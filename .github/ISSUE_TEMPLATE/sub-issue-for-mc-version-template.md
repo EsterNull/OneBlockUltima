@@ -1,0 +1,14 @@
+---
+name: Sub-issue for MC version template
+about: Add information for the sub-issue
+title: "[SUB-ISSUE]"
+labels: check_required
+assignees: XZSt4nce
+
+---
+
+**MC version**
+Minecraft <version>
+
+**Description**
+The issue description is found in the description of the parent issue.

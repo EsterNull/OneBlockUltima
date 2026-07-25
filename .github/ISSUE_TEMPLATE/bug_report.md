@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: "[BUG]"
-labels: bug, check_required
+labels: bug, check_required, enhancement
 assignees: XZSt4nce
 
 ---
