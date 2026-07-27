@@ -18,6 +18,7 @@ public class BlockPriceConfigTest {
     @BeforeClass
     public static void setUp() {
         Bootstrap.register();
+        BlockPriceConfig.reset();
     }
 
     private BlockPriceConfig newConfig() throws Exception {

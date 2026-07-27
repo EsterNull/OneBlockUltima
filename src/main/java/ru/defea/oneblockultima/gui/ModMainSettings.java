@@ -68,6 +68,6 @@ public class ModMainSettings extends GuiScreen
     @Override
     public boolean doesGuiPauseGame()
     {
-        return false;
+        return true;
     }
 }

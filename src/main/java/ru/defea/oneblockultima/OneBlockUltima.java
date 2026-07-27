@@ -55,7 +55,7 @@ public class OneBlockUltima
     {
         logger = event.getModLog();
         BlockSetConfig.load(event.getModConfigurationDirectory());
-        BlockPriceConfig.load();
+        BlockPriceConfig.load(event.getModConfigurationDirectory());
         OneBlockPlayerDataProvider.register();
         ModTileEntities.register();
         ModMessages.register();

@@ -420,6 +420,6 @@ public class GuiModSettings extends GuiScreen
     @Override
     public boolean doesGuiPauseGame()
     {
-        return false;
+        return true;
     }
 }

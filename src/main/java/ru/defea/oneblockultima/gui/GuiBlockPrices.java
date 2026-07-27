@@ -55,6 +55,7 @@ public class GuiBlockPrices extends GuiScreen
 
     private String editingRegistry = "";
     private String editingName = "";
+    private int editingMeta = 0;
     private int editingPrice = 0;
     private boolean editingExisting = false;
     private int deleteTargetIndex = -1;
@@ -65,12 +66,14 @@ public class GuiBlockPrices extends GuiScreen
         final String registry;
         final String name;
         final ItemStack stack;
+        final int meta;
 
         SearchResult(String registry, String name, ItemStack stack)
         {
             this.registry = registry;
             this.name = name;
             this.stack = stack;
+            this.meta = stack.isEmpty() ? 0 : stack.getMetadata();
         }
     }
 
@@ -179,6 +182,7 @@ public class GuiBlockPrices extends GuiScreen
             editingExisting = false;
             editingRegistry = "";
             editingName = "";
+            editingMeta = 0;
             editingPrice = 0;
             searchQuery = "";
             changeView(VIEW_ADD_BLOCK);
@@ -229,10 +233,13 @@ public class GuiBlockPrices extends GuiScreen
             if (index >= 0 && index < filteredEntries.size())
             {
                 Map.Entry<String, Integer> entry = filteredEntries.get(index);
-                editingRegistry = entry.getKey();
+                String entryKey = entry.getKey();
+                int entryMeta = parseMetaFromKey(entryKey);
+                editingRegistry = entryMeta > 0 ? entryKey.substring(0, entryKey.lastIndexOf(':')) : entryKey;
+                editingMeta = entryMeta;
                 editingPrice = entry.getValue();
                 editingExisting = true;
-                editingName = getBlockDisplayName(editingRegistry);
+                editingName = getBlockDisplayName(editingRegistry, editingMeta);
                 changeView(VIEW_EDIT_PRICE);
             }
         }
@@ -255,7 +262,8 @@ public class GuiBlockPrices extends GuiScreen
             return;
         }
 
-        stagedPrices.put(editingRegistry, price);
+        String priceKey = editingMeta > 0 ? editingRegistry + ":" + editingMeta : editingRegistry;
+        stagedPrices.put(priceKey, price);
         statusMessage = I18n.format("gui.oneblockultima.prices.price_saved");
         statusTimer = 60;
         changeView(VIEW_PRICES);
@@ -295,9 +303,11 @@ public class GuiBlockPrices extends GuiScreen
                 {
                     SearchResult result = searchResults.get(index);
                     editingRegistry = result.registry;
+                    editingMeta = result.meta;
                     editingName = result.name;
-                    editingPrice = stagedPrices.getOrDefault(editingRegistry, 0);
-                    editingExisting = stagedPrices.containsKey(editingRegistry);
+                    String priceKey = editingMeta > 0 ? editingRegistry + ":" + editingMeta : editingRegistry;
+                    editingPrice = stagedPrices.getOrDefault(priceKey, 0);
+                    editingExisting = stagedPrices.containsKey(priceKey);
                     changeView(VIEW_EDIT_PRICE);
                     return;
                 }
@@ -441,7 +451,7 @@ public class GuiBlockPrices extends GuiScreen
                 Gui.drawRect(listX + 1, ey, listX + listW - 1, ey + entryHeight, 0x33FFFFFF);
             }
 
-            ItemStack stack = BlockPriceConfig.createItemStack(entry.getKey());
+            ItemStack stack = BlockPriceConfig.createItemStack(parseRegistryFromKey(entry.getKey()), parseMetaFromKey(entry.getKey()));
             if (!stack.isEmpty())
             {
                 GlStateManager.enableDepth();
@@ -453,7 +463,7 @@ public class GuiBlockPrices extends GuiScreen
                 GlStateManager.disableDepth();
             }
 
-            String name = getBlockDisplayName(entry.getKey());
+            String name = getBlockDisplayName(parseRegistryFromKey(entry.getKey()), parseMetaFromKey(entry.getKey()));
             fontRenderer.drawStringWithShadow(name, listX + 24, ey + 2, 0xFFFFFF);
             fontRenderer.drawStringWithShadow(entry.getKey(), listX + 24, ey + 12, 0x808080);
 
@@ -526,10 +536,13 @@ public class GuiBlockPrices extends GuiScreen
                 if (mouseX >= editBtnX && mouseX <= editBtnX + editW && mouseY >= editBtnY && mouseY <= editBtnY + btnH)
                 {
                     Map.Entry<String, Integer> entry = filteredEntries.get(idx);
-                    editingRegistry = entry.getKey();
+                    String entryKey = entry.getKey();
+                    int entryMeta = parseMetaFromKey(entryKey);
+                    editingRegistry = entryMeta > 0 ? entryKey.substring(0, entryKey.lastIndexOf(':')) : entryKey;
+                    editingMeta = entryMeta;
                     editingPrice = entry.getValue();
                     editingExisting = true;
-                    editingName = getBlockDisplayName(editingRegistry);
+                    editingName = getBlockDisplayName(editingRegistry, editingMeta);
                     changeView(VIEW_EDIT_PRICE);
                     return;
                 }
@@ -632,7 +645,7 @@ public class GuiBlockPrices extends GuiScreen
         int centerX = width / 2;
         int centerY = height / 2 - 20;
 
-        ItemStack stack = BlockPriceConfig.createItemStack(editingRegistry);
+        ItemStack stack = BlockPriceConfig.createItemStack(editingRegistry, editingMeta);
         if (!stack.isEmpty())
         {
             GlStateManager.enableDepth();
@@ -711,8 +724,9 @@ public class GuiBlockPrices extends GuiScreen
             {
                 if (subStack.isEmpty() || subStack.getItem() != item) continue;
 
-                String key = registry + ":" + subStack.getMetadata();
-                if (stagedPrices.containsKey(key) || stagedPrices.containsKey(registry)) continue;
+                int meta = subStack.getMetadata();
+                boolean alreadyPriced = meta == 0 ? stagedPrices.containsKey(registry) : stagedPrices.containsKey(registry + ":" + meta);
+                if (alreadyPriced) continue;
 
                 String name = "";
                 try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
@@ -750,8 +764,9 @@ public class GuiBlockPrices extends GuiScreen
             {
                 if (subStack.isEmpty() || subStack.getItem() != item) continue;
 
-                String key = registry + ":" + subStack.getMetadata();
-                if (stagedPrices.containsKey(key) || stagedPrices.containsKey(registry)) continue;
+                int meta = subStack.getMetadata();
+                boolean alreadyPriced = meta == 0 ? stagedPrices.containsKey(registry) : stagedPrices.containsKey(registry + ":" + meta);
+                if (alreadyPriced) continue;
 
                 String name = "";
                 try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
@@ -775,9 +790,9 @@ public class GuiBlockPrices extends GuiScreen
         return true;
     }
 
-    private String getBlockDisplayName(String registry)
+    private String getBlockDisplayName(String registry, int meta)
     {
-        ItemStack stack = BlockPriceConfig.createItemStack(registry);
+        ItemStack stack = BlockPriceConfig.createItemStack(registry, meta);
         if (!stack.isEmpty())
         {
             try { return stack.getDisplayName(); } catch (Exception ignored) {}
@@ -785,10 +800,43 @@ public class GuiBlockPrices extends GuiScreen
         return registry;
     }
 
+    private static int parseMetaFromKey(String key)
+    {
+        if (key == null) return 0;
+        int lastColon = key.lastIndexOf(':');
+        if (lastColon < 0) return 0;
+        String suffix = key.substring(lastColon + 1);
+        try
+        {
+            return Integer.parseInt(suffix);
+        }
+        catch (NumberFormatException e)
+        {
+            return 0;
+        }
+    }
+
+    private static String parseRegistryFromKey(String key)
+    {
+        if (key == null) return "";
+        int lastColon = key.lastIndexOf(':');
+        if (lastColon < 0) return key;
+        String suffix = key.substring(lastColon + 1);
+        try
+        {
+            Integer.parseInt(suffix);
+            return key.substring(0, lastColon);
+        }
+        catch (NumberFormatException e)
+        {
+            return key;
+        }
+    }
+
     @Override
     public boolean doesGuiPauseGame()
     {
-        return false;
+        return true;
     }
 
     @Override
