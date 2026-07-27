@@ -48,7 +48,7 @@ public class PacketSyncPlayerData implements IMessage
         }
 
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("currency", playerData.getCurrency());
+        tag.setDouble("currency", playerData.getCurrency());
         tag.setInteger("brokenBlocksTotal", playerData.getBrokenBlocksCount());
         NBTTagCompound levels = new NBTTagCompound();
         for (java.util.Map.Entry<String, Integer> entry : ((OneBlockPlayerData) playerData).getSetLevels().entrySet())
@@ -86,7 +86,7 @@ public class PacketSyncPlayerData implements IMessage
                     if (data instanceof OneBlockPlayerData)
                     {
                         OneBlockPlayerData playerData = (OneBlockPlayerData) data;
-                        playerData.setCurrency(message.data.getInteger("currency"));
+                        playerData.setCurrency(message.data.getDouble("currency"));
                         playerData.setBrokenBlocksTotal(message.data.getInteger("brokenBlocksTotal"));
                         playerData.getSetLevels().clear();
                         NBTTagCompound levels = message.data.getCompoundTag("setLevels");

@@ -24,6 +24,8 @@ import static org.junit.Assert.*;
 
 public class BlockSetConfigUnlockConditionTest
 {
+    private static final double DELTA = 0.0001;
+
     @BeforeClass
     public static void initMinecraftBootstrap()
     {
@@ -74,7 +76,7 @@ public class BlockSetConfigUnlockConditionTest
         OneBlockPlayerData target = new OneBlockPlayerData();
         target.copyFrom(source);
 
-        assertEquals(120, target.getCurrency());
+        assertEquals(120, target.getCurrency(), DELTA);
         assertEquals(7, target.getBrokenBlocksCount());
         assertEquals(7, target.getBrokenBlocksCount("classic"));
         assertEquals(2, target.getSetLevel("classic"));

@@ -4,14 +4,14 @@
       "id": "classic",
       "unlockCost": 0,
       "blocks": [
-        { "registry": "minecraft:grass", "meta": 0, "baseLevel": 1, "baseChance": 70, "currency": 1 },
-        { "registry": "minecraft:log", "meta": 0, "baseLevel": 1, "baseChance": 29, "currency": 2 },
-        { "registry": "minecraft:tallgrass", "meta": 1, "baseLevel": 1, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:stone", "meta": 0, "baseLevel": 2, "baseChance": 10, "currency": 2 },
-        { "registry": "minecraft:coal_ore", "meta": 0, "baseLevel": 2, "baseChance": 2, "currency": 5 },
-        { "registry": "minecraft:iron_ore", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 5 },
-        { "registry": "minecraft:water", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:bedrock", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5, "dropItem": "minecraft:bedrock" }
+        { "registry": "minecraft:grass", "meta": 0, "baseLevel": 1, "baseChance": 70 },
+        { "registry": "minecraft:log", "meta": 0, "baseLevel": 1, "baseChance": 29 },
+        { "registry": "minecraft:tallgrass", "meta": 1, "baseLevel": 1, "baseChance": 1 },
+        { "registry": "minecraft:stone", "meta": 0, "baseLevel": 2, "baseChance": 10 },
+        { "registry": "minecraft:coal_ore", "meta": 0, "baseLevel": 2, "baseChance": 2 },
+        { "registry": "minecraft:iron_ore", "meta": 0, "baseLevel": 2, "baseChance": 1 },
+        { "registry": "minecraft:water", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:bedrock", "meta": 0, "baseLevel": 5, "baseChance": 1, "dropItem": "minecraft:bedrock" }
       ],
       "mobs": [
         { "registry": "minecraft:zombie", "baseLevel": 3, "baseChance": 5, "count": 1 },
@@ -26,22 +26,22 @@
       "id": "plain",
       "unlockCost": 100,
       "blocks": [
-        { "registry": "minecraft:grass", "meta": 0, "baseLevel": 1, "baseChance": 70, "currency": 1 },
-        { "registry": "minecraft:sand", "meta": 0, "baseLevel": 1, "baseChance": 10, "currency": 1 },
-        { "registry": "minecraft:clay", "meta": 0, "baseLevel": 1, "baseChance": 10, "currency": 1 },
-        { "registry": "minecraft:gravel", "meta": 0, "baseLevel": 1, "baseChance": 10, "currency": 1 },
-        { "registry": "minecraft:carrots", "meta": 0, "baseLevel": 2, "baseChance": 2, "currency": 0, "dropItem": "minecraft:carrot" },
-        { "registry": "minecraft:reeds", "meta": 0, "baseLevel": 2, "baseChance": 2, "currency": 0, "dropItem": "minecraft:reeds" },
-        { "registry": "minecraft:wheat", "meta": 0, "baseLevel": 2, "baseChance": 2, "currency": 0, "dropItem": "minecraft:wheat_seeds" },
-        { "registry": "minecraft:potatoes", "meta": 0, "baseLevel": 3, "baseChance": 2, "currency": 0, "dropItem": "minecraft:potato" },
-        { "registry": "minecraft:beetroots", "meta": 0, "baseLevel": 3, "baseChance": 2, "currency": 0, "dropItem": "minecraft:beetroot_seeds" },
-        { "registry": "minecraft:red_flower", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:yellow_flower", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:red_mushroom", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:brown_mushroom", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:cactus", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 1 },
-        { "registry": "minecraft:double_plant", "metas": [0, 1, 4, 5], "baseLevel": 4, "baseChance": 1, "currency": 0 },
-        { "registry": "minecraft:red_flower", "metas": [1, 2, 3, 4, 5, 6, 7, 8], "baseLevel": 5, "baseChance": 1, "currency": 0 }
+        { "registry": "minecraft:grass", "meta": 0, "baseLevel": 1, "baseChance": 70 },
+        { "registry": "minecraft:sand", "meta": 0, "baseLevel": 1, "baseChance": 10 },
+        { "registry": "minecraft:clay", "meta": 0, "baseLevel": 1, "baseChance": 10 },
+        { "registry": "minecraft:gravel", "meta": 0, "baseLevel": 1, "baseChance": 10 },
+        { "registry": "minecraft:carrots", "meta": 0, "baseLevel": 2, "baseChance": 2, "dropItem": "minecraft:carrot" },
+        { "registry": "minecraft:reeds", "meta": 0, "baseLevel": 2, "baseChance": 2, "dropItem": "minecraft:reeds" },
+        { "registry": "minecraft:wheat", "meta": 0, "baseLevel": 2, "baseChance": 2, "dropItem": "minecraft:wheat_seeds" },
+        { "registry": "minecraft:potatoes", "meta": 0, "baseLevel": 3, "baseChance": 2, "dropItem": "minecraft:potato" },
+        { "registry": "minecraft:beetroots", "meta": 0, "baseLevel": 3, "baseChance": 2, "dropItem": "minecraft:beetroot_seeds" },
+        { "registry": "minecraft:red_flower", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:yellow_flower", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:red_mushroom", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:brown_mushroom", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:cactus", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:double_plant", "metas": [0, 1, 4, 5], "baseLevel": 4, "baseChance": 1 },
+        { "registry": "minecraft:red_flower", "metas": [1, 2, 3, 4, 5, 6, 7, 8], "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "minecraft:pig", "baseLevel": 1, "baseChance": 2, "count": 1 },
@@ -58,25 +58,25 @@
       "id": "mixed_forest",
       "unlockCost": 100,
       "blocks": [
-        { "registry": "minecraft:log", "meta": 0, "baseLevel": 1, "baseChance": 70, "currency": 2 },
-        { "registry": "minecraft:log", "metas": [1, 2, 3], "baseLevel": 1, "baseChance": 10, "currency": 2 },
-        { "registry": "minecraft:log2", "metas": [0, 1], "baseLevel": 6, "baseChance": 10, "currency": 2 }
+        { "registry": "minecraft:log", "meta": 0, "baseLevel": 1, "baseChance": 70 },
+        { "registry": "minecraft:log", "metas": [1, 2, 3], "baseLevel": 1, "baseChance": 10 },
+        { "registry": "minecraft:log2", "metas": [0, 1], "baseLevel": 6, "baseChance": 10 }
       ]
     },
     {
       "id": "dungeon",
       "unlockCost": 100,
       "blocks": [
-        { "registry": "minecraft:stone", "meta": 0, "baseLevel": 1, "baseChance": 80, "currency": 2 },
-        { "registry": "minecraft:cobblestone", "meta": 0, "baseLevel": 1, "baseChance": 18, "currency": 2 },
-        { "registry": "minecraft:coal_ore", "meta": 0, "baseLevel": 1, "baseChance": 2, "currency": 5 },
-        { "registry": "minecraft:iron_ore", "meta": 0, "baseLevel": 3, "baseChance": 2, "currency": 5 },
-        { "registry": "minecraft:gold_ore", "meta": 0, "baseLevel": 4, "baseChance": 2, "currency": 5 },
-        { "registry": "minecraft:lapis_ore", "meta": 0, "baseLevel": 4, "baseChance": 2, "currency": 5 },
-        { "registry": "minecraft:redstone_ore", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 },
-        { "registry": "minecraft:emerald_ore", "meta": 0, "baseLevel": 6, "baseChance": 1, "currency": 15 },
-        { "registry": "minecraft:diamond_ore", "meta": 0, "baseLevel": 7, "baseChance": 1, "currency": 15 },
-        { "registry": "minecraft:chest", "meta": 0, "baseLevel": 10, "baseChance": 1, "currency": 0,
+        { "registry": "minecraft:stone", "meta": 0, "baseLevel": 1, "baseChance": 80 },
+        { "registry": "minecraft:cobblestone", "meta": 0, "baseLevel": 1, "baseChance": 18 },
+        { "registry": "minecraft:coal_ore", "meta": 0, "baseLevel": 1, "baseChance": 2 },
+        { "registry": "minecraft:iron_ore", "meta": 0, "baseLevel": 3, "baseChance": 2 },
+        { "registry": "minecraft:gold_ore", "meta": 0, "baseLevel": 4, "baseChance": 2 },
+        { "registry": "minecraft:lapis_ore", "meta": 0, "baseLevel": 4, "baseChance": 2 },
+        { "registry": "minecraft:redstone_ore", "meta": 0, "baseLevel": 5, "baseChance": 1 },
+        { "registry": "minecraft:emerald_ore", "meta": 0, "baseLevel": 6, "baseChance": 1 },
+        { "registry": "minecraft:diamond_ore", "meta": 0, "baseLevel": 7, "baseChance": 1 },
+        { "registry": "minecraft:chest", "meta": 0, "baseLevel": 10, "baseChance": 1,
           "nbtTags": {
             "LootTable":"minecraft:chests/simple_dungeon"
           }
@@ -101,30 +101,30 @@
       "requiredMods": ["ic2", "appliedenergistics2", "industrialupgrade", "thermalfoundation"],
       "unlockCost": 300,
       "blocks": [
-        { "registry": "minecraft:stone", "meta": 0, "baseLevel": 1, "baseChance": 80, "currency": 2 },
-        { "registry": "ic2:resource", "metas": [1, 2, 3, 4], "baseLevel": 1, "baseChance": 5, "currency": 5 },
-        { "registry": "ic2:sapling", "meta": 0, "baseLevel": 2, "baseChance": 3, "currency": 5 },
-        { "registry": "appliedenergistics2:quartz_ore", "meta": 0, "baseLevel": 2, "baseChance": 3, "currency": 5 },
-        { "registry": "appliedenergistics2:charged_quartz_ore", "meta": 0, "baseLevel": 2, "baseChance": 3, "currency": 5 },
-        { "registry": "industrialupgrade:blockpreciousore", "meta": 3, "baseLevel": 2, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:fluidneft", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 5 },
+        { "registry": "minecraft:stone", "meta": 0, "baseLevel": 1, "baseChance": 80 },
+        { "registry": "ic2:resource", "metas": [1, 2, 3, 4], "baseLevel": 1, "baseChance": 5 },
+        { "registry": "ic2:sapling", "meta": 0, "baseLevel": 2, "baseChance": 3 },
+        { "registry": "appliedenergistics2:quartz_ore", "meta": 0, "baseLevel": 2, "baseChance": 3 },
+        { "registry": "appliedenergistics2:charged_quartz_ore", "meta": 0, "baseLevel": 2, "baseChance": 3 },
+        { "registry": "industrialupgrade:blockpreciousore", "meta": 3, "baseLevel": 2, "baseChance": 1 },
+        { "registry": "industrialupgrade:fluidneft", "meta": 0, "baseLevel": 2, "baseChance": 1 },
 
-        { "registry": "appliedenergistics2:sky_stone_block", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "appliedenergistics2:material", "metas": [13, 14, 15, 19, 21], "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:baseOre", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 3, "baseChance": 1, "currency": 5 },
+        { "registry": "appliedenergistics2:sky_stone_block", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "appliedenergistics2:material", "metas": [13, 14, 15, 19, 21], "baseLevel": 3, "baseChance": 1 },
+        { "registry": "industrialupgrade:baseOre", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 3, "baseChance": 1 },
 
-        { "registry": "industrialupgrade:apatite", "metas": [1, 2, 3, 4], "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "thermalfoundation:ore_fluid", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
+        { "registry": "industrialupgrade:apatite", "metas": [1, 2, 3, 4], "baseLevel": 3, "baseChance": 1 },
+        { "registry": "thermalfoundation:ore_fluid", "meta": 0, "baseLevel": 3, "baseChance": 1 },
 
-        { "registry": "industrialupgrade:baseOre1", "metas": [0, 1, 2, 3, 4, 5, 6, 7], "baseLevel": 4, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:baseOre2", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 5, "baseChance": 1, "currency": 5 },
+        { "registry": "industrialupgrade:baseOre1", "metas": [0, 1, 2, 3, 4, 5, 6, 7], "baseLevel": 4, "baseChance": 1 },
+        { "registry": "industrialupgrade:baseOre2", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 5, "baseChance": 1 },
 
-        { "registry": "industrialupgrade:blockpreciousore", "metas": [0, 1, 2], "baseLevel": 6, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:blockradiationore", "metas": [0, 1, 2], "baseLevel": 6, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:thorium_ore", "meta": 0, "baseLevel": 7, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:blockspace", "meta": 10, "baseLevel": 7, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:blockspace2", "metas": [5, 15], "baseLevel": 7, "baseChance": 1, "currency": 5 },
-        { "registry": "industrialupgrade:blockspace3", "metas": [3, 6], "baseLevel": 7, "baseChance": 1, "currency": 5 }
+        { "registry": "industrialupgrade:blockpreciousore", "metas": [0, 1, 2], "baseLevel": 6, "baseChance": 1 },
+        { "registry": "industrialupgrade:blockradiationore", "metas": [0, 1, 2], "baseLevel": 6, "baseChance": 1 },
+        { "registry": "industrialupgrade:thorium_ore", "meta": 0, "baseLevel": 7, "baseChance": 1 },
+        { "registry": "industrialupgrade:blockspace", "meta": 10, "baseLevel": 7, "baseChance": 1 },
+        { "registry": "industrialupgrade:blockspace2", "metas": [5, 15], "baseLevel": 7, "baseChance": 1 },
+        { "registry": "industrialupgrade:blockspace3", "metas": [3, 6], "baseLevel": 7, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "minecraft:zombie", "baseLevel": 1, "baseChance": 10, "count": 1 },
@@ -148,17 +148,17 @@
       "unlockCost": 300,
       "requiredMods": ["tconstruct", "thermalfoundation"],
       "blocks": [
-        { "registry": "minecraft:netherrack", "meta": 0, "baseLevel": 1, "baseChance": 44, "currency": 2 },
-        { "registry": "minecraft:nether_brick", "meta": 0, "baseLevel": 1, "baseChance": 4, "currency": 2 },
-        { "registry": "minecraft:lava", "meta": 0, "baseLevel": 1, "baseChance": 1, "currency": 2 },
-        { "registry": "minecraft:glowstone", "meta": 0, "baseLevel": 1, "baseChance": 5, "currency": 2 },
-        { "registry": "minecraft:soul_sand", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "minecraft:magma", "meta": 0, "baseLevel": 2, "baseChance": 2, "currency": 2 },
-        { "registry": "minecraft:quartz_ore", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 5 },
-        { "registry": "minecraft:nether_wart", "meta": 0, "baseLevel": 3, "baseChance": 3, "currency": 5 },
-        { "registry": "tconstruct:ore", "metas": [0, 1], "baseLevel": 4, "baseChance": 3, "currency": 5 },
-        { "registry": "thermalfoundation:ore_fluid", "meta": 3, "baseLevel": 4, "baseChance": 1, "currency": 5 },
-        { "registry": "thermalfoundation:fluid_glowstone", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 }
+        { "registry": "minecraft:netherrack", "meta": 0, "baseLevel": 1, "baseChance": 44 },
+        { "registry": "minecraft:nether_brick", "meta": 0, "baseLevel": 1, "baseChance": 4 },
+        { "registry": "minecraft:lava", "meta": 0, "baseLevel": 1, "baseChance": 1 },
+        { "registry": "minecraft:glowstone", "meta": 0, "baseLevel": 1, "baseChance": 5 },
+        { "registry": "minecraft:soul_sand", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "minecraft:magma", "meta": 0, "baseLevel": 2, "baseChance": 2 },
+        { "registry": "minecraft:quartz_ore", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "minecraft:nether_wart", "meta": 0, "baseLevel": 3, "baseChance": 3 },
+        { "registry": "tconstruct:ore", "metas": [0, 1], "baseLevel": 4, "baseChance": 3 },
+        { "registry": "thermalfoundation:ore_fluid", "meta": 3, "baseLevel": 4, "baseChance": 1 },
+        { "registry": "thermalfoundation:fluid_glowstone", "meta": 0, "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "minecraft:zombie_pigman", "baseLevel": 1, "baseChance": 10, "count": 1,
@@ -181,13 +181,13 @@
       "unlockCost": 300,
       "requiredMods": ["extrautils2", "thermalfoundation", "draconicevolution"],
       "blocks": [
-        { "registry": "minecraft:end_stone", "meta": 0, "baseLevel": 1, "baseChance": 60, "currency": 2 },
-        { "registry": "minecraft:obsidian", "meta": 0, "baseLevel": 1, "baseChance": 40, "currency": 2 },
-        { "registry": "extrautils2:enderlilly", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "thermalfoundation:ore_fluid", "meta": 4, "baseLevel": 2, "baseChance": 1, "currency": 5 },
-        { "registry": "draconicevolution:draconium_ore", "meta": 2, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "minecraft:chorus_plant", "meta": 0, "baseLevel": 4, "baseChance": 1, "currency": 5 },
-        { "registry": "minecraft:end_portal_frame", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 10, "dropItem": "minecraft:end_portal_frame" }
+        { "registry": "minecraft:end_stone", "meta": 0, "baseLevel": 1, "baseChance": 60 },
+        { "registry": "minecraft:obsidian", "meta": 0, "baseLevel": 1, "baseChance": 40 },
+        { "registry": "extrautils2:enderlilly", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "thermalfoundation:ore_fluid", "meta": 4, "baseLevel": 2, "baseChance": 1 },
+        { "registry": "draconicevolution:draconium_ore", "meta": 2, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "minecraft:chorus_plant", "meta": 0, "baseLevel": 4, "baseChance": 1 },
+        { "registry": "minecraft:end_portal_frame", "meta": 0, "baseLevel": 5, "baseChance": 1, "dropItem": "minecraft:end_portal_frame" }
       ],
       "mobs": [
         { "registry": "minecraft:enderman", "baseLevel": 1, "baseChance": 10, "count": 1 },
@@ -200,15 +200,15 @@
       "unlockCost": 1000,
       "requiredMods": ["thaumcraft"],
       "blocks": [
-        { "registry": "thaumcraft:ore_amber", "meta": 0, "baseLevel": 1, "baseChance": 12, "currency": 5 },
-        { "registry": "thaumcraft:ore_cinnabar", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_aer", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_ignis", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_aqua", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_terra", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_ordo", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_perditio", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 },
-        { "registry": "thaumcraft:crystal_vitium", "meta": 0, "baseLevel": 1, "baseChance": 11, "currency": 5 }
+        { "registry": "thaumcraft:ore_amber", "meta": 0, "baseLevel": 1, "baseChance": 12 },
+        { "registry": "thaumcraft:ore_cinnabar", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_aer", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_ignis", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_aqua", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_terra", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_ordo", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_perditio", "meta": 0, "baseLevel": 1, "baseChance": 11 },
+        { "registry": "thaumcraft:crystal_vitium", "meta": 0, "baseLevel": 1, "baseChance": 11 }
       ]
     },
     {
@@ -216,8 +216,8 @@
       "unlockCost": 300,
       "requiredMods": ["botania"],
       "blocks": [
-        { "registry": "botania:mushroom", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 1, "baseChance": 6, "currency": 0 },
-        { "registry": "botania:flower", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 2, "baseChance": 4, "currency": 0 }
+        { "registry": "botania:mushroom", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 1, "baseChance": 6 },
+        { "registry": "botania:flower", "metas": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "baseLevel": 2, "baseChance": 4 }
       ]
     },
     {
@@ -225,8 +225,8 @@
       "unlockCost": 1000,
       "requiredMods": ["forestry"],
       "blocks": [
-        { "registry": "forestry:beehives", "metas": [0, 1, 2, 3, 4, 5, 6], "baseLevel": 1, "baseChance": 30, "currency": 5 },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:beehives", "metas": [0, 1, 2, 3, 4, 5, 6], "baseLevel": 1, "baseChance": 30 },
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -245,7 +245,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -264,7 +264,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -283,7 +283,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -302,7 +302,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -321,7 +321,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -340,7 +340,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -359,7 +359,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -378,7 +378,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -397,7 +397,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -416,7 +416,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -435,7 +435,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -454,7 +454,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -473,7 +473,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -492,7 +492,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -511,7 +511,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -530,7 +530,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -549,7 +549,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -568,7 +568,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -587,7 +587,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -606,7 +606,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -625,7 +625,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -644,7 +644,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -663,7 +663,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -682,7 +682,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -701,7 +701,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -720,7 +720,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -739,7 +739,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -758,7 +758,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -777,7 +777,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -796,7 +796,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -815,7 +815,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -834,7 +834,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -853,7 +853,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -872,7 +872,7 @@
             }
           }
         },
-        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1, "currency": 0,
+        { "registry": "forestry:sapling", "meta": 0, "baseLevel": 2, "baseChance": 1,
           "nbtTags": {
             "IsAnalyzed": 0,
             "Genome": {
@@ -898,10 +898,10 @@
       "unlockCost": 300,
       "requiredMods": ["astralsorcery"],
       "blocks": [
-        { "registry": "astralsorcery:blockmarble", "meta": 0, "baseLevel": 1, "baseChance": 85, "currency": 2 },
-        { "registry": "astralsorcery:blockcustomsandore", "meta": 0, "baseLevel": 1, "baseChance": 15, "currency": 3 },
-        { "registry": "astralsorcery:blockcustomore", "meta": 1, "baseLevel": 2, "baseChance": 5, "currency": 5 },
-        { "registry": "astralsorcery:blockcustomore", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 }
+        { "registry": "astralsorcery:blockmarble", "meta": 0, "baseLevel": 1, "baseChance": 85 },
+        { "registry": "astralsorcery:blockcustomsandore", "meta": 0, "baseLevel": 1, "baseChance": 15 },
+        { "registry": "astralsorcery:blockcustomore", "meta": 1, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "astralsorcery:blockcustomore", "meta": 0, "baseLevel": 3, "baseChance": 1 }
       ]
     },
     {
@@ -909,12 +909,12 @@
       "unlockCost": 300,
       "requiredMods": ["divinerpg"],
       "blocks": [
-        { "registry": "divinerpg:eden_grass", "meta": 0, "baseLevel": 1, "baseChance": 85, "currency": 1 },
-        { "registry": "divinerpg:eden_log", "meta": 0, "baseLevel": 1, "baseChance": 15, "currency": 2 },
-        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "divinerpg:eden_ore", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "divinerpg:eden_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3, "currency": 1 },
-        { "registry": "divinerpg:realmite_ore", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 }
+        { "registry": "divinerpg:eden_grass", "meta": 0, "baseLevel": 1, "baseChance": 85 },
+        { "registry": "divinerpg:eden_log", "meta": 0, "baseLevel": 1, "baseChance": 15 },
+        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "divinerpg:eden_ore", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "divinerpg:eden_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3 },
+        { "registry": "divinerpg:realmite_ore", "meta": 0, "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "divinerpg:eden_cadillion", "baseLevel": 1, "baseChance": 8, "count": 1 },
@@ -927,12 +927,12 @@
       "unlockCost": 300,
       "requiredMods": ["divinerpg"],
       "blocks": [
-        { "registry": "divinerpg:skythern_grass", "meta": 0, "baseLevel": 1, "baseChance": 85, "currency": 1 },
-        { "registry": "divinerpg:skythern_log", "meta": 0, "baseLevel": 1, "baseChance": 15, "currency": 2 },
-        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "divinerpg:skythern_ore", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "divinerpg:skythern_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3, "currency": 1 },
-        { "registry": "divinerpg:arlemite_ore", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 }
+        { "registry": "divinerpg:skythern_grass", "meta": 0, "baseLevel": 1, "baseChance": 85 },
+        { "registry": "divinerpg:skythern_log", "meta": 0, "baseLevel": 1, "baseChance": 15 },
+        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "divinerpg:skythern_ore", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "divinerpg:skythern_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3 },
+        { "registry": "divinerpg:arlemite_ore", "meta": 0, "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "divinerpg:skythern_fiend", "baseLevel": 1, "baseChance": 8, "count": 1 },
@@ -945,12 +945,12 @@
       "unlockCost": 300,
       "requiredMods": ["divinerpg"],
       "blocks": [
-        { "registry": "divinerpg:apalachia_grass", "meta": 0, "baseLevel": 1, "baseChance": 85, "currency": 1 },
-        { "registry": "divinerpg:apalachia_log", "meta": 0, "baseLevel": 1, "baseChance": 15, "currency": 2 },
-        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "divinerpg:apalachia_ore", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "divinerpg:apalachia_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3, "currency": 1 },
-        { "registry": "divinerpg:bloodgem_ore", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 }
+        { "registry": "divinerpg:apalachia_grass", "meta": 0, "baseLevel": 1, "baseChance": 85 },
+        { "registry": "divinerpg:apalachia_log", "meta": 0, "baseLevel": 1, "baseChance": 15 },
+        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "divinerpg:apalachia_ore", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "divinerpg:apalachia_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3 },
+        { "registry": "divinerpg:bloodgem_ore", "meta": 0, "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "divinerpg:apalachia_cadillion", "baseLevel": 1, "baseChance": 8, "count": 1 },
@@ -963,12 +963,12 @@
       "unlockCost": 300,
       "requiredMods": ["divinerpg"],
       "blocks": [
-        { "registry": "divinerpg:wildwood_grass", "meta": 0, "baseLevel": 1, "baseChance": 85, "currency": 1 },
-        { "registry": "divinerpg:wildwood_log", "meta": 0, "baseLevel": 1, "baseChance": 15, "currency": 2 },
-        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "divinerpg:wildwood_ore", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "divinerpg:wildwood_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3, "currency": 1 },
-        { "registry": "divinerpg:rupee_ore", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 }
+        { "registry": "divinerpg:wildwood_grass", "meta": 0, "baseLevel": 1, "baseChance": 85 },
+        { "registry": "divinerpg:wildwood_log", "meta": 0, "baseLevel": 1, "baseChance": 15 },
+        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "divinerpg:wildwood_ore", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "divinerpg:wildwood_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3 },
+        { "registry": "divinerpg:rupee_ore", "meta": 0, "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "divinerpg:wildwood_cadillion", "baseLevel": 1, "baseChance": 8, "count": 1 },
@@ -981,12 +981,12 @@
       "unlockCost": 300,
       "requiredMods": ["divinerpg"],
       "blocks": [
-        { "registry": "divinerpg:mortum_grass", "meta": 0, "baseLevel": 1, "baseChance": 85, "currency": 1 },
-        { "registry": "divinerpg:mortum_log", "meta": 0, "baseLevel": 1, "baseChance": 15, "currency": 2 },
-        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 2 },
-        { "registry": "divinerpg:mortum_ore", "meta": 0, "baseLevel": 3, "baseChance": 1, "currency": 5 },
-        { "registry": "divinerpg:mortum_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3, "currency": 1 },
-        { "registry": "divinerpg:netherite_ore", "meta": 0, "baseLevel": 5, "baseChance": 1, "currency": 5 }
+        { "registry": "divinerpg:mortum_grass", "meta": 0, "baseLevel": 1, "baseChance": 85 },
+        { "registry": "divinerpg:mortum_log", "meta": 0, "baseLevel": 1, "baseChance": 15 },
+        { "registry": "divinerpg:twilight_stone", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "divinerpg:mortum_ore", "meta": 0, "baseLevel": 3, "baseChance": 1 },
+        { "registry": "divinerpg:mortum_leaves", "meta": 0, "baseLevel": 4, "baseChance": 3 },
+        { "registry": "divinerpg:netherite_ore", "meta": 0, "baseLevel": 5, "baseChance": 1 }
       ],
       "mobs": [
         { "registry": "divinerpg:eden_cadillion", "baseLevel": 1, "baseChance": 8, "count": 1 },
@@ -999,17 +999,17 @@
       "unlockCost": 300,
       "requiredMods": ["farmersdelight", "harvestcraft"],
       "blocks": [
-        { "registry": "farmersdelight:wild_rice", "meta": 0, "baseLevel": 1, "baseChance": 20, "currency": 0 },
-        { "registry": "farmersdelight:sandy_shrub", "meta": 0, "baseLevel": 1, "baseChance": 20, "currency": 0 },
-        { "registry": "farmersdelight:wild_cabbages", "meta": 0, "baseLevel": 1, "baseChance": 20, "currency": 0 },
-        { "registry": "farmersdelight:wild_onions", "meta": 0, "baseLevel": 1, "baseChance": 20, "currency": 0 },
-        { "registry": "farmersdelight:wild_tomatoes", "meta": 0, "baseLevel": 1, "baseChance": 20, "currency": 0 },
-        { "registry": "harvestcraft:windygarden", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 0 },
-        { "registry": "harvestcraft:aridgarden", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 0 },
-        { "registry": "harvestcraft:frostgarden", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 0 },
-        { "registry": "harvestcraft:soggygarden", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 0 },
-        { "registry": "harvestcraft:tropicalgarden", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 0 },
-        { "registry": "harvestcraft:shadedgarden", "meta": 0, "baseLevel": 2, "baseChance": 5, "currency": 0 }
+        { "registry": "farmersdelight:wild_rice", "meta": 0, "baseLevel": 1, "baseChance": 20 },
+        { "registry": "farmersdelight:sandy_shrub", "meta": 0, "baseLevel": 1, "baseChance": 20 },
+        { "registry": "farmersdelight:wild_cabbages", "meta": 0, "baseLevel": 1, "baseChance": 20 },
+        { "registry": "farmersdelight:wild_onions", "meta": 0, "baseLevel": 1, "baseChance": 20 },
+        { "registry": "farmersdelight:wild_tomatoes", "meta": 0, "baseLevel": 1, "baseChance": 20 },
+        { "registry": "harvestcraft:windygarden", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "harvestcraft:aridgarden", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "harvestcraft:frostgarden", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "harvestcraft:soggygarden", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "harvestcraft:tropicalgarden", "meta": 0, "baseLevel": 2, "baseChance": 5 },
+        { "registry": "harvestcraft:shadedgarden", "meta": 0, "baseLevel": 2, "baseChance": 5 }
       ]
     }
   ]

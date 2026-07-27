@@ -18,7 +18,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.lwjgl.input.Keyboard;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
-import ru.defea.oneblockultima.config.ModSettings;
 
 import java.io.IOException;
 import java.util.*;
@@ -43,9 +42,9 @@ public class GuiBlockPrices extends GuiScreen
     private String statusMessage = "";
     private int statusTimer = 0;
 
-    private List<Map.Entry<String, Integer>> priceEntries = new ArrayList<>();
-    private List<Map.Entry<String, Integer>> filteredEntries = new ArrayList<>();
-    private Map<String, Integer> stagedPrices = new LinkedHashMap<>();
+    private List<Map.Entry<String, Double>> priceEntries = new ArrayList<>();
+    private List<Map.Entry<String, Double>> filteredEntries = new ArrayList<>();
+    private Map<String, Double> stagedPrices = new LinkedHashMap<>();
 
     private GuiTextField searchField;
     private GuiTextField priceField;
@@ -56,10 +55,10 @@ public class GuiBlockPrices extends GuiScreen
     private String editingRegistry = "";
     private String editingName = "";
     private int editingMeta = 0;
-    private int editingPrice = 0;
+    private double editingPrice = 0;
     private boolean editingExisting = false;
     private int deleteTargetIndex = -1;
-    private ModSettings.BalanceMode currentBalanceMode;
+    private BlockPriceConfig.BalanceMode currentBalanceMode;
 
     private static class SearchResult
     {
@@ -80,7 +79,7 @@ public class GuiBlockPrices extends GuiScreen
     public GuiBlockPrices(GuiScreen parent)
     {
         this.parent = parent;
-        this.currentBalanceMode = ModSettings.get().getBalanceMode();
+        this.currentBalanceMode = BlockPriceConfig.get().getBalanceMode();
         stagedPrices.clear();
         stagedPrices.putAll(BlockPriceConfig.get().getPrices());
     }
@@ -100,7 +99,7 @@ public class GuiBlockPrices extends GuiScreen
             int topY = 35;
             int bottomY = height - 30;
 
-            String balanceModeLabel = currentBalanceMode == ModSettings.BalanceMode.BREAK_BLOCK
+            String balanceModeLabel = currentBalanceMode == BlockPriceConfig.BalanceMode.BREAK_BLOCK
                     ? I18n.format("gui.oneblockultima.mod_settings.balance_mode.break_block")
                     : I18n.format("gui.oneblockultima.mod_settings.balance_mode.sell_block");
             String balanceToggleText = I18n.format("gui.oneblockultima.mod_settings.balance_mode") + ": " + balanceModeLabel;
@@ -129,7 +128,7 @@ public class GuiBlockPrices extends GuiScreen
             buttonList.clear();
             priceField = new GuiTextField(1, fontRenderer, centerX - 60, height / 2 + 10, 120, 14);
             priceField.setFocused(true);
-            priceField.setText(String.valueOf(editingPrice));
+            priceField.setText(formatPrice(editingPrice));
             priceField.setMaxStringLength(10);
             priceField.setEnableBackgroundDrawing(false);
 
@@ -191,9 +190,9 @@ public class GuiBlockPrices extends GuiScreen
 
         if (button.id == BUTTON_BALANCE_MODE && currentView == VIEW_PRICES)
         {
-            currentBalanceMode = (currentBalanceMode == ModSettings.BalanceMode.BREAK_BLOCK)
-                    ? ModSettings.BalanceMode.SELL_BLOCK
-                    : ModSettings.BalanceMode.BREAK_BLOCK;
+            currentBalanceMode = (currentBalanceMode == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
+                    ? BlockPriceConfig.BalanceMode.SELL_BLOCK
+                    : BlockPriceConfig.BalanceMode.BREAK_BLOCK;
             initGui();
             return;
         }
@@ -207,7 +206,7 @@ public class GuiBlockPrices extends GuiScreen
         if (button.id == BUTTON_SAVE && currentView == VIEW_PRICES)
         {
             flushToConfig();
-            ModSettings.get().setBalanceMode(currentBalanceMode);
+            BlockPriceConfig.get().setBalanceMode(currentBalanceMode);
             statusMessage = I18n.format("gui.oneblockultima.prices.table_saved");
             statusTimer = 60;
             return;
@@ -218,7 +217,7 @@ public class GuiBlockPrices extends GuiScreen
             int index = button.id - BUTTON_DELETE_BASE + scrollOffset;
             if (index >= 0 && index < filteredEntries.size())
             {
-                Map.Entry<String, Integer> entry = filteredEntries.get(index);
+                Map.Entry<String, Double> entry = filteredEntries.get(index);
                 stagedPrices.remove(entry.getKey());
                 statusMessage = I18n.format("gui.oneblockultima.prices.price_removed");
                 statusTimer = 60;
@@ -232,7 +231,7 @@ public class GuiBlockPrices extends GuiScreen
             int index = button.id - BUTTON_EDIT_BASE + scrollOffset;
             if (index >= 0 && index < filteredEntries.size())
             {
-                Map.Entry<String, Integer> entry = filteredEntries.get(index);
+                Map.Entry<String, Double> entry = filteredEntries.get(index);
                 String entryKey = entry.getKey();
                 int entryMeta = parseMetaFromKey(entryKey);
                 editingRegistry = entryMeta > 0 ? entryKey.substring(0, entryKey.lastIndexOf(':')) : entryKey;
@@ -247,10 +246,11 @@ public class GuiBlockPrices extends GuiScreen
 
     private void savePrice()
     {
-        int price = 0;
+        double price = 0;
         try
         {
-            price = Integer.parseInt(priceField.getText().trim());
+            String text = priceField.getText().trim().replace(',', '.');
+            price = Double.parseDouble(text);
         }
         catch (NumberFormatException e)
         {
@@ -306,7 +306,7 @@ public class GuiBlockPrices extends GuiScreen
                     editingMeta = result.meta;
                     editingName = result.name;
                     String priceKey = editingMeta > 0 ? editingRegistry + ":" + editingMeta : editingRegistry;
-                    editingPrice = stagedPrices.getOrDefault(priceKey, 0);
+                    editingPrice = stagedPrices.getOrDefault(priceKey, 0.0);
                     editingExisting = stagedPrices.containsKey(priceKey);
                     changeView(VIEW_EDIT_PRICE);
                     return;
@@ -442,7 +442,7 @@ public class GuiBlockPrices extends GuiScreen
         for (int i = 0; i < maxVisible && i + scrollOffset < filteredEntries.size(); i++)
         {
             int idx = i + scrollOffset;
-            Map.Entry<String, Integer> entry = filteredEntries.get(idx);
+            Map.Entry<String, Double> entry = filteredEntries.get(idx);
             int ey = listY + i * entryHeight;
 
             boolean hovered = mouseX >= listX && mouseX <= listX + listW && mouseY >= ey && mouseY < ey + entryHeight;
@@ -467,7 +467,7 @@ public class GuiBlockPrices extends GuiScreen
             fontRenderer.drawStringWithShadow(name, listX + 24, ey + 2, 0xFFFFFF);
             fontRenderer.drawStringWithShadow(entry.getKey(), listX + 24, ey + 12, 0x808080);
 
-            String priceStr = String.valueOf(entry.getValue());
+            String priceStr = formatPrice(entry.getValue());
             int priceW = fontRenderer.getStringWidth(priceStr);
             int priceX = usableRight - priceW - btnGap - editW - btnGap - delW - 4;
             int priceY = ey + (entryHeight - 8) / 2;
@@ -535,7 +535,7 @@ public class GuiBlockPrices extends GuiScreen
 
                 if (mouseX >= editBtnX && mouseX <= editBtnX + editW && mouseY >= editBtnY && mouseY <= editBtnY + btnH)
                 {
-                    Map.Entry<String, Integer> entry = filteredEntries.get(idx);
+                    Map.Entry<String, Double> entry = filteredEntries.get(idx);
                     String entryKey = entry.getKey();
                     int entryMeta = parseMetaFromKey(entryKey);
                     editingRegistry = entryMeta > 0 ? entryKey.substring(0, entryKey.lastIndexOf(':')) : entryKey;
@@ -549,7 +549,7 @@ public class GuiBlockPrices extends GuiScreen
 
                 if (mouseX >= delBtnX && mouseX <= delBtnX + delW && mouseY >= delBtnY && mouseY <= delBtnY + btnH)
                 {
-                    Map.Entry<String, Integer> entry = filteredEntries.get(idx);
+                    Map.Entry<String, Double> entry = filteredEntries.get(idx);
                     stagedPrices.remove(entry.getKey());
                     statusMessage = I18n.format("gui.oneblockultima.prices.price_removed");
                     statusTimer = 60;
@@ -725,8 +725,8 @@ public class GuiBlockPrices extends GuiScreen
                 if (subStack.isEmpty() || subStack.getItem() != item) continue;
 
                 int meta = subStack.getMetadata();
-                boolean alreadyPriced = meta == 0 ? stagedPrices.containsKey(registry) : stagedPrices.containsKey(registry + ":" + meta);
-                if (alreadyPriced) continue;
+                String key = registry + ":" + meta;
+                if (stagedPrices.containsKey(key) || (meta == 0 && stagedPrices.containsKey(registry))) continue;
 
                 String name = "";
                 try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
@@ -765,8 +765,8 @@ public class GuiBlockPrices extends GuiScreen
                 if (subStack.isEmpty() || subStack.getItem() != item) continue;
 
                 int meta = subStack.getMetadata();
-                boolean alreadyPriced = meta == 0 ? stagedPrices.containsKey(registry) : stagedPrices.containsKey(registry + ":" + meta);
-                if (alreadyPriced) continue;
+                String key = registry + ":" + meta;
+                if (stagedPrices.containsKey(key) || (meta == 0 && stagedPrices.containsKey(registry))) continue;
 
                 String name = "";
                 try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
@@ -843,5 +843,14 @@ public class GuiBlockPrices extends GuiScreen
     public void onGuiClosed()
     {
         Keyboard.enableRepeatEvents(false);
+    }
+
+    private static String formatPrice(double price)
+    {
+        if (price == (long) price)
+        {
+            return String.valueOf((long) price);
+        }
+        return String.valueOf(price);
     }
 }

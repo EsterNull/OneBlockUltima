@@ -262,9 +262,9 @@ tile.compressed_iron_block_5x.name=Quintuple compressed iron block
 tile.compressed_mineral_block.name=Compressed mineral block
 
 # Sell commands
-command.obuSell.success=Sold %1$d x %2$s for %3$d currency. Balance: %4$d
+command.obuSell.success=Sold %1$d x %2$s for %3$s currency. Balance: %4$s
 command.obuSellAll.empty=No matching items found in inventory.
-command.obuSellAll.success=Sold %1$d items for %2$d currency. Balance: %3$d
+command.obuSellAll.success=Sold %1$d items for %2$s currency. Balance: %3$s
 
 # Mod settings - balance mode
 gui.oneblockultima.mod_settings.balance_mode=Income Mode

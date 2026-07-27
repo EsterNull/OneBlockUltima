@@ -248,7 +248,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
                         // Отмечаем как сгенерированное
                         GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                        registry.markGenerated(targetPos, pos, selectedSetId, BlockPriceConfig.get().getPrice(entry.registry), level, entry.registry, entry.meta);
+                        registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
 
                         return; // Успешно разместили блок
                     }
@@ -278,7 +278,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     world.spawnEntity(entityItem);
 
                     GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                    registry.markGenerated(targetPos, pos, selectedSetId, BlockPriceConfig.get().getPrice(entry.registry), level, entry.registry, entry.meta);
+                    registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
                 }
             } catch (Exception ex) {
                 OneBlockUltima.getLogger().error("[Generator] Failed to spawn item fallback", ex);
@@ -312,7 +312,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
         NBTTagCompound genNbt2 = ensureObuGenerated(entry.nbtTags);
         BlockUtil.placeBlockWithNBT(world, targetPos, state, genNbt2);
         OneBlockUltima.getLogger().info("[Generator] After place block at " + targetPos + ", now=" + world.getBlockState(targetPos).getBlock().getRegistryName());
-        registry.markGenerated(targetPos, pos, selectedSetId, BlockPriceConfig.get().getPrice(entry.registry), level, entry.registry, entry.meta);
+        registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
         if (world != null && !world.isRemote)
         {
             nonPlayerBreakCooldownActive = false;

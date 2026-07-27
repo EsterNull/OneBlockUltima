@@ -23,18 +23,11 @@ public final class ModSettings
         LEFT;
     }
 
-    public enum BalanceMode
-    {
-        BREAK_BLOCK,
-        SELL_BLOCK
-    }
-
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE_NAME = "oneblockultima_mod_settings.json";
     private static ModSettings instance;
 
     private BalancePosition balancePosition = BalancePosition.TOP_RIGHT;
-    private BalanceMode balanceMode = BalanceMode.BREAK_BLOCK;
     private int hOffset = 5;
     private int vOffset = 3;
 
@@ -48,12 +41,10 @@ public final class ModSettings
     }
 
     public BalancePosition getBalancePosition() { return balancePosition; }
-    public BalanceMode getBalanceMode() { return balanceMode; }
     public int getHOffset() { return hOffset; }
     public int getVOffset() { return vOffset; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
-    public void setBalanceMode(BalanceMode mode) { this.balanceMode = mode; save(); }
     public void setHOffset(int offset) { this.hOffset = offset; save(); }
     public void setVOffset(int offset) { this.vOffset = offset; save(); }
 

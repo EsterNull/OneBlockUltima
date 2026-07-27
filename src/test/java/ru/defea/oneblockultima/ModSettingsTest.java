@@ -22,31 +22,6 @@ public class ModSettingsTest {
         return ctor.newInstance();
     }
 
-    // --- BalanceMode enum ---
-
-    @Test
-    public void balanceModeHasTwoValues() {
-        assertEquals(2, ModSettings.BalanceMode.values().length);
-    }
-
-    @Test
-    public void balanceModeContainsBreakBlock() {
-        assertNotNull(ModSettings.BalanceMode.BREAK_BLOCK);
-        assertEquals("BREAK_BLOCK", ModSettings.BalanceMode.BREAK_BLOCK.name());
-    }
-
-    @Test
-    public void balanceModeContainsSellBlock() {
-        assertNotNull(ModSettings.BalanceMode.SELL_BLOCK);
-        assertEquals("SELL_BLOCK", ModSettings.BalanceMode.SELL_BLOCK.name());
-    }
-
-    @Test
-    public void balanceModeValueOf() {
-        assertEquals(ModSettings.BalanceMode.BREAK_BLOCK, ModSettings.BalanceMode.valueOf("BREAK_BLOCK"));
-        assertEquals(ModSettings.BalanceMode.SELL_BLOCK, ModSettings.BalanceMode.valueOf("SELL_BLOCK"));
-    }
-
     // --- BalancePosition enum ---
 
     @Test
@@ -73,12 +48,6 @@ public class ModSettingsTest {
     // --- Default values ---
 
     @Test
-    public void defaultBalanceModeIsBreakBlock() throws Exception {
-        ModSettings settings = newInstance();
-        assertEquals(ModSettings.BalanceMode.BREAK_BLOCK, settings.getBalanceMode());
-    }
-
-    @Test
     public void defaultBalancePositionIsTopRight() throws Exception {
         ModSettings settings = newInstance();
         assertEquals(ModSettings.BalancePosition.TOP_RIGHT, settings.getBalancePosition());
@@ -97,21 +66,6 @@ public class ModSettingsTest {
     }
 
     // --- Setters and getters ---
-
-    @Test
-    public void setBalanceModeChangesValue() throws Exception {
-        ModSettings settings = newInstance();
-        settings.setBalanceMode(ModSettings.BalanceMode.SELL_BLOCK);
-        assertEquals(ModSettings.BalanceMode.SELL_BLOCK, settings.getBalanceMode());
-    }
-
-    @Test
-    public void setBalanceModeBackToBreakBlock() throws Exception {
-        ModSettings settings = newInstance();
-        settings.setBalanceMode(ModSettings.BalanceMode.SELL_BLOCK);
-        settings.setBalanceMode(ModSettings.BalanceMode.BREAK_BLOCK);
-        assertEquals(ModSettings.BalanceMode.BREAK_BLOCK, settings.getBalanceMode());
-    }
 
     @Test
     public void setBalancePositionChangesValue() throws Exception {
@@ -150,17 +104,5 @@ public class ModSettingsTest {
         settings.setVOffset(0);
         assertEquals(0, settings.getHOffset());
         assertEquals(0, settings.getVOffset());
-    }
-
-    // --- Mode interaction ---
-
-    @Test
-    public void modesAreIndependent() throws Exception {
-        ModSettings settings = newInstance();
-        settings.setBalanceMode(ModSettings.BalanceMode.SELL_BLOCK);
-        assertEquals(ModSettings.BalanceMode.SELL_BLOCK, settings.getBalanceMode());
-        settings.setBalancePosition(ModSettings.BalancePosition.LEFT);
-        assertEquals(ModSettings.BalanceMode.SELL_BLOCK, settings.getBalanceMode());
-        assertEquals(ModSettings.BalancePosition.LEFT, settings.getBalancePosition());
     }
 }

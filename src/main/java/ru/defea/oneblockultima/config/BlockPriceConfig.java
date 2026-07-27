@@ -21,7 +21,14 @@ public final class BlockPriceConfig
     private static BlockPriceConfig instance;
     static File configFile;
 
-    private Map<String, Integer> prices = new LinkedHashMap<>();
+    public enum BalanceMode
+    {
+        BREAK_BLOCK,
+        SELL_BLOCK
+    }
+
+    private Map<String, Double> prices = new LinkedHashMap<>();
+    private String balanceMode = "BREAK_BLOCK";
 
     public static void load(File configDir)
     {
@@ -62,44 +69,49 @@ public final class BlockPriceConfig
         return instance;
     }
 
-    public int getPrice(String registry)
+    public double getPrice(String registry)
     {
         if (registry == null) return 0;
-        Integer price = prices.get(registry);
+        Double price = prices.get(registry);
         return price != null ? price : 0;
     }
 
-    public int getPriceFromItemStack(ItemStack stack)
+    public double getPriceFromItemStack(ItemStack stack)
     {
         if (stack.isEmpty()) return 0;
         Item item = stack.getItem();
+        net.minecraft.util.ResourceLocation reg = null;
         if (item instanceof net.minecraft.item.ItemBlock)
         {
             Block block = ((net.minecraft.item.ItemBlock) item).getBlock();
-            net.minecraft.util.ResourceLocation reg = block.getRegistryName();
-            if (reg != null)
-            {
-                int meta = stack.getMetadata();
-                String metaKey = reg.toString() + ":" + meta;
-                Integer metaPrice = prices.get(metaKey);
-                if (metaPrice != null) return metaPrice;
-                return getPrice(reg.toString());
-            }
+            reg = block.getRegistryName();
+        }
+        else
+        {
+            reg = item.getRegistryName();
+        }
+        if (reg != null)
+        {
+            int meta = stack.getMetadata();
+            String metaKey = reg.toString() + ":" + meta;
+            Double metaPrice = prices.get(metaKey);
+            if (metaPrice != null) return metaPrice;
+            return getPrice(reg.toString());
         }
         return 0;
     }
 
-    public Map<String, Integer> getPrices()
+    public Map<String, Double> getPrices()
     {
         return Collections.unmodifiableMap(prices);
     }
 
-    public List<Map.Entry<String, Integer>> getPricesList()
+    public List<Map.Entry<String, Double>> getPricesList()
     {
         return new ArrayList<>(prices.entrySet());
     }
 
-    public void setPrice(String registry, int price)
+    public void setPrice(String registry, double price)
     {
         if (registry == null) return;
         prices.put(registry, price);
@@ -113,7 +125,7 @@ public final class BlockPriceConfig
         save();
     }
 
-    public void replaceAll(Map<String, Integer> newPrices)
+    public void replaceAll(Map<String, Double> newPrices)
     {
         if (newPrices == null) return;
         prices.clear();
@@ -124,6 +136,24 @@ public final class BlockPriceConfig
     public boolean hasPrice(String registry)
     {
         return registry != null && prices.containsKey(registry);
+    }
+
+    public BalanceMode getBalanceMode()
+    {
+        try
+        {
+            return BalanceMode.valueOf(balanceMode);
+        }
+        catch (Exception e)
+        {
+            return BalanceMode.BREAK_BLOCK;
+        }
+    }
+
+    public void setBalanceMode(BalanceMode mode)
+    {
+        this.balanceMode = mode != null ? mode.name() : BalanceMode.BREAK_BLOCK.name();
+        save();
     }
 
     public boolean isBlockPlaceable(String registry)

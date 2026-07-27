@@ -12,7 +12,6 @@ import net.minecraft.util.text.TextComponentString;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
-import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 
 public class CommandOBUSellAll extends CommandBase
@@ -38,7 +37,7 @@ public class CommandOBUSellAll extends CommandBase
             return;
         }
 
-        if (ModSettings.get().getBalanceMode() == ModSettings.BalanceMode.BREAK_BLOCK)
+        if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
         {
             sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.sell_disabled")));
             return;
@@ -53,7 +52,7 @@ public class CommandOBUSellAll extends CommandBase
         }
 
         InventoryPlayer inventory = player.inventory;
-        int totalPrice = 0;
+        double totalPrice = 0;
         int totalCount = 0;
         Item targetType = null;
 
@@ -73,7 +72,7 @@ public class CommandOBUSellAll extends CommandBase
                 continue;
             }
 
-            int price = BlockPriceConfig.get().getPriceFromItemStack(stack);
+            double price = BlockPriceConfig.get().getPriceFromItemStack(stack);
             if (price <= 0) continue;
 
             int count = stack.getCount();

@@ -2,11 +2,11 @@ package ru.defea.oneblockultima.capability;
 
 public interface IOneBlockPlayerData
 {
-    int getCurrency();
+    double getCurrency();
 
-    void addCurrency(int amount);
+    void addCurrency(double amount);
 
-    boolean spendCurrency(int amount);
+    boolean spendCurrency(double amount);
 
     int getSetLevel(String setId);
 

@@ -269,7 +269,7 @@ public class ContainerOneBlock extends Container
             }
 
             int cost = set.unlockCost;
-            int currency = data.getCurrency();
+            double currency = data.getCurrency();
 
             System.out.println("[OneBlock] Unlock attempt - Have: " + currency + ", Need: " + cost);
 
@@ -330,7 +330,7 @@ public class ContainerOneBlock extends Container
             }
 
             int cost = nextLevel.upgradeCost;
-            int currency = data.getCurrency();
+            double currency = data.getCurrency();
 
             System.out.println("[OneBlock] Upgrade attempt - Have: " + currency + ", Need: " + cost);
 

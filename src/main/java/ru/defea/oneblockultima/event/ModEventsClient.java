@@ -42,7 +42,14 @@ public final class ModEventsClient
         BlockSetConfig.reload();
     }
 
-    private static final Map<UUID, Float> displayedCurrencyMap = new HashMap<>();
+    private static final Map<UUID, Double> displayedCurrencyMap = new HashMap<>();
+    private static final Map<UUID, Double> animStepMap = new HashMap<>();
+
+    private static double computeAnimStep(double delta)
+    {
+        if (delta <= 0) return 0.01;
+        return Math.max(0.01, Math.pow(10, Math.floor(Math.log10(delta)) - 1)) / 2;
+    }
 
     @SubscribeEvent
     public static void onRenderGameOverlay(RenderGameOverlayEvent.Text event)
@@ -81,9 +88,9 @@ public final class ModEventsClient
             return;
         }
 
-        int currency = getDisplayedCurrency(player);
+        double currency = getDisplayedCurrency(player);
 
-        String balanceValue = String.valueOf(currency);
+        String balanceValue = formatCurrency(currency);
         int textWidth = mc.fontRenderer.getStringWidth(balanceValue);
         int coinSize = 8;
         int spaceBetween = 2;
@@ -161,7 +168,7 @@ public final class ModEventsClient
         Minecraft.getMinecraft().fontRenderer.drawString(balanceValue, x + coinSize + spaceBetween, y, 0xFFD700);
     }
 
-    public static int getDisplayedCurrency(EntityPlayer player)
+    public static double getDisplayedCurrency(EntityPlayer player)
     {
         if (player == null)
         {
@@ -170,30 +177,58 @@ public final class ModEventsClient
 
         UUID playerUUID = player.getUniqueID();
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
-        int targetCurrency = data == null ? 0 : data.getCurrency();
+        double targetCurrency = data == null ? 0 : data.getCurrency();
 
-        Integer lastCurrency = ModEvents.lastDisplayedCurrency.get(playerUUID);
+        Double lastCurrency = ModEvents.lastDisplayedCurrency.get(playerUUID);
         if (lastCurrency == null)
         {
-            displayedCurrencyMap.put(playerUUID, (float) targetCurrency);
+            displayedCurrencyMap.put(playerUUID, targetCurrency);
             ModEvents.lastDisplayedCurrency.put(playerUUID, targetCurrency);
             return targetCurrency;
         }
 
+        double currentDisplayed = displayedCurrencyMap.getOrDefault(playerUUID, targetCurrency);
+
         if (lastCurrency != targetCurrency)
         {
             ModEvents.lastDisplayedCurrency.put(playerUUID, targetCurrency);
+            double delta = Math.abs(targetCurrency - currentDisplayed);
+            animStepMap.put(playerUUID, computeAnimStep(delta));
         }
 
-        float currentDisplayed = displayedCurrencyMap.getOrDefault(playerUUID, (float) targetCurrency);
-        float newDisplayed = currentDisplayed + (targetCurrency - currentDisplayed) * 0.14f;
-        if (Math.abs(targetCurrency - newDisplayed) < 0.01f)
+        double diff = targetCurrency - currentDisplayed;
+        if (Math.abs(diff) < 0.01)
+        {
+            displayedCurrencyMap.put(playerUUID, targetCurrency);
+            animStepMap.remove(playerUUID);
+            return targetCurrency;
+        }
+
+        double step = animStepMap.getOrDefault(playerUUID, 1.0);
+        double newDisplayed;
+        if (Math.abs(diff) <= step)
         {
             newDisplayed = targetCurrency;
+            animStepMap.remove(playerUUID);
+        }
+        else
+        {
+            newDisplayed = currentDisplayed + Math.signum(diff) * step;
         }
 
         displayedCurrencyMap.put(playerUUID, newDisplayed);
-        return Math.round(newDisplayed);
+        return newDisplayed;
+    }
+
+    public static String formatCurrency(double value)
+    {
+        long rounded = Math.round(value * 100.0);
+        double d = rounded / 100.0;
+        if (d == (long) d)
+        {
+            return String.valueOf((long) d);
+        }
+        return String.valueOf(d);
     }
 
     @SuppressWarnings("SameParameterValue")

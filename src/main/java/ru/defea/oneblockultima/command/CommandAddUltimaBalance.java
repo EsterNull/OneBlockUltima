@@ -33,10 +33,10 @@ public class CommandAddUltimaBalance extends CommandBase
             return;
         }
 
-        int amount;
+        double amount;
         try
         {
-            amount = Integer.parseInt(args[0]);
+            amount = Double.parseDouble(args[0].replace(',', '.'));
         }
         catch (NumberFormatException ex)
         {

@@ -15,6 +15,8 @@ import static org.junit.Assert.*;
 
 public class BlockPriceConfigTest {
 
+    private static final double DELTA = 0.0001;
+
     @BeforeClass
     public static void setUp() {
         Bootstrap.register();
@@ -25,7 +27,7 @@ public class BlockPriceConfigTest {
         BlockPriceConfig config = new BlockPriceConfig();
         Field pricesField = BlockPriceConfig.class.getDeclaredField("prices");
         pricesField.setAccessible(true);
-        pricesField.set(config, new LinkedHashMap<String, Integer>());
+        pricesField.set(config, new LinkedHashMap<String, Double>());
         return config;
     }
 
@@ -34,20 +36,27 @@ public class BlockPriceConfigTest {
     @Test
     public void getPriceReturnsZeroForUnknown() throws Exception {
         BlockPriceConfig config = newConfig();
-        assertEquals(0, config.getPrice("minecraft:stone"));
+        assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
     public void getPriceReturnsZeroForNull() throws Exception {
         BlockPriceConfig config = newConfig();
-        assertEquals(0, config.getPrice(null));
+        assertEquals(0, config.getPrice(null), DELTA);
     }
 
     @Test
     public void getPriceReturnsCorrectValue() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:dirt", 5);
-        assertEquals(5, config.getPrice("minecraft:dirt"));
+        assertEquals(5, config.getPrice("minecraft:dirt"), DELTA);
+    }
+
+    @Test
+    public void getPriceReturnsFractionalValue() throws Exception {
+        BlockPriceConfig config = newConfig();
+        config.setPrice("minecraft:dirt", 0.5);
+        assertEquals(0.5, config.getPrice("minecraft:dirt"), DELTA);
     }
 
     @Test
@@ -55,7 +64,7 @@ public class BlockPriceConfigTest {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.removePrice("minecraft:stone");
-        assertEquals(0, config.getPrice("minecraft:stone"));
+        assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
     }
 
     // --- hasPrice ---
@@ -93,7 +102,7 @@ public class BlockPriceConfigTest {
     public void setPriceAddsNewEntry() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
-        assertEquals(10, config.getPrice("minecraft:stone"));
+        assertEquals(10, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
@@ -101,7 +110,7 @@ public class BlockPriceConfigTest {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:stone", 25);
-        assertEquals(25, config.getPrice("minecraft:stone"));
+        assertEquals(25, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
@@ -109,7 +118,7 @@ public class BlockPriceConfigTest {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 0);
         assertTrue(config.hasPrice("minecraft:stone"));
-        assertEquals(0, config.getPrice("minecraft:stone"));
+        assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
@@ -123,7 +132,14 @@ public class BlockPriceConfigTest {
     public void setPriceWithNegativeValue() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", -5);
-        assertEquals(-5, config.getPrice("minecraft:stone"));
+        assertEquals(-5, config.getPrice("minecraft:stone"), DELTA);
+    }
+
+    @Test
+    public void setPriceWithFractionalValue() throws Exception {
+        BlockPriceConfig config = newConfig();
+        config.setPrice("minecraft:stone", 0.25);
+        assertEquals(0.25, config.getPrice("minecraft:stone"), DELTA);
     }
 
     // --- removePrice ---
@@ -157,22 +173,22 @@ public class BlockPriceConfigTest {
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:dirt", 5);
 
-        Map<String, Integer> newPrices = new LinkedHashMap<>();
-        newPrices.put("minecraft:diamond", 100);
-        newPrices.put("minecraft:emerald", 50);
+        Map<String, Double> newPrices = new LinkedHashMap<>();
+        newPrices.put("minecraft:diamond", 100.0);
+        newPrices.put("minecraft:emerald", 50.0);
         config.replaceAll(newPrices);
 
         assertFalse(config.hasPrice("minecraft:stone"));
         assertFalse(config.hasPrice("minecraft:dirt"));
-        assertEquals(100, config.getPrice("minecraft:diamond"));
-        assertEquals(50, config.getPrice("minecraft:emerald"));
+        assertEquals(100, config.getPrice("minecraft:diamond"), DELTA);
+        assertEquals(50, config.getPrice("minecraft:emerald"), DELTA);
     }
 
     @Test
     public void replaceAllWithEmptyMapClearsAll() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
-        config.replaceAll(new HashMap<String, Integer>());
+        config.replaceAll(new HashMap<String, Double>());
         assertFalse(config.hasPrice("minecraft:stone"));
         assertEquals(0, config.getPrices().size());
     }
@@ -191,9 +207,9 @@ public class BlockPriceConfigTest {
     public void getPricesReturnsUnmodifiableMap() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
-        Map<String, Integer> prices = config.getPrices();
+        Map<String, Double> prices = config.getPrices();
         try {
-            prices.put("minecraft:dirt", 5);
+            prices.put("minecraft:dirt", 5.0);
             fail("Should throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {
             // expected
@@ -218,7 +234,7 @@ public class BlockPriceConfigTest {
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:dirt", 5);
 
-        java.util.List<Map.Entry<String, Integer>> list = config.getPricesList();
+        java.util.List<Map.Entry<String, Double>> list = config.getPricesList();
         assertEquals(2, list.size());
         list.clear();
         assertEquals(2, config.getPrices().size());
@@ -231,7 +247,7 @@ public class BlockPriceConfigTest {
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:dirt", 5);
 
-        java.util.List<Map.Entry<String, Integer>> list = config.getPricesList();
+        java.util.List<Map.Entry<String, Double>> list = config.getPricesList();
         assertEquals("minecraft:diamond", list.get(0).getKey());
         assertEquals("minecraft:stone", list.get(1).getKey());
         assertEquals("minecraft:dirt", list.get(2).getKey());
@@ -281,9 +297,9 @@ public class BlockPriceConfigTest {
 
         config.removePrice("minecraft:dirt");
         assertEquals(2, config.getPrices().size());
-        assertEquals(10, config.getPrice("minecraft:stone"));
-        assertEquals(0, config.getPrice("minecraft:dirt"));
-        assertEquals(3, config.getPrice("minecraft:cobblestone"));
+        assertEquals(10, config.getPrice("minecraft:stone"), DELTA);
+        assertEquals(0, config.getPrice("minecraft:dirt"), DELTA);
+        assertEquals(3, config.getPrice("minecraft:cobblestone"), DELTA);
     }
 
     @Test
@@ -292,6 +308,40 @@ public class BlockPriceConfigTest {
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:stone", 0);
         assertTrue(config.hasPrice("minecraft:stone"));
-        assertEquals(0, config.getPrice("minecraft:stone"));
+        assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
+    }
+
+    // --- BalanceMode ---
+
+    @Test
+    public void defaultBalanceModeIsBreakBlock() throws Exception {
+        BlockPriceConfig config = newConfig();
+        assertEquals(BlockPriceConfig.BalanceMode.BREAK_BLOCK, config.getBalanceMode());
+    }
+
+    @Test
+    public void setBalanceModeChangesValue() throws Exception {
+        BlockPriceConfig config = newConfig();
+        config.setBalanceMode(BlockPriceConfig.BalanceMode.SELL_BLOCK);
+        assertEquals(BlockPriceConfig.BalanceMode.SELL_BLOCK, config.getBalanceMode());
+    }
+
+    @Test
+    public void setBalanceModeBackToBreakBlock() throws Exception {
+        BlockPriceConfig config = newConfig();
+        config.setBalanceMode(BlockPriceConfig.BalanceMode.SELL_BLOCK);
+        config.setBalanceMode(BlockPriceConfig.BalanceMode.BREAK_BLOCK);
+        assertEquals(BlockPriceConfig.BalanceMode.BREAK_BLOCK, config.getBalanceMode());
+    }
+
+    @Test
+    public void balanceModeHasTwoValues() {
+        assertEquals(2, BlockPriceConfig.BalanceMode.values().length);
+    }
+
+    @Test
+    public void balanceModeValueOf() {
+        assertEquals(BlockPriceConfig.BalanceMode.BREAK_BLOCK, BlockPriceConfig.BalanceMode.valueOf("BREAK_BLOCK"));
+        assertEquals(BlockPriceConfig.BalanceMode.SELL_BLOCK, BlockPriceConfig.BalanceMode.valueOf("SELL_BLOCK"));
     }
 }

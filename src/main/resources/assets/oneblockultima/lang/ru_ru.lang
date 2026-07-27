@@ -262,9 +262,9 @@ tile.compressed_iron_block_5x.name=Пятикратно сжатый желез�
 tile.compressed_mineral_block.name=Сжатый минеральный блок
 
 # Sell commands
-command.obuSell.success=Продано %1$d x %2$s за %3$d валюты. Баланс: %4$d
+command.obuSell.success=Продано %1$d x %2$s за %3$s валюты. Баланс: %4$s
 command.obuSellAll.empty=Подходящие предметы не найдены в инвентаре.
-command.obuSellAll.success=Продано %1$d предметов за %2$d валюты. Баланс: %3$d
+command.obuSellAll.success=Продано %1$d предметов за %2$s валюты. Баланс: %3$s
 
 # Mod settings - balance mode
 gui.oneblockultima.mod_settings.balance_mode=Режим начисления

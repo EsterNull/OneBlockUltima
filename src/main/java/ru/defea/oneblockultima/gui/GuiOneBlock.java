@@ -1137,8 +1137,8 @@ public class GuiOneBlock extends GuiContainer
         drawCenteredString(fontRenderer, title, xSize / 2, textHeight, 0xFFFFFF);
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(container.getPlayer());
-        int currency = ru.defea.oneblockultima.event.ModEventsClient.getDisplayedCurrency(container.getPlayer());
-        String balanceValue = String.valueOf(currency);
+        double currency = ru.defea.oneblockultima.event.ModEventsClient.getDisplayedCurrency(container.getPlayer());
+        String balanceValue = ru.defea.oneblockultima.event.ModEventsClient.formatCurrency(currency);
         int balanceWidth = fontRenderer.getStringWidth(balanceValue);
         int iconSize = 12;
         int padding = 4;

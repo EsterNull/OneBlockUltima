@@ -71,17 +71,14 @@ public final class ModEvents
     private static final Map<BlockPos, UUID> lastBreakPlayers = new HashMap<>();
     private static int lastBreakCleanupTick = 0;
 
-    static final Map<UUID, Integer> lastDisplayedCurrency = new HashMap<>();
+    static final Map<UUID, Double> lastDisplayedCurrency = new HashMap<>();
 
-    public static void syncDisplayedCurrency(EntityPlayer player, int currency)
+    public static void syncDisplayedCurrency(EntityPlayer player, double currency)
     {
         if (player == null)
         {
             return;
         }
-
-        UUID playerUUID = player.getUniqueID();
-        lastDisplayedCurrency.put(playerUUID, currency);
     }
 
     public static void sendAccessDeniedMessage(EntityPlayer player)
@@ -914,9 +911,9 @@ public final class ModEvents
                 // Only award currency and count broken blocks for blocks directly from generator
                 if (entry.generatorPos != null && !entry.generatorPos.equals(event.getPos()))
                 {
-                    if (ModSettings.get().getBalanceMode() == ModSettings.BalanceMode.BREAK_BLOCK)
+                    if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
                     {
-                        int blockPrice = BlockPriceConfig.get().getPrice(entry.blockRegistry);
+                        double blockPrice = BlockPriceConfig.get().getPrice(entry.blockRegistry);
                         if (blockPrice > 0) data.addCurrency(blockPrice);
                     }
                     data.addBrokenBlocks(entry.setId, 1);

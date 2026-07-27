@@ -48,7 +48,7 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<NBTTa
         }
 
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger(CURRENCY_TAG, data.getCurrency());
+        tag.setDouble(CURRENCY_TAG, data.getCurrency());
         tag.setInteger(BROKEN_BLOCKS_TOTAL_TAG, data.getBrokenBlocksCount());
 
         NBTTagCompound setLevels = new NBTTagCompound();
@@ -92,7 +92,7 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<NBTTa
         if (data instanceof OneBlockPlayerData)
         {
             OneBlockPlayerData playerData = (OneBlockPlayerData) data;
-            playerData.setCurrency(tag.getInteger(CURRENCY_TAG));
+            playerData.setCurrency(tag.getDouble(CURRENCY_TAG));
             playerData.setBrokenBlocksTotal(tag.getInteger(BROKEN_BLOCKS_TOTAL_TAG));
 
             playerData.getSetLevels().clear();
@@ -133,7 +133,7 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<NBTTa
     public NBTTagCompound serializeNBT()
     {
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("currency", instance.getCurrency());
+        tag.setDouble("currency", instance.getCurrency());
         tag.setInteger("brokenBlocksTotal", instance.getBrokenBlocksCount());
 
         NBTTagCompound setLevels = new NBTTagCompound();
@@ -155,7 +155,7 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<NBTTa
     @Override
     public void deserializeNBT(NBTTagCompound nbt)
     {
-        instance.setCurrency(nbt.getInteger("currency"));
+        instance.setCurrency(nbt.getDouble("currency"));
         instance.setBrokenBlocksTotal(nbt.getInteger("brokenBlocksTotal"));
 
         instance.getSetLevels().clear();
