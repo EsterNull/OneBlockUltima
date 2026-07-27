@@ -26,7 +26,7 @@ The mod is compatible with other mods, and it already has basic support:
 <ul>
     <li><a href="https://github.com/XZSt4nce/oneblockultima/releases/">GitHub</a>
     <li><a href="https://www.curseforge.com/minecraft/mc-mods/oneblockultima">Curse Forge</a>
-    <li><a href="https://tlmods.org/ru/mods/one-block-ultima/">TLauncher</a>
+    <li><a href="https://tlmods.org/ru/mods/oneblockultima/">TLauncher</a>
     <li><a href="https://minecraft-inside.ru/194280/">Minecraft Inside</a>
 </li>
 </ul>
