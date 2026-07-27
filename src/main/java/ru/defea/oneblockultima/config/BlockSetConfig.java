@@ -190,7 +190,7 @@ public final class BlockSetConfig
         try (OutputStream outputStream = Files.newOutputStream(file.toPath());
              java.io.Writer writer = new java.io.OutputStreamWriter(outputStream, StandardCharsets.UTF_8))
         {
-            writer.write(GSON.toJson(config));
+            writer.write(COMPACT_GSON.toJson(config));
         }
         catch (Exception e)
         {
@@ -310,9 +310,45 @@ public final class BlockSetConfig
         {
             if (set != null && set.id != null)
             {
+                mergeBlockMetas(set);
                 setsById.put(set.id, set);
             }
         }
+    }
+
+    private static void mergeBlockMetas(BlockSetDefinition set)
+    {
+        if (set.blocks == null || set.blocks.size() <= 1) return;
+
+        Map<String, BlockElementDefinition> merged = new LinkedHashMap<>();
+        List<BlockElementDefinition> result = new ArrayList<>();
+
+        for (BlockElementDefinition block : set.blocks)
+        {
+            if (block == null) continue;
+
+            String key = block.registry + "@" + block.baseLevel + "@" + block.baseChance;
+            BlockElementDefinition existing = merged.get(key);
+
+            if (existing == null)
+            {
+                merged.put(key, block);
+                result.add(block);
+            }
+            else
+            {
+                List<Integer> existingMetas = existing.getMetaValues();
+                List<Integer> newMetas = block.getMetaValues();
+                Set<Integer> combined = new LinkedHashSet<>(existingMetas);
+                combined.addAll(newMetas);
+                List<Integer> sorted = new ArrayList<>(combined);
+                sorted.sort(Integer::compareTo);
+                existing.metas = sorted;
+                existing.meta = sorted.get(0);
+            }
+        }
+
+        set.blocks = result;
     }
 
     public List<BlockSetDefinition> getSets()

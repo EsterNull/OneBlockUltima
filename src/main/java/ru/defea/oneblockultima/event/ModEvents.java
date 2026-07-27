@@ -913,7 +913,7 @@ public final class ModEvents
                 {
                     if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
                     {
-                        double blockPrice = BlockPriceConfig.get().getPrice(entry.blockRegistry);
+                        double blockPrice = BlockPriceConfig.get().getPrice(entry.blockRegistry, entry.blockMeta);
                         if (blockPrice > 0) data.addCurrency(blockPrice);
                     }
                     data.addBrokenBlocks(entry.setId, 1);

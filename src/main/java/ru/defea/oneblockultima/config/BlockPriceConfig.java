@@ -16,6 +16,7 @@ import java.util.*;
 public final class BlockPriceConfig
 {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson COMPACT_GSON = new GsonBuilder().create();
     private static final String FILE_NAME = "oneblockultima/block_prices.json";
 
     private static BlockPriceConfig instance;
@@ -74,6 +75,18 @@ public final class BlockPriceConfig
         if (registry == null) return 0;
         Double price = prices.get(registry);
         return price != null ? price : 0;
+    }
+
+    public double getPrice(String registry, int meta)
+    {
+        if (registry == null) return 0;
+        if (meta != 0)
+        {
+            String metaKey = registry + ":" + meta;
+            Double metaPrice = prices.get(metaKey);
+            if (metaPrice != null) return metaPrice;
+        }
+        return getPrice(registry);
     }
 
     public double getPriceFromItemStack(ItemStack stack)
@@ -341,7 +354,7 @@ public final class BlockPriceConfig
 
             try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8))
             {
-                GSON.toJson(this, writer);
+                COMPACT_GSON.toJson(this, writer);
             }
         }
         catch (Exception e)

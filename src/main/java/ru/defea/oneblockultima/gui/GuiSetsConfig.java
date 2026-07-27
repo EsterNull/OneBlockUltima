@@ -495,7 +495,7 @@ public class GuiSetsConfig extends GuiScreen
         String typeLabel = requiredMods.getType() == BlockSetConfig.SetRequiredModsDefinition.TYPE.ANY
                 ? I18n.format("gui.oneblockultima.config.any")
                 : I18n.format("gui.oneblockultima.config.all");
-        return typeLabel + " (" + requiredMods.getMods().size() + ")";
+        return I18n.format("gui.oneblockultima.config.required_mods") + ": " + typeLabel + " (" + requiredMods.getMods().size() + ")";
     }
 
     private String getUnlockConditionsButtonLabel(BlockSetConfig.UnlockConditionGroup conditions)
@@ -1503,7 +1503,7 @@ public class GuiSetsConfig extends GuiScreen
         requiredModsBackButton = new GuiButton(BUTTON_REQUIRED_MODS_BACK, pad + gap, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.settings.back"));
         requiredModsAddButton = new GuiButton(BUTTON_REQUIRED_MODS_ADD, addX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.config.add"));
         requiredModsDeleteButton = new GuiButton(BUTTON_REQUIRED_MODS_DELETE, removeX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.config.remove"));
-        requiredModsSaveButton = new GuiButton(BUTTON_REQUIRED_MODS_SAVE, saveX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.save"));
+        requiredModsSaveButton = new GuiButton(BUTTON_REQUIRED_MODS_SAVE, saveX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.done"));
 
         buttonList.add(requiredModsToggleButton);
         buttonList.add(requiredModsBackButton);
@@ -1658,7 +1658,7 @@ public class GuiSetsConfig extends GuiScreen
         editLevelField.setCursorPositionEnd();
         editChanceField.setFocused(false);
 
-        String saveLabel = I18n.format("gui.oneblockultima.save");
+        String saveLabel = I18n.format("gui.oneblockultima.done");
         String cancelLabel = I18n.format("gui.oneblockultima.cancel");
         int btnWidth = Math.max(fontRenderer.getStringWidth(saveLabel) + pad * 2,
                 fontRenderer.getStringWidth(cancelLabel) + pad * 2);
@@ -2438,8 +2438,33 @@ public class GuiSetsConfig extends GuiScreen
             if (editingEntryType == EntryType.BLOCK && editingSet.blocks != null && editingCurrencyIndex < editingSet.blocks.size())
             {
                 BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
-                entry.baseLevel = Integer.parseInt(editLevelField.getText().trim());
-                entry.baseChance = Math.min(100, Math.max(1, Integer.parseInt(editChanceField.getText().trim())));
+                int newLevel = Integer.parseInt(editLevelField.getText().trim());
+                int newChance = Math.min(100, Math.max(1, Integer.parseInt(editChanceField.getText().trim())));
+
+                boolean hasMultipleMetas = entry.metas != null && entry.metas.size() > 1;
+                boolean hasSelectedMeta = selectedBlockMeta >= 0 && entry.metas != null && entry.metas.contains(selectedBlockMeta);
+
+                if (hasMultipleMetas && hasSelectedMeta)
+                {
+                    entry.metas.remove(Integer.valueOf(selectedBlockMeta));
+                    entry.meta = entry.metas.get(0);
+
+                    BlockSetConfig.BlockElementDefinition split = new BlockSetConfig.BlockElementDefinition();
+                    split.registry = entry.registry;
+                    split.meta = selectedBlockMeta;
+                    split.metas = new ArrayList<>();
+                    split.metas.add(selectedBlockMeta);
+                    split.baseLevel = newLevel;
+                    split.baseChance = newChance;
+                    split.nbtTags = entry.nbtTags;
+
+                    editingSet.blocks.add(editingCurrencyIndex + 1, split);
+                }
+                else
+                {
+                    entry.baseLevel = newLevel;
+                    entry.baseChance = newChance;
+                }
             }
             else if (editingEntryType == EntryType.MOB && editingSet.mobs != null && editingCurrencyIndex < editingSet.mobs.size())
             {

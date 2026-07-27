@@ -97,6 +97,7 @@ gui.oneblockultima.config.unlock_conditions_type_broken_blocks_total=Total broke
 
 gui.oneblockultima.reset_default=Reset Default
 gui.oneblockultima.save=Save
+gui.oneblockultima.done=Done
 gui.oneblockultima.cancel=Cancel
 gui.oneblockultima.tabs.sets=Sets
 gui.oneblockultima.tabs.settings=Settings
@@ -112,7 +113,8 @@ gui.oneblockultima.settings.fluid=Fluid generation
 gui.oneblockultima.settings.mobs=Mob generation
 gui.oneblockultima.settings.chests=Chest generation
 gui.oneblockultima.settings.saplings=Sapling generation
-gui.oneblockultima.settings.open_editor=Manage config
+gui.oneblockultima.settings.open_editor=Manage sets
+gui.oneblockultima.settings.open_prices=Manage prices
 gui.oneblockultima.settings.mod_settings=UI Settings
 gui.oneblockultima.settings.back=Back
 gui.oneblockultima.settings.enabled=enabled

@@ -97,6 +97,7 @@ gui.oneblockultima.config.unlock_conditions_type_broken_blocks_total=Всего 
 
 gui.oneblockultima.reset_default=Сбросить по умолчанию
 gui.oneblockultima.save=Сохранить
+gui.oneblockultima.done=Готово
 gui.oneblockultima.cancel=Отмена
 gui.oneblockultima.tabs.sets=Наборы
 gui.oneblockultima.tabs.settings=Настройки
@@ -112,7 +113,8 @@ gui.oneblockultima.settings.fluid=Генерация жидкостей
 gui.oneblockultima.settings.mobs=Генерация мобов
 gui.oneblockultima.settings.chests=Генерация сундуков
 gui.oneblockultima.settings.saplings=Генерация саженцев
-gui.oneblockultima.settings.open_editor=Управление конфигом
+gui.oneblockultima.settings.open_editor=Управление наборами
+gui.oneblockultima.settings.open_prices=Управление ценами
 gui.oneblockultima.settings.mod_settings=Настройки UI
 gui.oneblockultima.settings.back=Назад
 gui.oneblockultima.settings.enabled=вкл.

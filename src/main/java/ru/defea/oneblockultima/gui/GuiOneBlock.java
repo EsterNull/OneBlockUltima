@@ -55,6 +55,7 @@ public class GuiOneBlock extends GuiContainer
     private static final int BUTTON_TOGGLE_SAPLINGS = 10;
     private static final int BUTTON_TAB_DONATE = 11;
     private static final int BUTTON_DONATE_BASE = 12;
+    private static final int BUTTON_OPEN_PRICES = 13;
     private static final int VIEW_SETS = 0;
     private static final int VIEW_SETTINGS = 1;
     private static final int VIEW_DONATE = 2;
@@ -74,6 +75,7 @@ public class GuiOneBlock extends GuiContainer
     private GuiButton tabSettingsButton;
     private GuiButton tabDonateButton;
     private GuiButton openConfigEditorButton;
+    private GuiButton openPricesButton;
     private GuiButton toggleFluidButton;
     private GuiButton toggleMobsButton;
     private GuiButton toggleChestsButton;
@@ -858,6 +860,7 @@ public class GuiOneBlock extends GuiContainer
         toggleChestsButton = new GuiButton(BUTTON_TOGGLE_CHESTS, guiLeft + contentLeft, settingsButtonStartY + buttonHeight + buttonGap, buttonWidth, buttonHeight, "");
         toggleSaplingsButton = new GuiButton(BUTTON_TOGGLE_SAPLINGS, guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + buttonHeight + buttonGap, buttonWidth, buttonHeight, "");
         openConfigEditorButton = new GuiButton(BUTTON_OPEN_CONFIG_EDITOR, guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + (buttonHeight + buttonGap) * 2, buttonWidth, buttonHeight, I18n.format("gui.oneblockultima.settings.open_editor"));
+        openPricesButton = new GuiButton(BUTTON_OPEN_PRICES, guiLeft + contentLeft, settingsButtonStartY + (buttonHeight + buttonGap) * 2, buttonWidth, buttonHeight, I18n.format("gui.oneblockultima.settings.open_prices"));
 
         int donateBtnX = guiLeft + contentLeft + 72;
         int donateBtnWidth = contentWidth - 72 - 4;
@@ -879,6 +882,7 @@ public class GuiOneBlock extends GuiContainer
         buttonList.add(selectButton);
         buttonList.add(upgradeButton);
         buttonList.add(openConfigEditorButton);
+        buttonList.add(openPricesButton);
         buttonList.add(toggleFluidButton);
         buttonList.add(toggleMobsButton);
         buttonList.add(toggleChestsButton);
@@ -910,6 +914,7 @@ public class GuiOneBlock extends GuiContainer
         if (tabSettingsButton != null) tabSettingsButton.enabled = !settingsView;
         if (tabDonateButton != null) tabDonateButton.enabled = !donateView;
         if (openConfigEditorButton != null) openConfigEditorButton.visible = settingsView;
+        if (openPricesButton != null) openPricesButton.visible = settingsView;
         if (toggleFluidButton != null) toggleFluidButton.visible = settingsView;
         if (toggleMobsButton != null) toggleMobsButton.visible = settingsView;
         if (toggleChestsButton != null) toggleChestsButton.visible = settingsView;
@@ -1045,6 +1050,10 @@ public class GuiOneBlock extends GuiContainer
         else if (button.id == BUTTON_OPEN_CONFIG_EDITOR)
         {
             mc.displayGuiScreen(new GuiSetsConfig(this));
+        }
+        else if (button.id == BUTTON_OPEN_PRICES)
+        {
+            mc.displayGuiScreen(new GuiBlockPrices(this));
         }
         else if (button.id >= BUTTON_DONATE_BASE && button.id < BUTTON_DONATE_BASE + DonateMethod.METHODS.length)
         {

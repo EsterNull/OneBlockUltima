@@ -134,7 +134,7 @@ public class GuiBlockPrices extends GuiScreen
 
             int bottomY = height - 30;
             int bw = 80;
-            buttonList.add(new GuiButton(BUTTON_SAVE, centerX - bw - 4, bottomY, bw, 20, I18n.format("gui.oneblockultima.save")));
+            buttonList.add(new GuiButton(BUTTON_SAVE, centerX - bw - 4, bottomY, bw, 20, I18n.format("gui.oneblockultima.done")));
             buttonList.add(new GuiButton(BUTTON_BACK, centerX + 4, bottomY, bw, 20, I18n.format("gui.oneblockultima.cancel")));
         }
     }
