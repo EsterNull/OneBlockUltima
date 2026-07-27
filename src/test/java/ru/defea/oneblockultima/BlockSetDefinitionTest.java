@@ -289,15 +289,12 @@ public class BlockSetDefinitionTest {
     public void editBlockProperties() {
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.currency = 10;
         block.meta = 0;
         block.baseLevel = 1;
 
-        block.currency = 20;
         block.meta = 2;
         block.baseLevel = 5;
 
-        assertEquals(20, block.currency);
         assertEquals(2, block.meta);
         assertEquals(5, block.baseLevel);
     }
@@ -642,7 +639,6 @@ public class BlockSetDefinitionTest {
 
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.currency = 10;
         original.blocks.add(block);
 
         MobElementDefinition mob = new MobElementDefinition();

@@ -78,7 +78,6 @@ public class BlockSetConfigSyncTest {
     public void toJsonRoundTripPreservesBlockEntries() {
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.currency = 15;
         block.meta = 0;
         block.baseLevel = 1;
         block.baseChance = 100;
@@ -98,7 +97,6 @@ public class BlockSetConfigSyncTest {
             assertNotNull(restoredSet);
             assertEquals(1, restoredSet.blocks.size());
             assertEquals("minecraft:stone", restoredSet.blocks.get(0).registry);
-            assertEquals(15, restoredSet.blocks.get(0).currency);
         } finally {
             restore();
         }
