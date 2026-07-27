@@ -1,6 +1,9 @@
 package ru.defea.oneblockultima.util;
 
+import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -8,11 +11,43 @@ import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.network.EnumPacketDirection;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.profiler.Profiler;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.world.EnumDifficulty;
+import net.minecraft.world.GameType;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldSettings;
+import net.minecraft.world.WorldType;
 import org.lwjgl.opengl.GL11;
+
+import java.util.UUID;
 
 public final class ModelUtil {
     private ModelUtil() {}
+
+    private static World dummyWorld;
+
+    public static World getWorldOrCreateDummy() {
+        World w = Minecraft.getMinecraft().world;
+        if (w != null) return w;
+        if (dummyWorld == null) {
+            try {
+                GameProfile profile = new GameProfile(UUID.randomUUID(), "OBUDummy");
+                NetworkManager nm = new NetworkManager(EnumPacketDirection.CLIENTBOUND);
+                NetHandlerPlayClient handler = new NetHandlerPlayClient(
+                    Minecraft.getMinecraft(), null, nm, profile);
+                dummyWorld = new WorldClient(handler,
+                    new WorldSettings(0L, GameType.CREATIVE, false, false, WorldType.DEFAULT),
+                    0, EnumDifficulty.PEACEFUL, new Profiler());
+            } catch (Exception e) {
+                System.err.println("[ModelUtil] Failed to create dummy world: " + e);
+            }
+        }
+        return dummyWorld;
+    }
 
     public static void renderBlockModelToGUI(net.minecraft.block.state.IBlockState state, int x, int y, int size)
     {
@@ -102,6 +137,9 @@ public final class ModelUtil {
         float origLimbSwingAmount = ent.limbSwingAmount;
         float origPrevLimbSwingAmount = ent.prevLimbSwingAmount;
 
+        RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
+        float prevPlayerViewY = renderManager.playerViewY;
+
         GlStateManager.enableColorMaterial();
         GlStateManager.pushMatrix();
         try
@@ -131,21 +169,20 @@ public final class ModelUtil {
             GlStateManager.enableCull();
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 
-            RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
-            float prevPlayerViewY = renderManager.playerViewY;
             renderManager.setPlayerViewY(180.0F);
             renderManager.setRenderShadow(false);
             renderManager.renderEntity(ent, 0.0D, 0.0D, 0.0D, 0.0F, 1.0F, false);
+        }
+        catch (Exception ignored) { }
+        finally
+        {
             renderManager.setRenderShadow(true);
             renderManager.setPlayerViewY(prevPlayerViewY);
 
             GlStateManager.disableCull();
             GlStateManager.disableDepth();
             GlStateManager.disableRescaleNormal();
-        }
-        catch (Exception ignored) { }
-        finally
-        {
+
             GlStateManager.popMatrix();
             RenderHelper.disableStandardItemLighting();
             GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);

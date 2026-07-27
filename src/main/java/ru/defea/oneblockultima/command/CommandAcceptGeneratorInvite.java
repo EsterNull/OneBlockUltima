@@ -35,7 +35,7 @@ public class CommandAcceptGeneratorInvite extends CommandBase
     {
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.acceptGeneratorInvite.only_player")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.only_player")));
             return;
         }
 
@@ -45,7 +45,7 @@ public class CommandAcceptGeneratorInvite extends CommandBase
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.acceptGeneratorInvite.not_near_generator")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.not_near_generator")));
             return;
         }
 
@@ -59,7 +59,7 @@ public class CommandAcceptGeneratorInvite extends CommandBase
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
         if (!generator.acceptInvite(player.getUniqueID()))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.acceptGeneratorInvite.no_invite")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.no_invite")));
             return;
         }
 

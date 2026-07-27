@@ -8,6 +8,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
@@ -15,6 +16,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.WorldEvent;
@@ -29,7 +31,9 @@ import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
+import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.GuiHandler;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketSyncBlockSetConfig;
@@ -567,13 +571,41 @@ public final class ModEvents
         }
 
         World world = event.getWorld();
+        BlockPos pos = event.getPos();
+        IBlockState placedState = event.getPlacedBlock();
+
+        // Передаём obuGenerated из ItemStack при повторном размещении через PlaceEvent
+        if (event.getPlayer() != null)
+        {
+            ItemStack heldItem = event.getPlayer().getHeldItemMainhand();
+            if (!heldItem.isEmpty() && heldItem.hasTagCompound()
+                    && heldItem.getTagCompound().hasKey("obuGenerated")
+                    && heldItem.getTagCompound().getBoolean("obuGenerated"))
+            {
+                TileEntity placedTE = world.getTileEntity(pos);
+                if (placedTE != null)
+                {
+                    placedTE.getTileData().setBoolean("obuGenerated", true);
+                    placedTE.markDirty();
+                }
+
+                GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
+                if (!registry.isGenerated(pos))
+                {
+                    Block placedBlock = placedState.getBlock();
+                    String blockRegistry = placedBlock.getRegistryName() != null ? placedBlock.getRegistryName().toString() : "";
+                    int blockMeta = placedBlock.getMetaFromState(placedState);
+                    registry.markGenerated(pos, pos, "", 0, 0, blockRegistry, blockMeta);
+                }
+            }
+        }
+
+        // OneBlock-specific logic
         if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
 
-        BlockPos pos = event.getPos();
-        IBlockState placedState = event.getPlacedBlock();
         if (placedState.getBlock() == ModBlocks.ONE_BLOCK_GENERATOR && event.getPlayer() != null)
         {
             OneBlockUltima.getLogger().info("[OwnerDebug] PlaceEvent fired for generator at {} by player {}", pos, event.getPlayer().getName());
@@ -628,7 +660,11 @@ public final class ModEvents
         }
         else
         {
-            generatorPos = registry.getGeneratorPos(clickedPos);
+            BlockPos registryGenPos = registry.getGeneratorPos(clickedPos);
+            if (registryGenPos != null && event.getWorld().getBlockState(registryGenPos).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+            {
+                generatorPos = registryGenPos;
+            }
         }
 
         if (player.isSneaking())
@@ -682,6 +718,24 @@ public final class ModEvents
                                     if (placedTE instanceof TileEntityOneBlockGenerator)
                                     {
                                         ((TileEntityOneBlockGenerator) placedTE).assignOwnerForPlacement(player.getUniqueID());
+                                    }
+
+                                    if (heldItem.hasTagCompound() && heldItem.getTagCompound().hasKey("obuGenerated") && heldItem.getTagCompound().getBoolean("obuGenerated"))
+                                    {
+                                        if (placedTE != null)
+                                        {
+                                            NBTTagCompound teNbt = placedTE.getTileData();
+                                            teNbt.setBoolean("obuGenerated", true);
+                                            placedTE.markDirty();
+                                        }
+
+                                        if (!registry.isGenerated(placePos))
+                                        {
+                                            Block placedBlock = placeState.getBlock();
+                                            String blockReg = placedBlock.getRegistryName() != null ? placedBlock.getRegistryName().toString() : "";
+                                            int blockMeta = placedBlock.getMetaFromState(placeState);
+                                            registry.markGenerated(placePos, placePos, "", 0, 0, blockReg, blockMeta);
+                                        }
                                     }
 
                                     event.setCanceled(true);
@@ -778,7 +832,7 @@ public final class ModEvents
             }
         }
 
-        if (world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+        if (world.getBlockState(pos).getBlock() == ModBlocks.FLUID_BARRIER && world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 2);
             OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {} after block break", pos);
@@ -857,11 +911,16 @@ public final class ModEvents
             IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
             if (data != null)
             {
-                if (entry.currency > 0)
+                // Only award currency and count broken blocks for blocks directly from generator
+                if (entry.generatorPos != null && !entry.generatorPos.equals(event.getPos()))
                 {
-                    data.addCurrency(entry.currency);
+                    if (ModSettings.get().getBalanceMode() == ModSettings.BalanceMode.BREAK_BLOCK)
+                    {
+                        int blockPrice = BlockPriceConfig.get().getPrice(entry.blockRegistry);
+                        if (blockPrice > 0) data.addCurrency(blockPrice);
+                    }
+                    data.addBrokenBlocks(entry.setId, 1);
                 }
-                data.addBrokenBlocks(entry.setId, 1);
                 PacketSyncPlayerData.sendToPlayer(player);
             }
         }
@@ -945,8 +1004,28 @@ public final class ModEvents
             return;
         }
 
+        // Blocks re-placed by the player (generatorPos == pos) should drop normally to world
+        boolean isPlayerRePlaced = mobSpawnEntry.generatorPos != null && mobSpawnEntry.generatorPos.equals(pos);
+        if (isPlayerRePlaced)
+        {
+            // Tag obuGenerated on drops and let them fall naturally
+            for (net.minecraft.item.ItemStack drop : event.getDrops())
+            {
+                if (drop.isEmpty()) continue;
+                if (!drop.hasTagCompound())
+                {
+                    drop.setTagCompound(new NBTTagCompound());
+                }
+                drop.getTagCompound().setBoolean("obuGenerated", true);
+            }
+            return;
+        }
+
         // Очищаем все дропы
         event.getDrops().clear();
+
+        // Определяем, есть ли obuGenerated — любой блок из GeneratedBlockRegistry считается сгенерированным
+        boolean hasObuGenerated = isTrackedBlock;
 
         // Добавляем дропы в инвентарь игрока
         for (net.minecraft.item.ItemStack drop : drops)
@@ -954,6 +1033,14 @@ public final class ModEvents
             if (drop.isEmpty()) continue;
 
             net.minecraft.item.ItemStack remaining = drop.copy();
+            if (hasObuGenerated)
+            {
+                if (remaining.getTagCompound() == null)
+                {
+                    remaining.setTagCompound(new NBTTagCompound());
+                }
+                remaining.getTagCompound().setBoolean("obuGenerated", true);
+            }
             if (!player.inventory.addItemStackToInventory(remaining))
             {
                 net.minecraft.entity.item.EntityItem entityItem = new net.minecraft.entity.item.EntityItem(
@@ -1134,6 +1221,19 @@ public final class ModEvents
 
             newPlayerData.copyFrom(oldPlayerData);
             OneBlockPlayerDataProvider.saveToEntity(event.getEntityPlayer(), newPlayerData);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onItemTooltip(ItemTooltipEvent event)
+    {
+        ItemStack stack = event.getItemStack();
+        if (stack.isEmpty()) return;
+
+        NBTTagCompound nbt = stack.getTagCompound();
+        if (nbt != null && nbt.hasKey("obuGenerated") && nbt.getBoolean("obuGenerated"))
+        {
+            event.getToolTip().add(net.minecraft.util.text.translation.I18n.translateToLocal("gui.oneblockultima.tooltip.obu_generated"));
         }
     }
 }

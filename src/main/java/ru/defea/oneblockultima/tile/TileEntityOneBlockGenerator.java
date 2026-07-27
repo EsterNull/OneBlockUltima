@@ -17,6 +17,7 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.ModBlocks;
+import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.util.BlockUtil;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
@@ -241,12 +242,13 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (newState != null && newState.getBlock() != Blocks.AIR) {
                         OneBlockUltima.getLogger().info("[Generator] Placing block: " + newState.getBlock().getRegistryName() + " at " + targetPos);
 
-                        // Размещаем блок с NBT
-                        BlockUtil.placeBlockWithNBT(world, targetPos, newState, entry.nbtTags);
+                        // Размещаем блок с NBT (добавляем obuGenerated)
+                        NBTTagCompound genNbt = ensureObuGenerated(entry.nbtTags);
+                        BlockUtil.placeBlockWithNBT(world, targetPos, newState, genNbt);
 
                         // Отмечаем как сгенерированное
                         GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                        registry.markGenerated(targetPos, pos, selectedSetId, entry.currency, level, entry.registry, entry.meta);
+                        registry.markGenerated(targetPos, pos, selectedSetId, BlockPriceConfig.get().getPrice(entry.registry), level, entry.registry, entry.meta);
 
                         return; // Успешно разместили блок
                     }
@@ -264,6 +266,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (entry.nbtTags != null && !entry.nbtTags.hasNoTags()) {
                         itemStack.setTagCompound(entry.nbtTags.copy());
                     }
+                    // Добавляем obuGenerated к предмету-фоллбэку
+                    if (itemStack.getTagCompound() == null) {
+                        itemStack.setTagCompound(new NBTTagCompound());
+                    }
+                    itemStack.getTagCompound().setBoolean("obuGenerated", true);
 
                     net.minecraft.entity.item.EntityItem entityItem = new net.minecraft.entity.item.EntityItem(
                             world, targetPos.getX(), targetPos.getY(), targetPos.getZ(), itemStack
@@ -271,7 +278,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     world.spawnEntity(entityItem);
 
                     GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                    registry.markGenerated(targetPos, pos, selectedSetId, entry.currency, level, entry.registry, entry.meta);
+                    registry.markGenerated(targetPos, pos, selectedSetId, BlockPriceConfig.get().getPrice(entry.registry), level, entry.registry, entry.meta);
                 }
             } catch (Exception ex) {
                 OneBlockUltima.getLogger().error("[Generator] Failed to spawn item fallback", ex);
@@ -301,10 +308,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
         {
             OneBlockUltima.getLogger().info("[Generator] Placing block with NBT tags at " + targetPos + ": " + entry.nbtTags);
         }
-        // Размещаем блок и применяем NBT теги одновременно
-        BlockUtil.placeBlockWithNBT(world, targetPos, state, entry.nbtTags);
+        // Размещаем блок и применяем NBT теги одновременно (добавляем obuGenerated)
+        NBTTagCompound genNbt2 = ensureObuGenerated(entry.nbtTags);
+        BlockUtil.placeBlockWithNBT(world, targetPos, state, genNbt2);
         OneBlockUltima.getLogger().info("[Generator] After place block at " + targetPos + ", now=" + world.getBlockState(targetPos).getBlock().getRegistryName());
-        registry.markGenerated(targetPos, pos, selectedSetId, entry.currency, level, entry.registry, entry.meta);
+        registry.markGenerated(targetPos, pos, selectedSetId, BlockPriceConfig.get().getPrice(entry.registry), level, entry.registry, entry.meta);
         if (world != null && !world.isRemote)
         {
             nonPlayerBreakCooldownActive = false;
@@ -348,6 +356,13 @@ public class TileEntityOneBlockGenerator extends TileEntity
             }
         }
         return allowed.get(allowed.size() - 1);
+    }
+
+    private static NBTTagCompound ensureObuGenerated(NBTTagCompound nbtTags)
+    {
+        NBTTagCompound result = nbtTags != null ? nbtTags.copy() : new NBTTagCompound();
+        result.setBoolean("obuGenerated", true);
+        return result;
     }
 
     private boolean isAllowedGenerationEntry(BlockSetConfig.BlockEntryDefinition entry)

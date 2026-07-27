@@ -35,7 +35,7 @@ public class CommandInviteGeneratorMember extends CommandBase
     {
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.inviteGeneratorMember.only_player")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.only_player")));
             return;
         }
 
@@ -51,7 +51,7 @@ public class CommandInviteGeneratorMember extends CommandBase
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.inviteGeneratorMember.not_near_generator")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.not_near_generator")));
             return;
         }
 

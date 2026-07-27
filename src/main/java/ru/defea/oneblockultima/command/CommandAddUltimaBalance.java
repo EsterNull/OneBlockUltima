@@ -5,7 +5,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.TextComponentString;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
@@ -29,7 +29,7 @@ public class CommandAddUltimaBalance extends CommandBase
     {
         if (args.length != 1)
         {
-            sender.sendMessage(new TextComponentTranslation("§c" + I18n.format("command.usage"), getUsage(sender)));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.usage", getUsage(sender))));
             return;
         }
 
@@ -40,13 +40,13 @@ public class CommandAddUltimaBalance extends CommandBase
         }
         catch (NumberFormatException ex)
         {
-            sender.sendMessage(new TextComponentTranslation("command.addUltimaBalance.integer"));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.addUltimaBalance.integer")));
             return;
         }
 
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentTranslation("command.addUltimaBalance.player"));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.addUltimaBalance.player")));
             return;
         }
 
@@ -54,13 +54,13 @@ public class CommandAddUltimaBalance extends CommandBase
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
-            sender.sendMessage(new TextComponentTranslation("command.addUltimaBalance.no_data"));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.addUltimaBalance.no_data")));
             return;
         }
 
         data.addCurrency(amount);
         PacketSyncPlayerData.sendToPlayer(player);
-        sender.sendMessage(new TextComponentTranslation("command.addUltimaBalance.success", amount, data.getCurrency()));
+        sender.sendMessage(new TextComponentString("\u00a7a" + I18n.format("command.addUltimaBalance.success", amount, data.getCurrency())));
     }
 
     @Override

@@ -734,6 +734,9 @@ public class GuiOneBlock extends GuiContainer
                         {
                             World mcWorld = Minecraft.getMinecraft().world;
                             entity = EntityList.createEntityByIDFromName(new ResourceLocation(mobEntry.registry), mcWorld);
+                            if (entity != null && entity.world == null) {
+                                entity.world = mcWorld;
+                            }
                             if (entity instanceof EntityLivingBase)
                             {
                                 int centerX = cellX + cellSize / 2;
@@ -1326,10 +1329,12 @@ public class GuiOneBlock extends GuiContainer
                 {
                     try
                     {
-                        String translationKey = EntityList.getTranslationName(new ResourceLocation(hoveredMobEntryLeft.registry));
-                        if (translationKey != null && !translationKey.isEmpty())
+                        String entityName = EntityList.getTranslationName(new ResourceLocation(hoveredMobEntryLeft.registry));
+                        if (entityName != null && !entityName.isEmpty())
                         {
+                            String translationKey = "entity." + entityName + ".name";
                             mobName = I18n.format(translationKey);
+                            if (mobName.equals(translationKey)) mobName = null;
                         }
                     }
                     catch (Exception ignored) { }
@@ -1366,10 +1371,12 @@ public class GuiOneBlock extends GuiContainer
                 {
                     try
                     {
-                        String translationKey = EntityList.getTranslationName(new ResourceLocation(hoveredMobEntryRight.registry));
-                        if (translationKey != null && !translationKey.isEmpty())
+                        String entityName = EntityList.getTranslationName(new ResourceLocation(hoveredMobEntryRight.registry));
+                        if (entityName != null && !entityName.isEmpty())
                         {
+                            String translationKey = "entity." + entityName + ".name";
                             mobName = I18n.format(translationKey);
+                            if (mobName.equals(translationKey)) mobName = null;
                         }
                     }
                     catch (Exception ignored) { }

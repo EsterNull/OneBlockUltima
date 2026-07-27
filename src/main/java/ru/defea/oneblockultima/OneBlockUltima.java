@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.command.*;
+import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.gui.GuiHandler;
 import ru.defea.oneblockultima.gui.GuiSetsConfig;
@@ -54,6 +55,7 @@ public class OneBlockUltima
     {
         logger = event.getModLog();
         BlockSetConfig.load(event.getModConfigurationDirectory());
+        BlockPriceConfig.load();
         OneBlockPlayerDataProvider.register();
         ModTileEntities.register();
         ModMessages.register();
@@ -82,6 +84,8 @@ public class OneBlockUltima
         event.registerServerCommand(new CommandAcceptGeneratorInvite());
         event.registerServerCommand(new CommandDeclineGeneratorInvite());
         event.registerServerCommand(new CommandSetOwner());
+        event.registerServerCommand(new CommandOBUSell());
+        event.registerServerCommand(new CommandOBUSellAll());
     }
 
     @Mod.EventHandler

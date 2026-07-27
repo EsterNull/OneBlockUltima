@@ -80,11 +80,10 @@ gui.oneblockultima.config.add=Добавить
 gui.oneblockultima.config.confirm=Подтвердить
 gui.oneblockultima.config.confirm_delete_message=Вы действительно хотите удалить набор %s?
 
-gui.oneblockultima.config.edit_currency=Редактировать стоимость
-gui.oneblockultima.config.currency_updated=Стоимость обновлена
+gui.oneblockultima.config.edit_level_chance=Редактировать уровень и шанс
+gui.oneblockultima.config.level_chance_updated=Уровень и шанс обновлены
 gui.oneblockultima.config.base_level=Уровень
-gui.oneblockultima.config.currency=Валюта
-gui.oneblockultima.config.error.invalid_currency=Некорректное значение валюты
+gui.oneblockultima.config.error.invalid_level_chance=Некорректное значение уровня или шанса
 
 gui.oneblockultima.config.unlock_conditions_edit=Условия разблокировки
 gui.oneblockultima.config.unlock_conditions_title=Условия разблокировки
@@ -154,26 +153,24 @@ gui.oneblockultima.claim_description=Вы можете стать его вла�
 gui.oneblockultima.claim_owner=Стать владельцем
 
 command.usage=Использование: %s
+command.only_player=Только игроки могут использовать эту команду.
 command.player_not_found=Игрок не найден в сети.
 command.no_generator=Генератор не найден.
+command.not_near_generator=Вы должны быть рядом с генератором.
+command.no_invite=У вас нет ожидающего приглашения для этого генератора.
+command.not_generated=Данный предмет не является сгенерированным блоком.
+command.sell_disabled=Команда отключена в текущем режиме начисления баланса.
+command.not_found=Блок не найден в таблице цен.
 command.addUltimaBalance.integer=Сумма должна быть целым числом.
 command.addUltimaBalance.player=Команда должна выполняться игроком.
 command.addUltimaBalance.no_data=Данные игрока недоступны.
 command.addUltimaBalance.success=Ultima баланс увеличен на %s. Текущий: %s
-command.inviteGeneratorMember.only_player=Только игроки могут использовать эту команду.
 command.inviteGeneratorMember.usage=Использование: /inviteGeneratorMember <playerName>
-command.inviteGeneratorMember.not_near_generator=Вы должны стоять рядом с генератором или на нём, чтобы пригласить кого-то.
 command.inviteGeneratorMember.owner_only=Только владелец может приглашать участников в этот генератор.
 command.inviteGeneratorMember.self_invite=Вы не можете пригласить сами себя.
 command.inviteGeneratorMember.invitation_received=Вас пригласили стать участником генератора. Введите /acceptGeneratorInvite, чтобы принять, или /declineGeneratorInvite, чтобы отклонить.
 command.inviteGeneratorMember.invitation_sent=Приглашение отправлено игроку %s.
-command.acceptGeneratorInvite.only_player=Только игроки могут использовать эту команду.
-command.acceptGeneratorInvite.not_near_generator=Вы должны быть рядом с генератором, чтобы принять приглашение.
-command.acceptGeneratorInvite.no_invite=У вас нет ожидающего приглашения для этого генератора.
 command.acceptGeneratorInvite.accepted=Вы приняли приглашение.
-command.declineGeneratorInvite.only_player=Только игроки могут использовать эту команду.
-command.declineGeneratorInvite.not_near_generator=Вы должны быть рядом с генератором, чтобы отклонить приглашение.
-command.declineGeneratorInvite.no_invite=У вас нет ожидающего приглашения для этого генератора.
 command.declineGeneratorInvite.declined=Вы отклонили приглашение.
 command.setOwner.success=Владелец генератора изменен
 
@@ -264,4 +261,29 @@ tile.compressed_iron_block_5x.name=Пятикратно сжатый желез�
 
 tile.compressed_mineral_block.name=Сжатый минеральный блок
 
-command.setOwner.success=Владелец генератора изменен
+# Sell commands
+command.obuSell.success=Продано %1$d x %2$s за %3$d валюты. Баланс: %4$d
+command.obuSellAll.empty=Подходящие предметы не найдены в инвентаре.
+command.obuSellAll.success=Продано %1$d предметов за %2$d валюты. Баланс: %3$d
+
+# Mod settings - balance mode
+gui.oneblockultima.mod_settings.balance_mode=Режим начисления
+gui.oneblockultima.mod_settings.balance_mode.break_block=За разрушение блоков
+gui.oneblockultima.mod_settings.balance_mode.sell_block=За продажу блоков
+gui.oneblockultima.mod_settings.block_prices=Таблица цен блоков
+
+# Block prices GUI
+gui.oneblockultima.prices.title=Таблица цен блоков
+gui.oneblockultima.prices.add=Добавить блок
+gui.oneblockultima.prices.edit=Редактировать
+gui.oneblockultima.prices.delete=Удалить
+gui.oneblockultima.prices.edit_title=Редактирование цены
+gui.oneblockultima.prices.price=Цена
+gui.oneblockultima.prices.search.help=@Мод &Идентификатор
+gui.oneblockultima.prices.search.no_results=Блоки не найдены
+gui.oneblockultima.prices.price_saved=Цена сохранена
+gui.oneblockultima.prices.table_saved=Таблица сохранена
+gui.oneblockultima.prices.price_removed=Цена удалена
+
+# Tooltip
+gui.oneblockultima.tooltip.obu_generated=Блок добыт из генератора

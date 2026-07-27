@@ -128,7 +128,7 @@ public class GuiModSettings extends GuiScreen
         buttonList.add(new GuiButton(BUTTON_V_OFFSET_DEC, btnDecX, vFieldY, buttonSize, buttonSize, "-"));
         buttonList.add(new GuiButton(BUTTON_V_OFFSET_INC, btnIncX, vFieldY, buttonSize, buttonSize, "+"));
 
-        int bottomY = controlsY + cellSize * 3 + cellGap * 2 + 8;
+        int bottomY = controlsY + cellSize * 3 + cellGap * 2 + 20;
         int bottomBtnWidth = 80;
 
         buttonList.add(new GuiButton(BUTTON_SAVE, centerX - bottomBtnWidth - 4, bottomY, bottomBtnWidth, 20, I18n.format("gui.oneblockultima.save")));
@@ -304,14 +304,14 @@ public class GuiModSettings extends GuiScreen
     {
         switch (pos)
         {
-            case TOP_LEFT: return "↖";
-            case TOP: return "↑";
-            case TOP_RIGHT: return "↗";
-            case LEFT: return "←";
-            case RIGHT: return "→";
-            case BOTTOM_LEFT: return "↙";
-            case BOTTOM: return "↓";
-            case BOTTOM_RIGHT: return "↘";
+            case TOP_LEFT: return "\u2196";
+            case TOP: return "\u2191";
+            case TOP_RIGHT: return "\u2197";
+            case LEFT: return "\u2190";
+            case RIGHT: return "\u2192";
+            case BOTTOM_LEFT: return "\u2199";
+            case BOTTOM: return "\u2193";
+            case BOTTOM_RIGHT: return "\u2198";
             default: return "?";
         }
     }

@@ -262,7 +262,6 @@ public final class BlockSetConfig
         public List<Integer> metas = new ArrayList<>();
         public int baseLevel = 1;
         public int baseChance = 0;
-        public int currency = 0;
         String dropItem = null;
         public NBTTagCompound nbtTags = new NBTTagCompound();
 
@@ -293,7 +292,6 @@ public final class BlockSetConfig
         int meta;
         int baseLevel;
         int baseChance;
-        int currency;
         String dropItem = null;
         int count;
         boolean isMob;
@@ -774,7 +772,6 @@ public final class BlockSetConfig
                     ie.meta = metaValue == null ? 0 : metaValue;
                     ie.baseLevel = be.baseLevel;
                     ie.baseChance = be.baseChance;
-                    ie.currency = be.currency;
                     ie.dropItem = be.dropItem;
                     ie.count = 1;
                     ie.isMob = false;
@@ -793,7 +790,6 @@ public final class BlockSetConfig
                 ie.meta = 0;
                 ie.baseLevel = me.baseLevel;
                 ie.baseChance = me.baseChance;
-                ie.currency = 0;
                 ie.dropItem = null;
                 ie.count = me.count;
                 ie.isMob = true;
@@ -859,7 +855,6 @@ public final class BlockSetConfig
                     b.registry = e.registry;
                     b.meta = e.meta;
                     b.chance = percent;
-                    b.currency = e.currency;
                     b.dropItem = e.dropItem;
                     Set<String> keys = e.nbtTags.getKeySet();
                     for (String nbtKey : keys) {
@@ -1081,7 +1076,6 @@ public final class BlockSetConfig
         public String registry;
         public int meta;
         public int chance;
-        public int currency;
         public String dropItem = null;
         public NBTTagCompound nbtTags = new NBTTagCompound();
 
@@ -1243,7 +1237,6 @@ public final class BlockSetConfig
             elementCopy.metas = element.metas != null ? new ArrayList<>(element.metas) : new ArrayList<>();
             elementCopy.baseLevel = element.baseLevel;
             elementCopy.baseChance = element.baseChance;
-            elementCopy.currency = element.currency;
             elementCopy.dropItem = element.dropItem;
             elementCopy.nbtTags = copyNbtCompound(element.nbtTags);
             copy.add(elementCopy);

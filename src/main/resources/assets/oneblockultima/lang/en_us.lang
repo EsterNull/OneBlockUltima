@@ -80,11 +80,10 @@ gui.oneblockultima.config.add=Add
 gui.oneblockultima.config.confirm=Confirm
 gui.oneblockultima.config.confirm_delete_message=Do you really want to delete the set %s?
 
-gui.oneblockultima.config.edit_currency=Edit currency
-gui.oneblockultima.config.currency_updated=Currency updated
+gui.oneblockultima.config.edit_level_chance=Edit Level & Chance
+gui.oneblockultima.config.level_chance_updated=Level & Chance updated
 gui.oneblockultima.config.base_level=Level
-gui.oneblockultima.config.currency=Currency
-gui.oneblockultima.config.error.invalid_currency=Invalid currency value
+gui.oneblockultima.config.error.invalid_level_chance=Invalid level or chance value
 
 gui.oneblockultima.config.unlock_conditions_edit=Unlock conditions
 gui.oneblockultima.config.unlock_conditions_title=Unlock Conditions
@@ -154,26 +153,24 @@ gui.oneblockultima.claim_description=You can become its owner.
 gui.oneblockultima.claim_owner=Become owner
 
 command.usage=Usage: %s
+command.only_player=Only players can use this command.
 command.player_not_found=Player not found online.
 command.no_generator=No generator found.
+command.not_near_generator=You must be near a generator block.
+command.no_invite=You don't have a pending invite for this generator.
+command.not_generated=This item is not a generated block.
+command.sell_disabled=This command is disabled in the current balance mode.
+command.not_found=Block not found in the price table.
 command.addUltimaBalance.integer=Amount must be an integer.
 command.addUltimaBalance.player=Command must be executed by a player.
 command.addUltimaBalance.no_data=Player data not available.
 command.addUltimaBalance.success=Ultima balance increased by %s. Current: %s
-command.inviteGeneratorMember.only_player=Only players can use this command.
 command.inviteGeneratorMember.usage=Usage: /inviteGeneratorMember <playerName>
-command.inviteGeneratorMember.not_near_generator=You must stand on or next to a generator block to invite someone.
 command.inviteGeneratorMember.owner_only=Only the owner can invite members to this generator.
 command.inviteGeneratorMember.self_invite=You cannot invite yourself.
 command.inviteGeneratorMember.invitation_received=You were invited to join generator ownership. Type /acceptGeneratorInvite to accept or /declineGeneratorInvite to decline.
 command.inviteGeneratorMember.invitation_sent=Invitation sent to %s.
-command.acceptGeneratorInvite.only_player=Only players can use this command.
-command.acceptGeneratorInvite.not_near_generator=You must be near the generator block to accept this invite.
-command.acceptGeneratorInvite.no_invite=You don't have a pending invite for this generator.
 command.acceptGeneratorInvite.accepted=You accepted the invitation.
-command.declineGeneratorInvite.only_player=Only players can use this command.
-command.declineGeneratorInvite.not_near_generator=You must be near the generator block to decline this invite.
-command.declineGeneratorInvite.no_invite=You don't have a pending invite for this generator.
 command.declineGeneratorInvite.declined=You declined the invitation.
 command.setOwner.success=Generator owner changed
 
@@ -264,4 +261,29 @@ tile.compressed_iron_block_5x.name=Quintuple compressed iron block
 
 tile.compressed_mineral_block.name=Compressed mineral block
 
-command.setOwner.success=Generator owner changed
+# Sell commands
+command.obuSell.success=Sold %1$d x %2$s for %3$d currency. Balance: %4$d
+command.obuSellAll.empty=No matching items found in inventory.
+command.obuSellAll.success=Sold %1$d items for %2$d currency. Balance: %3$d
+
+# Mod settings - balance mode
+gui.oneblockultima.mod_settings.balance_mode=Income Mode
+gui.oneblockultima.mod_settings.balance_mode.break_block=By Breaking Blocks
+gui.oneblockultima.mod_settings.balance_mode.sell_block=By Selling Blocks
+gui.oneblockultima.mod_settings.block_prices=Block Prices
+
+# Block prices GUI
+gui.oneblockultima.prices.title=Block Price Table
+gui.oneblockultima.prices.add=Add Block
+gui.oneblockultima.prices.edit=Edit
+gui.oneblockultima.prices.delete=Delete
+gui.oneblockultima.prices.edit_title=Edit Price
+gui.oneblockultima.prices.price=Price
+gui.oneblockultima.prices.search.help=@Mod &ID
+gui.oneblockultima.prices.search.no_results=No blocks found
+gui.oneblockultima.prices.price_saved=Price saved
+gui.oneblockultima.prices.table_saved=Table saved
+gui.oneblockultima.prices.price_removed=Price removed
+
+# Tooltip
+gui.oneblockultima.tooltip.obu_generated=Block obtained from generator

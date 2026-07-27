@@ -35,7 +35,7 @@ public class CommandDeclineGeneratorInvite extends CommandBase
     {
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.declineGeneratorInvite.only_player")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.only_player")));
             return;
         }
 
@@ -45,7 +45,7 @@ public class CommandDeclineGeneratorInvite extends CommandBase
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.declineGeneratorInvite.not_near_generator")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.not_near_generator")));
             return;
         }
 
@@ -59,7 +59,7 @@ public class CommandDeclineGeneratorInvite extends CommandBase
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
         if (!generator.declineInvite(player.getUniqueID()))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.declineGeneratorInvite.no_invite")));
+            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.no_invite")));
             return;
         }
 

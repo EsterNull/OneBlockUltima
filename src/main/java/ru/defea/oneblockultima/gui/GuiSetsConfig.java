@@ -17,6 +17,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -65,13 +66,11 @@ public class GuiSetsConfig extends GuiScreen
     private static final int BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE = 24;
     private static final int BUTTON_UNLOCK_CONDITIONS_CYCLE_SET = 25;
 
-    private static final ResourceLocation COIN_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png");
-
     private static final int VIEW_SETS = 0;
     private static final int VIEW_SET_DETAILS = 1;
     private static final int VIEW_ADD_ENTRY = 2;
     private static final int VIEW_CONFIRM_DELETE = 3;
-    private static final int VIEW_EDIT_CURRENCY = 4;
+    private static final int VIEW_EDIT = 4;
     private static final int VIEW_REQUIRED_MODS_EDITOR = 5;
     private static final int VIEW_REQUIRED_MODS_ADD = 6;
     private static final int VIEW_UNLOCK_CONDITIONS = 7;
@@ -116,11 +115,9 @@ public class GuiSetsConfig extends GuiScreen
     private GuiTextField setIdField;
     private GuiTextField unlockCostField;
     private GuiTextField entrySearchField;
-    private GuiTextField currencyField;
     private GuiTextField addLevelField;
     private GuiTextField addChanceField;
     private GuiTextField requiredModsField;
-    private GuiTextField editCurrencyField;
     private GuiTextField editLevelField;
     private GuiTextField editChanceField;
 
@@ -284,10 +281,8 @@ public class GuiSetsConfig extends GuiScreen
         if (unlockCostField != null) unlockCostField.setFocused(false);
         if (requiredModsField != null) requiredModsField.setFocused(false);
         if (entrySearchField != null) entrySearchField.setFocused(false);
-        if (currencyField != null) currencyField.setFocused(false);
         if (addLevelField != null) addLevelField.setFocused(false);
         if (addChanceField != null) addChanceField.setFocused(false);
-        if (editCurrencyField != null) editCurrencyField.setFocused(false);
         if (editLevelField != null) editLevelField.setFocused(false);
         if (editChanceField != null) editChanceField.setFocused(false);
         if (unlockConditionsLevelField != null) unlockConditionsLevelField.setFocused(false);
@@ -1316,8 +1311,8 @@ public class GuiSetsConfig extends GuiScreen
             case VIEW_CONFIRM_DELETE:
                 initConfirmDeleteView();
                 break;
-            case VIEW_EDIT_CURRENCY:
-                initEditCurrencyView();
+            case VIEW_EDIT:
+                initEditView();
                 break;
             case VIEW_REQUIRED_MODS_EDITOR:
                 initRequiredModsView();
@@ -1581,20 +1576,6 @@ public class GuiSetsConfig extends GuiScreen
         if (currentEntryType == EntryType.BLOCK)
         {
             currentSearchType = SearchType.BLOCKS;
-            if (currencyField == null)
-            {
-                currencyField = new GuiTextField(6, fontRenderer, 0, 0, 0, fieldHeight);
-            }
-            int iconSizeLocal = 12;
-            int currencyX = addChanceField.x + fieldWidthSmall + gap * 2;
-            currencyField.x = currencyX + iconSizeLocal + gap;
-            currencyField.y = fieldsY;
-            currencyField.width = fieldWidthSmall;
-            currencyField.height = fieldHeight;
-            if (currencyField.getText().isEmpty())
-            {
-                currencyField.setText("0");
-            }
         }
         else
         {
@@ -1629,11 +1610,10 @@ public class GuiSetsConfig extends GuiScreen
         buttonList.add(cancelDeleteButton);
     }
 
-    private void initEditCurrencyView()
+    private void initEditView()
     {
-        if (editCurrencyField == null)
+        if (editLevelField == null || editChanceField == null)
         {
-            editCurrencyField = new GuiTextField(7, fontRenderer, 0, 0, 0, btnHeight);
             editLevelField = new GuiTextField(10, fontRenderer, 0, 0, 0, btnHeight);
             editChanceField = new GuiTextField(11, fontRenderer, 0, 0, 0, btnHeight);
         }
@@ -1653,12 +1633,6 @@ public class GuiSetsConfig extends GuiScreen
         editChanceField.width = fieldWidth;
         editChanceField.height = btnHeight;
 
-        editCurrencyField.x = centerX - fieldWidth / 2;
-        editCurrencyField.y = centerY + fieldGap;
-        editCurrencyField.width = fieldWidth;
-        editCurrencyField.height = btnHeight;
-        editCurrencyField.setVisible(editingEntryType == EntryType.BLOCK);
-
         if (editingEntryType == EntryType.BLOCK
                 && editingSet != null
                 && editingSet.blocks != null
@@ -1668,7 +1642,6 @@ public class GuiSetsConfig extends GuiScreen
             BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
             editLevelField.setText(String.valueOf(entry.baseLevel));
             editChanceField.setText(String.valueOf(entry.baseChance));
-            editCurrencyField.setText(String.valueOf(entry.currency));
         }
         else if (editingEntryType == EntryType.MOB
                 && editingSet != null
@@ -1679,20 +1652,18 @@ public class GuiSetsConfig extends GuiScreen
             BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
             editLevelField.setText(String.valueOf(entry.baseLevel));
             editChanceField.setText(String.valueOf(entry.baseChance));
-            editCurrencyField.setText("0");
         }
 
         editLevelField.setFocused(true);
         editLevelField.setCursorPositionEnd();
         editChanceField.setFocused(false);
-        editCurrencyField.setFocused(false);
 
         String saveLabel = I18n.format("gui.oneblockultima.save");
         String cancelLabel = I18n.format("gui.oneblockultima.cancel");
         int btnWidth = Math.max(fontRenderer.getStringWidth(saveLabel) + pad * 2,
                 fontRenderer.getStringWidth(cancelLabel) + pad * 2);
 
-        int lastFieldY = editingEntryType == EntryType.BLOCK ? editCurrencyField.y : editChanceField.y;
+        int lastFieldY = editChanceField.y;
 
         saveCurrencyButton = new GuiButton(BUTTON_SAVE_CURRENCY, centerX - btnWidth - gap, lastFieldY + btnHeight + gap, btnWidth, btnHeight, saveLabel);
         cancelCurrencyButton = new GuiButton(BUTTON_CANCEL_CURRENCY, centerX + gap, lastFieldY + btnHeight + gap, btnWidth, btnHeight, cancelLabel);
@@ -1873,43 +1844,13 @@ public class GuiSetsConfig extends GuiScreen
                     String name = registry;
                     try
                     {
-                        // Способ 1: через EntityList.getTranslationName
-                        String translationKey = EntityList.getTranslationName(reg);
-                        if (translationKey != null) {
+                        String entityName = EntityList.getTranslationName(reg);
+                        if (entityName != null && !entityName.isEmpty()) {
+                            String translationKey = "entity." + entityName + ".name";
                             String localized = I18n.format(translationKey);
-                            // Проверяем, что локализация действительно найдена
                             if (!localized.equals(translationKey)) {
                                 name = localized;
                             }
-                        }
-
-                        // Способ 2: если не нашли, пробуем через создание сущности
-                        if (name.equals(registry)) {
-                            Entity entity = EntityList.createEntityByIDFromName(reg, mc.world);
-                            if (entity != null) {
-                                String displayName = entity.getDisplayName().getUnformattedText();
-                                if (displayName != null && !displayName.isEmpty()) {
-                                    name = displayName;
-                                }
-                            }
-                        }
-
-                        // Способ 3: пробуем через EntityList.getEntityString
-                        if (name.equals(registry)) {
-                            try {
-                                // Создаем временную сущность для получения имени
-                                Entity tempEntity = EntityList.createEntityByIDFromName(reg, mc.world);
-                                if (tempEntity != null) {
-                                    String entityString = EntityList.getEntityString(tempEntity);
-                                    if (entityString != null) {
-                                        String altKey = "entity." + entityString + ".name";
-                                        String localized = I18n.format(altKey);
-                                        if (!localized.equals(altKey)) {
-                                            name = localized;
-                                        }
-                                    }
-                                }
-                            } catch (Exception ignored) {}
                         }
                     }
                     catch (Exception ignored) {}
@@ -1996,18 +1937,11 @@ public class GuiSetsConfig extends GuiScreen
     {
         try {
             ResourceLocation reg = new ResourceLocation(entry.registry);
-            String translationKey = EntityList.getTranslationName(reg);
-            if (translationKey != null) {
+            String entityName = EntityList.getTranslationName(reg);
+            if (entityName != null && !entityName.isEmpty()) {
+                String translationKey = "entity." + entityName + ".name";
                 String name = I18n.format(translationKey);
-                if (name != null && !name.equals(translationKey)) {
-                    return name;
-                }
-            }
-
-            Entity entity = EntityList.createEntityByIDFromName(reg, mc.world);
-            if (entity != null) {
-                String name = entity.getDisplayName().getUnformattedText();
-                if (name != null && !name.isEmpty()) {
+                if (!name.equals(translationKey)) {
                     return name;
                 }
             }
@@ -2412,7 +2346,6 @@ public class GuiSetsConfig extends GuiScreen
 
         int baseLevel = 1;
         int baseChance = 1;
-        int currency = 0;
 
         if (addLevelField != null)
         {
@@ -2422,11 +2355,6 @@ public class GuiSetsConfig extends GuiScreen
         {
             try { baseChance = Math.min(100, Math.max(1, Integer.parseInt(addChanceField.getText().trim()))); } catch (NumberFormatException ignored) {}
         }
-        if (type == EntryType.BLOCK && currencyField != null)
-        {
-            try { currency = Integer.parseInt(currencyField.getText().trim()); } catch (NumberFormatException ignored) {}
-        }
-
         if (type == EntryType.BLOCK)
         {
             BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
@@ -2434,7 +2362,6 @@ public class GuiSetsConfig extends GuiScreen
             entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
             entry.baseLevel = baseLevel;
             entry.baseChance = baseChance;
-            entry.currency = currency;
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             editingSet.blocks.add(entry);
             statusMessage = I18n.format("gui.oneblockultima.config.block_added", result.name);
@@ -2500,7 +2427,7 @@ public class GuiSetsConfig extends GuiScreen
 
         editingEntryType = type;
         editingCurrencyIndex = index;
-        changeView(VIEW_EDIT_CURRENCY);
+        changeView(VIEW_EDIT);
     }
 
     private void saveCurrency()
@@ -2513,7 +2440,6 @@ public class GuiSetsConfig extends GuiScreen
                 BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
                 entry.baseLevel = Integer.parseInt(editLevelField.getText().trim());
                 entry.baseChance = Math.min(100, Math.max(1, Integer.parseInt(editChanceField.getText().trim())));
-                entry.currency = Integer.parseInt(editCurrencyField.getText().trim());
             }
             else if (editingEntryType == EntryType.MOB && editingSet.mobs != null && editingCurrencyIndex < editingSet.mobs.size())
             {
@@ -2526,10 +2452,10 @@ public class GuiSetsConfig extends GuiScreen
                 return;
             }
             editingSet.computedLevels = null;
-            statusMessage = I18n.format("gui.oneblockultima.config.currency_updated");
+            statusMessage = I18n.format("gui.oneblockultima.config.level_chance_updated");
             statusTimer = 60;
         } catch (NumberFormatException e) {
-            statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_currency");
+            statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_level_chance");
             statusTimer = 100;
             return;
         }
@@ -2550,9 +2476,9 @@ public class GuiSetsConfig extends GuiScreen
         switch (button.id)
         {
             case BUTTON_BACK:
-                if (currentView == VIEW_ADD_ENTRY || currentView == VIEW_EDIT_CURRENCY)
+                if (currentView == VIEW_ADD_ENTRY || currentView == VIEW_EDIT)
                 {
-                    if (currentView == VIEW_EDIT_CURRENCY) cancelCurrencyEdit();
+                    if (currentView == VIEW_EDIT) cancelCurrencyEdit();
                     else changeView(VIEW_SET_DETAILS);
                 }
                 else if (currentView == VIEW_REQUIRED_MODS_EDITOR)
@@ -2607,7 +2533,7 @@ public class GuiSetsConfig extends GuiScreen
                     deleteTargetIndex = -1;
                     changeView(VIEW_SETS);
                 }
-                else if (currentView == VIEW_EDIT_CURRENCY)
+                else if (currentView == VIEW_EDIT)
                 {
                     cancelCurrencyEdit();
                 }
@@ -2757,7 +2683,7 @@ public class GuiSetsConfig extends GuiScreen
             case VIEW_SET_DETAILS: drawSetDetailsView(mouseX, mouseY); break;
             case VIEW_ADD_ENTRY: drawAddEntryView(mouseX, mouseY); break;
             case VIEW_CONFIRM_DELETE: drawConfirmDeleteView(); break;
-            case VIEW_EDIT_CURRENCY: drawEditCurrencyView(mouseX, mouseY); break;
+            case VIEW_EDIT: drawEditCurrencyView(mouseX, mouseY); break;
             case VIEW_REQUIRED_MODS_EDITOR: drawRequiredModsEditorView(mouseX, mouseY); break;
             case VIEW_REQUIRED_MODS_ADD: drawRequiredModsAddView(mouseX, mouseY); break;
             case VIEW_UNLOCK_CONDITIONS: drawUnlockConditionsView(mouseX, mouseY); break;
@@ -2967,25 +2893,13 @@ public class GuiSetsConfig extends GuiScreen
                 fontRenderer.drawString(levelLabel, textX + nameWidth + gap * 2, entryY + innerPadding, 0x707070);
                 fontRenderer.drawString(entry.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": " + entry.baseChance + "%", textX, entryY + innerPadding * 2 + textHeight, 0x808080);
 
-                String currencyStr = String.valueOf(entry.currency);
-                int editBtnWidth = entryHeight - innerPadding * 2;
-                int coinSize = 10;
-                int currencyWidth = fontRenderer.getStringWidth(currencyStr);
-                int currencyLabelWidth = coinSize + innerPadding + currencyWidth;
-                int coinX = entryX + colWidth - innerPadding - editBtnWidth - gap - currencyLabelWidth;
-                int coinY = entryY + innerPadding + (entryHeight - textHeight) / 2;
-                int textY = entryY + innerPadding + (entryHeight - textHeight) / 2;
-                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                mc.getTextureManager().bindTexture(COIN_TEXTURE);
-                drawModalRectWithCustomSizedTexture(coinX, coinY, 0, 0, coinSize, coinSize, coinSize, coinSize);
-                fontRenderer.drawString(currencyStr, coinX + coinSize + innerPadding, textY, 0xFFD700);
-
-                int editCurrX = entryX + colWidth - innerPadding - editBtnWidth - gap / 2;
-                boolean currHover = mouseX >= editCurrX && mouseX <= editCurrX + editBtnWidth &&
+                int blockEditBtnWidth = entryHeight - innerPadding * 2;
+                int blockEditX = entryX + colWidth - innerPadding - blockEditBtnWidth - gap / 2;
+                boolean blockEditHover = mouseX >= blockEditX && mouseX <= blockEditX + blockEditBtnWidth &&
                         mouseY >= entryY && mouseY <= entryY + entryHeight;
-                int currColor = currHover ? 0xFF6A7A8A : 0xFF3A4A5A;
-                drawRect(editCurrX, entryY + gap / 2, editCurrX + editBtnWidth, entryY + entryHeight - gap / 2, currColor);
-                drawCenteredString(fontRenderer, "\u270E", editCurrX + editBtnWidth / 2, entryY + entryHeight / 2 - textHeight / 2, 0xFFFFFF);
+                int blockEditColor = blockEditHover ? 0xFF6A7A8A : 0xFF3A4A5A;
+                drawRect(blockEditX, entryY + gap / 2, blockEditX + blockEditBtnWidth, entryY + entryHeight - gap / 2, blockEditColor);
+                drawCenteredString(fontRenderer, "\u270E", blockEditX + blockEditBtnWidth / 2, entryY + entryHeight / 2 - textHeight / 2, 0xFFFFFF);
             }
 
             if (idx < mobCount)
@@ -2999,7 +2913,12 @@ public class GuiSetsConfig extends GuiScreen
                 drawRect(entryX, entryY, entryX + colWidth - innerPadding, entryY + entryHeight, bgColor);
 
                 try {
-                    Entity entity = EntityList.createEntityByIDFromName(new ResourceLocation(entry.registry), mc.world);
+                    World renderWorld = ModelUtil.getWorldOrCreateDummy();
+                    Entity entity = null;
+                    if (renderWorld != null) {
+                        entity = EntityList.createEntityByIDFromName(new ResourceLocation(entry.registry), renderWorld);
+                        if (entity != null && entity.world == null) entity.world = renderWorld;
+                    }
                     if (entity instanceof EntityLivingBase) {
                         int drawSize = iconSize;
                         int centerX = entryX + drawSize / 2 + innerPadding;
@@ -3159,8 +3078,7 @@ public class GuiSetsConfig extends GuiScreen
 
     private int getAddEntryListY()
     {
-        return Math.max(addLevelField != null ? addLevelField.y + addLevelField.height + gap : 0,
-                currentEntryType == EntryType.BLOCK && currencyField != null ? currencyField.y + currencyField.height + gap : 0);
+        return Math.max(addLevelField != null ? addLevelField.y + addLevelField.height + gap : 0, 0);
     }
 
     private void drawAddEntryView(int mouseX, int mouseY)
@@ -3190,17 +3108,6 @@ public class GuiSetsConfig extends GuiScreen
             int textY = addChanceField.y + addChanceField.height / 2 - textHeight / 2;
             drawString(fontRenderer, I18n.format("gui.oneblockultima.chance") + ":", labelX, textY, 0xA0A0A0);
             addChanceField.drawTextBox();
-        }
-
-        if (currentEntryType == EntryType.BLOCK && currencyField != null)
-        {
-            int iconSize = 12;
-            int iconX = currencyField.x - iconSize - gap;
-            int iconY = currencyField.y + currencyField.height / 2 - iconSize / 2;
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            mc.getTextureManager().bindTexture(COIN_TEXTURE);
-            drawModalRectWithCustomSizedTexture(iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
-            currencyField.drawTextBox();
         }
 
         int listY = getAddEntryListY();
@@ -3255,13 +3162,24 @@ public class GuiSetsConfig extends GuiScreen
                 {
                     try
                     {
-                        Entity entity = (Entity) result.entityClass.getConstructor(net.minecraft.world.World.class)
-                                .newInstance(Minecraft.getMinecraft().world);
+                        World renderWorld = ModelUtil.getWorldOrCreateDummy();
+                        Entity entity = null;
+                        if (renderWorld != null) {
+                            entity = EntityList.createEntityByIDFromName(new ResourceLocation(result.registry), renderWorld);
+                            if (entity != null && entity.world == null) entity.world = renderWorld;
+                        }
                         if (entity instanceof EntityLivingBase) {
                             int drawSize = iconSize;
                             int centerX = entryX + drawSize / 2 + innerPadding;
                             int centerY = entryY + innerPadding + drawSize * 3 / 4;
-                            ModelUtil.drawEntityOnScreen(centerX, centerY, entity, drawSize);
+                            GlStateManager.pushMatrix();
+                            try {
+                                ModelUtil.drawEntityOnScreen(centerX, centerY, entity, drawSize);
+                            } catch (Exception ignored) {
+                            } finally {
+                                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                                GlStateManager.popMatrix();
+                            }
                         }
                     }
                     catch (Exception ignored)
@@ -3305,15 +3223,13 @@ public class GuiSetsConfig extends GuiScreen
     private void drawEditCurrencyView(int mouseX, int mouseY)
     {
         int centerX = width / 2;
-        int centerY = height / 2;
         int fieldWidth = 100;
         int labelGap = 4;
 
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.edit_currency"), centerX, pad + textHeight / 2, 0xFFFFFF);
+        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.edit_level_chance"), centerX, pad + textHeight / 2, 0xFFFFFF);
 
         int levelLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.base_level") + ":");
         int chanceLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.chance") + ":");
-        int currencyLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.currency") + ":");
 
         if (editLevelField != null)
         {
@@ -3330,24 +3246,17 @@ public class GuiSetsConfig extends GuiScreen
             drawString(fontRenderer, I18n.format("gui.oneblockultima.chance") + ":", labelX, textY, 0xA0A0A0);
             editChanceField.drawTextBox();
         }
-
-        if (editCurrencyField != null && editingEntryType == EntryType.BLOCK)
-        {
-            int labelX = centerX - fieldWidth / 2 - labelGap - currencyLabelWidth;
-            int textY = editCurrencyField.y + editCurrencyField.height / 2 - textHeight / 2;
-            drawString(fontRenderer, I18n.format("gui.oneblockultima.config.currency") + ":", labelX, textY, 0xA0A0A0);
-            editCurrencyField.drawTextBox();
-        }
     }
 
     private int getSetDetailsListY()
     {
-        return pad + textHeight + pad + (btnHeight + gap) * 4 + gap;
+        return pad + textHeight + pad + (btnHeight + gap) * 4;
     }
 
     private int getSetDetailsListHeight()
     {
-        return height - pad * 2 - textHeight - btnHeight - gap * 3 - (btnHeight + gap) * 4 - gap * 2;
+        int listY = getSetDetailsListY();
+        return Math.max(80, height - listY - btnHeight - pad - gap - innerPadding * 2);
     }
 
     private boolean handleSetsViewClick(int mouseX, int mouseY)
@@ -3439,9 +3348,9 @@ public class GuiSetsConfig extends GuiScreen
 
             int entryX = listX + innerPadding;
             int entryY = listY + innerPadding + (row - entryScrollOffset) * entryHeight;
-            int editBtnWidth = 24;
-            int editCurrX = entryX + colWidth - innerPadding - editBtnWidth - gap / 2;
-            if (mouseX >= editCurrX && mouseX <= editCurrX + editBtnWidth && mouseY >= entryY && mouseY <= entryY + entryHeight)
+            int blockEditBtnWidth = entryHeight - innerPadding * 2;
+            int blockEditX = entryX + colWidth - innerPadding - blockEditBtnWidth - gap / 2;
+            if (mouseX >= blockEditX && mouseX <= blockEditX + blockEditBtnWidth && mouseY >= entryY && mouseY <= entryY + entryHeight)
             {
                 editBlock(displayEntry.blockIndex, EntryType.BLOCK);
             }
@@ -3552,7 +3461,6 @@ public class GuiSetsConfig extends GuiScreen
             entrySearchField.mouseClicked(mouseX, mouseY, mouseButton);
             if (addLevelField != null) addLevelField.mouseClicked(mouseX, mouseY, mouseButton);
             if (addChanceField != null) addChanceField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (currencyField != null) currencyField.mouseClicked(mouseX, mouseY, mouseButton);
         }
         else if (searchField != null)
         {
@@ -3566,11 +3474,10 @@ public class GuiSetsConfig extends GuiScreen
             if (unlockCostField != null) unlockCostField.mouseClicked(mouseX, mouseY, mouseButton);
             if (requiredModsField != null) requiredModsField.mouseClicked(mouseX, mouseY, mouseButton);
         }
-        else if (currentView == VIEW_EDIT_CURRENCY)
+        else if (currentView == VIEW_EDIT)
         {
             if (editLevelField != null) editLevelField.mouseClicked(mouseX, mouseY, mouseButton);
             if (editChanceField != null) editChanceField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (editCurrencyField != null) editCurrencyField.mouseClicked(mouseX, mouseY, mouseButton);
         }
         else if (currentView == VIEW_UNLOCK_CONDITIONS)
         {
@@ -3715,11 +3622,6 @@ public class GuiSetsConfig extends GuiScreen
             performSearch();
             return;
         }
-        if (currencyField != null && currencyField.isFocused())
-        {
-            currencyField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
         if (addLevelField != null && addLevelField.isFocused())
         {
             addLevelField.textboxKeyTyped(typedChar, keyCode);
@@ -3738,11 +3640,6 @@ public class GuiSetsConfig extends GuiScreen
         if (editChanceField != null && editChanceField.isFocused())
         {
             editChanceField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (editCurrencyField != null && editCurrencyField.isFocused())
-        {
-            editCurrencyField.textboxKeyTyped(typedChar, keyCode);
             return;
         }
         if (unlockConditionsLevelField != null && unlockConditionsLevelField.isFocused())
@@ -3780,7 +3677,7 @@ public class GuiSetsConfig extends GuiScreen
             {
                 changeView(VIEW_SET_DETAILS);
             }
-            else if (currentView == VIEW_EDIT_CURRENCY)
+            else if (currentView == VIEW_EDIT)
             {
                 cancelCurrencyEdit();
             }
@@ -3921,8 +3818,6 @@ public class GuiSetsConfig extends GuiScreen
         if (unlockCostField != null) unlockCostField.updateCursorCounter();
         if (requiredModsField != null) requiredModsField.updateCursorCounter();
         if (entrySearchField != null) entrySearchField.updateCursorCounter();
-        if (currencyField != null) currencyField.updateCursorCounter();
-        if (editCurrencyField != null) editCurrencyField.updateCursorCounter();
         if (unlockConditionsLevelField != null) unlockConditionsLevelField.updateCursorCounter();
         if (unlockConditionsCountField != null) unlockConditionsCountField.updateCursorCounter();
 
