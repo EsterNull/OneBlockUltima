@@ -1,5 +1,6 @@
 package ru.defea.oneblockultima.gui.layout;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
@@ -8,7 +9,7 @@ import java.util.List;
 
 public class TextFieldElement extends ViewElement {
     private final int width;
-    private final int height = 14;
+    private static final int HEIGHT = Minecraft.getMinecraft().fontRenderer.FONT_HEIGHT + 4;
     private GuiTextField textField;
     private String text = "";
     private boolean focused = false;
@@ -91,7 +92,7 @@ public class TextFieldElement extends ViewElement {
     public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
         int id = factory.getTextFields().size();
         int fieldWidth = width > 0 ? width : computedWidth;
-        textField = new GuiTextField(id, fontRenderer, computedX, computedY, fieldWidth, height);
+        textField = new GuiTextField(id, fontRenderer, computedX, computedY, fieldWidth, HEIGHT);
         textField.setText(text);
         textField.setFocused(focused);
         textField.setMaxStringLength(maxStringLength);
@@ -135,6 +136,6 @@ public class TextFieldElement extends ViewElement {
 
     @Override
     public int getPreferredHeight() {
-        return height;
+        return HEIGHT;
     }
 }

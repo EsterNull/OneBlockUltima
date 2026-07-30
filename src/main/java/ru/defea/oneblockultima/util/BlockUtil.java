@@ -11,6 +11,7 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
@@ -467,6 +468,40 @@ public final class BlockUtil
         catch (Exception e)
         {
             OneBlockUltima.getLogger().error("[Generator] Failed to apply NBT tags to block at {}", pos, e);
+        }
+    }
+
+    public static boolean isFullBlock(net.minecraft.block.Block block, int meta)
+    {
+        try
+        {
+            net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
+            if (item == Items.AIR)
+            {
+                return false;
+            }
+
+            net.minecraft.block.state.IBlockState state = null;
+            try
+            {
+                state = block.getStateFromMeta(meta);
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    state = block.getDefaultState();
+                }
+                catch (Exception ignored) {}
+            }
+
+            if (state == null) return false;
+
+            return block.isFullBlock(state) && block.isFullCube(state);
+        }
+        catch (Exception e)
+        {
+            return false;
         }
     }
 

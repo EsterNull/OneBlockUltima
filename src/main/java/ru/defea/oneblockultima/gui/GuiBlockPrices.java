@@ -27,11 +27,12 @@ public class GuiBlockPrices extends GuiScreen
     private static final int BUTTON_BACK = 2;
     private static final int BUTTON_BALANCE_MODE = 3;
 
+    private static final int ENTRY_HEIGHT = 24;
+
     private final GuiScreen parent;
     private final ContainerBlockPrices container;
     private int currentView = VIEW_PRICES;
     private int scrollOffset = 0;
-    private final int entryHeight = 24;
     private String statusMessage = "";
     private int statusTimer = 0;
     private int searchScrollOffset = 0;
@@ -185,7 +186,7 @@ public class GuiBlockPrices extends GuiScreen
             });
         }
 
-        priceList = new ScrollableListElement(entryHeight)
+        priceList = new ScrollableListElement(ENTRY_HEIGHT)
             .entries(entries)
             .scrollOffset(scrollOffset);
         priceList.visible(!entries.isEmpty());
@@ -455,7 +456,7 @@ public class GuiBlockPrices extends GuiScreen
 
     private int getMaxVisibleEntries()
     {
-        return Math.max(1, (height - 100) / entryHeight);
+        return Math.max(1, (height - 100) / ENTRY_HEIGHT);
     }
 
     private int getMaxVisibleSearchResults()

@@ -29,13 +29,11 @@ import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
-import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
-import ru.defea.oneblockultima.gui.GuiSetsConfig;
-import ru.defea.oneblockultima.gui.GuiBlockPrices;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
 import ru.defea.oneblockultima.gui.layout.ButtonElement;
 import ru.defea.oneblockultima.gui.layout.TabBarElement;
+import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.util.BlockUtil;
 
 import java.awt.*;
@@ -44,6 +42,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.*;
 
+import static ru.defea.oneblockultima.util.BlockUtil.isFullBlock;
 import static ru.defea.oneblockultima.util.ModelUtil.*;
 
 public class GuiOneBlock extends GuiContainer
@@ -69,6 +68,16 @@ public class GuiOneBlock extends GuiContainer
     private static final int GREEN_COLOR = 0x00EE00;
     private static final int ORANGE_COLOR = 0xFFAA00;
     private static final int RED_COLOR = 0xEE0000;
+
+    private static final int BUTTON_HEIGHT = 20;
+    private static final int BUTTON_GAP = 6;
+
+    private static final int SCROLLBAR_WIDTH = 6;
+    private static final int INNER_PADDING = 6;
+    private static final int SECTION_GAP = 8;
+    private static final int BACKGROUND_TEXTURE_SIZE = 32;
+
+    private int rowInterval;
 
     private final ContainerOneBlock container;
     private final List<BlockSetConfig.BlockSetDefinition> visibleSets = new ArrayList<>();
@@ -114,7 +123,6 @@ public class GuiOneBlock extends GuiContainer
     private int cellPadding = 1;
     private int blockCols = 4;
     private int mobCols = 2;
-    private final int SCROLLBAR_WIDTH = 6;
     private int panelGap = 8;
     private int panelWidth;
     private int panelHeight;
@@ -126,19 +134,11 @@ public class GuiOneBlock extends GuiContainer
     private int textHeight;
     private int infoRowY;
     private int infoHeight;
-    private final int buttonHeight = 20;
-    private final int buttonGap = 6;
     private String clientActiveSetId = null;
-    private int rowInterval;
-
-    private final int INNER_PADDING = 6;
-    private final int SECTION_GAP = 8;
 
     private final List<BlockSetConfig.BlockEntryDefinition> backgroundBlocks = new ArrayList<>();
-    private final int backgroundTextureSize = 32;
 
     private TabBarElement tabs;
-    private int tabY;
 
     public GuiOneBlock(EntityPlayer player, World world, BlockPos generatorPos)
     {
@@ -216,16 +216,13 @@ public class GuiOneBlock extends GuiContainer
 
         int infoButtonRows = activeView == VIEW_SETTINGS ? 3 : 2;
         int infoTextHeight = infoLines * fontRenderer.FONT_HEIGHT + Math.max(0, infoLines - 1) * 4;
-        int infoButtonArea = infoButtonRows * buttonHeight + Math.max(0, infoButtonRows - 1) * buttonGap;
+        int infoButtonArea = infoButtonRows * BUTTON_HEIGHT + (infoButtonRows - 1) * BUTTON_GAP;
         infoHeight = infoTextHeight + infoButtonArea + textHeight;
 
-        int contentHeight = ySize - infoRowY - infoHeight - 20;
-        if (contentHeight < 100) {
-            contentHeight = 100;
-        }
+        int contentHeight = ySize - infoRowY - 20;
 
-        panelGap = Math.max(8, contentWidth / 40);
-        panelWidth = Math.max(140, (contentWidth - panelGap) / 2);
+        panelGap = contentWidth / 40;
+        panelWidth = (contentWidth - panelGap) / 2;
         panelHeight = contentHeight - 10;
         leftPanelX = contentLeft;
         rightPanelX = contentLeft + panelWidth + panelGap;
@@ -234,10 +231,10 @@ public class GuiOneBlock extends GuiContainer
     }
 
     private void calculateColumns() {
-        int availableWidth = Math.max(1, panelWidth - INNER_PADDING * 2);
+        int availableWidth = panelWidth - INNER_PADDING * 2;
         int halfWidth = (availableWidth - SECTION_GAP) / 2;
-        int blockAreaWidth = Math.max(40, halfWidth - 8);
-        int mobAreaWidth = Math.max(40, halfWidth - 8);
+        int blockAreaWidth = halfWidth - 8;
+        int mobAreaWidth = halfWidth - 8;
 
         blockCols = Math.max(2, blockAreaWidth / 20);
 
@@ -264,10 +261,8 @@ public class GuiOneBlock extends GuiContainer
     }
 
     private int getAreaHeight() {
-        return panelHeight - rowInterval * 2 - cellSize;
+        return panelHeight - rowInterval * 2 - BUTTON_HEIGHT - BUTTON_GAP * 2 - cellSize;
     }
-
-    // ==================== РІвЂўРЃР В¬РІвЂўРЃР ТђРІвЂўРЃР Р†РІвЂўРЃР В®РІвЂўРЃР В¤РІвЂўРЃР В» РІвЂўРЃР В¤РІвЂўРЃР В«РІвЂўРЃР С— РІвЂўРЃР Р‡РІвЂўРЃР В°РІвЂўРЃР В®РІвЂўРЃР В¶РІвЂўРЃР ТђРІвЂўРЃР В¤РІвЂўРЃР С–РІвЂўРЃР В°РІвЂўРЃР В­РІвЂўРЃР В®РІвЂўРЃР Р€РІвЂўРЃР В® РІвЂўРЃР Т‘РІвЂўРЃР В®РІвЂўРЃР В­РІвЂўРЃР В  ====================
 
     private void initBackgroundBlocks()
     {
@@ -291,7 +286,6 @@ public class GuiOneBlock extends GuiContainer
                         net.minecraft.block.Block mcBlock = block.resolveBlock();
                         if (mcBlock == null) continue;
 
-                        // РІвЂўРЃР Р‡РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ, РІвЂўВ¤Р вЂ”РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂє РІвЂўВ¤Р СњРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ
                         if (!isFullBlock(mcBlock, block.meta)) continue;
 
                         backgroundBlocks.add(block);
@@ -307,45 +301,8 @@ public class GuiOneBlock extends GuiContainer
         }
     }
 
-    private boolean isFullBlock(net.minecraft.block.Block block, int meta)
-    {
-        try
-        {
-            // РІвЂўРЃР Р‡РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ, РІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р Сљ РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂњ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂ“вЂ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂ™ (РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂў РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С›РІвЂўВ¤Р вЂ™ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂ“вЂ)
-            net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
-            if (item == Items.AIR)
-            {
-                return false;
-            }
-
-            // РІвЂўРЃР Р‡РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р СџРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂ“вЂ
-            net.minecraft.block.state.IBlockState state = null;
-            try
-            {
-                state = block.getStateFromMeta(meta);
-            }
-            catch (Exception ex)
-            {
-                try
-                {
-                    state = block.getDefaultState();
-                }
-                catch (Exception ignored) {}
-            }
-
-            if (state == null) return false;
-
-            return block.isFullBlock(state) && block.isFullCube(state);
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-    }
-
     private void addDefaultBackgroundBlocks()
     {
-        // РІвЂўРЃР В¤РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СљРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂў
         addBlockIfFull("minecraft:stone", 0);
         addBlockIfFull("minecraft:dirt", 0);
         addBlockIfFull("minecraft:cobblestone", 0);
@@ -389,12 +346,11 @@ public class GuiOneBlock extends GuiContainer
         }
 
         int totalBlocks = backgroundBlocks.size();
-        int texSize = backgroundTextureSize;
+        int texSize = BACKGROUND_TEXTURE_SIZE;
 
         int cols = (width + texSize - 1) / texSize;
         int rows = (height + texSize - 1) / texSize;
 
-        // РІвЂўРЃР В¤РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СљРІвЂўВ¤Р ВРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўР€ РІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂќвЂљРІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСћРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р Сџ
         int extraCols = 2;
         int extraRows = 2;
 
@@ -411,7 +367,6 @@ public class GuiOneBlock extends GuiContainer
                 int x = startX + col * texSize;
                 int y = startY + row * texSize;
 
-                // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСњ - РІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р вЂњРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ РІвЂўРЃРІвЂ“вЂњРІвЂўВ¤Р вЂєРІвЂўВ¤Р вЂўРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂ™ РІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂ РІвЂўРЃРІвЂќвЂљРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂ“РІвЂўВ¤Р вЂє, РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СљРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСњРІвЂўВ¤Р вЂњРІвЂўВ¤Р С› РІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р Сљ
                 int drawX = Math.max(startX, x);
                 int drawY = Math.max(startY, y);
                 int drawX2 = Math.min(startX + width, x + texSize);
@@ -419,7 +374,6 @@ public class GuiOneBlock extends GuiContainer
 
                 if (drawX >= drawX2 || drawY >= drawY2) continue;
 
-                // РІвЂўРЃР СћРІвЂўВ¤Р вЂєРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ UV РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р вЂє РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂў
                 float u1 = (drawX - x) / (float)texSize;
                 float v1 = (drawY - y) / (float)texSize;
                 float u2 = (drawX2 - x) / (float)texSize;
@@ -476,7 +430,6 @@ public class GuiOneBlock extends GuiContainer
 
             mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
-            // РІвЂўРЃР РЃРІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р С’РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ UV РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р вЂє
             float minU = sprite.getMinU();
             float maxU = sprite.getMaxU();
             float minV = sprite.getMinV();
@@ -508,8 +461,6 @@ public class GuiOneBlock extends GuiContainer
         catch (Exception ignored) {}
     }
 
-    // ==================== РІвЂўРЃР В®РІвЂўРЃР В±РІвЂўРЃР Р†РІвЂўРЃР В РІвЂўРЃР В«РІвЂўРЃР СРІвЂўРЃР В­РІвЂўРЃР В»РІвЂўРЃР Тђ РІвЂўРЃР В¬РІвЂўРЃР ТђРІвЂўРЃР Р†РІвЂўРЃР В®РІвЂўРЃР В¤РІвЂўРЃР В» ====================
-
     private void renderLevelPanel(BlockSetConfig.SetLevelDefinition levelDefinition, int panelX, int panelY, boolean isLeft, int mouseX, int mouseY)
     {
         if (levelDefinition == null) return;
@@ -522,6 +473,7 @@ public class GuiOneBlock extends GuiContainer
         int mobsStartX = getMobsStartX(panelX);
         int gridStartY = getGridStartY(panelY);
         int areaHeight = getAreaHeight();
+        OneBlockUltima.getLogger().debug("[DEBUG] Area height: {}", areaHeight);
 
         fontRenderer.drawString(I18n.format(isLeft ? "gui.oneblockultima.current_level" : "gui.oneblockultima.next_level") + ": " + levelDefinition.level,
                 panelX + INNER_PADDING, panelY + 4, 0xA0B0C0);
@@ -835,19 +787,19 @@ public class GuiOneBlock extends GuiContainer
         int visibleTabs = settingsTabVisible ? 3 : 2;
         int totalTabWidth = tabWidth * visibleTabs + tabGap * (visibleTabs - 1);
         int tabX = guiLeft + (xSize - totalTabWidth) / 2;
-        tabY = guiTop + tabRowY + textHeight / 2;
+        int tabY = guiTop + tabRowY + textHeight / 2;
         int infoButtonsY = guiTop + infoRowY + rowInterval * 2;
         int leftButtonX = guiLeft + contentLeft;
-        int selectWidth = contentWidth / 2 - buttonGap;
+        int selectWidth = contentWidth / 2 - BUTTON_GAP;
         int rightButtonX = guiLeft + contentLeft + contentWidth - selectWidth;
         int settingWidth = contentWidth;
 
-        int settingsButtonWidth = settingWidth / 2 - buttonGap;
+        int settingsButtonWidth = settingWidth / 2 - BUTTON_GAP;
         int settingsButtonStartY = guiTop + infoRowY;
 
         tabs = new TabBarElement();
         tabs.setComputedPosition(tabX, tabY);
-        tabs.setComputedSize(totalTabWidth, buttonHeight);
+        tabs.setComputedSize(totalTabWidth, BUTTON_HEIGHT);
         tabs.tab(BUTTON_TAB_SETS, I18n.format("gui.oneblockultima.tabs.sets"));
         if (settingsTabVisible)
         {
@@ -855,56 +807,56 @@ public class GuiOneBlock extends GuiContainer
         }
         tabs.tab(BUTTON_TAB_DONATE, I18n.format("gui.oneblockultima.tabs.donate"));
         tabs.activeTab(activeView == VIEW_SETS ? BUTTON_TAB_SETS :
-                       activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
+                activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
 
         prevButton = new ButtonElement(BUTTON_PREV_SET, "<");
         prevButton.setComputedPosition(leftButtonX, infoButtonsY);
-        prevButton.setComputedSize(20, buttonHeight);
+        prevButton.setComputedSize(20, BUTTON_HEIGHT);
         prevButton.createWidgets(buttonList, fontRenderer, null);
 
         nextButton = new ButtonElement(BUTTON_NEXT_SET, ">");
         nextButton.setComputedPosition(leftButtonX + 26, infoButtonsY);
-        nextButton.setComputedSize(20, buttonHeight);
+        nextButton.setComputedSize(20, BUTTON_HEIGHT);
         nextButton.createWidgets(buttonList, fontRenderer, null);
 
         selectButton = new ButtonElement(BUTTON_SELECT_SET, I18n.format("gui.oneblockultima.select"));
-        selectButton.setComputedPosition(leftButtonX, infoButtonsY + buttonHeight + buttonGap);
-        selectButton.setComputedSize(selectWidth, buttonHeight);
+        selectButton.setComputedPosition(leftButtonX, infoButtonsY + BUTTON_HEIGHT + BUTTON_GAP);
+        selectButton.setComputedSize(selectWidth, BUTTON_HEIGHT);
         selectButton.createWidgets(buttonList, fontRenderer, null);
 
         upgradeButton = new ButtonElement(BUTTON_UPGRADE_SET, I18n.format("gui.oneblockultima.upgrade"));
-        upgradeButton.setComputedPosition(rightButtonX, infoButtonsY + buttonHeight + buttonGap);
-        upgradeButton.setComputedSize(selectWidth, buttonHeight);
+        upgradeButton.setComputedPosition(rightButtonX, infoButtonsY + BUTTON_HEIGHT + BUTTON_GAP);
+        upgradeButton.setComputedSize(selectWidth, BUTTON_HEIGHT);
         upgradeButton.createWidgets(buttonList, fontRenderer, null);
 
         toggleFluidButton = new ButtonElement(BUTTON_TOGGLE_FLUIDS, "");
         toggleFluidButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY);
-        toggleFluidButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleFluidButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleFluidButton.createWidgets(buttonList, fontRenderer, null);
 
         toggleMobsButton = new ButtonElement(BUTTON_TOGGLE_MOBS, "");
-        toggleMobsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY);
-        toggleMobsButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleMobsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY);
+        toggleMobsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleMobsButton.createWidgets(buttonList, fontRenderer, null);
 
         toggleChestsButton = new ButtonElement(BUTTON_TOGGLE_CHESTS, "");
-        toggleChestsButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + buttonHeight + buttonGap);
-        toggleChestsButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleChestsButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + BUTTON_HEIGHT + BUTTON_GAP);
+        toggleChestsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleChestsButton.createWidgets(buttonList, fontRenderer, null);
 
         toggleSaplingsButton = new ButtonElement(BUTTON_TOGGLE_SAPLINGS, "");
-        toggleSaplingsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + buttonHeight + buttonGap);
-        toggleSaplingsButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleSaplingsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + BUTTON_HEIGHT + BUTTON_GAP);
+        toggleSaplingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleSaplingsButton.createWidgets(buttonList, fontRenderer, null);
 
         openConfigEditorButton = new ButtonElement(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.settings.open_editor"));
-        openConfigEditorButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + (buttonHeight + buttonGap) * 2);
-        openConfigEditorButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        openConfigEditorButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
+        openConfigEditorButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openConfigEditorButton.createWidgets(buttonList, fontRenderer, null);
 
         openPricesButton = new ButtonElement(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
-        openPricesButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (buttonHeight + buttonGap) * 2);
-        openPricesButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        openPricesButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
+        openPricesButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openPricesButton.createWidgets(buttonList, fontRenderer, null);
 
         int donateBtnX = guiLeft + contentLeft + 72;
@@ -914,13 +866,12 @@ public class GuiOneBlock extends GuiContainer
         for (int i = 0; i < DonateMethod.METHODS.length; i++)
         {
             donateButtons[i] = new ButtonElement(BUTTON_DONATE_BASE + i, DonateMethod.METHODS[i].text);
-            donateButtons[i].setComputedPosition(donateBtnX, donateBtnY + (buttonHeight + buttonGap) * i);
-            donateButtons[i].setComputedSize(donateBtnWidth, buttonHeight);
+            donateButtons[i].setComputedPosition(donateBtnX, donateBtnY + (BUTTON_HEIGHT + BUTTON_GAP) * i);
+            donateButtons[i].setComputedSize(donateBtnWidth, BUTTON_HEIGHT);
             donateButtons[i].createWidgets(buttonList, fontRenderer, null);
         }
         updateViewButtons();
 
-        // РІвЂўРЃР РЃРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂ“РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р С’РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃР Р‡РІвЂўРЃР В®РІвЂўРЃР В±РІвЂўРЃР В«РІвЂўРЃР Тђ РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂќвЂљРІвЂўРЃРІвЂўвЂє, РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ РІвЂўРЃРІвЂ“вЂњРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’
         initBackgroundBlocks();
     }
 
@@ -1011,7 +962,6 @@ public class GuiOneBlock extends GuiContainer
         if (!activeSetId.equals(clientActiveSetId))
         {
             clientActiveSetId = activeSetId;
-            // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
             initBackgroundBlocks();
         }
     }
@@ -1071,13 +1021,11 @@ public class GuiOneBlock extends GuiContainer
         else if (button.id == BUTTON_PREV_SET)
         {
             selectedSetIndex = (selectedSetIndex - 1 + visibleSets.size()) % visibleSets.size();
-            // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
             initBackgroundBlocks();
         }
         else if (button.id == BUTTON_NEXT_SET)
         {
             selectedSetIndex = (selectedSetIndex + 1) % visibleSets.size();
-            // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
             initBackgroundBlocks();
         }
         else if (button.id == BUTTON_SELECT_SET)
@@ -1086,7 +1034,6 @@ public class GuiOneBlock extends GuiContainer
             if (selectedSet != null)
             {
                 container.selectSet(selectedSet.id);
-                // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўРЃРІвЂ“вЂњРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
                 initBackgroundBlocks();
             }
         }
@@ -1096,7 +1043,6 @@ public class GuiOneBlock extends GuiContainer
             if (selectedSet != null)
             {
                 container.upgradeSet(selectedSet.id);
-                // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўВ¤Р вЂ”РІвЂўВ¤Р ВРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂў
                 initBackgroundBlocks();
             }
         }
@@ -1511,13 +1457,13 @@ public class GuiOneBlock extends GuiContainer
                 int blocksAreaWidth = getBlocksAreaWidth();
                 int mobsAreaWidth = getMobsAreaWidth();
                 int gridStartY = getGridStartY(panelY);
-                int areaHeight = getAreaHeight();
+                int currentAreaHeight = getAreaHeight();
 
                 if (canShowCurrent)
                 {
                     if (localMouseX >= leftPanelX + INNER_PADDING &&
                             localMouseX <= leftPanelX + INNER_PADDING + blocksAreaWidth &&
-                            localMouseY >= gridStartY && localMouseY <= gridStartY + areaHeight)
+                            localMouseY >= gridStartY && localMouseY <= gridStartY + currentAreaHeight)
                     {
                         int maxScroll = getMaxBlockScroll(set, currentLevel);
                         blockScroll = Math.max(0, Math.min(blockScroll + delta, maxScroll));
@@ -1527,7 +1473,7 @@ public class GuiOneBlock extends GuiContainer
                     int mobsStartX = getMobsStartX(leftPanelX);
                     if (localMouseX >= mobsStartX &&
                             localMouseX <= mobsStartX + mobsAreaWidth &&
-                            localMouseY >= gridStartY && localMouseY <= gridStartY + areaHeight)
+                            localMouseY >= gridStartY && localMouseY <= gridStartY + currentAreaHeight)
                     {
                         int maxScroll = getMaxMobScroll(set, currentLevel);
                         mobScroll = Math.max(0, Math.min(mobScroll + delta, maxScroll));
@@ -1540,7 +1486,7 @@ public class GuiOneBlock extends GuiContainer
 
                 if (localMouseX >= rightStartX + INNER_PADDING &&
                         localMouseX <= rightStartX + INNER_PADDING + blocksAreaWidth &&
-                        localMouseY >= gridStartY && localMouseY <= gridStartY + areaHeight)
+                        localMouseY >= gridStartY && localMouseY <= gridStartY + currentAreaHeight)
                 {
                     int maxScroll = getMaxBlockScroll(set, nextLevel);
                     blockScrollNext = Math.max(0, Math.min(blockScrollNext + delta, maxScroll));
@@ -1550,7 +1496,7 @@ public class GuiOneBlock extends GuiContainer
                 int rightMobsStartX = getMobsStartX(rightStartX);
                 if (localMouseX >= rightMobsStartX &&
                         localMouseX <= rightMobsStartX + mobsAreaWidth &&
-                        localMouseY >= gridStartY && localMouseY <= gridStartY + areaHeight)
+                        localMouseY >= gridStartY && localMouseY <= gridStartY + currentAreaHeight)
                 {
                     int maxScroll = getMaxMobScroll(set, nextLevel);
                     mobScrollNext = Math.max(0, Math.min(mobScrollNext + delta, maxScroll));
@@ -1646,7 +1592,7 @@ public class GuiOneBlock extends GuiContainer
 
         if (donateStatusMessage != null && donateStatusTicks > 0)
         {
-            int statusY = ySize - buttonGap - fontRenderer.FONT_HEIGHT;
+            int statusY = ySize - BUTTON_GAP - fontRenderer.FONT_HEIGHT;
             int statusColor = 0x55FF55;
             drawCenteredString(fontRenderer, donateStatusMessage, contentLeft + contentWidth / 2, statusY, statusColor);
         }
@@ -1664,39 +1610,42 @@ public class GuiOneBlock extends GuiContainer
         int setContentBottom = this.height - guiTop;
 
         if (activeView == VIEW_SETTINGS) {
-            // 1. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњ
-            int remainingHeight = tabsBottom + (buttonHeight + buttonGap) * 3 + buttonGap - titleBottom;
-            renderProceduralBackground(
-                    guiLeft,
-                    titleBottom,
-                    xSize,
-                    remainingHeight
-            );
+            int remainingHeight = tabsBottom + (BUTTON_HEIGHT + BUTTON_GAP) * 3 + BUTTON_GAP - titleBottom;
+            if (remainingHeight > 0) {
+                renderProceduralBackground(
+                        guiLeft,
+                        titleBottom,
+                        xSize,
+                        remainingHeight
+                );
+            }
 
-            // 2. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ“РІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂ™РІвЂўВ¤Р РЋРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р вЂў
             drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, 0xFF22272E);
             drawRect(guiLeft, titleBottom, guiLeft + xSize,
                     remainingHeight + titleBottom, 0xCC1F2328);
             drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, 0xFF2E3A45);
         }
         else {
-            // 1. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњ РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂў info
-            renderProceduralBackground(
-                    guiLeft,
-                    titleBottom,
-                    xSize,
-                    infoBottom - titleBottom
-            );
+            int infoBgHeight = infoBottom - titleBottom;
+            if (infoBgHeight > 0) {
+                renderProceduralBackground(
+                        guiLeft,
+                        titleBottom,
+                        xSize,
+                        infoBgHeight
+                );
+            }
 
-            // 2. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњ РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂў content
-            renderProceduralBackground(
-                    guiLeft,
-                    infoBottom,
-                    xSize,
-                    setContentBottom - infoBottom
-            );
+            int contentBgHeight = setContentBottom - infoBottom;
+            if (contentBgHeight > 0) {
+                renderProceduralBackground(
+                        guiLeft,
+                        infoBottom,
+                        xSize,
+                        contentBgHeight
+                );
+            }
 
-            // 3. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ“РІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂ™РІвЂўВ¤Р РЋРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р вЂў
             drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, 0xFF22272E);
             drawRect(guiLeft, titleBottom, guiLeft + xSize, infoBottom, 0xCC1F2328);
             drawRect(guiLeft, infoBottom, guiLeft + xSize, setContentBottom, 0xCC1F2328);
@@ -1726,9 +1675,10 @@ public class GuiOneBlock extends GuiContainer
 
     private void renderScrollBar(int scrollX, int scrollY, int scrollHeight, int currentScroll, int maxScroll)
     {
-        if (maxScroll <= 0) return;
+        if (maxScroll <= 0 || scrollHeight <= 0) return;
 
-        int barHeight = Math.max(10, (scrollHeight * scrollHeight) / (scrollHeight + maxScroll * cellSize));
+        int barHeight = Math.max(8, (scrollHeight * scrollHeight) / (scrollHeight + maxScroll * cellSize));
+        if (barHeight > scrollHeight) barHeight = scrollHeight;
         int barY = scrollY + (currentScroll * (scrollHeight - barHeight)) / maxScroll;
 
         drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, 0xFF2A2F34);
@@ -1737,9 +1687,10 @@ public class GuiOneBlock extends GuiContainer
 
     private void renderMobScrollBar(int scrollX, int scrollY, int scrollHeight, int currentScroll, int maxScroll)
     {
-        if (maxScroll <= 0) return;
+        if (maxScroll <= 0 || scrollHeight <= 0) return;
 
-        int barHeight = Math.max(10, (scrollHeight * scrollHeight) / (scrollHeight + maxScroll * cellSize));
+        int barHeight = Math.max(8, (scrollHeight * scrollHeight) / (scrollHeight + maxScroll * cellSize));
+        if (barHeight > scrollHeight) barHeight = scrollHeight;
         int barY = scrollY + (currentScroll * (scrollHeight - barHeight)) / maxScroll;
 
         drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, 0xFF2A2F34);
