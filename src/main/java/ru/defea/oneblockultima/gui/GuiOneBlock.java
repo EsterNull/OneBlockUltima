@@ -1283,7 +1283,7 @@ public class GuiOneBlock extends GuiContainer
             }
             else if (hoveredEntryLeft != null && hoveredEntryLeft.isFluid())
             {
-                java.util.List<String> tooltip = BlockUtil.getTooltip(hoveredEntryLeft, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                java.util.List<String> tooltip = BlockUtil.getTooltip(hoveredEntryLeft, mc.gameSettings.advancedItemTooltips);
                 tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + hoveredEntryLeft.getChance() + "%");
                 drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
             }
@@ -1325,7 +1325,7 @@ public class GuiOneBlock extends GuiContainer
             }
             else if (hoveredEntryRight != null && hoveredEntryRight.isFluid())
             {
-                java.util.List<String> tooltip = BlockUtil.getTooltip(hoveredEntryRight, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                java.util.List<String> tooltip = BlockUtil.getTooltip(hoveredEntryRight, mc.gameSettings.advancedItemTooltips);
                 tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + hoveredEntryRight.getChance() + "%");
                 drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
             }

@@ -27,6 +27,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
@@ -1217,19 +1219,6 @@ public final class ModEvents
 
             newPlayerData.copyFrom(oldPlayerData);
             OneBlockPlayerDataProvider.saveToEntity(event.getEntityPlayer(), newPlayerData);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onItemTooltip(ItemTooltipEvent event)
-    {
-        ItemStack stack = event.getItemStack();
-        if (stack.isEmpty()) return;
-
-        NBTTagCompound nbt = stack.getTagCompound();
-        if (nbt != null && nbt.hasKey("obuGenerated") && nbt.getBoolean("obuGenerated"))
-        {
-            event.getToolTip().add(net.minecraft.util.text.translation.I18n.translateToLocal("gui.oneblockultima.tooltip.obu_generated"));
         }
     }
 }

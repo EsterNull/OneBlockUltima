@@ -7,10 +7,13 @@ import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
@@ -330,5 +333,18 @@ public final class ModEventsClient
             }
         }
         return null;
+    }
+
+    @SubscribeEvent
+    public static void onItemTooltip(ItemTooltipEvent event)
+    {
+        ItemStack stack = event.getItemStack();
+        if (stack.isEmpty()) return;
+
+        NBTTagCompound nbt = stack.getTagCompound();
+        if (nbt != null && nbt.hasKey("obuGenerated") && nbt.getBoolean("obuGenerated"))
+        {
+            event.getToolTip().add(net.minecraft.util.text.translation.I18n.translateToLocal("gui.oneblockultima.tooltip.obu_generated"));
+        }
     }
 }

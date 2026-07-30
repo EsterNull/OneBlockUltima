@@ -6,7 +6,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockCrops;
 import net.minecraft.block.BlockEndPortalFrame;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
@@ -194,7 +193,7 @@ public final class BlockUtil
         return net.minecraft.util.text.translation.I18n.translateToLocal(net.minecraft.util.text.translation.I18n.translateToLocal(block.getUnlocalizedName()) + ".name").trim();
     }
 
-    public static List<String> getTooltip(BlockSetConfig.BlockEntryDefinition hoveredEntry, ITooltipFlag advanced) {
+    public static List<String> getTooltip(BlockSetConfig.BlockEntryDefinition hoveredEntry, boolean isAdvanced) {
         java.util.List<String> tooltip = new java.util.ArrayList<>();
         Block resolvedBlock = hoveredEntry.resolveBlock();
         boolean hasTagCompound = hoveredEntry.nbtTags != null;
@@ -206,7 +205,7 @@ public final class BlockUtil
             s = hoveredEntry.registry;
         }
 
-        if (advanced.isAdvanced())
+        if (isAdvanced)
         {
             String s1 = "";
 
@@ -268,7 +267,7 @@ public final class BlockUtil
 
             if (nbttagcompound1.hasKey("color", Constants.NBT.TAG_INT))
             {
-                if (advanced.isAdvanced())
+                if (isAdvanced)
                 {
                     tooltip.add(net.minecraft.util.text.translation.I18n.translateToLocalFormatted("block.color", String.format("#%06X", nbttagcompound1.getInteger("color"))));
                 }
@@ -330,7 +329,7 @@ public final class BlockUtil
             }
         }
 
-        if (advanced.isAdvanced())
+        if (isAdvanced)
         {
 
             tooltip.add(TextFormatting.DARK_GRAY + Block.REGISTRY.getNameForObject(resolvedBlock).toString());
