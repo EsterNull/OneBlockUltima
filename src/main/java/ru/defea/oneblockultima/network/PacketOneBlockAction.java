@@ -7,8 +7,8 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import ru.defea.oneblockultima.gui.ContainerClaimGenerator;
-import ru.defea.oneblockultima.gui.ContainerOneBlock;
+import ru.defea.oneblockultima.gui.containers.ContainerClaimGenerator;
+import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 
 public class PacketOneBlockAction implements IMessage
 {

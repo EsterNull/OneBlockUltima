@@ -1,4 +1,4 @@
-package ru.defea.oneblockultima.gui;
+package ru.defea.oneblockultima.gui.containers;
 
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
@@ -330,6 +330,7 @@ public class ContainerOneBlock extends Container
             }
 
             int cost = nextLevel.upgradeCost;
+            assert data != null;
             double currency = data.getCurrency();
 
             System.out.println("[OneBlock] Upgrade attempt - Have: " + currency + ", Need: " + cost);

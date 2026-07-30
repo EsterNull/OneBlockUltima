@@ -4,22 +4,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.config.ModSettings;
+import ru.defea.oneblockultima.gui.layout.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GuiModSettings extends GuiScreen
 {
     private static final int BUTTON_SAVE = 0;
     private static final int BUTTON_BACK = 1;
-    private static final int GRID_BUTTON_BASE = 10;
     private static final int BUTTON_H_OFFSET_DEC = 21;
     private static final int BUTTON_H_OFFSET_INC = 22;
     private static final int BUTTON_V_OFFSET_DEC = 23;
@@ -31,24 +28,11 @@ public class GuiModSettings extends GuiScreen
     private ModSettings.BalancePosition currentPos;
     private int hOffset;
     private int vOffset;
-    private GuiTextField hOffsetField;
-    private GuiTextField vOffsetField;
+    private ViewFactory factory;
+    private TextFieldElement hOffsetField;
+    private TextFieldElement vOffsetField;
 
-    private int hFieldY;
-    private int vFieldY;
-    private int hLabelX;
-    private int vLabelX;
-
-    private int previewX;
-    private int previewY;
-    private int previewWidth;
-    private int previewHeight;
-
-    private final int cellSize = 16;
-    private final int cellGap = 3;
-    private final int titleY = 12;
-
-    private final List<int[]> gridCells = new ArrayList<>();
+    private LabelElement positionLabel;
 
     public GuiModSettings(GuiScreen parent)
     {
@@ -58,81 +42,129 @@ public class GuiModSettings extends GuiScreen
     @Override
     public void initGui()
     {
+        buttonList.clear();
         ModSettings settings = ModSettings.get();
         currentPos = settings.getBalancePosition();
         hOffset = settings.getHOffset();
         vOffset = settings.getVOffset();
 
-        int centerX = width / 2;
-        int padding = 10;
-
-        previewWidth = Math.min(width - padding * 2, 250);
-        previewHeight = 80;
-        previewX = centerX - previewWidth / 2;
-        previewY = titleY + fontRenderer.FONT_HEIGHT * 2 + cellGap * 2;
-
-        int controlsY = previewY + previewHeight + 20;
-        int gridTotalW = cellSize * 3 + cellGap * 2;
-        int gridLeft = centerX - gridTotalW - 15;
-
-        gridCells.clear();
-        ModSettings.BalancePosition[][] grid = {
-            {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
-            {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
-            {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
-        };
-
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 3; col++)
-            {
-                ModSettings.BalancePosition pos = grid[row][col];
-                if (pos == null) continue;
-                int bx = gridLeft + col * (cellSize + cellGap);
-                int by = controlsY + row * (cellSize + cellGap);
-                gridCells.add(new int[]{GRID_BUTTON_BASE + pos.ordinal(), bx, by, pos.ordinal()});
-            }
-        }
-
+        int contentWidth = width - 20;
+        int fieldWidth = Math.max(40, contentWidth * 5 / 100);
         String hLabel = I18n.format("gui.oneblockultima.mod_settings.h_offset");
         String vLabel = I18n.format("gui.oneblockultima.mod_settings.v_offset");
-        int labelWidth = Math.max(fontRenderer.getStringWidth(hLabel), fontRenderer.getStringWidth(vLabel));
 
-        int rightX = centerX + 15;
-        int fieldWidth = 40;
-        int buttonSize = 14;
-        int gap = 3;
-        int fieldX = rightX + labelWidth + buttonSize + gap;
-        hLabelX = rightX;
-        vLabelX = rightX;
-        int btnDecX = fieldX - (buttonSize + gap);
-        int btnIncX = fieldX + fieldWidth + gap;
+        int previewWidth = Math.min(contentWidth, 300);
+        int previewHeight = Math.max(60, (height - 40) * 15 / 100);
+        CustomDrawCallbackElement previewElement = new CustomDrawCallbackElement(
+            (x, y, w, h, fr, mx, my, pt) -> drawPreviewAt(x, y, w, h, fr),
+            previewWidth, previewHeight
+        );
+        previewElement.align(Alignment.CENTER);
 
-        hFieldY = controlsY + 2;
-        vFieldY = controlsY + 26;
+        int gridCellSize = Math.max(16, contentWidth * 4 / 100);
+        GridElement gridElement = new GridElement(3, 3)
+            .cellSize(gridCellSize)
+            .cellGap(4)
+            .select(-1, -1)
+            .renderer((x, y, cw, ch, row, col, hovered, selected, fr, mx, my, pt) -> {
+                ModSettings.BalancePosition[][] g = {
+                    {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
+                    {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
+                    {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
+                };
+                if (row < 0 || row >= 3 || col < 0 || col >= 3) return;
+                ModSettings.BalancePosition pos = g[row][col];
+                if (pos == null) return;
 
-        hOffsetField = new GuiTextField(100, fontRenderer, fieldX, hFieldY, fieldWidth, 14);
-        hOffsetField.setText(String.valueOf(hOffset));
-        hOffsetField.setFocused(false);
-        hOffsetField.setEnableBackgroundDrawing(false);
-        hOffsetField.setEnabled(false);
+                boolean isSelected = pos == currentPos;
+                int bgColor;
+                if (isSelected) bgColor = 0xFF2A6B35;
+                else if (hovered) bgColor = 0xFF4A4A5A;
+                else bgColor = 0xFF3A3A4A;
 
-        vOffsetField = new GuiTextField(101, fontRenderer, fieldX, vFieldY, fieldWidth, 14);
-        vOffsetField.setText(String.valueOf(vOffset));
-        vOffsetField.setFocused(false);
-        vOffsetField.setEnableBackgroundDrawing(false);
-        vOffsetField.setEnabled(false);
+                Gui.drawRect(x, y, x + cw, y + ch, bgColor);
+                Gui.drawRect(x, y, x + cw, y + 1, 0xFF666666);
+                Gui.drawRect(x, y + ch - 1, x + cw, y + ch, 0xFF666666);
+                Gui.drawRect(x, y, x + 1, y + ch, 0xFF666666);
+                Gui.drawRect(x + cw - 1, y, x + cw, y + ch, 0xFF666666);
 
-        buttonList.add(new GuiButton(BUTTON_H_OFFSET_DEC, btnDecX, hFieldY, buttonSize, buttonSize, "-"));
-        buttonList.add(new GuiButton(BUTTON_H_OFFSET_INC, btnIncX, hFieldY, buttonSize, buttonSize, "+"));
-        buttonList.add(new GuiButton(BUTTON_V_OFFSET_DEC, btnDecX, vFieldY, buttonSize, buttonSize, "-"));
-        buttonList.add(new GuiButton(BUTTON_V_OFFSET_INC, btnIncX, vFieldY, buttonSize, buttonSize, "+"));
+                String label = getPositionLabel(pos);
+                int textColor = isSelected ? 0x55FF55 : 0xFFFFFF;
+                int tw = fr.getStringWidth(label);
+                fr.drawStringWithShadow(label, x + (cw - tw) / 2.0F, y + (ch - 8) / 2.0F, textColor);
+            })
+            .clickHandler((row, col, mx, my, mb) -> {
+                ModSettings.BalancePosition[][] g = {
+                    {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
+                    {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
+                    {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
+                };
+                if (row >= 0 && row < 3 && col >= 0 && col < 3 && g[row][col] != null) {
+                    currentPos = g[row][col];
+                    positionLabel.text(I18n.format("gui.oneblockultima.mod_settings.pos." + currentPos.name().toLowerCase()));
+                    return true;
+                }
+                return false;
+            });
 
-        int bottomY = controlsY + cellSize * 3 + cellGap * 2 + 20;
-        int bottomBtnWidth = 80;
+        factory = new ViewFactory(width, height)
+            .margin(8).padding(2)
+            .gap(8)
+            .align(Alignment.CENTER)
+            .panel(0xCC22272E, 0xFF3A3F44);
 
-        buttonList.add(new GuiButton(BUTTON_SAVE, centerX - bottomBtnWidth - 4, bottomY, bottomBtnWidth, 20, I18n.format("gui.oneblockultima.save")));
-        buttonList.add(new GuiButton(BUTTON_BACK, centerX + 4, bottomY, bottomBtnWidth, 20, I18n.format("gui.oneblockultima.cancel")));
+        factory.title("gui.oneblockultima.mod_settings.title");
+        factory.add(previewElement);
+        positionLabel = new LabelElement(I18n.format("gui.oneblockultima.mod_settings.pos." + currentPos.name().toLowerCase())).centered(true).color(0x55FF55);
+        factory.add(positionLabel);
+
+        hOffsetField = new TextFieldElement(fieldWidth)
+            .text(String.valueOf(hOffset))
+            .enabled(false)
+            .textColor(0xE0E0E0);
+
+        vOffsetField = new TextFieldElement(fieldWidth)
+            .text(String.valueOf(vOffset))
+            .enabled(false)
+            .textColor(0xE0E0E0);
+
+        int hLabelW = fontRenderer.getStringWidth(hLabel);
+        int vLabelW = fontRenderer.getStringWidth(vLabel);
+        int maxLabelW = Math.max(hLabelW, vLabelW);
+
+        RowElement hControls = new RowElement(Alignment.LEFT).gap(5);
+        hControls.label(hLabel, 0xC0C0C0);
+        hControls.spacer(maxLabelW - hLabelW);
+        hControls.button(BUTTON_H_OFFSET_DEC, "-");
+        hControls.add(hOffsetField);
+        hControls.button(BUTTON_H_OFFSET_INC, "+");
+
+        RowElement vControls = new RowElement(Alignment.LEFT).gap(5);
+        vControls.label(vLabel, 0xC0C0C0);
+        vControls.spacer(maxLabelW - vLabelW);
+        vControls.button(BUTTON_V_OFFSET_DEC, "-");
+        vControls.add(vOffsetField);
+        vControls.button(BUTTON_V_OFFSET_INC, "+");
+
+        ColumnElement offsetsColumn = new ColumnElement().gap(4).align(Alignment.LEFT);
+        offsetsColumn.add(hControls);
+        offsetsColumn.add(vControls);
+
+        ColumnElement gridColumn = new ColumnElement().align(Alignment.CENTER);
+        gridColumn.add(gridElement);
+
+        RowElement controlsRow = new RowElement(Alignment.CENTER).gap(15);
+        controlsRow.widthPercent(80);
+        controlsRow.add(gridColumn);
+        controlsRow.add(offsetsColumn);
+        factory.add(controlsRow);
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
+        btnRow.widthPercent(60);
+        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
+        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
+
+        factory.build(buttonList, fontRenderer);
     }
 
     @Override
@@ -140,8 +172,9 @@ public class GuiModSettings extends GuiScreen
     {
         if (button.id == BUTTON_SAVE)
         {
-            applyOffsets();
             ModSettings.get().setBalancePosition(currentPos);
+            ModSettings.get().setHOffset(hOffset);
+            ModSettings.get().setVOffset(vOffset);
             mc.displayGuiScreen(parent);
             return;
         }
@@ -153,206 +186,60 @@ public class GuiModSettings extends GuiScreen
         if (button.id == BUTTON_H_OFFSET_DEC)
         {
             hOffset = Math.max(0, hOffset - 1);
-            hOffsetField.setText(String.valueOf(hOffset));
+            if (hOffsetField != null) hOffsetField.setText(String.valueOf(hOffset));
         }
         else if (button.id == BUTTON_H_OFFSET_INC)
         {
             hOffset = Math.min(50, hOffset + 1);
-            hOffsetField.setText(String.valueOf(hOffset));
+            if (hOffsetField != null) hOffsetField.setText(String.valueOf(hOffset));
         }
         else if (button.id == BUTTON_V_OFFSET_DEC)
         {
             vOffset = Math.max(0, vOffset - 1);
-            vOffsetField.setText(String.valueOf(vOffset));
+            if (vOffsetField != null) vOffsetField.setText(String.valueOf(vOffset));
         }
         else if (button.id == BUTTON_V_OFFSET_INC)
         {
             vOffset = Math.min(50, vOffset + 1);
-            vOffsetField.setText(String.valueOf(vOffset));
+            if (vOffsetField != null) vOffsetField.setText(String.valueOf(vOffset));
         }
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
-        if (mouseButton == 0)
-        {
-            for (int[] cell : gridCells)
-            {
-            int cx = cell[1], cy = cell[2], ordinal = cell[3];
-                if (mouseX >= cx && mouseX < cx + cellSize && mouseY >= cy && mouseY < cy + cellSize)
-                {
-                    currentPos = ModSettings.BalancePosition.values()[ordinal];
-                    return;
-                }
-            }
-        }
-        hOffsetField.mouseClicked(mouseX, mouseY, mouseButton);
-        vOffsetField.mouseClicked(mouseX, mouseY, mouseButton);
         super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    private void applyOffsets()
-    {
-        try { hOffset = Integer.parseInt(hOffsetField.getText()); }
-        catch (NumberFormatException e) { hOffset = ModSettings.get().getHOffset(); }
-        hOffset = Math.max(0, Math.min(50, hOffset));
-
-        try { vOffset = Integer.parseInt(vOffsetField.getText()); }
-        catch (NumberFormatException e) { vOffset = ModSettings.get().getVOffset(); }
-        vOffset = Math.max(0, Math.min(50, vOffset));
-
-        ModSettings.get().setHOffset(hOffset);
-        ModSettings.get().setVOffset(vOffset);
-    }
-
-    @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
-    {
-        if (hOffsetField.isFocused())
-        {
-            hOffsetField.textboxKeyTyped(typedChar, keyCode);
-            hOffset = parseOffset(hOffsetField.getText(), hOffset);
-        }
-        else if (vOffsetField.isFocused())
-        {
-            vOffsetField.textboxKeyTyped(typedChar, keyCode);
-            vOffset = parseOffset(vOffsetField.getText(), vOffset);
-        }
-        super.keyTyped(typedChar, keyCode);
-    }
-
-    private int parseOffset(String text, int fallback)
-    {
-        try { int val = Integer.parseInt(text); return Math.max(0, Math.min(50, val)); }
-        catch (NumberFormatException e) { return fallback; }
-    }
-
-    @Override
-    public void updateScreen()
-    {
-        super.updateScreen();
-        hOffsetField.updateCursorCounter();
-        vOffsetField.updateCursorCounter();
+        if (factory != null) factory.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.mod_settings.title"), width / 2, titleY, 0xFFFFFF);
-
-        drawPreview();
-
-        fontRenderer.drawString(I18n.format("gui.oneblockultima.mod_settings.h_offset"), hLabelX, hFieldY + 3, 0xC0C0C0);
-        fontRenderer.drawString(I18n.format("gui.oneblockultima.mod_settings.v_offset"), vLabelX, vFieldY + 3, 0xC0C0C0);
-
-        drawTextFieldBackground(hOffsetField);
-        hOffsetField.drawTextBox();
-        drawTextFieldBackground(vOffsetField);
-        vOffsetField.drawTextBox();
-
-        String posName = I18n.format("gui.oneblockultima.mod_settings.pos." + currentPos.name().toLowerCase());
-        drawCenteredString(fontRenderer, posName, width / 2, previewY + previewHeight + 8, 0x55FF55);
-
-        drawGrid(mouseX, mouseY);
-
-        for (GuiButton btn : buttonList)
-        {
-            btn.drawButton(mc, mouseX, mouseY, partialTicks);
-        }
+        if (factory != null) factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
-    private void drawGrid(int mouseX, int mouseY)
+    private void drawPreviewAt(int previewX, int previewY, int previewWidth, int previewHeight, net.minecraft.client.gui.FontRenderer fr)
     {
-        for (int[] cell : gridCells)
-        {
-            int cx = cell[1], cy = cell[2], ordinal = cell[3];
-            ModSettings.BalancePosition pos = ModSettings.BalancePosition.values()[ordinal];
-            boolean selected = pos == currentPos;
-            boolean hovered = mouseX >= cx && mouseX < cx + cellSize && mouseY >= cy && mouseY < cy + cellSize;
-
-            int bgColor;
-            if (selected)
-            {
-                bgColor = 0xFF2A6B35;
-            }
-            else if (hovered)
-            {
-                bgColor = 0xFF4A4A5A;
-            }
-            else
-            {
-                bgColor = 0xFF3A3A4A;
-            }
-
-            Gui.drawRect(cx, cy, cx + cellSize, cy + cellSize, bgColor);
-            drawHorizontalLine(cx, cx + cellSize, cy, 0xFF666666);
-            drawHorizontalLine(cx, cx + cellSize, cy + cellSize, 0xFF666666);
-            drawVerticalLine(cx, cy, cy + cellSize, 0xFF666666);
-            drawVerticalLine(cx + cellSize, cy, cy + cellSize, 0xFF666666);
-
-            String label = getPositionLabel(pos);
-            int textColor = selected ? 0x55FF55 : 0xFFFFFF;
-            int textWidth = fontRenderer.getStringWidth(label);
-            fontRenderer.drawStringWithShadow(label, cx + (cellSize - textWidth) / 2.0F, cy + (cellSize - 8) / 2.0F, textColor);
-        }
-    }
-
-    private String getPositionLabel(ModSettings.BalancePosition pos)
-    {
-        switch (pos)
-        {
-            case TOP_LEFT: return "\u2196";
-            case TOP: return "\u2191";
-            case TOP_RIGHT: return "\u2197";
-            case LEFT: return "\u2190";
-            case RIGHT: return "\u2192";
-            case BOTTOM_LEFT: return "\u2199";
-            case BOTTOM: return "\u2193";
-            case BOTTOM_RIGHT: return "\u2198";
-            default: return "?";
-        }
-    }
-
-    private void drawTextFieldBackground(GuiTextField field)
-    {
-        int pad = 2;
-        int x = field.x - pad;
-        int y = field.y - pad;
-        int w = field.width + pad * 2;
-        int h = field.height + pad * 2;
-        Gui.drawRect(x, y, x + w, y + h, 0xFF1A1D21);
-        drawHorizontalLine(x, x + w, y, 0xFF444444);
-        drawHorizontalLine(x, x + w, y + h, 0xFF444444);
-        drawVerticalLine(x, y, y + h, 0xFF444444);
-        drawVerticalLine(x + w, y, y + h, 0xFF444444);
-    }
-
-    private void drawPreview()
-    {
+        Gui.drawRect(previewX + 1, previewY + 1, previewX + previewWidth - 1, previewY + previewHeight - 1, 0xAA111111);
         drawHorizontalLine(previewX, previewX + previewWidth, previewY, 0xFF555555);
         drawHorizontalLine(previewX, previewX + previewWidth, previewY + previewHeight, 0xFF555555);
         drawVerticalLine(previewX, previewY, previewY + previewHeight, 0xFF555555);
         drawVerticalLine(previewX + previewWidth, previewY, previewY + previewHeight, 0xFF555555);
-        Gui.drawRect(previewX + 1, previewY + 1, previewX + previewWidth - 1, previewY + previewHeight - 1, 0xAA111111);
 
         int chX = previewX + previewWidth / 2;
         int chY = previewY + previewHeight / 2;
         int chLen = 5;
-        int chThick = 1;
-        Gui.drawRect(chX - chLen, chY, chX + chLen + (chThick + 1) / 2, chY + (chThick + 1) / 2, 0xFFCCCCCC);
-        Gui.drawRect(chX, chY - chLen, chX + (chThick + 1) / 2, chY + chLen + (chThick + 1) / 2, 0xFFCCCCCC);
-
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.mod_settings.preview"), previewX + previewWidth / 2, previewY - fontRenderer.FONT_HEIGHT - cellGap, 0xA0A0A0);
+        Gui.drawRect(chX - chLen, chY, chX + chLen + 1, chY + 1, 0xFFCCCCCC);
+        Gui.drawRect(chX, chY - chLen, chX + 1, chY + chLen + 1, 0xFFCCCCCC);
 
         int coinSize = 6;
         int spaceBetween = 2;
         int hMargin = 5;
         int vMargin = 3;
         String sampleText = "12345";
-        int textWidth = fontRenderer.getStringWidth(sampleText);
+        int textWidth = fr.getStringWidth(sampleText);
         int boxW = coinSize + textWidth + spaceBetween + hMargin * 2;
         int boxH = coinSize + vMargin * 2;
 
@@ -414,7 +301,23 @@ public class GuiModSettings extends GuiScreen
         Minecraft.getMinecraft().getTextureManager().bindTexture(COIN_TEXTURE);
         Gui.drawModalRectWithCustomSizedTexture(boxX + hMargin, boxY + vMargin, 0, 0, coinSize, coinSize, coinSize, coinSize);
         GlStateManager.disableBlend();
-        fontRenderer.drawString(sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin - fontRenderer.FONT_HEIGHT / 4, 0xFFD700);
+        fr.drawString(sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin - fr.FONT_HEIGHT / 4, 0xFFD700);
+    }
+
+    private String getPositionLabel(ModSettings.BalancePosition pos)
+    {
+        switch (pos)
+        {
+            case TOP_LEFT: return "\u2196";
+            case TOP: return "\u2191";
+            case TOP_RIGHT: return "\u2197";
+            case LEFT: return "\u2190";
+            case RIGHT: return "\u2192";
+            case BOTTOM_LEFT: return "\u2199";
+            case BOTTOM: return "\u2193";
+            case BOTTOM_RIGHT: return "\u2198";
+            default: return "?";
+        }
     }
 
     @Override

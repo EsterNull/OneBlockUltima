@@ -3,6 +3,8 @@ package ru.defea.oneblockultima.gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
+import ru.defea.oneblockultima.gui.layout.Alignment;
+import ru.defea.oneblockultima.gui.layout.ViewFactory;
 
 public class ModMainSettings extends GuiScreen
 {
@@ -12,6 +14,7 @@ public class ModMainSettings extends GuiScreen
     private static final int BUTTON_BACK = 3;
 
     private final GuiScreen parent;
+    private ViewFactory factory;
 
     public ModMainSettings(GuiScreen parent)
     {
@@ -21,19 +24,19 @@ public class ModMainSettings extends GuiScreen
     @Override
     public void initGui()
     {
-        int centerX = width / 2;
-        int btnWidth = 200;
-        int btnHeight = 20;
-        int startY = height / 2 - 45;
+        factory = new ViewFactory(width, height)
+            .padding(10)
+            .gap(8)
+            .align(Alignment.CENTER)
+            .centerVertical();
 
-        buttonList.add(new GuiButton(BUTTON_CONFIG_EDITOR, centerX - btnWidth / 2, startY, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.settings.open_editor")));
-        buttonList.add(new GuiButton(BUTTON_MOD_SETTINGS, centerX - btnWidth / 2, startY + btnHeight + 8, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.settings.mod_settings")));
-        buttonList.add(new GuiButton(BUTTON_BLOCK_PRICES, centerX - btnWidth / 2, startY + (btnHeight + 8) * 2, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.mod_settings.block_prices")));
-        buttonList.add(new GuiButton(BUTTON_BACK, centerX - btnWidth / 2, startY + (btnHeight + 8) * 3, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.cancel")));
+        factory.title("gui.oneblockultima.mod_settings.title");
+        factory.button(BUTTON_CONFIG_EDITOR, 200, I18n.format("gui.oneblockultima.settings.open_editor"));
+        factory.button(BUTTON_MOD_SETTINGS, 200, I18n.format("gui.oneblockultima.settings.mod_settings"));
+        factory.button(BUTTON_BLOCK_PRICES, 200, I18n.format("gui.oneblockultima.mod_settings.block_prices"));
+        factory.button(BUTTON_BACK, 200, I18n.format("gui.oneblockultima.cancel"));
+
+        factory.build(buttonList, fontRenderer);
     }
 
     @Override
@@ -61,7 +64,6 @@ public class ModMainSettings extends GuiScreen
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.mod_settings.title"), width / 2, 14, 0xFFFFFF);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 

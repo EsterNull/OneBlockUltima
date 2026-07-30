@@ -8,7 +8,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.command.CommandOBUSell;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class CommandOBUSellTest {
 

@@ -15,12 +15,7 @@ import net.minecraft.network.EnumPacketDirection;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.profiler.Profiler;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.world.EnumDifficulty;
-import net.minecraft.world.GameType;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldSettings;
-import net.minecraft.world.WorldType;
+import net.minecraft.world.*;
 import org.lwjgl.opengl.GL11;
 
 import java.util.UUID;
@@ -97,11 +92,16 @@ public final class ModelUtil {
             float minV = sprite.getMinV();
             float maxV = sprite.getMaxV();
 
+            int fluidColor = fluid.getColor();
+            float r = ((fluidColor >> 16) & 0xFF) / 255.0F;
+            float g = ((fluidColor >> 8) & 0xFF) / 255.0F;
+            float b = (fluidColor & 0xFF) / 255.0F;
+
             RenderHelper.enableGUIStandardItemLighting();
             GlStateManager.enableAlpha();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.color(r, g, b, 1.0F);
 
             Tessellator tess = Tessellator.getInstance();
             BufferBuilder buf = tess.getBuffer();

@@ -1,0 +1,185 @@
+package ru.defea.oneblockultima.gui.layout;
+
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiButton;
+
+import java.util.List;
+
+public class TwoColumnListElement extends ViewElement {
+    private final int itemHeight;
+    private int scrollOffset = 0;
+    private int maxScroll = 0;
+    private int visibleItems = 0;
+    private int trackWidth = 6;
+    private int trackColor = 0xFF2A2F34;
+    private int thumbColor = 0xFF7A7F84;
+    private int panelColor = 0xFF1A1F24;
+    private int innerPad = 4;
+    private List<? extends TwoColumnEntry> leftEntries;
+    private List<? extends TwoColumnEntry> rightEntries;
+
+    public interface TwoColumnEntry {
+        void drawLeft(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY);
+        void drawRight(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY);
+        boolean mouseClickedLeft(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton);
+        boolean mouseClickedRight(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton);
+    }
+
+    public TwoColumnListElement(int itemHeight) {
+        this.itemHeight = itemHeight;
+    }
+
+    public TwoColumnListElement leftEntries(List<? extends TwoColumnEntry> entries) {
+        this.leftEntries = entries;
+        return this;
+    }
+
+    public TwoColumnListElement rightEntries(List<? extends TwoColumnEntry> entries) {
+        this.rightEntries = entries;
+        return this;
+    }
+
+    public TwoColumnListElement scrollOffset(int offset) {
+        this.scrollOffset = offset;
+        return this;
+    }
+
+    public TwoColumnListElement panelColor(int color) {
+        this.panelColor = color;
+        return this;
+    }
+
+    public int getScrollOffset() {
+        return scrollOffset;
+    }
+
+    public void setScrollOffset(int offset) {
+        this.scrollOffset = offset;
+    }
+
+    private int getMaxEntries() {
+        int left = leftEntries != null ? leftEntries.size() : 0;
+        int right = rightEntries != null ? rightEntries.size() : 0;
+        return Math.max(left, right);
+    }
+
+    @Override
+    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    }
+
+    @Override
+    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+        if ((leftEntries == null || leftEntries.isEmpty()) && (rightEntries == null || rightEntries.isEmpty()))
+            return;
+
+        int listWidth = computedWidth - trackWidth - 2;
+        visibleItems = Math.max(1, computedHeight / itemHeight);
+        int maxEntries = getMaxEntries();
+        maxScroll = Math.max(0, maxEntries - visibleItems);
+        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+        if (scrollOffset < 0) scrollOffset = 0;
+
+        Gui.drawRect(computedX, computedY, computedX + listWidth + trackWidth + 2, computedY + computedHeight, panelColor);
+
+        int colWidth = (listWidth - innerPad * 2) / 2;
+        int contentTop = computedY;
+
+        for (int i = 0; i < visibleItems; i++) {
+            int row = scrollOffset + i;
+            if (row >= maxEntries) break;
+
+            int y = contentTop + i * itemHeight;
+
+            boolean leftHovered = mouseX >= computedX && mouseX <= computedX + colWidth &&
+                                  mouseY >= y && mouseY < y + itemHeight;
+            boolean rightHovered = mouseX >= computedX + colWidth + innerPad && mouseX <= computedX + listWidth &&
+                                   mouseY >= y && mouseY < y + itemHeight;
+
+            if (row < (leftEntries != null ? leftEntries.size() : 0)) {
+                int bg = (row % 2 == 0) ? 0xFF2A2F34 : 0xFF22272E;
+                Gui.drawRect(computedX + innerPad, y, computedX + colWidth, y + itemHeight, bg);
+                leftEntries.get(row).drawLeft(computedX + innerPad, y, colWidth - innerPad, itemHeight, leftHovered, row, fr, mouseX, mouseY);
+            }
+            if (row < (rightEntries != null ? rightEntries.size() : 0)) {
+                int bg = (row % 2 == 0) ? 0xFF2A2F34 : 0xFF22272E;
+                Gui.drawRect(computedX + colWidth + innerPad, y, computedX + listWidth, y + itemHeight, bg);
+                rightEntries.get(row).drawRight(computedX + colWidth + innerPad, y, colWidth - innerPad, itemHeight, rightHovered, row, fr, mouseX, mouseY);
+            }
+        }
+
+        if (maxEntries > visibleItems) {
+            int scrollbarX = computedX + listWidth + 2;
+            int scrollbarY = contentTop;
+            int scrollbarHeight = computedHeight;
+            Gui.drawRect(scrollbarX, scrollbarY, scrollbarX + trackWidth, scrollbarY + scrollbarHeight, trackColor);
+
+            float ratio = (float) visibleItems / maxEntries;
+            int thumbH = Math.max(10, (int) (scrollbarHeight * ratio));
+            float thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
+            int thumbY = scrollbarY + (int) (thumbPos * (scrollbarHeight - thumbH));
+            Gui.drawRect(scrollbarX, thumbY, scrollbarX + trackWidth, thumbY + thumbH, thumbColor);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        if ((leftEntries == null || leftEntries.isEmpty()) && (rightEntries == null || rightEntries.isEmpty()))
+            return false;
+
+        int listWidth = computedWidth - trackWidth - 2;
+        int colWidth = (listWidth - innerPad * 2) / 2;
+        int scrollbarX = computedX + listWidth + 2;
+
+        if (mouseX >= scrollbarX && mouseX <= scrollbarX + trackWidth &&
+            mouseY >= computedY && mouseY <= computedY + computedHeight) {
+            int clickY = mouseY - computedY - 5;
+            float ratio = Math.max(0, Math.min(1, (float) clickY / (computedHeight - 10)));
+            scrollOffset = Math.round(ratio * maxScroll);
+            if (scrollOffset < 0) scrollOffset = 0;
+            if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+            return true;
+        }
+
+        if (mouseX >= computedX && mouseX <= computedX + listWidth) {
+            for (int i = 0; i < visibleItems; i++) {
+                int row = scrollOffset + i;
+                if (row >= getMaxEntries()) break;
+
+                int y = computedY + i * itemHeight;
+                int localY = mouseY - y;
+
+                if (mouseY >= y && mouseY < y + itemHeight) {
+                    if (mouseX >= computedX && mouseX <= computedX + colWidth && row < (leftEntries != null ? leftEntries.size() : 0)) {
+                        int localX = mouseX - (computedX + innerPad);
+                        return leftEntries.get(row).mouseClickedLeft(mouseX, mouseY, localX, localY, colWidth - innerPad, itemHeight, mouseButton);
+                    }
+                    if (mouseX >= computedX + colWidth + innerPad && mouseX <= computedX + listWidth && row < (rightEntries != null ? rightEntries.size() : 0)) {
+                        int localX = mouseX - (computedX + colWidth + innerPad);
+                        return rightEntries.get(row).mouseClickedRight(mouseX, mouseY, localX, localY, colWidth - innerPad, itemHeight, mouseButton);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean handleMouseInput(int dWheel) {
+        if (getMaxEntries() <= visibleItems) return false;
+        scrollOffset -= dWheel > 0 ? 1 : -1;
+        if (scrollOffset < 0) scrollOffset = 0;
+        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+        return true;
+    }
+
+    @Override
+    public int getPreferredWidth() {
+        return 0;
+    }
+
+    @Override
+    public int getPreferredHeight() {
+        return 120;
+    }
+}

@@ -15,7 +15,7 @@ import ru.defea.oneblockultima.command.*;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.gui.GuiHandler;
-import ru.defea.oneblockultima.gui.GuiSetsConfig;
+import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.tile.ModTileEntities;
 import ru.defea.oneblockultima.update.UpdateChecker;
@@ -65,7 +65,7 @@ public class OneBlockUltima
 
         if (net.minecraftforge.fml.common.FMLCommonHandler.instance().getSide() == net.minecraftforge.fml.relauncher.Side.CLIENT)
         {
-            GuiSetsConfig.loadStaticCustomNames();
+            ContainerSetsConfig.loadStaticCustomNames();
         }
         logger.info("{} загружается...", NAME);
     }

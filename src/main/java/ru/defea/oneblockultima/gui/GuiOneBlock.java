@@ -30,6 +30,11 @@ import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
+import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
+import ru.defea.oneblockultima.gui.GuiSetsConfig;
+import ru.defea.oneblockultima.gui.GuiBlockPrices;
+import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
+import ru.defea.oneblockultima.gui.layout.TabBarElement;
 import ru.defea.oneblockultima.util.BlockUtil;
 
 import java.awt.*;
@@ -55,7 +60,7 @@ public class GuiOneBlock extends GuiContainer
     private static final int BUTTON_TOGGLE_SAPLINGS = 10;
     private static final int BUTTON_TAB_DONATE = 11;
     private static final int BUTTON_DONATE_BASE = 12;
-    private static final int BUTTON_OPEN_PRICES = 13;
+    private static final int BUTTON_OPEN_PRICES = 30;
     private static final int VIEW_SETS = 0;
     private static final int VIEW_SETTINGS = 1;
     private static final int VIEW_DONATE = 2;
@@ -71,9 +76,6 @@ public class GuiOneBlock extends GuiContainer
     private GuiButton nextButton;
     private GuiButton selectButton;
     private GuiButton upgradeButton;
-    private GuiButton tabSetsButton;
-    private GuiButton tabSettingsButton;
-    private GuiButton tabDonateButton;
     private GuiButton openConfigEditorButton;
     private GuiButton openPricesButton;
     private GuiButton toggleFluidButton;
@@ -131,9 +133,11 @@ public class GuiOneBlock extends GuiContainer
     private final int INNER_PADDING = 6;
     private final int SECTION_GAP = 8;
 
-    // Поля для процедурного фона
     private final List<BlockSetConfig.BlockEntryDefinition> backgroundBlocks = new ArrayList<>();
     private final int backgroundTextureSize = 32;
+
+    private TabBarElement tabs;
+    private int tabY;
 
     public GuiOneBlock(EntityPlayer player, World world, BlockPos generatorPos)
     {
@@ -262,7 +266,7 @@ public class GuiOneBlock extends GuiContainer
         return panelHeight - rowInterval * 2 - cellSize;
     }
 
-    // ==================== МЕТОДЫ ДЛЯ ПРОЦЕДУРНОГО ФОНА ====================
+    // ==================== РІвЂўРЃР В¬РІвЂўРЃР ТђРІвЂўРЃР Р†РІвЂўРЃР В®РІвЂўРЃР В¤РІвЂўРЃР В» РІвЂўРЃР В¤РІвЂўРЃР В«РІвЂўРЃР С— РІвЂўРЃР Р‡РІвЂўРЃР В°РІвЂўРЃР В®РІвЂўРЃР В¶РІвЂўРЃР ТђРІвЂўРЃР В¤РІвЂўРЃР С–РІвЂўРЃР В°РІвЂўРЃР В­РІвЂўРЃР В®РІвЂўРЃР Р€РІвЂўРЃР В® РІвЂўРЃР Т‘РІвЂўРЃР В®РІвЂўРЃР В­РІвЂўРЃР В  ====================
 
     private void initBackgroundBlocks()
     {
@@ -286,7 +290,7 @@ public class GuiOneBlock extends GuiContainer
                         net.minecraft.block.Block mcBlock = block.resolveBlock();
                         if (mcBlock == null) continue;
 
-                        // Проверяем, что это полноразмерный блок
+                        // РІвЂўРЃР Р‡РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ, РІвЂўВ¤Р вЂ”РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂє РІвЂўВ¤Р СњРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ
                         if (!isFullBlock(mcBlock, block.meta)) continue;
 
                         backgroundBlocks.add(block);
@@ -306,14 +310,14 @@ public class GuiOneBlock extends GuiContainer
     {
         try
         {
-            // Проверяем, есть ли у блока предмет (некоторые блоки не имеют предмета)
+            // РІвЂўРЃР Р‡РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ, РІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р Сљ РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂњ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂ“вЂ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂ™ (РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂў РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С›РІвЂўВ¤Р вЂ™ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂ“вЂ)
             net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
             if (item == Items.AIR)
             {
                 return false;
             }
 
-            // Получаем состояние блока
+            // РІвЂўРЃР Р‡РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р СџРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂ“вЂ
             net.minecraft.block.state.IBlockState state = null;
             try
             {
@@ -340,7 +344,7 @@ public class GuiOneBlock extends GuiContainer
 
     private void addDefaultBackgroundBlocks()
     {
-        // Добавляем только полноразмерные блоки
+        // РІвЂўРЃР В¤РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СљРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂў
         addBlockIfFull("minecraft:stone", 0);
         addBlockIfFull("minecraft:dirt", 0);
         addBlockIfFull("minecraft:cobblestone", 0);
@@ -389,7 +393,7 @@ public class GuiOneBlock extends GuiContainer
         int cols = (width + texSize - 1) / texSize;
         int rows = (height + texSize - 1) / texSize;
 
-        // Добавляем небольшой запас для плавного движения
+        // РІвЂўРЃР В¤РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СљРІвЂўВ¤Р ВРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўР€ РІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂќвЂљРІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСћРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р Сџ
         int extraCols = 2;
         int extraRows = 2;
 
@@ -406,7 +410,7 @@ public class GuiOneBlock extends GuiContainer
                 int x = startX + col * texSize;
                 int y = startY + row * texSize;
 
-                // Обрезаем по координатам - если текстура выходит за границы, рисуем только видимую часть
+                // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСњ - РІвЂўРЃРІвЂўРЋРІвЂўВ¤Р вЂРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р вЂњРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ РІвЂўРЃРІвЂ“вЂњРІвЂўВ¤Р вЂєРІвЂўВ¤Р вЂўРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂ™ РІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂ РІвЂўРЃРІвЂќвЂљРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂ“РІвЂўВ¤Р вЂє, РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СљРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂє РІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСњРІвЂўВ¤Р вЂњРІвЂўВ¤Р С› РІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р Сљ
                 int drawX = Math.max(startX, x);
                 int drawY = Math.max(startY, y);
                 int drawX2 = Math.min(startX + width, x + texSize);
@@ -414,7 +418,7 @@ public class GuiOneBlock extends GuiContainer
 
                 if (drawX >= drawX2 || drawY >= drawY2) continue;
 
-                // Вычисляем UV координаты для обрезанной части
+                // РІвЂўРЃР СћРІвЂўВ¤Р вЂєРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ UV РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р вЂє РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂў
                 float u1 = (drawX - x) / (float)texSize;
                 float v1 = (drawY - y) / (float)texSize;
                 float u2 = (drawX2 - x) / (float)texSize;
@@ -471,7 +475,7 @@ public class GuiOneBlock extends GuiContainer
 
             mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
-            // Интерполируем UV координаты
+            // РІвЂўРЃР РЃРІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р С’РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ UV РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ™РІвЂўВ¤Р вЂє
             float minU = sprite.getMinU();
             float maxU = sprite.getMaxU();
             float minV = sprite.getMinV();
@@ -503,7 +507,7 @@ public class GuiOneBlock extends GuiContainer
         catch (Exception ignored) {}
     }
 
-    // ==================== ОСТАЛЬНЫЕ МЕТОДЫ ====================
+    // ==================== РІвЂўРЃР В®РІвЂўРЃР В±РІвЂўРЃР Р†РІвЂўРЃР В РІвЂўРЃР В«РІвЂўРЃР СРІвЂўРЃР В­РІвЂўРЃР В»РІвЂўРЃР Тђ РІвЂўРЃР В¬РІвЂўРЃР ТђРІвЂўРЃР Р†РІвЂўРЃР В®РІвЂўРЃР В¤РІвЂўРЃР В» ====================
 
     private void renderLevelPanel(BlockSetConfig.SetLevelDefinition levelDefinition, int panelX, int panelY, boolean isLeft, int mouseX, int mouseY)
     {
@@ -830,24 +834,26 @@ public class GuiOneBlock extends GuiContainer
         int visibleTabs = settingsTabVisible ? 3 : 2;
         int totalTabWidth = tabWidth * visibleTabs + tabGap * (visibleTabs - 1);
         int tabX = guiLeft + (xSize - totalTabWidth) / 2;
-        int tabY = guiTop + tabRowY + textHeight / 2;
+        tabY = guiTop + tabRowY + textHeight / 2;
         int infoButtonsY = guiTop + infoRowY + rowInterval * 2;
         int leftButtonX = guiLeft + contentLeft;
         int selectWidth = contentWidth / 2 - buttonGap;
         int rightButtonX = guiLeft + contentLeft + contentWidth - selectWidth;
         int settingWidth = contentWidth;
 
-        tabSetsButton = new GuiButton(BUTTON_TAB_SETS, tabX, tabY, tabWidth, buttonHeight, I18n.format("gui.oneblockultima.tabs.sets"));
+        // TabBarElement via ViewFactory
+        int tabButtonId = activeView == VIEW_SETS ? BUTTON_TAB_SETS :
+                          activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE;
+        tabs = new TabBarElement();
+        tabs.setComputedPosition(tabX, tabY);
+        tabs.setComputedSize(totalTabWidth, buttonHeight);
+        tabs.tab(BUTTON_TAB_SETS, I18n.format("gui.oneblockultima.tabs.sets"));
         if (settingsTabVisible)
         {
-            tabSettingsButton = new GuiButton(BUTTON_TAB_SETTINGS, tabX + tabWidth + tabGap, tabY, tabWidth, buttonHeight, I18n.format("gui.oneblockultima.tabs.settings"));
-            tabDonateButton = new GuiButton(BUTTON_TAB_DONATE, tabX + (tabWidth + tabGap) * 2, tabY, tabWidth, buttonHeight, I18n.format("gui.oneblockultima.tabs.donate"));
+            tabs.tab(BUTTON_TAB_SETTINGS, I18n.format("gui.oneblockultima.tabs.settings"));
         }
-        else
-        {
-            tabSettingsButton = null;
-            tabDonateButton = new GuiButton(BUTTON_TAB_DONATE, tabX + tabWidth + tabGap, tabY, tabWidth, buttonHeight, I18n.format("gui.oneblockultima.tabs.donate"));
-        }
+        tabs.tab(BUTTON_TAB_DONATE, I18n.format("gui.oneblockultima.tabs.donate"));
+        tabs.activeTab(tabButtonId);
         prevButton = new GuiButton(BUTTON_PREV_SET, leftButtonX, infoButtonsY, 20, buttonHeight, "<");
         nextButton = new GuiButton(BUTTON_NEXT_SET, leftButtonX + 26, infoButtonsY, 20, buttonHeight, ">");
         selectButton = new GuiButton(BUTTON_SELECT_SET, leftButtonX, infoButtonsY + buttonHeight + buttonGap, selectWidth, buttonHeight, I18n.format("gui.oneblockultima.select"));
@@ -871,12 +877,6 @@ public class GuiOneBlock extends GuiContainer
             donateButtons[i] = new GuiButton(BUTTON_DONATE_BASE + i, donateBtnX, donateBtnY + (buttonHeight + buttonGap) * i, donateBtnWidth, buttonHeight, DonateMethod.METHODS[i].text);
         }
 
-        buttonList.add(tabSetsButton);
-        if (settingsTabVisible)
-        {
-            buttonList.add(tabSettingsButton);
-        }
-        buttonList.add(tabDonateButton);
         buttonList.add(prevButton);
         buttonList.add(nextButton);
         buttonList.add(selectButton);
@@ -893,7 +893,7 @@ public class GuiOneBlock extends GuiContainer
         }
         updateViewButtons();
 
-        // Инициализируем фон ПОСЛЕ того, как выбран набор
+        // РІвЂўРЃР РЃРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂ“РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р С’РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃР Р‡РІвЂўРЃР В®РІвЂўРЃР В±РІвЂўРЃР В«РІвЂўРЃР Тђ РІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂќвЂљРІвЂўРЃРІвЂўвЂє, РІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўвЂ РІвЂўРЃРІвЂ“вЂњРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’
         initBackgroundBlocks();
     }
 
@@ -906,13 +906,14 @@ public class GuiOneBlock extends GuiContainer
         boolean setsView = activeView == VIEW_SETS;
         boolean settingsView = activeView == VIEW_SETTINGS;
         boolean donateView = activeView == VIEW_DONATE;
+        if (tabs != null)
+        {
+            tabs.activeTab(setsView ? BUTTON_TAB_SETS : settingsView ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
+        }
         if (prevButton != null) prevButton.visible = setsView;
         if (nextButton != null) nextButton.visible = setsView;
         if (selectButton != null) selectButton.visible = setsView;
         if (upgradeButton != null) upgradeButton.visible = setsView;
-        if (tabSetsButton != null) tabSetsButton.enabled = !setsView;
-        if (tabSettingsButton != null) tabSettingsButton.enabled = !settingsView;
-        if (tabDonateButton != null) tabDonateButton.enabled = !donateView;
         if (openConfigEditorButton != null) openConfigEditorButton.visible = settingsView;
         if (openPricesButton != null) openPricesButton.visible = settingsView;
         if (toggleFluidButton != null) toggleFluidButton.visible = settingsView;
@@ -983,14 +984,14 @@ public class GuiOneBlock extends GuiContainer
         if (!activeSetId.equals(clientActiveSetId))
         {
             clientActiveSetId = activeSetId;
-            // Обновляем фон при смене набора
+            // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
             initBackgroundBlocks();
         }
     }
 
     private String getLocalizedSetName(BlockSetConfig.BlockSetDefinition set)
     {
-        return GuiSetsConfig.getLocalizedSetNameStatic(set);
+        return ContainerSetsConfig.getLocalizedSetName(set);
     }
 
     @Override
@@ -1062,13 +1063,13 @@ public class GuiOneBlock extends GuiContainer
         else if (button.id == BUTTON_PREV_SET)
         {
             selectedSetIndex = (selectedSetIndex - 1 + visibleSets.size()) % visibleSets.size();
-            // Обновляем фон при смене набора
+            // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
             initBackgroundBlocks();
         }
         else if (button.id == BUTTON_NEXT_SET)
         {
             selectedSetIndex = (selectedSetIndex + 1) % visibleSets.size();
-            // Обновляем фон при смене набора
+            // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
             initBackgroundBlocks();
         }
         else if (button.id == BUTTON_SELECT_SET)
@@ -1077,7 +1078,7 @@ public class GuiOneBlock extends GuiContainer
             if (selectedSet != null)
             {
                 container.selectSet(selectedSet.id);
-                // Обновляем фон при выборе набора
+                // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўРЃРІвЂ“вЂњРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂўРЋ РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂ“вЂРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂєРІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂ
                 initBackgroundBlocks();
             }
         }
@@ -1087,7 +1088,7 @@ public class GuiOneBlock extends GuiContainer
             if (selectedSet != null)
             {
                 container.upgradeSet(selectedSet.id);
-                // Обновляем фон при улучшении
+                // РІвЂўРЃР В®РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р СџРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂў РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўВ¤Р вЂ”РІвЂўВ¤Р ВРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСљРІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂў
                 initBackgroundBlocks();
             }
         }
@@ -1198,7 +1199,7 @@ public class GuiOneBlock extends GuiContainer
                             for (BlockSetConfig.UnlockConditionDefinition condition : set.unlockConditions.conditions)
                             {
                                 if (condition == null) continue;
-                                String text = " - " + formatUnlockCondition(condition, data, generator) + " ✓";
+                                String text = " - " + formatUnlockCondition(condition, data, generator) + " РЎвЂљР В¬Р Р€";
                                 int width = fontRenderer.getStringWidth(text);
                                 if (width > maxConditionWidth) maxConditionWidth = width;
                             }
@@ -1432,7 +1433,7 @@ public class GuiOneBlock extends GuiContainer
             String conditionText = formatUnlockCondition(condition, data, generator);
             boolean satisfied = condition.isSatisfied(data, generator);
             int color = satisfied ? 0x7CEC9F : 0xFF7D7D;
-            String status = satisfied ? " ✓" : " ✗";
+            String status = satisfied ? " РЎвЂљР В¬Р Р€" : " РЎвЂљР В¬Р В§";
             String fullText = " - " + conditionText + status;
 
             int textWidth = fontRenderer.getStringWidth(fullText);
@@ -1655,7 +1656,7 @@ public class GuiOneBlock extends GuiContainer
         int setContentBottom = this.height - guiTop;
 
         if (activeView == VIEW_SETTINGS) {
-            // 1. Рисуем фон из блоков
+            // 1. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњ
             int remainingHeight = tabsBottom + (buttonHeight + buttonGap) * 3 + buttonGap - titleBottom;
             renderProceduralBackground(
                     guiLeft,
@@ -1664,14 +1665,14 @@ public class GuiOneBlock extends GuiContainer
                     remainingHeight
             );
 
-            // 2. Рисуем полупрозрачный тёмный фон поверх
+            // 2. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ“РІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂ™РІвЂўВ¤Р РЋРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р вЂў
             drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, 0xFF22272E);
             drawRect(guiLeft, titleBottom, guiLeft + xSize,
                     remainingHeight + titleBottom, 0xCC1F2328);
             drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, 0xFF2E3A45);
         }
         else {
-            // 1. Рисуем фон из блоков для области info
+            // 1. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњ РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂў info
             renderProceduralBackground(
                     guiLeft,
                     titleBottom,
@@ -1679,7 +1680,7 @@ public class GuiOneBlock extends GuiContainer
                     infoBottom - titleBottom
             );
 
-            // 2. Рисуем фон из блоков для области content
+            // 2. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂўвЂўРІвЂўРЃРІвЂўвЂ“ РІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњ РІвЂўРЃРІвЂќВ¤РІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р Сџ РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂ™РІвЂўРЃРІвЂўвЂ”РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂ™РІвЂўРЃРІвЂўвЂў content
             renderProceduralBackground(
                     guiLeft,
                     infoBottom,
@@ -1687,12 +1688,31 @@ public class GuiOneBlock extends GuiContainer
                     setContentBottom - infoBottom
             );
 
-            // 3. Рисуем полупрозрачный тёмный фон поверх
+            // 3. РІвЂўРЃР В°РІвЂўРЃРІвЂўвЂўРІвЂўВ¤Р вЂРІвЂўВ¤Р вЂњРІвЂўРЃРІвЂўРЋРІвЂўРЃРІвЂўСњ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ”РІвЂўВ¤Р вЂњРІвЂўРЃРІвЂќС’РІвЂўВ¤Р С’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўвЂ“РІвЂўВ¤Р С’РІвЂўРЃРІвЂ“вЂРІвЂўВ¤Р вЂ”РІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂ™РІвЂўВ¤Р РЋРІвЂўРЃРІвЂўСњРІвЂўРЃРІвЂўСљРІвЂўВ¤Р вЂєРІвЂўРЃРІвЂўР€ РІвЂўВ¤Р вЂќРІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂўСљ РІвЂўРЃРІвЂќС’РІвЂўРЃРІвЂўвЂєРІвЂўРЃРІвЂ“вЂњРІвЂўРЃРІвЂўРЋРІвЂўВ¤Р С’РІвЂўВ¤Р вЂў
             drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, 0xFF22272E);
             drawRect(guiLeft, titleBottom, guiLeft + xSize, infoBottom, 0xCC1F2328);
             drawRect(guiLeft, infoBottom, guiLeft + xSize, setContentBottom, 0xCC1F2328);
             drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, 0xFF2E3A45);
             drawRect(guiLeft, infoBottom, guiLeft + xSize, infoBottom + 1, 0xFF2E3A45);
+        }
+
+        if (tabs != null)
+        {
+            tabs.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    {
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+        if (tabs != null && tabs.mouseClicked(mouseX, mouseY, mouseButton))
+        {
+            int clickedId = tabs.getActiveTabId();
+            if (clickedId == BUTTON_TAB_SETS) activeView = VIEW_SETS;
+            else if (clickedId == BUTTON_TAB_SETTINGS) activeView = VIEW_SETTINGS;
+            else if (clickedId == BUTTON_TAB_DONATE) activeView = VIEW_DONATE;
+            updateViewButtons();
         }
     }
 

@@ -45,12 +45,6 @@ public final class ModEventsClient
     private static final Map<UUID, Double> displayedCurrencyMap = new HashMap<>();
     private static final Map<UUID, Double> animStepMap = new HashMap<>();
 
-    private static double computeAnimStep(double delta)
-    {
-        if (delta <= 0) return 0.01;
-        return Math.max(0.01, Math.pow(10, Math.floor(Math.log10(delta)) - 1)) / 2;
-    }
-
     @SubscribeEvent
     public static void onRenderGameOverlay(RenderGameOverlayEvent.Text event)
     {
@@ -193,11 +187,13 @@ public final class ModEventsClient
         {
             ModEvents.lastDisplayedCurrency.put(playerUUID, targetCurrency);
             double delta = Math.abs(targetCurrency - currentDisplayed);
-            animStepMap.put(playerUUID, computeAnimStep(delta));
+            long intPart = (long) Math.floor(delta);
+            double step = Math.max(1, Math.round(intPart / 20.0));
+            animStepMap.put(playerUUID, step);
         }
 
         double diff = targetCurrency - currentDisplayed;
-        if (Math.abs(diff) < 0.01)
+        if (Math.abs(diff) < 0.001)
         {
             displayedCurrencyMap.put(playerUUID, targetCurrency);
             animStepMap.remove(playerUUID);

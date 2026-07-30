@@ -7,7 +7,8 @@ import ru.defea.oneblockultima.config.ModSettings;
 
 import java.lang.reflect.Constructor;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ModSettingsTest {
 

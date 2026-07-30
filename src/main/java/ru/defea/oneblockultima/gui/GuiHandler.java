@@ -5,6 +5,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.gui.containers.ContainerClaimGenerator;
+import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 
 import javax.annotation.Nullable;
 
