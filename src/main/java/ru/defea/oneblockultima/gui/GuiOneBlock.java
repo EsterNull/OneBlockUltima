@@ -68,6 +68,8 @@ public class GuiOneBlock extends GuiContainer
     private static final int GREEN_COLOR = 0x00EE00;
     private static final int ORANGE_COLOR = 0xFFAA00;
     private static final int RED_COLOR = 0xEE0000;
+    private static final int REDDISH_COLOR = 0xFF7D7D;
+    private static final int GREENISH_COLOR = 0x7CEC9F;
 
     private static final int BUTTON_HEIGHT = 20;
     private static final int BUTTON_GAP = 6;
@@ -1153,7 +1155,7 @@ public class GuiOneBlock extends GuiContainer
                             for (BlockSetConfig.UnlockConditionDefinition condition : set.unlockConditions.conditions)
                             {
                                 if (condition == null) continue;
-                                String text = " - " + formatUnlockCondition(condition, data, generator) + " РЎвЂљР В¬Р Р€";
+                                String text = " - " + formatUnlockCondition(condition, data, generator);
                                 int width = fontRenderer.getStringWidth(text);
                                 if (width > maxConditionWidth) maxConditionWidth = width;
                             }
@@ -1193,7 +1195,7 @@ public class GuiOneBlock extends GuiContainer
             int currentLevel = generator == null ? 0 : generator.getSetLevel(set.id);
             boolean isActiveSet = (set.id.equals(clientActiveSetId));
 
-            int setColor = currentLevel <= 0 ? 0xFF7D7D : isActiveSet ? 0x7CEC9F : 0xFFFFFF;
+            int setColor = currentLevel <= 0 ? REDDISH_COLOR : isActiveSet ? GREENISH_COLOR : 0xFFFFFF;
             String setTitle = getLocalizedSetName(set) + " " + I18n.format("gui.oneblockultima.lv") + currentLevel;
             if (isActiveSet)
             {
@@ -1374,7 +1376,7 @@ public class GuiOneBlock extends GuiContainer
         int currentLevel = generator == null ? 0 : generator.getSetLevel(set.id);
         if (currentLevel > 0) return;
 
-        String title = I18n.format("gui.oneblockultima.unlock_conditions");
+        String title = I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config." + set.unlockConditions.mode);
         int titleWidth = fontRenderer.getStringWidth(title);
         int startX = x + (maxWidth - titleWidth) / 2;
         fontRenderer.drawString(title, startX, y, 0xA0B0C0);
@@ -1386,8 +1388,8 @@ public class GuiOneBlock extends GuiContainer
 
             String conditionText = formatUnlockCondition(condition, data, generator);
             boolean satisfied = condition.isSatisfied(data, generator);
-            int color = satisfied ? 0x7CEC9F : 0xFF7D7D;
-            String status = satisfied ? " РЎвЂљР В¬Р Р€" : " РЎвЂљР В¬Р В§";
+            int color = satisfied ? GREENISH_COLOR : REDDISH_COLOR;
+            String status = satisfied ? " \u2713" : " \u2717";
             String fullText = " - " + conditionText + status;
 
             int textWidth = fontRenderer.getStringWidth(fullText);

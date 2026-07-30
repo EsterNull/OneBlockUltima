@@ -87,9 +87,6 @@ gui.oneblockultima.config.level_chance_updated=Level & Chance updated
 gui.oneblockultima.config.base_level=Level
 gui.oneblockultima.config.error.invalid_level_chance=Invalid level or chance value
 
-gui.oneblockultima.config.unlock_conditions_edit=Unlock conditions
-gui.oneblockultima.config.unlock_conditions_title=Unlock Conditions
-gui.oneblockultima.config.unlock_conditions_empty=No conditions set
 gui.oneblockultima.config.unlock_conditions_saved=Unlock conditions saved
 gui.oneblockultima.config.unlock_conditions_level=Level
 gui.oneblockultima.config.unlock_conditions_count=Count

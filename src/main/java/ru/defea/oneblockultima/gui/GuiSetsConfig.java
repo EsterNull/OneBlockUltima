@@ -1067,7 +1067,7 @@ public class GuiSetsConfig extends GuiScreen
     {
         if (container.getEditingSet() == null) { changeView(VIEW_SET_DETAILS); return; }
 
-        factory.title("gui.oneblockultima.config.unlock_conditions_title");
+        factory.title("gui.oneblockultima.unlock_conditions");
 
         String toggleLabel = "any".equalsIgnoreCase(container.getUnlockConditionsEditorMode())
                 ? I18n.format("gui.oneblockultima.config.any")

@@ -936,7 +936,7 @@ public class ContainerSetsConfig
     public String getUnlockConditionsButtonLabel()
     {
         if (editingSet == null || editingSet.unlockConditions == null)
-            return I18n.format("gui.oneblockultima.unlock_conditions") + ": -";
+            return I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config.none");
         BlockSetConfig.UnlockConditionGroup group = editingSet.unlockConditions;
         if (group.conditions == null || group.conditions.isEmpty())
             return I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config.none");
