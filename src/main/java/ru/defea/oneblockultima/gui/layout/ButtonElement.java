@@ -42,6 +42,13 @@ public class ButtonElement extends ViewElement {
         return this;
     }
 
+    @Override
+    public ButtonElement visible(boolean visible) {
+        super.visible(visible);
+        if (guiButton != null) guiButton.visible = visible;
+        return this;
+    }
+
     public ButtonElement text(String text) {
         this.text = text;
         if (guiButton != null) guiButton.displayString = text;

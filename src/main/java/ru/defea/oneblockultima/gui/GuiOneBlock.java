@@ -34,6 +34,7 @@ import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 import ru.defea.oneblockultima.gui.GuiSetsConfig;
 import ru.defea.oneblockultima.gui.GuiBlockPrices;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
+import ru.defea.oneblockultima.gui.layout.ButtonElement;
 import ru.defea.oneblockultima.gui.layout.TabBarElement;
 import ru.defea.oneblockultima.util.BlockUtil;
 
@@ -72,17 +73,17 @@ public class GuiOneBlock extends GuiContainer
     private final ContainerOneBlock container;
     private final List<BlockSetConfig.BlockSetDefinition> visibleSets = new ArrayList<>();
     private int selectedSetIndex = 0;
-    private GuiButton prevButton;
-    private GuiButton nextButton;
-    private GuiButton selectButton;
-    private GuiButton upgradeButton;
-    private GuiButton openConfigEditorButton;
-    private GuiButton openPricesButton;
-    private GuiButton toggleFluidButton;
-    private GuiButton toggleMobsButton;
-    private GuiButton toggleChestsButton;
-    private GuiButton toggleSaplingsButton;
-    private GuiButton[] donateButtons;
+    private ButtonElement prevButton;
+    private ButtonElement nextButton;
+    private ButtonElement selectButton;
+    private ButtonElement upgradeButton;
+    private ButtonElement openConfigEditorButton;
+    private ButtonElement openPricesButton;
+    private ButtonElement toggleFluidButton;
+    private ButtonElement toggleMobsButton;
+    private ButtonElement toggleChestsButton;
+    private ButtonElement toggleSaplingsButton;
+    private ButtonElement[] donateButtons;
     private Boolean pendingDisableFluid = null;
     private Boolean pendingDisableMob = null;
     private Boolean pendingDisableChest = null;
@@ -841,9 +842,9 @@ public class GuiOneBlock extends GuiContainer
         int rightButtonX = guiLeft + contentLeft + contentWidth - selectWidth;
         int settingWidth = contentWidth;
 
-        // TabBarElement via ViewFactory
-        int tabButtonId = activeView == VIEW_SETS ? BUTTON_TAB_SETS :
-                          activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE;
+        int settingsButtonWidth = settingWidth / 2 - buttonGap;
+        int settingsButtonStartY = guiTop + infoRowY;
+
         tabs = new TabBarElement();
         tabs.setComputedPosition(tabX, tabY);
         tabs.setComputedSize(totalTabWidth, buttonHeight);
@@ -853,43 +854,69 @@ public class GuiOneBlock extends GuiContainer
             tabs.tab(BUTTON_TAB_SETTINGS, I18n.format("gui.oneblockultima.tabs.settings"));
         }
         tabs.tab(BUTTON_TAB_DONATE, I18n.format("gui.oneblockultima.tabs.donate"));
-        tabs.activeTab(tabButtonId);
-        prevButton = new GuiButton(BUTTON_PREV_SET, leftButtonX, infoButtonsY, 20, buttonHeight, "<");
-        nextButton = new GuiButton(BUTTON_NEXT_SET, leftButtonX + 26, infoButtonsY, 20, buttonHeight, ">");
-        selectButton = new GuiButton(BUTTON_SELECT_SET, leftButtonX, infoButtonsY + buttonHeight + buttonGap, selectWidth, buttonHeight, I18n.format("gui.oneblockultima.select"));
-        upgradeButton = new GuiButton(BUTTON_UPGRADE_SET, rightButtonX, infoButtonsY + buttonHeight + buttonGap, selectWidth, buttonHeight, I18n.format("gui.oneblockultima.upgrade"));
+        tabs.activeTab(activeView == VIEW_SETS ? BUTTON_TAB_SETS :
+                       activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
 
-        int settingsButtonStartY = guiTop + infoRowY;
-        int buttonWidth = settingWidth / 2 - buttonGap;
-        toggleFluidButton = new GuiButton(BUTTON_TOGGLE_FLUIDS, guiLeft + contentLeft, settingsButtonStartY, buttonWidth, buttonHeight, "");
-        toggleMobsButton = new GuiButton(BUTTON_TOGGLE_MOBS, guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY, buttonWidth, buttonHeight, "");
-        toggleChestsButton = new GuiButton(BUTTON_TOGGLE_CHESTS, guiLeft + contentLeft, settingsButtonStartY + buttonHeight + buttonGap, buttonWidth, buttonHeight, "");
-        toggleSaplingsButton = new GuiButton(BUTTON_TOGGLE_SAPLINGS, guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + buttonHeight + buttonGap, buttonWidth, buttonHeight, "");
-        openConfigEditorButton = new GuiButton(BUTTON_OPEN_CONFIG_EDITOR, guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + (buttonHeight + buttonGap) * 2, buttonWidth, buttonHeight, I18n.format("gui.oneblockultima.settings.open_editor"));
-        openPricesButton = new GuiButton(BUTTON_OPEN_PRICES, guiLeft + contentLeft, settingsButtonStartY + (buttonHeight + buttonGap) * 2, buttonWidth, buttonHeight, I18n.format("gui.oneblockultima.settings.open_prices"));
+        prevButton = new ButtonElement(BUTTON_PREV_SET, "<");
+        prevButton.setComputedPosition(leftButtonX, infoButtonsY);
+        prevButton.setComputedSize(20, buttonHeight);
+        prevButton.createWidgets(buttonList, fontRenderer, null);
+
+        nextButton = new ButtonElement(BUTTON_NEXT_SET, ">");
+        nextButton.setComputedPosition(leftButtonX + 26, infoButtonsY);
+        nextButton.setComputedSize(20, buttonHeight);
+        nextButton.createWidgets(buttonList, fontRenderer, null);
+
+        selectButton = new ButtonElement(BUTTON_SELECT_SET, I18n.format("gui.oneblockultima.select"));
+        selectButton.setComputedPosition(leftButtonX, infoButtonsY + buttonHeight + buttonGap);
+        selectButton.setComputedSize(selectWidth, buttonHeight);
+        selectButton.createWidgets(buttonList, fontRenderer, null);
+
+        upgradeButton = new ButtonElement(BUTTON_UPGRADE_SET, I18n.format("gui.oneblockultima.upgrade"));
+        upgradeButton.setComputedPosition(rightButtonX, infoButtonsY + buttonHeight + buttonGap);
+        upgradeButton.setComputedSize(selectWidth, buttonHeight);
+        upgradeButton.createWidgets(buttonList, fontRenderer, null);
+
+        toggleFluidButton = new ButtonElement(BUTTON_TOGGLE_FLUIDS, "");
+        toggleFluidButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY);
+        toggleFluidButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleFluidButton.createWidgets(buttonList, fontRenderer, null);
+
+        toggleMobsButton = new ButtonElement(BUTTON_TOGGLE_MOBS, "");
+        toggleMobsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY);
+        toggleMobsButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleMobsButton.createWidgets(buttonList, fontRenderer, null);
+
+        toggleChestsButton = new ButtonElement(BUTTON_TOGGLE_CHESTS, "");
+        toggleChestsButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + buttonHeight + buttonGap);
+        toggleChestsButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleChestsButton.createWidgets(buttonList, fontRenderer, null);
+
+        toggleSaplingsButton = new ButtonElement(BUTTON_TOGGLE_SAPLINGS, "");
+        toggleSaplingsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + buttonHeight + buttonGap);
+        toggleSaplingsButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        toggleSaplingsButton.createWidgets(buttonList, fontRenderer, null);
+
+        openConfigEditorButton = new ButtonElement(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.settings.open_editor"));
+        openConfigEditorButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + buttonGap, settingsButtonStartY + (buttonHeight + buttonGap) * 2);
+        openConfigEditorButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        openConfigEditorButton.createWidgets(buttonList, fontRenderer, null);
+
+        openPricesButton = new ButtonElement(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
+        openPricesButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (buttonHeight + buttonGap) * 2);
+        openPricesButton.setComputedSize(settingsButtonWidth, buttonHeight);
+        openPricesButton.createWidgets(buttonList, fontRenderer, null);
 
         int donateBtnX = guiLeft + contentLeft + 72;
         int donateBtnWidth = contentWidth - 72 - 4;
         int donateBtnY = guiTop + infoRowY + rowInterval * 5;
-        donateButtons = new GuiButton[DonateMethod.METHODS.length];
+        donateButtons = new ButtonElement[DonateMethod.METHODS.length];
         for (int i = 0; i < DonateMethod.METHODS.length; i++)
         {
-            donateButtons[i] = new GuiButton(BUTTON_DONATE_BASE + i, donateBtnX, donateBtnY + (buttonHeight + buttonGap) * i, donateBtnWidth, buttonHeight, DonateMethod.METHODS[i].text);
-        }
-
-        buttonList.add(prevButton);
-        buttonList.add(nextButton);
-        buttonList.add(selectButton);
-        buttonList.add(upgradeButton);
-        buttonList.add(openConfigEditorButton);
-        buttonList.add(openPricesButton);
-        buttonList.add(toggleFluidButton);
-        buttonList.add(toggleMobsButton);
-        buttonList.add(toggleChestsButton);
-        buttonList.add(toggleSaplingsButton);
-        for (GuiButton btn : donateButtons)
-        {
-            buttonList.add(btn);
+            donateButtons[i] = new ButtonElement(BUTTON_DONATE_BASE + i, DonateMethod.METHODS[i].text);
+            donateButtons[i].setComputedPosition(donateBtnX, donateBtnY + (buttonHeight + buttonGap) * i);
+            donateButtons[i].setComputedSize(donateBtnWidth, buttonHeight);
+            donateButtons[i].createWidgets(buttonList, fontRenderer, null);
         }
         updateViewButtons();
 
@@ -910,21 +937,21 @@ public class GuiOneBlock extends GuiContainer
         {
             tabs.activeTab(setsView ? BUTTON_TAB_SETS : settingsView ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
         }
-        if (prevButton != null) prevButton.visible = setsView;
-        if (nextButton != null) nextButton.visible = setsView;
-        if (selectButton != null) selectButton.visible = setsView;
-        if (upgradeButton != null) upgradeButton.visible = setsView;
-        if (openConfigEditorButton != null) openConfigEditorButton.visible = settingsView;
-        if (openPricesButton != null) openPricesButton.visible = settingsView;
-        if (toggleFluidButton != null) toggleFluidButton.visible = settingsView;
-        if (toggleMobsButton != null) toggleMobsButton.visible = settingsView;
-        if (toggleChestsButton != null) toggleChestsButton.visible = settingsView;
-        if (toggleSaplingsButton != null) toggleSaplingsButton.visible = settingsView;
+        if (prevButton != null) prevButton.visible(setsView);
+        if (nextButton != null) nextButton.visible(setsView);
+        if (selectButton != null) selectButton.visible(setsView);
+        if (upgradeButton != null) upgradeButton.visible(setsView);
+        if (openConfigEditorButton != null) openConfigEditorButton.visible(settingsView);
+        if (openPricesButton != null) openPricesButton.visible(settingsView);
+        if (toggleFluidButton != null) toggleFluidButton.visible(settingsView);
+        if (toggleMobsButton != null) toggleMobsButton.visible(settingsView);
+        if (toggleChestsButton != null) toggleChestsButton.visible(settingsView);
+        if (toggleSaplingsButton != null) toggleSaplingsButton.visible(settingsView);
         if (donateButtons != null)
         {
-            for (GuiButton btn : donateButtons)
+            for (ButtonElement btn : donateButtons)
             {
-                btn.visible = donateView;
+                btn.visible(donateView);
             }
         }
 
@@ -936,7 +963,7 @@ public class GuiOneBlock extends GuiContainer
             {
                 disabled = pendingDisableFluid;
             }
-            toggleFluidButton.displayString = I18n.format("gui.oneblockultima.settings.fluid") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled"));
+            toggleFluidButton.text(I18n.format("gui.oneblockultima.settings.fluid") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled")));
         }
         if (toggleMobsButton != null)
         {
@@ -945,7 +972,7 @@ public class GuiOneBlock extends GuiContainer
             {
                 disabled = pendingDisableMob;
             }
-            toggleMobsButton.displayString = I18n.format("gui.oneblockultima.settings.mobs") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled"));
+            toggleMobsButton.text(I18n.format("gui.oneblockultima.settings.mobs") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled")));
         }
         if (toggleChestsButton != null)
         {
@@ -954,7 +981,7 @@ public class GuiOneBlock extends GuiContainer
             {
                 disabled = pendingDisableChest;
             }
-            toggleChestsButton.displayString = I18n.format("gui.oneblockultima.settings.chests") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled"));
+            toggleChestsButton.text(I18n.format("gui.oneblockultima.settings.chests") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled")));
         }
         if (toggleSaplingsButton != null)
         {
@@ -963,7 +990,7 @@ public class GuiOneBlock extends GuiContainer
             {
                 disabled = pendingDisableSapling;
             }
-            toggleSaplingsButton.displayString = I18n.format("gui.oneblockultima.settings.saplings") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled"));
+            toggleSaplingsButton.text(I18n.format("gui.oneblockultima.settings.saplings") + ": " + (disabled ? I18n.format("gui.oneblockultima.settings.disabled") : I18n.format("gui.oneblockultima.settings.enabled")));
         }
     }
 
@@ -1001,26 +1028,7 @@ public class GuiOneBlock extends GuiContainer
             return;
         }
 
-        if (button.id == BUTTON_TAB_SETS)
-        {
-            activeView = VIEW_SETS;
-            updateViewButtons();
-        }
-        else if (button.id == BUTTON_TAB_SETTINGS)
-        {
-            if (!settingsTabVisible)
-            {
-                return;
-            }
-            activeView = VIEW_SETTINGS;
-            updateViewButtons();
-        }
-        else if (button.id == BUTTON_TAB_DONATE)
-        {
-            activeView = VIEW_DONATE;
-            updateViewButtons();
-        }
-        else if (button.id == BUTTON_TOGGLE_FLUIDS)
+        if (button.id == BUTTON_TOGGLE_FLUIDS)
         {
             boolean currentDisabled = container.getGenerator() != null && container.getGenerator().isDisableFluidGeneration();
             pendingDisableFluid = !currentDisabled;
@@ -1272,26 +1280,26 @@ public class GuiOneBlock extends GuiContainer
 
             if (selectButton != null)
             {
-                selectButton.displayString = currentLevel <= 0 ? I18n.format("gui.oneblockultima.locked") : (isActiveSet ? I18n.format("gui.oneblockultima.selected") : I18n.format("gui.oneblockultima.select"));
-                selectButton.enabled = currentLevel > 0 && !isActiveSet;
+                selectButton.text(currentLevel <= 0 ? I18n.format("gui.oneblockultima.locked") : (isActiveSet ? I18n.format("gui.oneblockultima.selected") : I18n.format("gui.oneblockultima.select")));
+                selectButton.enabled(currentLevel > 0 && !isActiveSet);
             }
             if (upgradeButton != null)
             {
                 BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
                 if (currentLevel <= 0)
                 {
-                    upgradeButton.displayString = I18n.format("gui.oneblockultima.unlock");
-                    upgradeButton.enabled = true;
+                    upgradeButton.text(I18n.format("gui.oneblockultima.unlock"));
+                    upgradeButton.enabled(true);
                 }
                 else if (nextLevel != null)
                 {
-                    upgradeButton.displayString = I18n.format("gui.oneblockultima.upgrade");
-                    upgradeButton.enabled = true;
+                    upgradeButton.text(I18n.format("gui.oneblockultima.upgrade"));
+                    upgradeButton.enabled(true);
                 }
                 else
                 {
-                    upgradeButton.displayString = I18n.format("gui.oneblockultima.max");
-                    upgradeButton.enabled = false;
+                    upgradeButton.text(I18n.format("gui.oneblockultima.max"));
+                    upgradeButton.enabled(false);
                 }
             }
 
