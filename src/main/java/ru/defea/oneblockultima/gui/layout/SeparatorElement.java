@@ -6,8 +6,10 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.DARK_GRAY_COLOR_1;
+
 public class SeparatorElement extends ViewElement {
-    private int color = 0xFF3A3F44;
+    private int color = DARK_GRAY_COLOR_1;
     private int height = 2;
 
     public SeparatorElement color(int color) {

@@ -3,8 +3,11 @@ package ru.defea.oneblockultima.gui.layout;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
+import ru.defea.oneblockultima.Constants;
 
 import java.util.List;
+
+import static ru.defea.oneblockultima.Constants.*;
 
 public class ScrollableListElement extends ViewElement {
     private final int itemHeight;
@@ -12,12 +15,8 @@ public class ScrollableListElement extends ViewElement {
     private int maxScroll = 0;
     private int visibleItems = 0;
     private int trackWidth = 6;
-    private int trackColor = 0xFF2A2F34;
-    private int thumbColor = 0xFF7A7F84;
-    private int selectedColor = 0xFF3F5060;
-    private int panelColor = 0;
+    private int panelColor = PANEL_COLOR;
     private int hoveredRow = -1;
-    private boolean thumbHovered = false;
     private List<? extends ScrollableListEntry> entries;
 
     public interface ScrollableListEntry {
@@ -88,7 +87,7 @@ public class ScrollableListElement extends ViewElement {
                               mouseY >= y && mouseY < y + itemHeight;
             if (hovered) hoveredRow = row;
 
-            int bg = (row % 2 == 0) ? 0xFF2A2F34 : 0xFF22272E;
+            int bg = (row % 2 == 0) ? DARK_GRAY_COLOR_2 : DARK_GRAY_COLOR_3;
             Gui.drawRect(computedX, y, computedX + listWidth, y + itemHeight, bg);
 
             ScrollableListEntry entry = entries.get(row);
@@ -98,15 +97,14 @@ public class ScrollableListElement extends ViewElement {
         if (entries.size() > visibleItems) {
             int thumbWidth = trackWidth;
             int trackX = computedX + listWidth + 2;
-            Gui.drawRect(trackX, contentTop, trackX + thumbWidth, contentTop + computedHeight, trackColor);
+            Gui.drawRect(trackX, contentTop, trackX + thumbWidth, contentTop + computedHeight, DARK_GRAY_COLOR_2);
 
             float ratio = (float) visibleItems / entries.size();
             int thumbH = Math.max(10, (int) (computedHeight * ratio));
             float thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
             int thumbY = contentTop + (int) (thumbPos * (computedHeight - thumbH));
 
-            int color = thumbHovered ? 0xFF9A9FA4 : thumbColor;
-            Gui.drawRect(trackX, thumbY, trackX + thumbWidth, thumbY + thumbH, color);
+            Gui.drawRect(trackX, thumbY, trackX + thumbWidth, thumbY + thumbH, Constants.GRAY_COLOR_1);
         }
     }
 

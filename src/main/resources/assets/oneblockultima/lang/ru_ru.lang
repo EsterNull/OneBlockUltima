@@ -123,6 +123,7 @@ gui.oneblockultima.mod_settings.title=Настройки UI
 gui.oneblockultima.mod_settings.balance_position=Позиция баланса
 gui.oneblockultima.mod_settings.h_offset=Гор. (%%):
 gui.oneblockultima.mod_settings.v_offset=Верт. (%%):
+gui.oneblockultima.mod_settings.show_balance=Показать баланс:
 gui.oneblockultima.mod_settings.preview=Превью
 gui.oneblockultima.mod_settings.pos.top_left=Слева вверху
 gui.oneblockultima.mod_settings.pos.top=Сверху

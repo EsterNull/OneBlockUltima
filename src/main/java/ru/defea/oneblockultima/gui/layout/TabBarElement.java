@@ -7,6 +7,8 @@ import net.minecraft.client.gui.GuiButton;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.*;
+
 public class TabBarElement extends ViewElement {
     private final List<Tab> tabs = new ArrayList<>();
     private int activeTab = 0;
@@ -78,12 +80,12 @@ public class TabBarElement extends ViewElement {
                               mouseY >= computedY && mouseY < computedY + computedHeight;
 
             int bg;
-            if (active) bg = 0xFF3F5060;
-            else if (hovered) bg = 0xFF2A2F34;
-            else bg = 0xFF1A1F24;
+            if (active) bg = DARK_BLUE_GRAY_COLOR_1;
+            else if (hovered) bg = DARK_GRAY_COLOR_2;
+            else bg = PANEL_COLOR;
             Gui.drawRect(cx, computedY, cx + tabWidth, computedY + computedHeight, bg);
 
-            int textColor = active ? 0xFFFFFF : 0xA0B0C0;
+            int textColor = active ? WHITE_COLOR_1 : LIGHT_BLUE_GRAY_COLOR;
             fr.drawStringWithShadow(tab.label,
                 cx + (tabWidth - fr.getStringWidth(tab.label)) / 2.0f,
                 computedY + (computedHeight - 8) / 2.0f, textColor);

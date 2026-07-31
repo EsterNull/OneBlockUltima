@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.*;
+
 public class GuiBlockPrices extends GuiScreen
 {
     private static final int VIEW_PRICES = 0;
@@ -94,7 +96,7 @@ public class GuiBlockPrices extends GuiScreen
             .margin(8).padding(2)
             .gap(6)
             .align(Alignment.CENTER)
-            .panel(0xCC22272E, 0xFF3A3F44);
+            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
 
         factory.title("gui.oneblockultima.prices.title");
 
@@ -106,7 +108,7 @@ public class GuiBlockPrices extends GuiScreen
             entries.add(new ScrollableListElement.ScrollableListEntry() {
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
-                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
 
                     net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack(
                         ContainerBlockPrices.parseRegistryFromKey(entry.getKey()),
@@ -124,8 +126,8 @@ public class GuiBlockPrices extends GuiScreen
                     String name = container.getBlockDisplayName(
                         ContainerBlockPrices.parseRegistryFromKey(entry.getKey()),
                         ContainerBlockPrices.parseMetaFromKey(entry.getKey()));
-                    fr.drawStringWithShadow(name, x + 24, y + 2, 0xFFFFFF);
-                    fr.drawStringWithShadow(entry.getKey(), x + 24, y + 12, 0x808080);
+                    fr.drawStringWithShadow(name, x + 24, y + 2, WHITE_COLOR_1);
+                    fr.drawStringWithShadow(entry.getKey(), x + 24, y + 12, GRAY_COLOR_1);
 
                     String priceStr = ContainerBlockPrices.formatPrice(entry.getValue());
                     String editText = I18n.format("gui.oneblockultima.prices.edit");
@@ -139,19 +141,19 @@ public class GuiBlockPrices extends GuiScreen
                     int delBtnX = usableRight - delW;
                     int delBtnY = y + (height - btnH) / 2;
                     boolean delHovered = mouseX >= delBtnX && mouseX <= delBtnX + delW && mouseY >= delBtnY && mouseY <= delBtnY + btnH;
-                    Gui.drawRect(delBtnX, delBtnY, delBtnX + delW, delBtnY + btnH, delHovered ? 0xFF8B4A4A : 0xFF6B3A3A);
-                    drawCenteredString(fr, delText, delBtnX + delW / 2, delBtnY + 3, 0xFF5555);
+                    Gui.drawRect(delBtnX, delBtnY, delBtnX + delW, delBtnY + btnH, delHovered ? DARK_RED_COLOR_3 : DARK_RED_COLOR_1);
+                    drawCenteredString(fr, delText, delBtnX + delW / 2, delBtnY + 3, REDDISH_COLOR);
 
                     int editBtnX = delBtnX - btnGap - editW;
                     int editBtnY = y + (height - btnH) / 2;
                     boolean editHovered = mouseX >= editBtnX && mouseX <= editBtnX + editW && mouseY >= editBtnY && mouseY <= editBtnY + btnH;
-                    Gui.drawRect(editBtnX, editBtnY, editBtnX + editW, editBtnY + btnH, editHovered ? 0xFF4A8B4A : 0xFF3A6B3A);
-                    drawCenteredString(fr, editText, editBtnX + editW / 2, editBtnY + 3, 0x55FF55);
+                    Gui.drawRect(editBtnX, editBtnY, editBtnX + editW, editBtnY + btnH, editHovered ? GREEN : DARK_GREEN);
+                    drawCenteredString(fr, editText, editBtnX + editW / 2, editBtnY + 3, SUCCESS_COLOR);
 
                     int priceW = fr.getStringWidth(priceStr);
                     int priceX = editBtnX - btnGap - priceW;
                     int priceY = y + (height - 8) / 2;
-                    fr.drawStringWithShadow(priceStr, priceX, priceY, 0xFFD700);
+                    fr.drawStringWithShadow(priceStr, priceX, priceY, GOLD_COLOR);
                 }
 
                 @Override
@@ -216,7 +218,7 @@ public class GuiBlockPrices extends GuiScreen
             .margin(8).padding(2)
             .gap(6)
             .align(Alignment.CENTER)
-            .panel(0xCC22272E, 0xFF3A3F44);
+            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
 
         factory.title("gui.oneblockultima.prices.add");
 
@@ -226,7 +228,7 @@ public class GuiBlockPrices extends GuiScreen
             .widthPercent(60);
         factory.add(searchFieldElement);
 
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(0x808080).centered(true));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(GRAY_COLOR_1).centered(true));
 
         List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
         for (int i = 0; i < container.getSearchResults().size(); i++)
@@ -236,7 +238,7 @@ public class GuiBlockPrices extends GuiScreen
             searchEntries.add(new ScrollableListElement.ScrollableListEntry() {
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
-                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
 
                     if (!result.stack.isEmpty()) {
                         GlStateManager.enableDepth();
@@ -249,8 +251,8 @@ public class GuiBlockPrices extends GuiScreen
                     }
 
                     String displayName = result.name != null && !result.name.isEmpty() ? result.name : result.registry;
-                    fr.drawStringWithShadow(displayName, x + 20, y + 2, 0xFFFFFF);
-                    fr.drawStringWithShadow(result.registry, x + 20, y + 12, 0x808080);
+                    fr.drawStringWithShadow(displayName, x + 20, y + 2, WHITE_COLOR_1);
+                    fr.drawStringWithShadow(result.registry, x + 20, y + 12, GRAY_COLOR_1);
                 }
 
                 @Override
@@ -271,7 +273,7 @@ public class GuiBlockPrices extends GuiScreen
 
         if (searchEntries.isEmpty())
         {
-            factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(0x808080).centered(true));
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(GRAY_COLOR_1).centered(true));
         }
 
         factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
@@ -285,7 +287,7 @@ public class GuiBlockPrices extends GuiScreen
             .margin(8).padding(2)
             .gap(6)
             .align(Alignment.CENTER)
-            .panel(0xCC22272E, 0xFF3A3F44)
+            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1)
             .centerVertical();
 
         factory.title("gui.oneblockultima.prices.edit_title");
@@ -299,10 +301,10 @@ public class GuiBlockPrices extends GuiScreen
         String displayName = container.getEditingName() != null && !container.getEditingName().isEmpty()
                 ? container.getEditingName() : container.getEditingRegistry();
         factory.add(new LabelElement(displayName).centered(true));
-        factory.add(new LabelElement(container.getEditingRegistry()).color(0x808080).centered(true));
+        factory.add(new LabelElement(container.getEditingRegistry()).color(GRAY_COLOR_1).centered(true));
 
         factory.add(new SpacerElement(10));
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.price")).color(0xC0C0C0).centered(true));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.price")).centered(true));
 
         priceFieldElement = new TextFieldElement(0)
             .text(ContainerBlockPrices.formatPrice(container.getEditingPrice()))

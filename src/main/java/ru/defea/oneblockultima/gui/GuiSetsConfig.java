@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.*;
 import static ru.defea.oneblockultima.gui.containers.ContainerSetsConfig.*;
 
 public class GuiSetsConfig extends GuiScreen
@@ -125,7 +126,7 @@ public class GuiSetsConfig extends GuiScreen
                 .padding(4)
                 .gap(6)
                 .align(Alignment.CENTER)
-                .panel(0xCC22272E, 0xFF3A3F44);
+                .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
 
         switch (container.getCurrentView())
         {
@@ -173,7 +174,7 @@ public class GuiSetsConfig extends GuiScreen
         String status = container.getStatusMessage();
         if (status != null && !status.isEmpty() && container.getStatusTimer() > 0)
         {
-            int color = status.contains("error") || status.contains("failed") ? 0xFFFF4444 : 0xFFA0A0A0;
+            int color = status.contains("error") || status.contains("failed") ? REDDISH_COLOR : GRAY_COLOR_5;
             drawString(fontRenderer, status, width - fontRenderer.getStringWidth(status) - 10, 10, color);
         }
     }
@@ -460,11 +461,11 @@ public class GuiSetsConfig extends GuiScreen
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                     boolean isSelected = container.getSelectedSetIndex() == idx;
-                    if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0xFF3F5060);
-                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
                     String name = ContainerSetsConfig.getLocalizedSetName(set);
-                    fr.drawString(name, x + 4, y + 2, 0xFFFFFF);
-                    fr.drawString("ID: " + set.id, x + 4, y + 12, 0xA0A0A0);
+                    fr.drawString(name, x + 4, y + 2, WHITE_COLOR_1);
+                    fr.drawString("ID: " + set.id, x + 4, y + 12, GRAY_COLOR_5);
 
                     String editLabel = I18n.format("gui.oneblockultima.config.edit");
                     String delLabel = I18n.format("gui.oneblockultima.config.delete_set");
@@ -475,13 +476,13 @@ public class GuiSetsConfig extends GuiScreen
 
                     int delX = right - delW;
                     boolean delHov = mouseX >= delX && mouseX <= delX + delW && mouseY >= btnY && mouseY <= btnY + 14;
-                    Gui.drawRect(delX, btnY, delX + delW, btnY + 14, delHov ? 0xFF6A3A3A : 0xFF3A2A2A);
-                    drawCenteredString(fr, delLabel, delX + delW / 2, btnY + 3, 0xFFFF4444);
+                    Gui.drawRect(delX, btnY, delX + delW, btnY + 14, delHov ? DARK_RED_COLOR_1 : DARK_RED_COLOR_2);
+                    drawCenteredString(fr, delLabel, delX + delW / 2, btnY + 3, REDDISH_COLOR);
 
                     int editX = delX - 4 - editW;
                     boolean editHov = mouseX >= editX && mouseX <= editX + editW && mouseY >= btnY && mouseY <= btnY + 14;
-                    Gui.drawRect(editX, btnY, editX + editW, btnY + 14, editHov ? 0xFF6A7A8A : 0xFF3A4A5A);
-                    drawCenteredString(fr, editLabel, editX + editW / 2, btnY + 3, 0xFFFFFF);
+                    Gui.drawRect(editX, btnY, editX + editW, btnY + 14, editHov ? BLUE_GRAY_COLOR : DARK_BLUE_GRAY_COLOR_1);
+                    drawCenteredString(fr, editLabel, editX + editW / 2, btnY + 3, WHITE_COLOR_1);
                 }
 
                 @Override
@@ -553,7 +554,7 @@ public class GuiSetsConfig extends GuiScreen
                         : ContainerSetsConfig.getLocalizedSetName(editingSet));
         RowElement nameRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
         nameRow.add(new SpacerElement(leftPad, 20));
-        nameRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.set_name") + ":").color(0xA0A0A0).width(formLabelWidth).height(20));
+        nameRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.set_name") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
         nameRow.add(setNameElement);
         factory.add(nameRow);
 
@@ -562,7 +563,7 @@ public class GuiSetsConfig extends GuiScreen
                 .enabled(container.isNewSet());
         RowElement idRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
         idRow.add(new SpacerElement(leftPad, 20));
-        idRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.set_id") + ":").color(0xA0A0A0).width(formLabelWidth).height(20));
+        idRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.set_id") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
         idRow.add(setIdElement);
         factory.add(idRow);
 
@@ -570,7 +571,7 @@ public class GuiSetsConfig extends GuiScreen
                 container.isNewSet() ? container.getSavedNewSetCost() : String.valueOf(editingSet.unlockCost));
         RowElement costRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
         costRow.add(new SpacerElement(leftPad, 20));
-        costRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_cost") + ":").color(0xA0A0A0).width(formLabelWidth).height(20));
+        costRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_cost") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
         costRow.add(unlockCostElement);
         factory.add(costRow);
 
@@ -598,7 +599,7 @@ public class GuiSetsConfig extends GuiScreen
                     public void drawLeft(int x, int y, int width, int height, boolean hovered, int index, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                         boolean isSelected = container.getSelectedBlockIndex() == bde.blockIndex
                                 && container.getSelectedBlockMeta() == bde.meta;
-                        if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0xFF3F5060);
+                        if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
 
                         ItemStack stack = container.getItemStackFromEntry(block, bde.meta);
                         if (!stack.isEmpty())
@@ -628,20 +629,20 @@ public class GuiSetsConfig extends GuiScreen
                         String displayName = name;
                         if (fr.getStringWidth(displayName) > maxNameW)
                             displayName = fr.trimStringToWidth(displayName, maxNameW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(displayName, x + 20, y + 2, 0xA0A0A0);
+                        fr.drawString(displayName, x + 20, y + 2, GRAY_COLOR_5);
                         String levelInfo = I18n.format("gui.oneblockultima.config.base_level") + ": " + block.baseLevel;
-                        fr.drawString(levelInfo, x + 20 + fr.getStringWidth(displayName) + 4, y + 2, 0x707070);
+                        fr.drawString(levelInfo, x + 20 + fr.getStringWidth(displayName) + 4, y + 2, GRAY_COLOR_7);
                         String registryInfo = block.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": " + block.baseChance + "%";
                         int maxRegW = Math.max(10, rightBound - (x + 20));
                         if (fr.getStringWidth(registryInfo) > maxRegW)
                             registryInfo = fr.trimStringToWidth(registryInfo, maxRegW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(registryInfo, x + 20, y + 14, 0x808080);
+                        fr.drawString(registryInfo, x + 20, y + 14, GRAY_COLOR_1);
 
                         int editX = x + width - btnSize - 2;
                         boolean editHov = mouseX >= editX && mouseX <= editX + btnSize && mouseY >= y + 2 && mouseY <= y + 2 + btnSize;
-                        int editColor = editHov ? 0xFF6A7A8A : 0xFF3A4A5A;
+                        int editColor = editHov ? BLUE_GRAY_COLOR : DARK_BLUE_GRAY_COLOR_1;
                         Gui.drawRect(editX, y + 2, editX + btnSize, y + 2 + btnSize, editColor);
-                        drawCenteredString(fr, "\u270E", editX + btnSize / 2, y + 2 + (btnSize - fr.FONT_HEIGHT) / 2, 0xFFFFFF);
+                        drawCenteredString(fr, "\u270E", editX + btnSize / 2, y + 2 + (btnSize - fr.FONT_HEIGHT) / 2, WHITE_COLOR_1);
                     }
 
                     @Override
@@ -686,7 +687,7 @@ public class GuiSetsConfig extends GuiScreen
                     @Override
                     public void drawRight(int x, int y, int width, int height, boolean hovered, int index, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                         boolean isSelected = container.getSelectedMobIndex() == mobIdx;
-                        if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0xFF3F5060);
+                        if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
 
                         int iconSize = Math.min(16, height - 4);
                         try {
@@ -706,12 +707,12 @@ public class GuiSetsConfig extends GuiScreen
                             }
                             else
                             {
-                                Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, 0xFF444444);
-                                fr.drawString("M", x + 4, y + 4, 0xFFFFFF);
+                                Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, GRAY_COLOR_4);
+                                fr.drawString("M", x + 4, y + 4, WHITE_COLOR_1);
                             }
                         } catch (Exception ignored) {
-                            Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, 0xFF444444);
-                            fr.drawString("M", x + 4, y + 4, 0xFFFFFF);
+                            Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, GRAY_COLOR_4);
+                            fr.drawString("M", x + 4, y + 4, WHITE_COLOR_1);
                         }
 
                         String name = container.getLocalizedNameForMob(mob);
@@ -722,20 +723,20 @@ public class GuiSetsConfig extends GuiScreen
                         String displayName = name;
                         if (fr.getStringWidth(displayName) > maxNameW)
                             displayName = fr.trimStringToWidth(displayName, maxNameW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(displayName, textX, y + 2, 0xA0A0A0);
+                        fr.drawString(displayName, textX, y + 2, GRAY_COLOR_5);
                         String levelInfo = I18n.format("gui.oneblockultima.config.base_level") + ": " + mob.baseLevel;
-                        fr.drawString(levelInfo, textX + fr.getStringWidth(displayName) + 4, y + 2, 0x707070);
+                        fr.drawString(levelInfo, textX + fr.getStringWidth(displayName) + 4, y + 2, GRAY_COLOR_7);
                         String chanceInfo = I18n.format("gui.oneblockultima.chance") + ": " + mob.baseChance + "%";
                         int maxInfoW = Math.max(10, rightBound - textX);
                         if (fr.getStringWidth(chanceInfo) > maxInfoW)
                             chanceInfo = fr.trimStringToWidth(chanceInfo, maxInfoW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(chanceInfo, textX, y + 14, 0x808080);
+                        fr.drawString(chanceInfo, textX, y + 14, GRAY_COLOR_1);
 
                         int editX = x + width - btnSize - 2;
                         boolean editHov = mouseX >= editX && mouseX <= editX + btnSize && mouseY >= y + 2 && mouseY <= y + 2 + btnSize;
-                        int editColor = editHov ? 0xFF6A7A8A : 0xFF3A4A5A;
+                        int editColor = editHov ? BLUE_GRAY_COLOR : DARK_BLUE_GRAY_COLOR_1;
                         Gui.drawRect(editX, y + 2, editX + btnSize, y + 2 + btnSize, editColor);
-                        drawCenteredString(fr, "\u270E", editX + btnSize / 2, y + 2 + (btnSize - fr.FONT_HEIGHT) / 2, 0xFFFFFF);
+                        drawCenteredString(fr, "\u270E", editX + btnSize / 2, y + 2 + (btnSize - fr.FONT_HEIGHT) / 2, WHITE_COLOR_1);
                     }
 
                     @Override
@@ -796,14 +797,14 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(entrySearchElement);
 
         String helpText = I18n.format("gui.oneblockultima.config.search.help");
-        factory.add(new LabelElement(helpText).color(0x808080));
+        factory.add(new LabelElement(helpText).color(GRAY_COLOR_1));
 
         int fieldWidth = Math.max(30, width * 3 / 100);
         RowElement fieldsRow = new RowElement(Alignment.CENTER).gap(4);
-        fieldsRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ": ").color(0xC0C0C0));
+        fieldsRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ": "));
         addLevelElement = new TextFieldElement(fieldWidth).text("1");
         fieldsRow.add(addLevelElement);
-        fieldsRow.add(new LabelElement(I18n.format("gui.oneblockultima.chance") + ": ").color(0xC0C0C0));
+        fieldsRow.add(new LabelElement(I18n.format("gui.oneblockultima.chance") + ": "));
         addChanceElement = new TextFieldElement(fieldWidth).text("1");
         fieldsRow.add(addChanceElement);
         factory.add(fieldsRow);
@@ -817,7 +818,7 @@ public class GuiSetsConfig extends GuiScreen
             searchEntries.add(new ScrollableListElement.ScrollableListEntry() {
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
-                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
 
                     int iconSize = Math.min(16, height - 4);
                     if (!result.isMob && !result.stack.isEmpty())
@@ -840,8 +841,8 @@ public class GuiSetsConfig extends GuiScreen
                             World renderWorld = ModelUtil.getWorldOrCreateDummy();
                             Entity entity = renderWorld != null ? EntityList.createEntityByIDFromName(new ResourceLocation(result.registry), renderWorld) : null;
                             if (entity == null) {
-                                Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, 0xFF444444);
-                                fr.drawString("M", x + 4, y + 4, 0xFFFFFF);
+                                Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, GRAY_COLOR_4);
+                                fr.drawString("M", x + 4, y + 4, WHITE_COLOR_1);
                             } else {
                                 if (entity.world == null) entity.world = renderWorld;
                                 GlStateManager.pushMatrix();
@@ -854,15 +855,15 @@ public class GuiSetsConfig extends GuiScreen
                                 }
                             }
                         } catch (Exception ignored) {
-                            Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, 0xFF444444);
-                            fr.drawString("M", x + 4, y + 4, 0xFFFFFF);
+                            Gui.drawRect(x + 2, y + 2, x + 2 + iconSize, y + 2 + iconSize, GRAY_COLOR_4);
+                            fr.drawString("M", x + 4, y + 4, WHITE_COLOR_1);
                         }
                     }
 
                     String displayName = result.name != null && !result.name.isEmpty() ? result.name : result.registry;
                     int textX = x + iconSize + 6;
-                    fr.drawStringWithShadow(displayName, textX, y + 2, 0xFFFFFF);
-                    fr.drawStringWithShadow(result.registry, textX, y + 12, 0x808080);
+                    fr.drawStringWithShadow(displayName, textX, y + 2, WHITE_COLOR_1);
+                    fr.drawStringWithShadow(result.registry, textX, y + 12, GRAY_COLOR_1);
                 }
 
                 @Override
@@ -880,7 +881,6 @@ public class GuiSetsConfig extends GuiScreen
 
         searchResultsList = new ScrollableListElement(ENTRY_HEIGHT)
                 .entries(searchEntries)
-                .panelColor(0xFF1A1F24)
                 .scrollOffset(searchScrollOffset);
         searchResultsList.flexible(true);
         searchResultsList.visible(true);
@@ -888,7 +888,7 @@ public class GuiSetsConfig extends GuiScreen
 
         if (searchEntries.isEmpty())
         {
-            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(0x808080).centered(true));
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered(true));
         }
 
         factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
@@ -903,7 +903,7 @@ public class GuiSetsConfig extends GuiScreen
                 : "";
 
         factory.fitContent().centerVertical();
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName)).centered(true).color(0xFFFFFF));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName)).centered(true).color(WHITE_COLOR_1));
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
         btnRow.button(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done"));
@@ -938,17 +938,17 @@ public class GuiSetsConfig extends GuiScreen
 
         factory.gap(3).centerVertical().fitContent();
 
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.edit_title")).centered(true).color(0xFFFFFF));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.edit_title")).centered(true).color(WHITE_COLOR_1));
         if (!entryName.isEmpty())
         {
-            factory.add(new LabelElement(entryName).centered(true).color(0xC0C0C0));
+            factory.add(new LabelElement(entryName).centered(true));
         }
 
         int fieldWidth = Math.max(24, width * 2 / 100);
 
         ColumnElement labelCol = new ColumnElement().align(Alignment.RIGHT).gap(4);
-        labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ":").color(0xC0C0C0));
-        labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.chance") + ":").color(0xC0C0C0));
+        labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ":"));
+        labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.chance") + ":"));
 
         ColumnElement fieldCol = new ColumnElement().gap(4);
         editLevelElement = new TextFieldElement(fieldWidth).text(String.valueOf(currentLevel)).focused(true);
@@ -977,7 +977,7 @@ public class GuiSetsConfig extends GuiScreen
         String summary = container.getCurrentRequiredModEntries().isEmpty()
                 ? I18n.format("gui.oneblockultima.config.required_mods_empty")
                 : I18n.format("gui.oneblockultima.config.required_mods_selected", container.getCurrentRequiredModEntries().size());
-        factory.add(new LabelElement(summary).color(0xA0A0A0));
+        factory.add(new LabelElement(summary).color(GRAY_COLOR_5));
         factory.add(new SeparatorElement());
 
         List<RequiredModEntry> currentMods = container.getCurrentRequiredModEntries();
@@ -988,10 +988,10 @@ public class GuiSetsConfig extends GuiScreen
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                     boolean isSel = container.getSelectedRequiredModsForRemoval().contains(mod.modId);
-                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0xFF3F5060);
-                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
                     String label = mod.displayName.isEmpty() ? mod.modId : mod.displayName + " (" + mod.modId + ")";
-                    fr.drawStringWithShadow(label, x + 4, y + 4, 0xFFFFFF);
+                    fr.drawStringWithShadow(label, x + 4, y + 4, WHITE_COLOR_1);
                 }
 
                 @Override
@@ -1004,7 +1004,6 @@ public class GuiSetsConfig extends GuiScreen
 
         requiredModsList = new ScrollableListElement(ENTRY_HEIGHT)
                 .entries(entries)
-                .panelColor(0xFF1A1F24)
                 .scrollOffset(modsScrollOffset);
         requiredModsList.flexible(true);
         requiredModsList.visible(true);
@@ -1025,7 +1024,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.title("gui.oneblockultima.config.required_mods_add_title");
 
         String summary = I18n.format("gui.oneblockultima.config.required_mods_add_hint");
-        factory.add(new LabelElement(summary).color(0xA0A0A0));
+        factory.add(new LabelElement(summary).color(GRAY_COLOR_5));
 
         List<RequiredModEntry> availableMods = container.getAvailableRequiredModEntries();
         List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
@@ -1035,10 +1034,10 @@ public class GuiSetsConfig extends GuiScreen
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                     boolean isSel = container.getSelectedRequiredModsToAdd().contains(mod.modId);
-                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0xFF3F5060);
-                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
                     String label = mod.displayName.isEmpty() ? mod.modId : mod.displayName + " (" + mod.modId + ")";
-                    fr.drawStringWithShadow(label, x + 4, y + 4, 0xFFFFFF);
+                    fr.drawStringWithShadow(label, x + 4, y + 4, WHITE_COLOR_1);
                 }
 
                 @Override
@@ -1051,7 +1050,6 @@ public class GuiSetsConfig extends GuiScreen
 
         addModsList = new ScrollableListElement(ENTRY_HEIGHT)
                 .entries(entries)
-                .panelColor(0xFF1A1F24)
                 .scrollOffset(addModsScrollOffset);
         addModsList.flexible(true);
         addModsList.visible(true);
@@ -1099,13 +1097,13 @@ public class GuiSetsConfig extends GuiScreen
         int fieldWidth = Math.max(40, width * 4 / 100);
         if ("set_level".equals(type))
         {
-            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_conditions_level") + ":").color(0xC0C0C0));
+            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_conditions_level") + ":"));
             unlockLevelElement = new TextFieldElement(fieldWidth).text("1");
             addRow.add(unlockLevelElement);
         }
         else
         {
-            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":").color(0xC0C0C0));
+            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":"));
             unlockCountElement = new TextFieldElement(fieldWidth).text("1");
             addRow.add(unlockCountElement);
         }
@@ -1123,8 +1121,8 @@ public class GuiSetsConfig extends GuiScreen
                 @Override
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                     boolean isSel = container.getSelectedUnlockConditionIndex() == condIdx;
-                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0xFF3F5060);
-                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, 0x33FFFFFF);
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
 
                     String typeName = I18n.format("gui.oneblockultima.config.unlock_conditions_type_" + cond.type);
                     String info = typeName;
@@ -1136,7 +1134,7 @@ public class GuiSetsConfig extends GuiScreen
                     }
                     if (cond.level > 0) info += " " + I18n.format("gui.oneblockultima.lv") + ":" + cond.level;
                     if (cond.count > 0) info += " x" + cond.count;
-                    fr.drawStringWithShadow(info, x + 4, y + 4, 0xFFFFFF);
+                    fr.drawStringWithShadow(info, x + 4, y + 4, WHITE_COLOR_1);
                 }
 
                 @Override
@@ -1149,7 +1147,6 @@ public class GuiSetsConfig extends GuiScreen
 
         conditionsList = new ScrollableListElement(ENTRY_HEIGHT)
                 .entries(entries)
-                .panelColor(0xFF1A1F24)
                 .scrollOffset(conditionsScrollOffset);
         conditionsList.flexible(true);
         conditionsList.visible(true);

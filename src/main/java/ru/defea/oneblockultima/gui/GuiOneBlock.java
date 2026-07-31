@@ -25,6 +25,7 @@ import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import ru.defea.oneblockultima.Constants;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
@@ -42,6 +43,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.*;
 
+import static ru.defea.oneblockultima.Constants.*;
 import static ru.defea.oneblockultima.util.BlockUtil.isFullBlock;
 import static ru.defea.oneblockultima.util.ModelUtil.*;
 
@@ -64,12 +66,6 @@ public class GuiOneBlock extends GuiContainer
     private static final int VIEW_SETS = 0;
     private static final int VIEW_SETTINGS = 1;
     private static final int VIEW_DONATE = 2;
-
-    private static final int GREEN_COLOR = 0x00EE00;
-    private static final int ORANGE_COLOR = 0xFFAA00;
-    private static final int RED_COLOR = 0xEE0000;
-    private static final int REDDISH_COLOR = 0xFF7D7D;
-    private static final int GREENISH_COLOR = 0x7CEC9F;
 
     private static final int BUTTON_HEIGHT = 20;
     private static final int BUTTON_GAP = 6;
@@ -117,9 +113,6 @@ public class GuiOneBlock extends GuiContainer
     private ItemStack hoveredStackRight = ItemStack.EMPTY;
     private BlockSetConfig.MobEntryDefinition hoveredMobEntryRight = null;
     private String hoveredMobNameRight = null;
-
-    private static final ResourceLocation COIN_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png");
-    private static final ResourceLocation SBP_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/sbp.png");
 
     private int cellSize = 18;
     private int cellPadding = 1;
@@ -478,9 +471,9 @@ public class GuiOneBlock extends GuiContainer
         OneBlockUltima.getLogger().debug("[DEBUG] Area height: {}", areaHeight);
 
         fontRenderer.drawString(I18n.format(isLeft ? "gui.oneblockultima.current_level" : "gui.oneblockultima.next_level") + ": " + levelDefinition.level,
-                panelX + INNER_PADDING, panelY + 4, 0xA0B0C0);
+                panelX + INNER_PADDING, panelY + 4, LIGHT_BLUE_GRAY_COLOR);
         fontRenderer.drawString(I18n.format("gui.oneblockultima.possible_blocks") + ": ",
-                panelX + INNER_PADDING, panelY + rowInterval, 0xA0B0C0);
+                panelX + INNER_PADDING, panelY + rowInterval, LIGHT_BLUE_GRAY_COLOR);
 
         if (levelDefinition.blocks != null && !levelDefinition.blocks.isEmpty())
         {
@@ -559,8 +552,8 @@ public class GuiOneBlock extends GuiContainer
 
                     net.minecraft.block.Block blockForIcon = entry.resolveBlock();
 
-                    int bgColor = isHovered ? 0xFF3F5060 : 0xFF2A2F34;
-                    int borderColor = isHovered ? 0xFFFFFFFF : 0xFF3A3F44;
+                    int bgColor = isHovered ? DARK_BLUE_GRAY_COLOR_1 : DARK_GRAY_COLOR_2;
+                    int borderColor = isHovered ? WHITE_COLOR_1 : DARK_GRAY_COLOR_1;
 
                     drawRect(cellX, cellY, cellX + cellSize, cellY + cellSize, bgColor);
                     drawRect(cellX, cellY, cellX + cellSize, cellY + 1, borderColor);
@@ -647,7 +640,7 @@ public class GuiOneBlock extends GuiContainer
             if (levelDefinition.mobs != null && !levelDefinition.mobs.isEmpty())
             {
                 fontRenderer.drawString(I18n.format("gui.oneblockultima.mobs") + ":",
-                        mobsStartX, panelY + rowInterval, 0xA0B0C0);
+                        mobsStartX, panelY + rowInterval, LIGHT_BLUE_GRAY_COLOR);
 
                 int mobTotal = levelDefinition.mobs.size();
                 int mobRows = (mobTotal + mobCols - 1) / mobCols;
@@ -681,8 +674,8 @@ public class GuiOneBlock extends GuiContainer
                         boolean isMobHovered = (localMouseX >= cellX && localMouseX < cellX + cellSize &&
                                 localMouseY >= cellY && localMouseY < cellY + cellSize);
 
-                        int mobBgColor = isMobHovered ? 0xFF3F5060 : 0xFF2A2F34;
-                        int mobBorderColor = isMobHovered ? 0xFFFFFFFF : 0xFF3A3F44;
+                        int mobBgColor = isMobHovered ? DARK_BLUE_GRAY_COLOR_1 : DARK_GRAY_COLOR_2;
+                        int mobBorderColor = isMobHovered ? WHITE_COLOR_1 : DARK_GRAY_COLOR_1;
 
                         drawRect(cellX, cellY, cellX + cellSize, cellY + cellSize, mobBgColor);
                         drawRect(cellX, cellY, cellX + cellSize, cellY + 1, mobBorderColor);
@@ -1100,7 +1093,7 @@ public class GuiOneBlock extends GuiContainer
         updateLayoutMetrics();
 
         String title = I18n.format("tile.one_block_generator.name");
-        drawCenteredString(fontRenderer, title, xSize / 2, textHeight, 0xFFFFFF);
+        drawCenteredString(fontRenderer, title, xSize / 2, textHeight, WHITE_COLOR_1);
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(container.getPlayer());
         double currency = ru.defea.oneblockultima.event.ModEventsClient.getDisplayedCurrency(container.getPlayer());
@@ -1119,7 +1112,7 @@ public class GuiOneBlock extends GuiContainer
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         mc.getTextureManager().bindTexture(COIN_TEXTURE);
         drawModalRectWithCustomSizedTexture(iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
-        fontRenderer.drawString(balanceValue, numberX, numberY, 0xFFD700);
+        fontRenderer.drawString(balanceValue, numberX, numberY, GOLD_COLOR);
 
         TileEntityOneBlockGenerator generator = container.getGenerator();
         String activeSetId = generator == null ? null : generator.getSelectedSetId();
@@ -1134,8 +1127,8 @@ public class GuiOneBlock extends GuiContainer
         {
             String activeSetString = I18n.format("gui.oneblockultima.active_set");
             int rightTextX = contentWidth - fontRenderer.getStringWidth(activeSetString);
-            fontRenderer.drawString(activeSetString + ":", rightTextX, infoRowY, 0xA0B0C0);
-            fontRenderer.drawString(activeSetName, rightTextX, infoRowY + fontRenderer.FONT_HEIGHT + 2, 0xFFFFFF);
+            fontRenderer.drawString(activeSetString + ":", rightTextX, infoRowY, LIGHT_BLUE_GRAY_COLOR);
+            fontRenderer.drawString(activeSetName, rightTextX, infoRowY + fontRenderer.FONT_HEIGHT + 2, WHITE_COLOR_1);
 
             if (!visibleSets.isEmpty())
             {
@@ -1195,7 +1188,7 @@ public class GuiOneBlock extends GuiContainer
             int currentLevel = generator == null ? 0 : generator.getSetLevel(set.id);
             boolean isActiveSet = (set.id.equals(clientActiveSetId));
 
-            int setColor = currentLevel <= 0 ? REDDISH_COLOR : isActiveSet ? GREENISH_COLOR : 0xFFFFFF;
+            int setColor = currentLevel <= 0 ? REDDISH_COLOR : isActiveSet ? GREENISH_COLOR : WHITE_COLOR_1;
             String setTitle = getLocalizedSetName(set) + " " + I18n.format("gui.oneblockultima.lv") + currentLevel;
             if (isActiveSet)
             {
@@ -1211,18 +1204,18 @@ public class GuiOneBlock extends GuiContainer
             int statusY = setTitleY + rowInterval;
             if (currentLevel <= 0)
             {
-                fontRenderer.drawString(I18n.format("gui.oneblockultima.unlock_cost") + ": " + set.unlockCost, contentLeft + 4, statusY, 0xC0C0C0);
+                fontRenderer.drawString(I18n.format("gui.oneblockultima.unlock_cost") + ": " + set.unlockCost, contentLeft + 4, statusY, LIGHT_GRAY_COLOR_2);
             }
             else
             {
                 BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
                 if (nextLevel != null)
                 {
-                    fontRenderer.drawString(I18n.format("gui.oneblockultima.upgrade_cost") + ": " + nextLevel.upgradeCost, contentLeft + 4, statusY, 0xC0C0C0);
+                    fontRenderer.drawString(I18n.format("gui.oneblockultima.upgrade_cost") + ": " + nextLevel.upgradeCost, contentLeft + 4, statusY, LIGHT_GRAY_COLOR_2);
                 }
                 else
                 {
-                    fontRenderer.drawString(I18n.format("gui.oneblockultima.max_level"), contentLeft + 4, statusY, 0xC0C0C0);
+                    fontRenderer.drawString(I18n.format("gui.oneblockultima.max_level"), contentLeft + 4, statusY, LIGHT_GRAY_COLOR_2);
                 }
             }
 
@@ -1267,7 +1260,7 @@ public class GuiOneBlock extends GuiContainer
                 int separatorX = leftPanelX + panelWidth + panelGap / 2;
                 int separatorTop = infoHeight + infoRowY + 5;
                 int separatorBottom = ySize - 5;
-                drawRect(separatorX, separatorTop, separatorX + 1, separatorBottom, 0xFF4C5560);
+                drawRect(separatorX, separatorTop, separatorX + 1, separatorBottom, GRAY_COLOR_8);
             }
 
             if (hoveredEntryLeft == null && hoveredStackLeft.isEmpty() && hoveredMobEntryLeft == null &&
@@ -1379,7 +1372,7 @@ public class GuiOneBlock extends GuiContainer
         String title = I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config." + set.unlockConditions.mode);
         int titleWidth = fontRenderer.getStringWidth(title);
         int startX = x + (maxWidth - titleWidth) / 2;
-        fontRenderer.drawString(title, startX, y, 0xA0B0C0);
+        fontRenderer.drawString(title, startX, y, LIGHT_BLUE_GRAY_COLOR);
         y += fontRenderer.FONT_HEIGHT + 2;
 
         for (BlockSetConfig.UnlockConditionDefinition condition : set.unlockConditions.conditions)
@@ -1565,19 +1558,19 @@ public class GuiOneBlock extends GuiContainer
         int centerX = contentLeft + contentWidth / 2;
 
         String thankYou = I18n.format("gui.oneblockultima.donate.thank_you");
-        drawCenteredString(fontRenderer, thankYou, centerX, y, 0x55FF55);
+        drawCenteredString(fontRenderer, thankYou, centerX, y, SUCCESS_COLOR);
         y += rowInterval * 2;
 
         String line1 = I18n.format("gui.oneblockultima.donate.line1");
-        drawCenteredString(fontRenderer, line1, centerX, y, 0xCCCCCC);
+        drawCenteredString(fontRenderer, line1, centerX, y, LIGHT_GRAY_COLOR_1);
         y += rowInterval;
 
         String line2 = I18n.format("gui.oneblockultima.donate.line2");
-        drawCenteredString(fontRenderer, line2, centerX, y, 0xCCCCCC);
+        drawCenteredString(fontRenderer, line2, centerX, y, LIGHT_GRAY_COLOR_1);
         y += rowInterval;
 
         String line3 = I18n.format("gui.oneblockultima.donate.line3");
-        drawCenteredString(fontRenderer, line3, centerX, y, 0xCCCCCC);
+        drawCenteredString(fontRenderer, line3, centerX, y, LIGHT_GRAY_COLOR_1);
         y += rowInterval;
 
         int qrSize = 64;
@@ -1588,15 +1581,14 @@ public class GuiOneBlock extends GuiContainer
         mc.getTextureManager().bindTexture(SBP_TEXTURE);
         drawModalRectWithCustomSizedTexture(qrX, qrY, 0, 0, qrSize, qrSize, qrSize, qrSize);
 
-        String sbpLabel = "\u0421\u0411\u041F";
+        String sbpLabel = "SBP";
         int labelWidth = fontRenderer.getStringWidth(sbpLabel);
-        fontRenderer.drawStringWithShadow(sbpLabel, qrX + qrSize / 2.0F - labelWidth / 2.0F, qrY + qrSize + 4, 0xFFFFFF);
+        fontRenderer.drawStringWithShadow(sbpLabel, qrX + qrSize / 2.0F - labelWidth / 2.0F, qrY + qrSize + 4, WHITE_COLOR_1);
 
         if (donateStatusMessage != null && donateStatusTicks > 0)
         {
             int statusY = ySize - BUTTON_GAP - fontRenderer.FONT_HEIGHT;
-            int statusColor = 0x55FF55;
-            drawCenteredString(fontRenderer, donateStatusMessage, contentLeft + contentWidth / 2, statusY, statusColor);
+            drawCenteredString(fontRenderer, donateStatusMessage, contentLeft + contentWidth / 2, statusY, SUCCESS_COLOR);
         }
     }
 
@@ -1622,10 +1614,10 @@ public class GuiOneBlock extends GuiContainer
                 );
             }
 
-            drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, 0xFF22272E);
+            drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, DARK_GRAY_COLOR_3);
             drawRect(guiLeft, titleBottom, guiLeft + xSize,
-                    remainingHeight + titleBottom, 0xCC1F2328);
-            drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, 0xFF2E3A45);
+                    remainingHeight + titleBottom, TRANSPARENT_DARK_GRAY_COLOR_1);
+            drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, DARK_BLUE_GRAY_COLOR_2);
         }
         else {
             int infoBgHeight = infoBottom - titleBottom;
@@ -1648,11 +1640,11 @@ public class GuiOneBlock extends GuiContainer
                 );
             }
 
-            drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, 0xFF22272E);
-            drawRect(guiLeft, titleBottom, guiLeft + xSize, infoBottom, 0xCC1F2328);
-            drawRect(guiLeft, infoBottom, guiLeft + xSize, setContentBottom, 0xCC1F2328);
-            drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, 0xFF2E3A45);
-            drawRect(guiLeft, infoBottom, guiLeft + xSize, infoBottom + 1, 0xFF2E3A45);
+            drawRect(guiLeft, guiTop, guiLeft + xSize, titleBottom, DARK_GRAY_COLOR_3);
+            drawRect(guiLeft, titleBottom, guiLeft + xSize, infoBottom, TRANSPARENT_DARK_GRAY_COLOR_1);
+            drawRect(guiLeft, infoBottom, guiLeft + xSize, setContentBottom, TRANSPARENT_DARK_GRAY_COLOR_1);
+            drawRect(guiLeft + panelGap, titleBottom, guiLeft + xSize - panelGap, tabsBottom, DARK_BLUE_GRAY_COLOR_2);
+            drawRect(guiLeft, infoBottom, guiLeft + xSize, infoBottom + 1, DARK_BLUE_GRAY_COLOR_2);
         }
 
         if (tabs != null)
@@ -1683,8 +1675,8 @@ public class GuiOneBlock extends GuiContainer
         if (barHeight > scrollHeight) barHeight = scrollHeight;
         int barY = scrollY + (currentScroll * (scrollHeight - barHeight)) / maxScroll;
 
-        drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, 0xFF2A2F34);
-        drawRect(scrollX, barY, scrollX + SCROLLBAR_WIDTH, barY + barHeight, 0xFF7A7F84);
+        drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, DARK_GRAY_COLOR_2);
+        drawRect(scrollX, barY, scrollX + SCROLLBAR_WIDTH, barY + barHeight, Constants.GRAY_COLOR_1);
     }
 
     private void renderMobScrollBar(int scrollX, int scrollY, int scrollHeight, int currentScroll, int maxScroll)
@@ -1695,7 +1687,7 @@ public class GuiOneBlock extends GuiContainer
         if (barHeight > scrollHeight) barHeight = scrollHeight;
         int barY = scrollY + (currentScroll * (scrollHeight - barHeight)) / maxScroll;
 
-        drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, 0xFF2A2F34);
-        drawRect(scrollX, barY, scrollX + SCROLLBAR_WIDTH, barY + barHeight, 0xFF7A7F84);
+        drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, DARK_GRAY_COLOR_2);
+        drawRect(scrollX, barY, scrollX + SCROLLBAR_WIDTH, barY + barHeight, Constants.GRAY_COLOR_1);
     }
 }

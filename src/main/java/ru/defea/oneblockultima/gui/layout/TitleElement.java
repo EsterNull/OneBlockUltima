@@ -6,9 +6,11 @@ import net.minecraft.client.resources.I18n;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
+
 public class TitleElement extends ViewElement {
-    private String text;
-    private int color = 0xFFFFFF;
+    private final String text;
+    private int color = WHITE_COLOR_1;
 
     public TitleElement(String key, Object... args) {
         this.text = I18n.format(key, args);

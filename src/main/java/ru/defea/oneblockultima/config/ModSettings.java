@@ -30,6 +30,7 @@ public final class ModSettings
     private BalancePosition balancePosition = BalancePosition.TOP_RIGHT;
     private int hOffset = 5;
     private int vOffset = 3;
+    private boolean isShowBalance = true;
 
     public static ModSettings get()
     {
@@ -43,10 +44,12 @@ public final class ModSettings
     public BalancePosition getBalancePosition() { return balancePosition; }
     public int getHOffset() { return hOffset; }
     public int getVOffset() { return vOffset; }
+    public boolean isShowBalance() { return isShowBalance; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { this.hOffset = offset; save(); }
     public void setVOffset(int offset) { this.vOffset = offset; save(); }
+    public void setShowBalance(boolean isShowBalance) { this.isShowBalance = isShowBalance; save(); }
 
     private static File getFile()
     {

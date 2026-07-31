@@ -50,6 +50,13 @@ public class RowElement extends ViewElement {
         return e;
     }
 
+    public ButtonToggleElement buttonToggle(int id, boolean stateTriggered)
+    {
+        ButtonToggleElement e = new ButtonToggleElement(id, stateTriggered);
+        children.add(e);
+        return e;
+    }
+
     public RowElement label(String text) {
         children.add(new LabelElement(text));
         return this;

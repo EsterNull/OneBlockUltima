@@ -6,9 +6,11 @@ import net.minecraft.client.renderer.GlStateManager;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
+
 public class LabelElement extends ViewElement {
     private String text;
-    private int color = 0xFFFFFF;
+    private int color = WHITE_COLOR_1;
     private boolean centered = false;
     private float scale = 1.0f;
 

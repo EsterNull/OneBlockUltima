@@ -48,7 +48,7 @@ public class ModMainSettings extends GuiScreen
         }
         else if (button.id == BUTTON_MOD_SETTINGS)
         {
-            mc.displayGuiScreen(new GuiModSettings(this));
+            mc.displayGuiScreen(new GuiSettings(this));
         }
         else if (button.id == BUTTON_BLOCK_PRICES)
         {

@@ -6,6 +6,8 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
+
 public class InlineClickableElement extends ViewElement {
     public interface ClickHandler {
         boolean onClick(int mouseX, int mouseY, int mouseButton);
@@ -13,7 +15,7 @@ public class InlineClickableElement extends ViewElement {
 
     private int bgColor;
     private int hoverColor;
-    private int textColor = 0xFFFFFF;
+    private int textColor = WHITE_COLOR_1;
     private String text;
     private ClickHandler clickHandler;
     private boolean hovered = false;

@@ -6,13 +6,14 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.*;
+
 public class ScrollbarElement extends ViewElement {
     private int totalItems;
     private int visibleItems;
     private int scrollOffset;
-    private int trackColor = 0xFF2A2F34;
-    private int thumbColor = 0xFF7A7F84;
-    private int thumbHoverColor = 0xFF9A9FA4;
+    private int trackColor = DARK_GRAY_COLOR_2;
+    private int thumbColor = GRAY_COLOR_1;
     private boolean thumbHovered = false;
     private int thumbY;
     private int thumbHeight;
@@ -81,7 +82,7 @@ public class ScrollbarElement extends ViewElement {
         float thumbPos = maxOffset > 0 ? (float) scrollOffset / maxOffset : 0;
         thumbY = trackY + (int) (thumbPos * (trackHeight - thumbHeight));
 
-        int color = thumbHovered ? thumbHoverColor : thumbColor;
+        int color = thumbHovered ? GRAY_COLOR_5 : thumbColor;
         Gui.drawRect(trackX, thumbY, trackX + trackWidth, thumbY + thumbHeight, color);
     }
 

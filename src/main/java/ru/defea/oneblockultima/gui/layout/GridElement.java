@@ -6,6 +6,8 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.*;
+
 public class GridElement extends ViewElement {
     public interface CellRenderer {
         void draw(int x, int y, int cellWidth, int cellHeight, int row, int col,
@@ -92,7 +94,7 @@ public class GridElement extends ViewElement {
                 if (cellRenderer != null) {
                     cellRenderer.draw(cx, cy, actualCellSize, actualCellSize, r, c, hovered, selected, fr, mouseX, mouseY, partialTicks);
                 } else {
-                    int bg = selected ? 0xFF00EE00 : (hovered ? 0xFF3F5060 : 0xFF2A2F34);
+                    int bg = selected ? GREEN_COLOR : (hovered ? DARK_BLUE_GRAY_COLOR_1 : DARK_GRAY_COLOR_2);
                     Gui.drawRect(cx, cy, cx + actualCellSize, cy + actualCellSize, bg);
                 }
             }

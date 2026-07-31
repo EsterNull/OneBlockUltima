@@ -14,6 +14,8 @@ import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketOneBlockAction;
 
+import static ru.defea.oneblockultima.Constants.*;
+
 public class GuiClaimGenerator extends GuiScreen
 {
     private static final int BUTTON_CLAIM = 0;
@@ -41,10 +43,10 @@ public class GuiClaimGenerator extends GuiScreen
                 .gap(6)
                 .align(Alignment.CENTER)
                 .centerVertical()
-                .panel(0xCC22272E, 0xFF3A3F44);
+                .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
 
         factory.title(I18n.format("gui.oneblockultima.claim_title"));
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.claim_description")).color(0xCCCCCC).centered(true));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.claim_description")).color(LIGHT_GRAY_COLOR_1).centered(true));
         factory.add(new SpacerElement(12));
         factory.button(BUTTON_CLAIM, I18n.format("gui.oneblockultima.claim_owner"));
 

@@ -7,6 +7,8 @@ import net.minecraft.client.gui.GuiTextField;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.WHITE_COLOR_2;
+
 public class TextFieldElement extends ViewElement {
     private final int width;
     private static final int HEIGHT = Minecraft.getMinecraft().fontRenderer.FONT_HEIGHT + 4;
@@ -15,7 +17,7 @@ public class TextFieldElement extends ViewElement {
     private boolean focused = false;
     private boolean backgroundDrawing = true;
     private boolean enabled = true;
-    private int textColor = 0xE0E0E0;
+    private int textColor = WHITE_COLOR_2;
     private int maxStringLength = 256;
 
     public TextFieldElement(int width) {
@@ -49,6 +51,7 @@ public class TextFieldElement extends ViewElement {
     public TextFieldElement enabled(boolean enabled) {
         this.enabled = enabled;
         if (textField != null) textField.setEnabled(enabled);
+        if (!enabled) textColor(WHITE_COLOR_2);
         return this;
     }
 

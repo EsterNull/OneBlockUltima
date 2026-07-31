@@ -5,9 +5,11 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.SUCCESS_COLOR;
+
 public class StatusBarElement extends ViewElement {
     private String text = "";
-    private int textColor = 0x55FF55;
+    private int textColor = SUCCESS_COLOR;
     private int timer = 0;
 
     public StatusBarElement text(String text, int ticks) {

@@ -32,6 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static ru.defea.oneblockultima.Constants.GOLD_COLOR;
+import static ru.defea.oneblockultima.Constants.TRANSPARENT_DARK_GRAY_COLOR_2;
+
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = OneBlockUltima.MODID)
 public final class ModEventsClient
 {
@@ -101,68 +104,71 @@ public final class ModEventsClient
         int bgHeight = coinSize + vMargin * 2;
 
         ModSettings settings = ModSettings.get();
-        ModSettings.BalancePosition pos = settings.getBalancePosition();
-        int hOffset = settings.getHOffset();
-        int vOffset = settings.getVOffset();
+        boolean isShowBalance = settings.isShowBalance();
 
-        int hOffsetPx = screenWidth * hOffset / 100;
-        int vOffsetPx = screenHeight * vOffset / 100;
-
-        int bgX;
-        int bgY;
-
-        switch (pos)
+        if (isShowBalance)
         {
-            case TOP_LEFT:
-                bgX = hOffsetPx;
-                bgY = vOffsetPx;
-                break;
-            case TOP:
-                bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
-                bgY = vOffsetPx;
-                break;
-            case TOP_RIGHT:
-                bgX = screenWidth - bgWidth - hOffsetPx;
-                bgY = vOffsetPx;
-                break;
-            case LEFT:
-                bgX = hOffsetPx;
-                bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
-                break;
-            case RIGHT:
-                bgX = screenWidth - bgWidth - hOffsetPx;
-                bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
-                break;
-            case BOTTOM_LEFT:
-                bgX = hOffsetPx;
-                bgY = screenHeight - bgHeight - vOffsetPx;
-                break;
-            case BOTTOM:
-                bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
-                bgY = screenHeight - bgHeight - vOffsetPx;
-                break;
-            case BOTTOM_RIGHT:
-                bgX = screenWidth - bgWidth - hOffsetPx;
-                bgY = screenHeight - bgHeight - vOffsetPx;
-                break;
-            default:
-                bgX = screenWidth - bgWidth - hOffset;
-                bgY = vOffset;
-                break;
+            ModSettings.BalancePosition pos = settings.getBalancePosition();
+            int hOffset = settings.getHOffset();
+            int vOffset = settings.getVOffset();
+            int hOffsetPx = screenWidth * hOffset / 100;
+            int vOffsetPx = screenHeight * vOffset / 100;
+
+            int bgX;
+            int bgY;
+
+            switch (pos) {
+                case TOP_LEFT:
+                    bgX = hOffsetPx;
+                    bgY = vOffsetPx;
+                    break;
+                case TOP:
+                    bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
+                    bgY = vOffsetPx;
+                    break;
+                case TOP_RIGHT:
+                    bgX = screenWidth - bgWidth - hOffsetPx;
+                    bgY = vOffsetPx;
+                    break;
+                case LEFT:
+                    bgX = hOffsetPx;
+                    bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
+                    break;
+                case RIGHT:
+                    bgX = screenWidth - bgWidth - hOffsetPx;
+                    bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
+                    break;
+                case BOTTOM_LEFT:
+                    bgX = hOffsetPx;
+                    bgY = screenHeight - bgHeight - vOffsetPx;
+                    break;
+                case BOTTOM:
+                    bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
+                    bgY = screenHeight - bgHeight - vOffsetPx;
+                    break;
+                case BOTTOM_RIGHT:
+                    bgX = screenWidth - bgWidth - hOffsetPx;
+                    bgY = screenHeight - bgHeight - vOffsetPx;
+                    break;
+                default:
+                    bgX = screenWidth - bgWidth - hOffset;
+                    bgY = vOffset;
+                    break;
+            }
+
+            int x = bgX + hMargin;
+            int y = bgY + vMargin;
+
+            drawRoundedRect(bgX, bgY, bgWidth, bgHeight, 5, TRANSPARENT_DARK_GRAY_COLOR_2);
+
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+            Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png"));
+            Gui.drawModalRectWithCustomSizedTexture(x, y, 0, 0, coinSize, coinSize, coinSize, coinSize);
+            GlStateManager.disableBlend();
+            Minecraft.getMinecraft().fontRenderer.drawString(balanceValue, x + coinSize + spaceBetween, y, GOLD_COLOR);
         }
-
-        int x = bgX + hMargin;
-        int y = bgY + vMargin;
-
-        drawRoundedRect(bgX, bgY, bgWidth, bgHeight, 5, 0x99333333);
-
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png"));
-        Gui.drawModalRectWithCustomSizedTexture(x, y, 0, 0, coinSize, coinSize, coinSize, coinSize);
-        GlStateManager.disableBlend();
-        Minecraft.getMinecraft().fontRenderer.drawString(balanceValue, x + coinSize + spaceBetween, y, 0xFFD700);
     }
 
     public static double getDisplayedCurrency(EntityPlayer player)
