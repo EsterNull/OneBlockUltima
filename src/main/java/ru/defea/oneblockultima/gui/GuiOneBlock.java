@@ -777,9 +777,9 @@ public class GuiOneBlock extends GuiContainer
         rowInterval = fontRenderer.FONT_HEIGHT + 4;
 
         int tabGap = xSize / 36;
-        int tabWidth = xSize / 7;
-        settingsTabVisible = net.minecraft.client.Minecraft.getMinecraft().isIntegratedServerRunning();
         int visibleTabs = settingsTabVisible ? 3 : 2;
+        int tabWidth = xSize * 4 / (5 * visibleTabs);
+        settingsTabVisible = net.minecraft.client.Minecraft.getMinecraft().isIntegratedServerRunning();
         int totalTabWidth = tabWidth * visibleTabs + tabGap * (visibleTabs - 1);
         int tabX = guiLeft + (xSize - totalTabWidth) / 2;
         int tabY = guiTop + tabRowY + textHeight / 2;
