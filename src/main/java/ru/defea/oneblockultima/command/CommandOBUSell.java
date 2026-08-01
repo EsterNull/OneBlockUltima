@@ -12,6 +12,8 @@ import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 
+import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
+
 public class CommandOBUSell extends CommandBase
 {
     @Override
@@ -85,7 +87,7 @@ public class CommandOBUSell extends CommandBase
         if (stack.isEmpty()) return false;
         net.minecraft.nbt.NBTTagCompound nbt = stack.getTagCompound();
         if (nbt == null) return false;
-        return nbt.hasKey("obuGenerated") && nbt.getBoolean("obuGenerated");
+        return nbt.hasKey(NBT_OBU_GENERATED) && nbt.getBoolean(NBT_OBU_GENERATED);
     }
 
     @Override

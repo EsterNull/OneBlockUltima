@@ -73,7 +73,6 @@ public class GuiBlockPrices extends GuiScreen
     {
         if (priceList != null) scrollOffset = priceList.getScrollOffset();
         if (searchList != null) searchScrollOffset = searchList.getScrollOffset();
-        buttonList.clear();
 
         if (currentView == VIEW_PRICES)
         {
@@ -95,8 +94,7 @@ public class GuiBlockPrices extends GuiScreen
         factory = new ViewFactory(width, height)
             .margin(8).padding(2)
             .gap(6)
-            .align(Alignment.CENTER)
-            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
+            .align(Alignment.CENTER);
 
         factory.title("gui.oneblockultima.prices.title");
 
@@ -217,8 +215,7 @@ public class GuiBlockPrices extends GuiScreen
         factory = new ViewFactory(width, height)
             .margin(8).padding(2)
             .gap(6)
-            .align(Alignment.CENTER)
-            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
+            .align(Alignment.CENTER);
 
         factory.title("gui.oneblockultima.prices.add");
 
@@ -228,7 +225,7 @@ public class GuiBlockPrices extends GuiScreen
             .widthPercent(60);
         factory.add(searchFieldElement);
 
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(GRAY_COLOR_1).centered(true));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(GRAY_COLOR_1).centered());
 
         List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
         for (int i = 0; i < container.getSearchResults().size(); i++)
@@ -273,7 +270,7 @@ public class GuiBlockPrices extends GuiScreen
 
         if (searchEntries.isEmpty())
         {
-            factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(GRAY_COLOR_1).centered(true));
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(GRAY_COLOR_1).centered());
         }
 
         factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
@@ -287,7 +284,6 @@ public class GuiBlockPrices extends GuiScreen
             .margin(8).padding(2)
             .gap(6)
             .align(Alignment.CENTER)
-            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1)
             .centerVertical();
 
         factory.title("gui.oneblockultima.prices.edit_title");
@@ -300,11 +296,11 @@ public class GuiBlockPrices extends GuiScreen
 
         String displayName = container.getEditingName() != null && !container.getEditingName().isEmpty()
                 ? container.getEditingName() : container.getEditingRegistry();
-        factory.add(new LabelElement(displayName).centered(true));
-        factory.add(new LabelElement(container.getEditingRegistry()).color(GRAY_COLOR_1).centered(true));
+        factory.add(new LabelElement(displayName).centered());
+        factory.add(new LabelElement(container.getEditingRegistry()).color(GRAY_COLOR_1).centered());
 
         factory.add(new SpacerElement(10));
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.price")).centered(true));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.price")).centered());
 
         priceFieldElement = new TextFieldElement(0)
             .text(ContainerBlockPrices.formatPrice(container.getEditingPrice()))

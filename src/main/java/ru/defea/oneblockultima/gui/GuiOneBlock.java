@@ -60,9 +60,11 @@ public class GuiOneBlock extends GuiContainer
     private static final int BUTTON_TOGGLE_MOBS = 8;
     private static final int BUTTON_TOGGLE_CHESTS = 9;
     private static final int BUTTON_TOGGLE_SAPLINGS = 10;
-    private static final int BUTTON_TAB_DONATE = 11;
-    private static final int BUTTON_DONATE_BASE = 12;
-    private static final int BUTTON_OPEN_PRICES = 30;
+    private static final int BUTTON_OPEN_PRICES = 12;
+    private static final int BUTTON_OPEN_UI_SETTINGS = 13;
+    private static final int BUTTON_OPEN_MISC_SETTINGS = 14;
+    private static final int BUTTON_TAB_DONATE = 999;
+    private static final int BUTTON_DONATE_BASE = 1000;
     private static final int VIEW_SETS = 0;
     private static final int VIEW_SETTINGS = 1;
     private static final int VIEW_DONATE = 2;
@@ -86,6 +88,8 @@ public class GuiOneBlock extends GuiContainer
     private ButtonElement upgradeButton;
     private ButtonElement openConfigEditorButton;
     private ButtonElement openPricesButton;
+    private ButtonElement openUISettingsButton;
+    private ButtonElement openMiscSettingsButton;
     private ButtonElement toggleFluidButton;
     private ButtonElement toggleMobsButton;
     private ButtonElement toggleChestsButton;
@@ -157,7 +161,7 @@ public class GuiOneBlock extends GuiContainer
 
         int infoInternalWidth = Math.max(80, contentWidth - 16);
         int infoLines = 0;
-        if (activeView != VIEW_SETTINGS)
+        if (activeView == VIEW_SETS)
         {
             TileEntityOneBlockGenerator generator = container.getGenerator();
             String activeSetId = generator == null ? null : generator.getSelectedSetId();
@@ -844,15 +848,25 @@ public class GuiOneBlock extends GuiContainer
         toggleSaplingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleSaplingsButton.createWidgets(buttonList, fontRenderer, null);
 
-        openConfigEditorButton = new ButtonElement(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.settings.open_editor"));
-        openConfigEditorButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
-        openConfigEditorButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
-        openConfigEditorButton.createWidgets(buttonList, fontRenderer, null);
-
         openPricesButton = new ButtonElement(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
         openPricesButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
         openPricesButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openPricesButton.createWidgets(buttonList, fontRenderer, null);
+
+        openConfigEditorButton = new ButtonElement(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title"));
+        openConfigEditorButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
+        openConfigEditorButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
+        openConfigEditorButton.createWidgets(buttonList, fontRenderer, null);
+
+        openUISettingsButton = new ButtonElement(BUTTON_OPEN_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title"));
+        openUISettingsButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 3);
+        openUISettingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
+        openUISettingsButton.createWidgets(buttonList, fontRenderer, null);
+
+        openMiscSettingsButton = new ButtonElement(BUTTON_OPEN_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title"));
+        openMiscSettingsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 3);
+        openMiscSettingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
+        openMiscSettingsButton.createWidgets(buttonList, fontRenderer, null);
 
         int donateBtnX = guiLeft + contentLeft + 72;
         int donateBtnWidth = contentWidth - 72 - 4;
@@ -889,6 +903,8 @@ public class GuiOneBlock extends GuiContainer
         if (upgradeButton != null) upgradeButton.visible(setsView);
         if (openConfigEditorButton != null) openConfigEditorButton.visible(settingsView);
         if (openPricesButton != null) openPricesButton.visible(settingsView);
+        if (openUISettingsButton != null) openUISettingsButton.visible(settingsView);
+        if (openMiscSettingsButton != null) openMiscSettingsButton.visible(settingsView);
         if (toggleFluidButton != null) toggleFluidButton.visible(settingsView);
         if (toggleMobsButton != null) toggleMobsButton.visible(settingsView);
         if (toggleChestsButton != null) toggleChestsButton.visible(settingsView);
@@ -1008,6 +1024,14 @@ public class GuiOneBlock extends GuiContainer
         else if (button.id == BUTTON_OPEN_PRICES)
         {
             mc.displayGuiScreen(new GuiBlockPrices(this));
+        }
+        else if (button.id == BUTTON_OPEN_UI_SETTINGS)
+        {
+            mc.displayGuiScreen(new GuiUiSettings(this));
+        }
+        else if (button.id == BUTTON_OPEN_MISC_SETTINGS)
+        {
+            mc.displayGuiScreen(new GuiMiscSettings(this));
         }
         else if (button.id >= BUTTON_DONATE_BASE && button.id < BUTTON_DONATE_BASE + DonateMethod.METHODS.length)
         {
@@ -1604,7 +1628,7 @@ public class GuiOneBlock extends GuiContainer
         int setContentBottom = this.height - guiTop;
 
         if (activeView == VIEW_SETTINGS) {
-            int remainingHeight = tabsBottom + (BUTTON_HEIGHT + BUTTON_GAP) * 3 + BUTTON_GAP - titleBottom;
+            int remainingHeight = tabsBottom + (BUTTON_HEIGHT + BUTTON_GAP) * 4 + BUTTON_GAP - titleBottom;
             if (remainingHeight > 0) {
                 renderProceduralBackground(
                         guiLeft,

@@ -61,18 +61,6 @@ public class GuiSetsConfig extends GuiScreen
     private final ContainerSetsConfig container;
     private ViewFactory factory;
 
-    private GuiTextField searchField;
-    private GuiTextField setNameField;
-    private GuiTextField setIdField;
-    private GuiTextField unlockCostField;
-    private GuiTextField entrySearchField;
-    private GuiTextField addLevelField;
-    private GuiTextField addChanceField;
-    private GuiTextField editLevelField;
-    private GuiTextField editChanceField;
-    private GuiTextField unlockConditionsLevelField;
-    private GuiTextField unlockConditionsCountField;
-
     private TextFieldElement searchFieldElement;
     private TextFieldElement setNameElement;
     private TextFieldElement setIdElement;
@@ -125,8 +113,7 @@ public class GuiSetsConfig extends GuiScreen
                 .margin(8)
                 .padding(4)
                 .gap(6)
-                .align(Alignment.CENTER)
-                .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
+                .align(Alignment.CENTER);
 
         switch (container.getCurrentView())
         {
@@ -888,7 +875,7 @@ public class GuiSetsConfig extends GuiScreen
 
         if (searchEntries.isEmpty())
         {
-            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered(true));
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered());
         }
 
         factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
@@ -903,7 +890,7 @@ public class GuiSetsConfig extends GuiScreen
                 : "";
 
         factory.fitContent().centerVertical();
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName)).centered(true).color(WHITE_COLOR_1));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName)).centered());
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
         btnRow.button(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done"));
@@ -938,10 +925,10 @@ public class GuiSetsConfig extends GuiScreen
 
         factory.gap(3).centerVertical().fitContent();
 
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.edit_title")).centered(true).color(WHITE_COLOR_1));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.edit_title")).centered());
         if (!entryName.isEmpty())
         {
-            factory.add(new LabelElement(entryName).centered(true));
+            factory.add(new LabelElement(entryName).centered());
         }
 
         int fieldWidth = Math.max(24, width * 2 / 100);

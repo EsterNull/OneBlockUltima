@@ -9,7 +9,6 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -32,7 +31,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static ru.defea.oneblockultima.Constants.COIN_TEXTURE;
 import static ru.defea.oneblockultima.Constants.GOLD_COLOR;
+import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
 import static ru.defea.oneblockultima.Constants.TRANSPARENT_DARK_GRAY_COLOR_2;
 
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = OneBlockUltima.MODID)
@@ -164,7 +165,7 @@ public final class ModEventsClient
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-            Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png"));
+            Minecraft.getMinecraft().getTextureManager().bindTexture(COIN_TEXTURE);
             Gui.drawModalRectWithCustomSizedTexture(x, y, 0, 0, coinSize, coinSize, coinSize, coinSize);
             GlStateManager.disableBlend();
             Minecraft.getMinecraft().fontRenderer.drawString(balanceValue, x + coinSize + spaceBetween, y, GOLD_COLOR);
@@ -348,7 +349,7 @@ public final class ModEventsClient
         if (stack.isEmpty()) return;
 
         NBTTagCompound nbt = stack.getTagCompound();
-        if (nbt != null && nbt.hasKey("obuGenerated") && nbt.getBoolean("obuGenerated"))
+        if (nbt != null && nbt.hasKey(NBT_OBU_GENERATED) && nbt.getBoolean(NBT_OBU_GENERATED))
         {
             event.getToolTip().add(net.minecraft.util.text.translation.I18n.translateToLocal("gui.oneblockultima.tooltip.obu_generated"));
         }

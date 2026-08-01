@@ -112,27 +112,25 @@ gui.oneblockultima.settings.fluid=Fluid generation
 gui.oneblockultima.settings.mobs=Mob generation
 gui.oneblockultima.settings.chests=Chest generation
 gui.oneblockultima.settings.saplings=Sapling generation
-gui.oneblockultima.settings.open_editor=Manage sets
 gui.oneblockultima.settings.open_prices=Manage prices
-gui.oneblockultima.settings.mod_settings=UI Settings
 gui.oneblockultima.settings.back=Back
 gui.oneblockultima.settings.enabled=enabled
 gui.oneblockultima.settings.disabled=disabled
 
-gui.oneblockultima.mod_settings.title=UI Settings
-gui.oneblockultima.mod_settings.balance_position=Balance Position
-gui.oneblockultima.mod_settings.h_offset=H (%%):
-gui.oneblockultima.mod_settings.v_offset=V (%%):
-gui.oneblockultima.mod_settings.show_balance=Show Balance:
-gui.oneblockultima.mod_settings.preview=Preview
-gui.oneblockultima.mod_settings.pos.top_left=Top Left
-gui.oneblockultima.mod_settings.pos.top=Top
-gui.oneblockultima.mod_settings.pos.top_right=Top Right
-gui.oneblockultima.mod_settings.pos.left=Left
-gui.oneblockultima.mod_settings.pos.right=Right
-gui.oneblockultima.mod_settings.pos.bottom_left=Bottom Left
-gui.oneblockultima.mod_settings.pos.bottom=Bottom
-gui.oneblockultima.mod_settings.pos.bottom_right=Bottom Right
+gui.oneblockultima.ui_settings.title=UI Settings
+gui.oneblockultima.ui_settings.balance_position=Balance Position
+gui.oneblockultima.ui_settings.h_offset=H (%%):
+gui.oneblockultima.ui_settings.v_offset=V (%%):
+gui.oneblockultima.ui_settings.show_balance=Show Balance
+gui.oneblockultima.ui_settings.preview=Preview
+gui.oneblockultima.ui_settings.pos.top_left=Top Left
+gui.oneblockultima.ui_settings.pos.top=Top
+gui.oneblockultima.ui_settings.pos.top_right=Top Right
+gui.oneblockultima.ui_settings.pos.left=Left
+gui.oneblockultima.ui_settings.pos.right=Right
+gui.oneblockultima.ui_settings.pos.bottom_left=Bottom Left
+gui.oneblockultima.ui_settings.pos.bottom=Bottom
+gui.oneblockultima.ui_settings.pos.bottom_right=Bottom Right
 
 gui.oneblockultima.unlock_conditions=Unlock Conditions
 gui.oneblockultima.condition.set_level=%s level %d/%d
@@ -272,7 +270,6 @@ command.obuSellAll.success=Sold %1$d items for %2$s currency. Balance: %3$s
 gui.oneblockultima.mod_settings.balance_mode=Income Mode
 gui.oneblockultima.mod_settings.balance_mode.break_block=By Breaking Blocks
 gui.oneblockultima.mod_settings.balance_mode.sell_block=By Selling Blocks
-gui.oneblockultima.mod_settings.block_prices=Block Prices
 
 # Block prices GUI
 gui.oneblockultima.prices.title=Block Price Table
@@ -286,6 +283,10 @@ gui.oneblockultima.prices.search.no_results=No blocks found
 gui.oneblockultima.prices.price_saved=Price saved
 gui.oneblockultima.prices.table_saved=Table saved
 gui.oneblockultima.prices.price_removed=Price removed
+
+# Misc settings GUI
+gui.oneblockultima.misc.title=Misc
+gui.oneblockultima.misc.mob_world_generation=Mob generation in Overworld
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator

@@ -21,6 +21,8 @@ import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
+import static ru.defea.oneblockultima.Constants.MINECRAFT_DOMAIN;
+
 import javax.annotation.Nonnull;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -424,7 +426,7 @@ public final class BlockSetConfig
         {
             ResourceLocation loc = new ResourceLocation(registry);
             String domain = loc.getResourceDomain();
-            if ("minecraft".equals(domain))
+            if (MINECRAFT_DOMAIN.equals(domain))
             {
                 return true;
             }
@@ -1115,6 +1117,9 @@ public final class BlockSetConfig
         public String dropItem = null;
         public NBTTagCompound nbtTags = new NBTTagCompound();
 
+        private transient Block resolvedBlockCache;
+        private transient boolean resolvedBlockCacheSet;
+
         public int getChance()
         {
             return chance > 0 ? chance : 1;
@@ -1122,12 +1127,19 @@ public final class BlockSetConfig
 
         public Block resolveBlock()
         {
-            if (registry == null || registry.isEmpty())
+            if (!resolvedBlockCacheSet)
             {
-                return null;
+                resolvedBlockCacheSet = true;
+                if (registry == null || registry.isEmpty())
+                {
+                    resolvedBlockCache = null;
+                }
+                else
+                {
+                    resolvedBlockCache = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
+                }
             }
-
-            return ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
+            return resolvedBlockCache;
         }
 
         public boolean isFluid() {

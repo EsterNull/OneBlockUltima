@@ -8,7 +8,9 @@ import ru.defea.oneblockultima.config.ModSettings;
 import java.lang.reflect.Constructor;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ModSettingsTest {
 
@@ -105,5 +107,28 @@ public class ModSettingsTest {
         settings.setVOffset(0);
         assertEquals(0, settings.getHOffset());
         assertEquals(0, settings.getVOffset());
+    }
+
+    // --- mobWorldGeneration ---
+
+    @Test
+    public void defaultMobWorldGenerationIsFalse() throws Exception {
+        ModSettings settings = newInstance();
+        assertFalse(settings.getMobWorldGeneration());
+    }
+
+    @Test
+    public void setMobWorldGenerationTrueChangesValue() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setMobWorldGeneration(true);
+        assertTrue(settings.getMobWorldGeneration());
+    }
+
+    @Test
+    public void setMobWorldGenerationFalseAfterTrue() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setMobWorldGeneration(true);
+        settings.setMobWorldGeneration(false);
+        assertFalse(settings.getMobWorldGeneration());
     }
 }

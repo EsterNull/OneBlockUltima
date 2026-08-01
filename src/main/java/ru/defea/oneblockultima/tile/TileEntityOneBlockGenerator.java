@@ -22,6 +22,8 @@ import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.util.BlockUtil;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
 
+import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
+
 import javax.annotation.Nullable;
 import java.util.*;
 
@@ -270,7 +272,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (itemStack.getTagCompound() == null) {
                         itemStack.setTagCompound(new NBTTagCompound());
                     }
-                    itemStack.getTagCompound().setBoolean("obuGenerated", true);
+                    itemStack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
                     net.minecraft.entity.item.EntityItem entityItem = new net.minecraft.entity.item.EntityItem(
                             world, targetPos.getX(), targetPos.getY(), targetPos.getZ(), itemStack
@@ -361,7 +363,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
     private static NBTTagCompound ensureObuGenerated(NBTTagCompound nbtTags)
     {
         NBTTagCompound result = nbtTags != null ? nbtTags.copy() : new NBTTagCompound();
-        result.setBoolean("obuGenerated", true);
+        result.setBoolean(NBT_OBU_GENERATED, true);
         return result;
     }
 

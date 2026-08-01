@@ -8,6 +8,9 @@ import net.minecraft.client.gui.GuiTextField;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.defea.oneblockultima.Constants.DARK_GRAY_COLOR_1;
+import static ru.defea.oneblockultima.Constants.TRANSPARENT_DARK_GRAY_COLOR_1;
+
 public class ViewFactory {
     private final int screenWidth;
     private final int screenHeight;
@@ -18,8 +21,8 @@ public class ViewFactory {
     private int gap = 4;
     private Alignment defaultAlignment = Alignment.CENTER;
     private boolean centerVertical = false;
-    private int panelColor = 0;
-    private int panelBorderColor = 0;
+    private int panelColor = TRANSPARENT_DARK_GRAY_COLOR_1;
+    private int panelBorderColor = DARK_GRAY_COLOR_1;
     private int margin = 0;
     private boolean fitContent = false;
     private final List<ViewElement> elements = new ArrayList<>();
@@ -126,6 +129,18 @@ public class ViewFactory {
         return e;
     }
 
+    public ButtonToggleElement buttonToggle(int id, boolean stateTriggered) {
+        ButtonToggleElement e = new ButtonToggleElement(id, stateTriggered);
+        elements.add(e);
+        return e;
+    }
+
+    public ButtonToggleElement buttonToggle(boolean stateTriggered) {
+        ButtonToggleElement e = new ButtonToggleElement(stateTriggered);
+        elements.add(e);
+        return e;
+    }
+
     public TextFieldElement textField() {
         return textField(200);
     }
@@ -165,13 +180,23 @@ public class ViewFactory {
 
     public void build(List<GuiButton> buttonList, FontRenderer fontRenderer) {
         textFields.clear();
-        int contentX = margin + paddingLeft;
         int contentY = margin + paddingTop;
-        int contentWidth = screenWidth - margin * 2 - paddingLeft - paddingRight;
+        int maxContentWidth = screenWidth - margin * 2 - paddingLeft - paddingRight;
         int availableHeight = screenHeight - margin * 2 - paddingTop - paddingBottom;
         int visibleCount = 0;
         int fixedHeight = 0;
         int flexCount = 0;
+
+        int contentX;
+        int contentWidth;
+        if (fitContent) {
+            contentWidth = computeNaturalContentWidth(fontRenderer);
+            if (contentWidth <= 0 || contentWidth > maxContentWidth) contentWidth = maxContentWidth;
+            contentX = margin + paddingLeft + (maxContentWidth - contentWidth) / 2;
+        } else {
+            contentWidth = maxContentWidth;
+            contentX = margin + paddingLeft;
+        }
 
         for (ViewElement e : elements) {
             if (!e.isVisible()) continue;
@@ -242,6 +267,17 @@ public class ViewFactory {
 
     public int getTotalContentHeight() {
         return totalContentHeight;
+    }
+
+    private int computeNaturalContentWidth(FontRenderer fr) {
+        int maxWidth = 0;
+        for (ViewElement e : elements) {
+            if (!e.isVisible()) continue;
+            if (e.getWidthPercent() >= 0) return -1;
+            int w = e.getPreferredWidth(fr);
+            if (w > maxWidth) maxWidth = w;
+        }
+        return maxWidth;
     }
 
     public int getContentMinX() {

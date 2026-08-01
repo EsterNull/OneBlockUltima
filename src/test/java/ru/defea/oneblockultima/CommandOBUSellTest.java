@@ -10,6 +10,7 @@ import ru.defea.oneblockultima.command.CommandOBUSell;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
 
 public class CommandOBUSellTest {
 
@@ -41,7 +42,7 @@ public class CommandOBUSellTest {
     public void isObuGeneratedReturnsFalseWhenKeyExistsButFalse() {
         ItemStack stack = new ItemStack(Items.DIAMOND);
         stack.setTagCompound(new NBTTagCompound());
-        stack.getTagCompound().setBoolean("obuGenerated", false);
+        stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, false);
         assertFalse(CommandOBUSell.isObuGenerated(stack));
     }
 
@@ -49,7 +50,7 @@ public class CommandOBUSellTest {
     public void isObuGeneratedReturnsTrueWhenTagIsTrue() {
         ItemStack stack = new ItemStack(Items.DIAMOND);
         stack.setTagCompound(new NBTTagCompound());
-        stack.getTagCompound().setBoolean("obuGenerated", true);
+        stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
         assertTrue(CommandOBUSell.isObuGenerated(stack));
     }
 
@@ -57,7 +58,7 @@ public class CommandOBUSellTest {
     public void isObuGeneratedReturnsTrueForBlockItemWithTag() {
         net.minecraft.item.ItemStack stack = new ItemStack(net.minecraft.init.Blocks.STONE);
         stack.setTagCompound(new NBTTagCompound());
-        stack.getTagCompound().setBoolean("obuGenerated", true);
+        stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
         assertTrue(CommandOBUSell.isObuGenerated(stack));
     }
 
@@ -65,7 +66,7 @@ public class CommandOBUSellTest {
     public void isObuGeneratedReturnsTrueForDirtWithTag() {
         net.minecraft.item.ItemStack stack = new ItemStack(net.minecraft.init.Blocks.DIRT);
         stack.setTagCompound(new NBTTagCompound());
-        stack.getTagCompound().setBoolean("obuGenerated", true);
+        stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
         assertTrue(CommandOBUSell.isObuGenerated(stack));
     }
 
@@ -80,7 +81,7 @@ public class CommandOBUSellTest {
     public void isObuGeneratedReturnsTrueWithAdditionalTags() {
         ItemStack stack = new ItemStack(Items.DIAMOND);
         NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setBoolean("obuGenerated", true);
+        nbt.setBoolean(NBT_OBU_GENERATED, true);
         nbt.setString("customName", "My Diamond");
         nbt.setInteger("CustomModelData", 123);
         stack.setTagCompound(nbt);
@@ -91,11 +92,11 @@ public class CommandOBUSellTest {
     public void isObuGeneratedMultipleStacksSameNbt() {
         ItemStack stack1 = new ItemStack(Items.DIAMOND, 5);
         stack1.setTagCompound(new NBTTagCompound());
-        stack1.getTagCompound().setBoolean("obuGenerated", true);
+        stack1.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
         ItemStack stack2 = new ItemStack(Items.DIAMOND, 1);
         stack2.setTagCompound(new NBTTagCompound());
-        stack2.getTagCompound().setBoolean("obuGenerated", true);
+        stack2.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
         assertTrue(CommandOBUSell.isObuGenerated(stack1));
         assertTrue(CommandOBUSell.isObuGenerated(stack2));
@@ -105,7 +106,7 @@ public class CommandOBUSellTest {
     public void isObuGeneratedCopiedStackPreservesTag() {
         ItemStack original = new ItemStack(Items.DIAMOND);
         original.setTagCompound(new NBTTagCompound());
-        original.getTagCompound().setBoolean("obuGenerated", true);
+        original.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
         ItemStack copy = original.copy();
         assertTrue(CommandOBUSell.isObuGenerated(copy));
@@ -115,10 +116,10 @@ public class CommandOBUSellTest {
     public void isObuGeneratedModifiedCopyDoesNotAffectOriginal() {
         ItemStack original = new ItemStack(Items.DIAMOND);
         original.setTagCompound(new NBTTagCompound());
-        original.getTagCompound().setBoolean("obuGenerated", true);
+        original.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
         ItemStack copy = original.copy();
-        copy.getTagCompound().setBoolean("obuGenerated", false);
+        copy.getTagCompound().setBoolean(NBT_OBU_GENERATED, false);
 
         assertTrue(CommandOBUSell.isObuGenerated(original));
         assertFalse(CommandOBUSell.isObuGenerated(copy));

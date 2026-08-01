@@ -385,6 +385,26 @@ public class BlockSetDefinitionTest {
     }
 
     @Test
+    public void resolveBlockReturnsCachedInstance() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "minecraft:stone";
+        net.minecraft.block.Block first = entry.resolveBlock();
+        net.minecraft.block.Block second = entry.resolveBlock();
+        assertNotNull(first);
+        assertSame(first, second);
+    }
+
+    @Test
+    public void resolveBlockCachesResultForUnknownRegistry() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "nonexistent_mod:missing_block";
+        net.minecraft.block.Block first = entry.resolveBlock();
+        net.minecraft.block.Block second = entry.resolveBlock();
+        assertNotNull(first);
+        assertSame(first, second);
+    }
+
+    @Test
     public void isFluidReturnsTrueForWater() {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "minecraft:water";

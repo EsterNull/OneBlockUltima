@@ -15,6 +15,9 @@ import ru.defea.oneblockultima.network.PacketOneBlockAction;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
+import static ru.defea.oneblockultima.Constants.BLOCK_CENTER_OFFSET;
+import static ru.defea.oneblockultima.Constants.PLAYER_INTERACT_RANGE_SQ;
+
 public class ContainerOneBlock extends Container
 {
     private final World world;
@@ -51,7 +54,7 @@ public class ContainerOneBlock extends Container
     @Override
     public boolean canInteractWith(EntityPlayer playerIn)
     {
-        return playerIn.getDistanceSq(generatorPos.getX() + 0.5D, generatorPos.getY() + 0.5D, generatorPos.getZ() + 0.5D) <= 64.0D;
+        return playerIn.getDistanceSq(generatorPos.getX() + BLOCK_CENTER_OFFSET, generatorPos.getY() + BLOCK_CENTER_OFFSET, generatorPos.getZ() + BLOCK_CENTER_OFFSET) <= PLAYER_INTERACT_RANGE_SQ;
     }
 
     public void selectSet(String setId)

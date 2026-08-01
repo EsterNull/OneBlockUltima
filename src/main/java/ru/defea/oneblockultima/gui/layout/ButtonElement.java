@@ -10,8 +10,8 @@ import static ru.defea.oneblockultima.Constants.*;
 import static ru.defea.oneblockultima.Constants.DARK_GRAY_COLOR_1;
 
 public class ButtonElement extends ViewElement {
-    private static final int BUTTON_PADDING = 16;
-    private static final int BUTTON_HEIGHT_PADDING = 8;
+    public static final int BUTTON_PADDING = 16;
+    public static final int BUTTON_HEIGHT_PADDING = 8;
 
     private final int id;
     protected String text;
@@ -163,10 +163,12 @@ public class ButtonElement extends ViewElement {
     public short getBorderSize() { return borderSize; }
 
     protected int widgetFillColor(boolean hovered) {
+        if (!enabled) return DISABLED_BUTTON_FILL;
         return hovered ? GRAY_COLOR_6 : DARK_GRAY_COLOR_1;
     }
 
     protected int widgetTextColor(boolean hovered) {
+        if (!enabled) return DISABLED_BUTTON_TEXT;
         return hovered ? textColorHovered : textColor;
     }
 

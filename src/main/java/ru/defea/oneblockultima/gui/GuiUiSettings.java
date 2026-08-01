@@ -13,7 +13,7 @@ import java.io.IOException;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class GuiSettings extends GuiScreen
+public class GuiUiSettings extends GuiScreen
 {
     private static final int BUTTON_SAVE = 0;
     private static final int BUTTON_BACK = 1;
@@ -25,6 +25,7 @@ public class GuiSettings extends GuiScreen
 
     private final GuiScreen parent;
     private ModSettings.BalancePosition currentPos;
+    private ModSettings settings;
     private int hOffset;
     private int vOffset;
     private boolean isShowBalance;
@@ -35,7 +36,7 @@ public class GuiSettings extends GuiScreen
 
     private LabelElement positionLabel;
 
-    public GuiSettings(GuiScreen parent)
+    public GuiUiSettings(GuiScreen parent)
     {
         this.parent = parent;
     }
@@ -44,95 +45,97 @@ public class GuiSettings extends GuiScreen
     public void initGui()
     {
         buttonList.clear();
-        ModSettings settings = ModSettings.get();
+        settings = ModSettings.get();
         currentPos = settings.getBalancePosition();
         hOffset = settings.getHOffset();
         vOffset = settings.getVOffset();
         isShowBalance = settings.isShowBalance();
 
+        buildView();
+    }
+
+    private void buildView() {
         int contentWidth = width - 20;
         int fieldWidth = Math.max(40, contentWidth / 20);
-        String hLabel = I18n.format("gui.oneblockultima.mod_settings.h_offset");
-        String vLabel = I18n.format("gui.oneblockultima.mod_settings.v_offset");
-        String showBalanceLabel = I18n.format("gui.oneblockultima.mod_settings.show_balance");
+        String hLabel = I18n.format("gui.oneblockultima.ui_settings.h_offset");
+        String vLabel = I18n.format("gui.oneblockultima.ui_settings.v_offset");
+        String showBalanceLabel = I18n.format("gui.oneblockultima.ui_settings.show_balance");
 
         int previewWidth = contentWidth * 4 / 5;
         int previewHeight = Math.max(60, height * 3 / 20 - 6);
         CustomDrawCallbackElement previewElement = new CustomDrawCallbackElement(
-            (x, y, w, h, fr, mx, my, pt) -> drawPreviewAt(x, y, w, h, fr),
-            previewWidth, previewHeight
+                (x, y, w, h, fr, mx, my, pt) -> drawPreviewAt(x, y, w, h, fr),
+                previewWidth, previewHeight
         );
         previewElement.align(Alignment.CENTER);
 
         int gridCellSize = Math.max(16, contentWidth * 4 / 100);
         GridElement gridElement = new GridElement(3, 3)
-            .cellSize(gridCellSize)
-            .cellGap(4)
-            .select(-1, -1)
-            .renderer((x, y, cw, ch, row, col, hovered, selected, fr, mx, my, pt) -> {
-                ModSettings.BalancePosition[][] g = {
-                    {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
-                    {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
-                    {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
-                };
-                if (row < 0 || row >= 3 || col < 0 || col >= 3) return;
-                ModSettings.BalancePosition pos = g[row][col];
-                if (pos == null) return;
+                .cellSize(gridCellSize)
+                .cellGap(4)
+                .select(-1, -1)
+                .renderer((x, y, cw, ch, row, col, hovered, selected, fr, mx, my, pt) -> {
+                    ModSettings.BalancePosition[][] g = {
+                            {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
+                            {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
+                            {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
+                    };
+                    if (row < 0 || row >= 3 || col < 0 || col >= 3) return;
+                    ModSettings.BalancePosition pos = g[row][col];
+                    if (pos == null) return;
 
-                boolean isSelected = pos == currentPos;
-                int bgColor;
-                if (isSelected) bgColor = DARK_GREEN;
-                else if (hovered) bgColor = GRAY_COLOR_6;
-                else bgColor = DARK_GRAY_COLOR_1;
+                    boolean isSelected = pos == currentPos;
+                    int bgColor;
+                    if (isSelected) bgColor = hovered ? SUCCESS_HOVERED_COLOR : DARK_GREEN;
+                    else if (hovered) bgColor = GRAY_COLOR_6;
+                    else bgColor = DARK_GRAY_COLOR_1;
 
-                Gui.drawRect(x, y, x + cw, y + ch, bgColor);
-                Gui.drawRect(x, y, x + cw, y + 1, GRAY_COLOR_2);
-                Gui.drawRect(x, y + ch - 1, x + cw, y + ch, GRAY_COLOR_2);
-                Gui.drawRect(x, y, x + 1, y + ch, GRAY_COLOR_2);
-                Gui.drawRect(x + cw - 1, y, x + cw, y + ch, GRAY_COLOR_2);
+                    Gui.drawRect(x, y, x + cw, y + ch, bgColor);
+                    Gui.drawRect(x, y, x + cw, y + 1, GRAY_COLOR_2);
+                    Gui.drawRect(x, y + ch - 1, x + cw, y + ch, GRAY_COLOR_2);
+                    Gui.drawRect(x, y, x + 1, y + ch, GRAY_COLOR_2);
+                    Gui.drawRect(x + cw - 1, y, x + cw, y + ch, GRAY_COLOR_2);
 
-                String label = getPositionLabel(pos);
-                int textColor = isSelected ? SUCCESS_COLOR : WHITE_COLOR_1;
-                int tw = fr.getStringWidth(label);
-                fr.drawStringWithShadow(label, x + (cw - tw) / 2.0F, y + (ch - 8) / 2.0F, textColor);
-            })
-            .clickHandler((row, col, mx, my, mb) -> {
-                ModSettings.BalancePosition[][] g = {
-                    {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
-                    {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
-                    {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
-                };
-                if (row >= 0 && row < 3 && col >= 0 && col < 3 && g[row][col] != null) {
-                    currentPos = g[row][col];
-                    positionLabel.text(I18n.format("gui.oneblockultima.mod_settings.pos." + currentPos.name().toLowerCase()));
-                    return true;
-                }
-                return false;
-            });
+                    String label = getPositionLabel(pos);
+                    int textColor = isSelected ? SUCCESS_COLOR : WHITE_COLOR_1;
+                    int tw = fr.getStringWidth(label);
+                    fr.drawStringWithShadow(label, x + (cw - tw) / 2.0F, y + (ch - 8) / 2.0F, textColor);
+                })
+                .clickHandler((row, col, mx, my, mb) -> {
+                    ModSettings.BalancePosition[][] g = {
+                            {ModSettings.BalancePosition.TOP_LEFT, ModSettings.BalancePosition.TOP, ModSettings.BalancePosition.TOP_RIGHT},
+                            {ModSettings.BalancePosition.LEFT, null, ModSettings.BalancePosition.RIGHT},
+                            {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
+                    };
+                    if (row >= 0 && row < 3 && col >= 0 && col < 3 && g[row][col] != null) {
+                        currentPos = g[row][col];
+                        positionLabel.text(I18n.format("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase()));
+                        return true;
+                    }
+                    return false;
+                });
 
         factory = new ViewFactory(width, height)
-            .margin(8).padding(2)
-            .gap(8)
-            .align(Alignment.CENTER)
-            .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
+                .margin(8).padding(2)
+                .gap(8)
+                .align(Alignment.CENTER);
 
-        factory.title("gui.oneblockultima.mod_settings.title");
+        factory.title("gui.oneblockultima.ui_settings.title");
         factory.add(previewElement);
-        positionLabel = new LabelElement(I18n.format("gui.oneblockultima.mod_settings.pos." + currentPos.name().toLowerCase())).centered(true).color(SUCCESS_COLOR);
+        positionLabel = new LabelElement(I18n.format("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase())).centered().color(SUCCESS_COLOR);
         factory.add(positionLabel);
 
-        RowElement toggleControls = new RowElement(Alignment.RIGHT).gap(5).widthPercent(70);
-        toggleControls.label(showBalanceLabel);
-        showBalanceToggle = toggleControls.buttonToggle(BUTTON_SHOW_BALANCE, isShowBalance);
+        RowElement toggleControls = new RowElement(Alignment.LEFT).gap(5).widthPercent(70);
+        showBalanceToggle = toggleControls.buttonToggle(BUTTON_SHOW_BALANCE, isShowBalance).label(showBalanceLabel);
         factory.add(toggleControls);
 
         hOffsetField = new TextFieldElement(fieldWidth)
-            .text(String.valueOf(hOffset))
-            .enabled(false);
+                .text(String.valueOf(hOffset))
+                .enabled(false);
 
         vOffsetField = new TextFieldElement(fieldWidth)
-            .text(String.valueOf(vOffset))
-            .enabled(false);
+                .text(String.valueOf(vOffset))
+                .enabled(false);
 
         int hLabelW = fontRenderer.getStringWidth(hLabel);
         int vLabelW = fontRenderer.getStringWidth(vLabel);
@@ -178,10 +181,10 @@ public class GuiSettings extends GuiScreen
     {
         if (button.id == BUTTON_SAVE)
         {
-            ModSettings.get().setBalancePosition(currentPos);
-            ModSettings.get().setHOffset(hOffset);
-            ModSettings.get().setVOffset(vOffset);
-            ModSettings.get().setShowBalance(isShowBalance);
+            settings.setBalancePosition(currentPos);
+            settings.setHOffset(hOffset);
+            settings.setVOffset(vOffset);
+            settings.setShowBalance(isShowBalance);
             mc.displayGuiScreen(parent);
             return;
         }
@@ -328,11 +331,5 @@ public class GuiSettings extends GuiScreen
             case BOTTOM_RIGHT: return "\u2198";
             default: return "?";
         }
-    }
-
-    @Override
-    public boolean doesGuiPauseGame()
-    {
-        return true;
     }
 }

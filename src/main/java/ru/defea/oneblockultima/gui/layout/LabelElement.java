@@ -23,6 +23,11 @@ public class LabelElement extends ViewElement {
         return this;
     }
 
+    public LabelElement centered() {
+        this.centered = true;
+        return this;
+    }
+
     public LabelElement centered(boolean centered) {
         this.centered = centered;
         return this;

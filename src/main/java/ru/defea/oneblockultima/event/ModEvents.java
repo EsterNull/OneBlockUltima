@@ -35,6 +35,7 @@ import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.GuiHandler;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketSyncBlockSetConfig;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static ru.defea.oneblockultima.Constants.*;
 import static ru.defea.oneblockultima.block.BlockOneBlockGenerator.*;
 
 @Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
@@ -212,7 +214,7 @@ public final class ModEvents
 
         EntityPlayerMP player = (EntityPlayerMP) event.player;
         World world = player.world;
-        if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
@@ -229,8 +231,8 @@ public final class ModEvents
             world.setSpawnPoint(spawnPos);
             player.setSpawnPoint(spawnPos, true);
             player.setSpawnChunk(spawnPos, true, player.dimension);
-            player.setPositionAndUpdate(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
-            player.connection.setPlayerLocation(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, player.rotationYaw, player.rotationPitch);
+            player.setPositionAndUpdate(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET);
+            player.connection.setPlayerLocation(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET, player.rotationYaw, player.rotationPitch);
         }
 
         // Синхронизируем данные игрока после респавна
@@ -241,7 +243,7 @@ public final class ModEvents
     public static void onWorldLoad(WorldEvent.Load event)
     {
         World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.isRemote || world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
@@ -375,7 +377,7 @@ public final class ModEvents
         }
 
         World world = event.player.world;
-        if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
@@ -391,7 +393,7 @@ public final class ModEvents
         }
 
         EntityPlayerMP player = (EntityPlayerMP) event.player;
-        if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
@@ -422,8 +424,8 @@ public final class ModEvents
 
         if (!data.spawnTeleportDone)
         {
-            player.setPositionAndUpdate(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D);
-            player.connection.setPlayerLocation(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, player.rotationYaw, player.rotationPitch);
+            player.setPositionAndUpdate(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET);
+            player.connection.setPlayerLocation(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET, player.rotationYaw, player.rotationPitch);
             data.spawnTeleportDone = true;
             data.markDirty();
         }
@@ -489,6 +491,12 @@ public final class ModEvents
             }
         }
 
+        if (!lastAccessDeniedMessageTicks.isEmpty())
+        {
+            long worldTick = event.world.getTotalWorldTime();
+            lastAccessDeniedMessageTicks.values().removeIf(lastTick -> lastTick != worldTick);
+        }
+
         if (!lastBreakPlayers.isEmpty() && ++lastBreakCleanupTick >= 200)
         {
             lastBreakCleanupTick = 0;
@@ -505,7 +513,12 @@ public final class ModEvents
         }
 
         World world = event.getWorld();
-        if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        {
+            return;
+        }
+
+        if (ModSettings.get().getMobWorldGeneration())
         {
             return;
         }
@@ -532,7 +545,7 @@ public final class ModEvents
         net.minecraft.entity.item.EntityItem entityItem = (net.minecraft.entity.item.EntityItem) event.getEntity();
         World world = event.getWorld();
 
-        if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
@@ -577,13 +590,13 @@ public final class ModEvents
         {
             ItemStack heldItem = event.getPlayer().getHeldItemMainhand();
             if (!heldItem.isEmpty() && heldItem.hasTagCompound()
-                    && heldItem.getTagCompound().hasKey("obuGenerated")
-                    && heldItem.getTagCompound().getBoolean("obuGenerated"))
+                    && heldItem.getTagCompound().hasKey(NBT_OBU_GENERATED)
+                    && heldItem.getTagCompound().getBoolean(NBT_OBU_GENERATED))
             {
                 TileEntity placedTE = world.getTileEntity(pos);
                 if (placedTE != null)
                 {
-                    placedTE.getTileData().setBoolean("obuGenerated", true);
+                    placedTE.getTileData().setBoolean(NBT_OBU_GENERATED, true);
                     placedTE.markDirty();
                 }
 
@@ -599,7 +612,7 @@ public final class ModEvents
         }
 
         // OneBlock-specific logic
-        if (world.provider.getDimension() != 0 || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
@@ -718,12 +731,12 @@ public final class ModEvents
                                         ((TileEntityOneBlockGenerator) placedTE).assignOwnerForPlacement(player.getUniqueID());
                                     }
 
-                                    if (heldItem.hasTagCompound() && heldItem.getTagCompound().hasKey("obuGenerated") && heldItem.getTagCompound().getBoolean("obuGenerated"))
+                                    if (heldItem.hasTagCompound() && heldItem.getTagCompound().hasKey(NBT_OBU_GENERATED) && heldItem.getTagCompound().getBoolean(NBT_OBU_GENERATED))
                                     {
                                         if (placedTE != null)
                                         {
                                             NBTTagCompound teNbt = placedTE.getTileData();
-                                            teNbt.setBoolean("obuGenerated", true);
+                                            teNbt.setBoolean(NBT_OBU_GENERATED, true);
                                             placedTE.markDirty();
                                         }
 
@@ -802,7 +815,7 @@ public final class ModEvents
         World world = event.getWorld();
         EntityPlayer breaker = event.getPlayer();
 
-        if (breaker != null && world.provider.getDimension() == 0 && world.getWorldInfo().getTerrainType() == OneBlockWorldType.ONE_BLOCK)
+        if (breaker != null && world.provider.getDimension() == OVERWORLD_DIMENSION_ID && world.getWorldInfo().getTerrainType() == OneBlockWorldType.ONE_BLOCK)
         {
             lastBreakPlayers.put(pos, breaker.getUniqueID());
         }
@@ -1014,7 +1027,7 @@ public final class ModEvents
                 {
                     drop.setTagCompound(new NBTTagCompound());
                 }
-                drop.getTagCompound().setBoolean("obuGenerated", true);
+                drop.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
             }
             return;
         }
@@ -1037,15 +1050,15 @@ public final class ModEvents
                 {
                     remaining.setTagCompound(new NBTTagCompound());
                 }
-                remaining.getTagCompound().setBoolean("obuGenerated", true);
+                remaining.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
             }
             if (!player.inventory.addItemStackToInventory(remaining))
             {
                 net.minecraft.entity.item.EntityItem entityItem = new net.minecraft.entity.item.EntityItem(
                         event.getWorld(),
-                        pos.getX() + 0.5D,
-                        pos.getY() + 0.5D,
-                        pos.getZ() + 0.5D,
+                        pos.getX() + BLOCK_CENTER_OFFSET,
+                        pos.getY() + BLOCK_CENTER_OFFSET,
+                        pos.getZ() + BLOCK_CENTER_OFFSET,
                         remaining
                 );
                 event.getWorld().spawnEntity(entityItem);
@@ -1179,7 +1192,7 @@ public final class ModEvents
             }
 
             OneBlockUltima.getLogger().info("[Mob Spawn] Successfully spawned mob: {}", mobEntry.registry);
-            entity.setPosition(pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D);
+            entity.setPosition(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + BLOCK_TOP_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
 
             // Применяем NBT теги к мобу если они есть
             if (mobEntry.nbtTags != null && !mobEntry.nbtTags.hasNoTags())

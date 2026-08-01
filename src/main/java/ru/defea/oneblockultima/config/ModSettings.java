@@ -31,6 +31,7 @@ public final class ModSettings
     private int hOffset = 5;
     private int vOffset = 3;
     private boolean isShowBalance = true;
+    private boolean mobWorldGeneration = false;
 
     public static ModSettings get()
     {
@@ -45,11 +46,13 @@ public final class ModSettings
     public int getHOffset() { return hOffset; }
     public int getVOffset() { return vOffset; }
     public boolean isShowBalance() { return isShowBalance; }
+    public boolean getMobWorldGeneration() { return mobWorldGeneration; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { this.hOffset = offset; save(); }
     public void setVOffset(int offset) { this.vOffset = offset; save(); }
     public void setShowBalance(boolean isShowBalance) { this.isShowBalance = isShowBalance; save(); }
+    public void setMobWorldGeneration(boolean mobWorldGeneration) { this.mobWorldGeneration = mobWorldGeneration; save(); }
 
     private static File getFile()
     {

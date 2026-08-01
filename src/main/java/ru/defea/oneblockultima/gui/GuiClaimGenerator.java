@@ -42,11 +42,10 @@ public class GuiClaimGenerator extends GuiScreen
                 .margin(8).padding(4)
                 .gap(6)
                 .align(Alignment.CENTER)
-                .centerVertical()
-                .panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
+                .centerVertical();
 
         factory.title(I18n.format("gui.oneblockultima.claim_title"));
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.claim_description")).color(LIGHT_GRAY_COLOR_1).centered(true));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.claim_description")).color(LIGHT_GRAY_COLOR_1).centered());
         factory.add(new SpacerElement(12));
         factory.button(BUTTON_CLAIM, I18n.format("gui.oneblockultima.claim_owner"));
 
