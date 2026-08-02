@@ -140,6 +140,9 @@ gui.oneblockultima.condition.broken_blocks=Сломать %d блоков в %s
 gui.oneblockultima.condition.broken_blocks_total=Сломать %d блоков всего
 gui.oneblockultima.condition.unknown=Неизвестное условие: %s
 
+gui.oneblockultima.blocks_broken_total=Сломано блоков всего
+gui.oneblockultima.blocks_broken=Сломано блоков
+
 gui.oneblockultima.status.reset_success=Сброс успешен
 gui.oneblockultima.status.reset_failed=Не удалось сбросить
 gui.oneblockultima.status.save_failed=Не удалось сохранить конфиг

@@ -140,6 +140,9 @@ gui.oneblockultima.condition.broken_blocks=Break %d blocks in %s
 gui.oneblockultima.condition.broken_blocks_total=Break %d blocks total
 gui.oneblockultima.condition.unknown=Unknown condition: %s
 
+gui.oneblockultima.blocks_broken_total=Total blocks broken
+gui.oneblockultima.blocks_broken=Blocks broken
+
 gui.oneblockultima.status.reset_success=Reset successful
 gui.oneblockultima.status.reset_failed=Reset failed
 gui.oneblockultima.status.save_failed=Failed to save config

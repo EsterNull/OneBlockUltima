@@ -219,6 +219,10 @@ public class GuiOneBlock extends GuiContainer
         lines += fontRenderer.listFormattedStringToWidth(statusText, infoInternalWidth).size();
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(container.getPlayer());
+        String brokenText = I18n.format("gui.oneblockultima.blocks_broken") + ": " +
+                (data != null ? data.getBrokenBlocksCount(set.id) : 0);
+        lines += fontRenderer.listFormattedStringToWidth(brokenText, infoInternalWidth).size();
+
         if (data != null && currentLevel <= 0 && set.unlockConditions != null &&
                 !set.unlockConditions.conditions.isEmpty())
         {
@@ -405,6 +409,14 @@ public class GuiOneBlock extends GuiContainer
         String title = I18n.format("tile.one_block_generator.name");
         drawCenteredString(fr, title, x + width / 2, y + fr.FONT_HEIGHT, WHITE_COLOR_1);
 
+        IOneBlockPlayerData playerData = OneBlockPlayerDataProvider.get(container.getPlayer());
+        int brokenTotal = playerData == null ? 0 : playerData.getBrokenBlocksCount();
+        String brokenLabel = I18n.format("gui.oneblockultima.blocks_broken_total") + ":";
+        int brokenX = x + 10;
+        int brokenY = y + fr.FONT_HEIGHT;
+        fr.drawString(brokenLabel, brokenX, brokenY, LIGHT_GRAY_COLOR_2);
+        fr.drawString(String.valueOf(brokenTotal), brokenX + fr.getStringWidth(brokenLabel) + 2, brokenY, WHITE_COLOR_1);
+
         double currency = ru.defea.oneblockultima.event.ModEventsClient.getDisplayedCurrency(container.getPlayer());
         String balanceValue = ru.defea.oneblockultima.event.ModEventsClient.formatCurrency(currency);
         int iconSize = 12;
@@ -487,10 +499,16 @@ public class GuiOneBlock extends GuiContainer
         }
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(container.getPlayer());
+        if (data != null)
+        {
+            fr.drawString(I18n.format("gui.oneblockultima.blocks_broken") + ": " + data.getBrokenBlocksCount(set.id),
+                    x + 4, y + getRowInterval() * 2, LIGHT_GRAY_COLOR_2);
+        }
+
         if (data != null && currentLevel <= 0 && set.unlockConditions != null &&
                 !set.unlockConditions.conditions.isEmpty())
         {
-            drawUnlockConditions(set, x, y + getRowInterval() * 2, width, generator);
+            drawUnlockConditions(set, x, y + getRowInterval() * 3, width, generator);
         }
 
         if (selectButton != null)
