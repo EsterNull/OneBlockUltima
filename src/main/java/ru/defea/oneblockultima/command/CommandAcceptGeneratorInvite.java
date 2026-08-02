@@ -2,40 +2,44 @@ package ru.defea.oneblockultima.command;
 
 import net.minecraft.client.resources.I18n;
 import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CommandAcceptGeneratorInvite extends CommandBase
 {
     @Override
+    @Nonnull
     public String getName()
     {
         return "acceptGeneratorInvite";
     }
 
     @Override
-    public String getUsage(ICommandSender sender)
+    @Nonnull
+    public String getUsage(@Nonnull ICommandSender sender)
     {
         return "/acceptGeneratorInvite";
     }
 
     @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
+    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
     {
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.only_player")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
@@ -45,29 +49,30 @@ public class CommandAcceptGeneratorInvite extends CommandBase
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.not_near_generator")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.not_near_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         TileEntity tileEntity = world.getTileEntity(generatorPos);
         if (!(tileEntity instanceof TileEntityOneBlockGenerator))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.no_generator")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
         if (!generator.acceptInvite(player.getUniqueID()))
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.no_invite")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.no_invite")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
-        sender.sendMessage(new TextComponentString("§a" + I18n.format("command.acceptGeneratorInvite.accepted")));
+        sender.sendMessage(new TextComponentString(I18n.format("command.acceptGeneratorInvite.accepted")).setStyle(new Style().setColor(TextFormatting.GREEN)));
     }
 
     @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos)
+    @Nonnull
+    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, @Nonnull String[] args, BlockPos targetPos)
     {
         return new ArrayList<>();
     }
@@ -80,7 +85,7 @@ public class CommandAcceptGeneratorInvite extends CommandBase
 
 
     @Override
-    public boolean checkPermission(MinecraftServer server, ICommandSender sender)
+    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender)
     {
         return true;
     }

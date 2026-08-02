@@ -10,7 +10,8 @@ import ru.defea.oneblockultima.util.ModelUtil;
 
 import java.util.List;
 
-public class BlockElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class BlockElement extends ViewElement<BlockElement> {
     private IBlockState blockState;
     private int size = 16;
 
@@ -28,7 +29,7 @@ public class BlockElement extends ViewElement {
     public static BlockElement fromItemStack(net.minecraft.item.ItemStack stack) {
         if (stack.isEmpty()) return null;
         net.minecraft.block.Block block = net.minecraft.block.Block.getBlockFromItem(stack.getItem());
-        if (block == null || block == Blocks.AIR) return null;
+        if (block == Blocks.AIR) return null;
         return new BlockElement(block.getStateFromMeta(stack.getMetadata()));
     }
 

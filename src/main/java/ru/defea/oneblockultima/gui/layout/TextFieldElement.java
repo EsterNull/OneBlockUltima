@@ -9,8 +9,9 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.WHITE_COLOR_2;
 
-public class TextFieldElement extends ViewElement {
-    private final int width;
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class TextFieldElement extends ViewElement<TextFieldElement> {
+    private int width;
     private static final int HEIGHT = Minecraft.getMinecraft().fontRenderer.FONT_HEIGHT + 4;
     private GuiTextField textField;
     private String text = "";
@@ -22,6 +23,11 @@ public class TextFieldElement extends ViewElement {
 
     public TextFieldElement(int width) {
         this.width = width;
+    }
+
+    public TextFieldElement width(int width) {
+        this.width = width;
+        return this;
     }
 
     public TextFieldElement text(String text) {
@@ -61,16 +67,6 @@ public class TextFieldElement extends ViewElement {
     }
 
     public TextFieldElement height(int height) {
-        return this;
-    }
-
-    public TextFieldElement widthPercent(int percent) {
-        super.widthPercent(percent);
-        return this;
-    }
-
-    public TextFieldElement heightPercent(int percent) {
-        super.heightPercent(percent);
         return this;
     }
 

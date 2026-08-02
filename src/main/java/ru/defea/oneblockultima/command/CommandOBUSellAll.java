@@ -8,38 +8,44 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 
+import javax.annotation.Nonnull;
+
 public class CommandOBUSellAll extends CommandBase
 {
     @Override
+    @Nonnull
     public String getName()
     {
         return "obuSellAll";
     }
 
     @Override
-    public String getUsage(ICommandSender sender)
+    @Nonnull
+    public String getUsage(@Nonnull ICommandSender sender)
     {
         return "/obuSellAll";
     }
 
     @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args)
+    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
     {
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.only_player")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.sell_disabled")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.sell_disabled")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
@@ -47,7 +53,7 @@ public class CommandOBUSellAll extends CommandBase
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.not_generated")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.not_generated")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
@@ -82,12 +88,11 @@ public class CommandOBUSellAll extends CommandBase
 
         if (totalCount == 0)
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.obuSellAll.empty")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.obuSellAll.empty")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         int soldCount = 0;
-        String itemName = "";
         for (int i = 0; i < inventory.getSizeInventory(); i++)
         {
             ItemStack stack = inventory.getStackInSlot(i);
@@ -96,10 +101,6 @@ public class CommandOBUSellAll extends CommandBase
             if (!CommandOBUSell.isObuGenerated(stack)) continue;
 
             int count = stack.getCount();
-            if (soldCount == 0)
-            {
-                itemName = stack.getDisplayName();
-            }
             stack.shrink(count);
             soldCount += count;
         }
@@ -107,7 +108,7 @@ public class CommandOBUSellAll extends CommandBase
         data.addCurrency(totalPrice);
         PacketSyncPlayerData.sendToPlayer(player);
 
-        sender.sendMessage(new TextComponentString("\u00a7a" + I18n.format("command.obuSellAll.success", soldCount, totalPrice, data.getCurrency())));
+        sender.sendMessage(new TextComponentString(I18n.format("command.obuSellAll.success", soldCount, totalPrice, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));
     }
 
     @Override
@@ -117,7 +118,7 @@ public class CommandOBUSellAll extends CommandBase
     }
 
     @Override
-    public boolean checkPermission(MinecraftServer server, ICommandSender sender)
+    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender)
     {
         return true;
     }

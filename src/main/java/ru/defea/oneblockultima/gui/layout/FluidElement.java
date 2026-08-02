@@ -8,7 +8,8 @@ import ru.defea.oneblockultima.util.ModelUtil;
 
 import java.util.List;
 
-public class FluidElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class FluidElement extends ViewElement<FluidElement> {
     private Fluid fluid;
     private int width = 16;
     private int height = 16;

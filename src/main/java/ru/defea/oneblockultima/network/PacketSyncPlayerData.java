@@ -12,7 +12,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
-import ru.defea.oneblockultima.event.ModEvents;
 
 public class PacketSyncPlayerData implements IMessage
 {
@@ -71,36 +70,30 @@ public class PacketSyncPlayerData implements IMessage
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketSyncPlayerData message, MessageContext ctx)
         {
-            Minecraft.getMinecraft().addScheduledTask(new Runnable()
-            {
-                @Override
-                public void run()
+            Minecraft.getMinecraft().addScheduledTask(() -> {
+                EntityPlayer player = Minecraft.getMinecraft().player;
+                if (player == null)
                 {
-                    EntityPlayer player = Minecraft.getMinecraft().player;
-                    if (player == null)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    ru.defea.oneblockultima.capability.IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
-                    if (data instanceof OneBlockPlayerData)
+                ru.defea.oneblockultima.capability.IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
+                if (data instanceof OneBlockPlayerData)
+                {
+                    OneBlockPlayerData playerData = (OneBlockPlayerData) data;
+                    playerData.setCurrency(message.data.getDouble("currency"));
+                    playerData.setBrokenBlocksTotal(message.data.getInteger("brokenBlocksTotal"));
+                    playerData.getSetLevels().clear();
+                    NBTTagCompound levels = message.data.getCompoundTag("setLevels");
+                    for (String key : levels.getKeySet())
                     {
-                        OneBlockPlayerData playerData = (OneBlockPlayerData) data;
-                        playerData.setCurrency(message.data.getDouble("currency"));
-                        playerData.setBrokenBlocksTotal(message.data.getInteger("brokenBlocksTotal"));
-                        playerData.getSetLevels().clear();
-                        NBTTagCompound levels = message.data.getCompoundTag("setLevels");
-                        for (String key : levels.getKeySet())
-                        {
-                            playerData.getSetLevels().put(key, levels.getInteger(key));
-                        }
-                        playerData.getBrokenBlocksBySet().clear();
-                        NBTTagCompound brokenBlocksBySet = message.data.getCompoundTag("brokenBlocksBySet");
-                        for (String key : brokenBlocksBySet.getKeySet())
-                        {
-                            playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInteger(key));
-                        }
-                        ModEvents.syncDisplayedCurrency(player, playerData.getCurrency());
+                        playerData.getSetLevels().put(key, levels.getInteger(key));
+                    }
+                    playerData.getBrokenBlocksBySet().clear();
+                    NBTTagCompound brokenBlocksBySet = message.data.getCompoundTag("brokenBlocksBySet");
+                    for (String key : brokenBlocksBySet.getKeySet())
+                    {
+                        playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInteger(key));
                     }
                 }
             });

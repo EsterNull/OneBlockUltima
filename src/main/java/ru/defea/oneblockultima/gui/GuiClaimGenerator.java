@@ -3,9 +3,7 @@ package ru.defea.oneblockultima.gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import org.lwjgl.input.Keyboard;
 import ru.defea.oneblockultima.gui.layout.Alignment;
 import ru.defea.oneblockultima.gui.layout.LabelElement;
@@ -14,7 +12,9 @@ import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketOneBlockAction;
 
-import static ru.defea.oneblockultima.Constants.*;
+import javax.annotation.Nonnull;
+
+import static ru.defea.oneblockultima.Constants.LIGHT_GRAY_COLOR_1;
 
 public class GuiClaimGenerator extends GuiScreen
 {
@@ -23,7 +23,7 @@ public class GuiClaimGenerator extends GuiScreen
     private final BlockPos generatorPos;
     private ViewFactory factory;
 
-    public GuiClaimGenerator(EntityPlayer player, World world, BlockPos generatorPos)
+    public GuiClaimGenerator(BlockPos generatorPos)
     {
         this.generatorPos = generatorPos;
     }
@@ -53,7 +53,7 @@ public class GuiClaimGenerator extends GuiScreen
     }
 
     @Override
-    protected void actionPerformed(GuiButton button)
+    protected void actionPerformed(@Nonnull GuiButton button)
     {
         factory.actionPerformed(button);
 
@@ -78,6 +78,4 @@ public class GuiClaimGenerator extends GuiScreen
         Keyboard.enableRepeatEvents(false);
     }
 
-    @Override
-    public boolean doesGuiPauseGame() { return true; }
 }

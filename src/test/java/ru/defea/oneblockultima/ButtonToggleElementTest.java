@@ -6,9 +6,7 @@ import org.junit.Test;
 import ru.defea.oneblockultima.gui.layout.ButtonToggleElement;
 import ru.defea.oneblockultima.gui.layout.ButtonToggleElement.LabelPosition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static ru.defea.oneblockultima.Constants.*;
 
 public class ButtonToggleElementTest {
@@ -97,7 +95,7 @@ public class ButtonToggleElementTest {
 
     @Test
     public void preferredWidthIncludesLabelEstimate() {
-        ButtonToggleElement t = new ButtonToggleElement(false).label("abcd");
+        @SuppressWarnings("SpellCheckingInspection") ButtonToggleElement t = new ButtonToggleElement(false).label("abcd");
         assertEquals(6 + 4 * 6, t.getPreferredWidth());
     }
 

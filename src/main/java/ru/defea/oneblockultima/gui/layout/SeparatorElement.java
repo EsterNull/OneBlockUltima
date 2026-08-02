@@ -8,7 +8,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.DARK_GRAY_COLOR_1;
 
-public class SeparatorElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class SeparatorElement extends ViewElement<SeparatorElement> {
     private int color = DARK_GRAY_COLOR_1;
     private int height = 2;
 

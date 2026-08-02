@@ -8,17 +8,17 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
 
-public class InlineClickableElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class InlineClickableElement extends ViewElement<InlineClickableElement> {
     public interface ClickHandler {
         boolean onClick(int mouseX, int mouseY, int mouseButton);
     }
 
-    private int bgColor;
-    private int hoverColor;
+    private final int bgColor;
+    private final int hoverColor;
     private int textColor = WHITE_COLOR_1;
     private String text;
-    private ClickHandler clickHandler;
-    private boolean hovered = false;
+    private final ClickHandler clickHandler;
 
     public InlineClickableElement(String text, int bgColor, int hoverColor, ClickHandler handler) {
         this.text = text;
@@ -43,8 +43,8 @@ public class InlineClickableElement extends ViewElement {
 
     @Override
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        hovered = mouseX >= computedX && mouseX <= computedX + computedWidth &&
-                  mouseY >= computedY && mouseY <= computedY + computedHeight;
+        boolean hovered = mouseX >= computedX && mouseX <= computedX + computedWidth &&
+                mouseY >= computedY && mouseY <= computedY + computedHeight;
         int bg = hovered ? hoverColor : bgColor;
         Gui.drawRect(computedX, computedY, computedX + computedWidth, computedY + computedHeight, bg);
         if (text != null && !text.isEmpty()) {
@@ -56,7 +56,9 @@ public class InlineClickableElement extends ViewElement {
 
     @Override
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        if (!hovered) return false;
+        boolean hit = mouseX >= computedX && mouseX <= computedX + computedWidth &&
+                      mouseY >= computedY && mouseY <= computedY + computedHeight;
+        if (!hit) return false;
         if (clickHandler != null) return clickHandler.onClick(mouseX, mouseY, mouseButton);
         return false;
     }

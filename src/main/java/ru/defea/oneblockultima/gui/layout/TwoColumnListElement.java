@@ -9,7 +9,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class TwoColumnListElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
     private final int itemHeight;
     private int scrollOffset = 0;
     private int maxScroll = 0;
@@ -152,10 +153,12 @@ public class TwoColumnListElement extends ViewElement {
                 if (mouseY >= y && mouseY < y + itemHeight) {
                     if (mouseX >= computedX && mouseX <= computedX + colWidth && row < (leftEntries != null ? leftEntries.size() : 0)) {
                         int localX = mouseX - (computedX + innerPad);
+                        assert leftEntries != null;
                         return leftEntries.get(row).mouseClickedLeft(mouseX, mouseY, localX, localY, colWidth - innerPad, itemHeight, mouseButton);
                     }
                     if (mouseX >= computedX + colWidth + innerPad && mouseX <= computedX + listWidth && row < (rightEntries != null ? rightEntries.size() : 0)) {
                         int localX = mouseX - (computedX + colWidth + innerPad);
+                        assert rightEntries != null;
                         return rightEntries.get(row).mouseClickedRight(mouseX, mouseY, localX, localY, colWidth - innerPad, itemHeight, mouseButton);
                     }
                 }

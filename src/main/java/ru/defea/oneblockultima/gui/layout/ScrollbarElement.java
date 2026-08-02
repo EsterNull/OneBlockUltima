@@ -8,7 +8,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class ScrollbarElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class ScrollbarElement extends ViewElement<ScrollbarElement> {
     private int totalItems;
     private int visibleItems;
     private int scrollOffset;
@@ -37,7 +38,7 @@ public class ScrollbarElement extends ViewElement {
         return this;
     }
 
-    public ScrollbarElement width(int width) {
+    public ScrollbarElement trackWidth(int width) {
         this.trackWidth = width;
         return this;
     }

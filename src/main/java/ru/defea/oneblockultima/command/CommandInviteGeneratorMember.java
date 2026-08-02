@@ -2,46 +2,51 @@ package ru.defea.oneblockultima.command;
 
 import net.minecraft.client.resources.I18n;
 import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.block.ModBlocks;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CommandInviteGeneratorMember extends CommandBase
 {
     @Override
+    @Nonnull
     public String getName()
     {
         return "inviteGeneratorMember";
     }
 
     @Override
-    public String getUsage(ICommandSender sender)
+    @Nonnull
+    public String getUsage(@Nonnull ICommandSender sender)
     {
         return "/inviteGeneratorMember <playerName>";
     }
 
     @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
+    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
     {
         if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.only_player")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         if (args.length != 1)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.inviteGeneratorMember.usage")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.usage")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
@@ -51,44 +56,45 @@ public class CommandInviteGeneratorMember extends CommandBase
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString("\u00a7c" + I18n.format("command.not_near_generator")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.not_near_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         TileEntity tileEntity = world.getTileEntity(generatorPos);
         if (!(tileEntity instanceof TileEntityOneBlockGenerator))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.no_generator")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
         if (!generator.isOwner(owner))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.inviteGeneratorMember.owner_only")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.owner_only")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         EntityPlayerMP target = server.getPlayerList().getPlayerByUsername(args[0]);
         if (target == null)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.player_not_found")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.player_not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
         if (target.getUniqueID().equals(owner.getUniqueID()))
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.inviteGeneratorMember.self_invite")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.self_invite")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
-        generator.addPendingInvite(target.getUniqueID(), owner.getUniqueID(), 1200);
-        target.sendMessage(new TextComponentString("§a" + I18n.format("command.inviteGeneratorMember.invitation_received")));
-        owner.sendMessage(new TextComponentString("§a" + I18n.format("command.inviteGeneratorMember.invitation_sent", target.getName())));
+        generator.addPendingInvite(target.getUniqueID(), owner.getUniqueID(), Math.max(1, ModSettings.get().getInviteDurationTicks()));
+        target.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.invitation_received")).setStyle(new Style().setColor(TextFormatting.GREEN)));
+        owner.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.invitation_sent", target.getName())).setStyle(new Style().setColor(TextFormatting.GREEN)));
     }
 
     @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos)
+    @Nonnull
+    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args, BlockPos targetPos)
     {
         if (args.length != 1)
         {
@@ -105,7 +111,7 @@ public class CommandInviteGeneratorMember extends CommandBase
     }
 
     @Override
-    public boolean checkPermission(MinecraftServer server, ICommandSender sender)
+    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender)
     {
         return true;
     }

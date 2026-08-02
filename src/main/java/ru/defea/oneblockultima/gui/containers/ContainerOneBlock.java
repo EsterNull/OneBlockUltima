@@ -5,7 +5,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
@@ -114,7 +116,6 @@ public class ContainerOneBlock extends Container
 
         data.spendCurrency(cost);
         ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider.saveToEntity(player, data);
-        ModEvents.syncDisplayedCurrency(player, data.getCurrency());
     }
 
     public void toggleFluidGeneration()
@@ -266,12 +267,13 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.unlock_requirements")));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlock_requirements")).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }
 
             int cost = set.unlockCost;
+            assert data != null;
             double currency = data.getCurrency();
 
             System.out.println("[OneBlock] Unlock attempt - Have: " + currency + ", Need: " + cost);
@@ -280,7 +282,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }
@@ -289,7 +291,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.unlock_fail")));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlock_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }
@@ -303,7 +305,7 @@ public class ContainerOneBlock extends Container
                 data.addCurrency(cost);
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.unlock_fail")));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlock_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }
@@ -319,7 +321,7 @@ public class ContainerOneBlock extends Container
             System.out.println("[OneBlock] Set unlocked and selected: " + setId);
             if (player instanceof EntityPlayerMP)
             {
-                ((EntityPlayerMP) player).sendMessage(new TextComponentString("§a" + I18n.format("gui.oneblockultima.msg.unlocked")));
+                player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlocked")).setStyle(new Style().setColor(TextFormatting.GREEN)));
             }
         }
         else
@@ -342,7 +344,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }
@@ -351,7 +353,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.upgrade_fail")));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.upgrade_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }
@@ -365,7 +367,7 @@ public class ContainerOneBlock extends Container
                 data.addCurrency(cost);
                 if (player instanceof EntityPlayerMP)
                 {
-                    ((EntityPlayerMP) player).sendMessage(new TextComponentString("§c" + I18n.format("gui.oneblockultima.msg.upgrade_fail")));
+                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.upgrade_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
                 }
                 return false;
             }

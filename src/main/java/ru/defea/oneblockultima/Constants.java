@@ -14,8 +14,6 @@ public final class Constants {
     public static final double BLOCK_TOP_OFFSET = 1.0D;
     public static final double PLAYER_INTERACT_RANGE_SQ = 64.0D;
 
-    public static final float COMPRESSION_MULTIPLIER = 9F;
-
     public static final int PANEL_COLOR = 0xFF1A1F24;
     public static final int GOLD_COLOR = 0xFFFFD700;
     public static final int GREEN_COLOR = 0xFF00EE00;

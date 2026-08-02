@@ -8,7 +8,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
 
-public class TitleElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class TitleElement extends ViewElement<TitleElement> {
     private final String text;
     private int color = WHITE_COLOR_1;
 

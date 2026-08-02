@@ -287,6 +287,8 @@ gui.oneblockultima.prices.price_removed=Price removed
 # Misc settings GUI
 gui.oneblockultima.misc.title=Misc
 gui.oneblockultima.misc.mob_world_generation=Mob generation in Overworld
+gui.oneblockultima.misc.invite_duration=Invitation duration (ticks):
+gui.oneblockultima.misc.non_player_break_cooldown=Generation delay for non-player (ticks):
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator

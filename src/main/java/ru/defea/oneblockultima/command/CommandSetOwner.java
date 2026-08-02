@@ -8,31 +8,36 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class CommandSetOwner extends CommandBase
 {
     @Override
+    @Nonnull
     public String getName()
     {
         return "setOwner";
     }
 
     @Override
-    public String getUsage(ICommandSender sender)
+    @Nonnull
+    public String getUsage(@Nonnull ICommandSender sender)
     {
         return "/setOwner <x> <y> <z> <playerName>";
     }
 
     @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
+    public void execute(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args) throws CommandException
     {
         if (args.length != 4)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.usage") + getUsage(sender)));
+            sender.sendMessage(new TextComponentString(I18n.format("command.usage") + getUsage(sender)).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
@@ -41,7 +46,7 @@ public class CommandSetOwner extends CommandBase
 
         if (player == null)
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.player_not_found")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.player_not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
             return;
         }
 
@@ -49,16 +54,17 @@ public class CommandSetOwner extends CommandBase
         if (tileEntity instanceof TileEntityOneBlockGenerator) {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
             generator.setOwnerId(player.getUniqueID());
-            sender.sendMessage(new TextComponentString("§a" + I18n.format("command.setOwner.success")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.setOwner.success")).setStyle(new Style().setColor(TextFormatting.GREEN)));
         }
         else
         {
-            sender.sendMessage(new TextComponentString("§c" + I18n.format("command.no_generator")));
+            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
         }
     }
 
     @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, BlockPos targetPos)
+    @Nonnull
+    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args, BlockPos targetPos)
     {
         if (args.length == 1)
         {

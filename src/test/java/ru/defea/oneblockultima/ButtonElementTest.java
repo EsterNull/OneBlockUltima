@@ -15,7 +15,7 @@ public class ButtonElementTest {
         Bootstrap.register();
     }
 
-    private static class ExposedButton extends ButtonElement {
+    private static class ExposedButton extends ButtonElement<ExposedButton> {
         ExposedButton(int id, String text) {
             super(id, text);
         }

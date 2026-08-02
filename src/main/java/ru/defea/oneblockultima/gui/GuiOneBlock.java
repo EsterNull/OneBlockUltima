@@ -25,18 +25,23 @@ import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
-import ru.defea.oneblockultima.Constants;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
+import ru.defea.oneblockultima.gui.layout.BlockElement;
 import ru.defea.oneblockultima.gui.layout.ButtonElement;
+import ru.defea.oneblockultima.gui.layout.EntityRendererElement;
+import ru.defea.oneblockultima.gui.layout.FluidElement;
+import ru.defea.oneblockultima.gui.layout.ScrollbarElement;
 import ru.defea.oneblockultima.gui.layout.TabBarElement;
+import ru.defea.oneblockultima.gui.layout.TextureElement;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.util.BlockUtil;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
@@ -45,7 +50,6 @@ import java.util.*;
 
 import static ru.defea.oneblockultima.Constants.*;
 import static ru.defea.oneblockultima.util.BlockUtil.isFullBlock;
-import static ru.defea.oneblockultima.util.ModelUtil.*;
 
 public class GuiOneBlock extends GuiContainer
 {
@@ -82,19 +86,19 @@ public class GuiOneBlock extends GuiContainer
     private final ContainerOneBlock container;
     private final List<BlockSetConfig.BlockSetDefinition> visibleSets = new ArrayList<>();
     private int selectedSetIndex = 0;
-    private ButtonElement prevButton;
-    private ButtonElement nextButton;
-    private ButtonElement selectButton;
-    private ButtonElement upgradeButton;
-    private ButtonElement openConfigEditorButton;
-    private ButtonElement openPricesButton;
-    private ButtonElement openUISettingsButton;
-    private ButtonElement openMiscSettingsButton;
-    private ButtonElement toggleFluidButton;
-    private ButtonElement toggleMobsButton;
-    private ButtonElement toggleChestsButton;
-    private ButtonElement toggleSaplingsButton;
-    private ButtonElement[] donateButtons;
+    private ButtonElement<?> prevButton;
+    private ButtonElement<?> nextButton;
+    private ButtonElement<?> selectButton;
+    private ButtonElement<?> upgradeButton;
+    private ButtonElement<?> openConfigEditorButton;
+    private ButtonElement<?> openPricesButton;
+    private ButtonElement<?> openUISettingsButton;
+    private ButtonElement<?> openMiscSettingsButton;
+    private ButtonElement<?> toggleFluidButton;
+    private ButtonElement<?> toggleMobsButton;
+    private ButtonElement<?> toggleChestsButton;
+    private ButtonElement<?> toggleSaplingsButton;
+    private ButtonElement<?>[] donateButtons;
     private Boolean pendingDisableFluid = null;
     private Boolean pendingDisableMob = null;
     private Boolean pendingDisableChest = null;
@@ -315,6 +319,7 @@ public class GuiOneBlock extends GuiContainer
         addBlockIfFull("minecraft:quartz_block", 0);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void addBlockIfFull(String registry, int meta)
     {
         try
@@ -600,11 +605,17 @@ public class GuiOneBlock extends GuiContainer
 
                             if (fluid != null)
                             {
-                                renderFluidSprite(fluid, iconX, iconY, 12, 12);
+                                FluidElement fluidIcon = new FluidElement(fluid).size(12);
+                                fluidIcon.setComputedPosition(iconX, iconY);
+                                fluidIcon.setComputedSize(12, 12);
+                                fluidIcon.draw(fontRenderer, mouseX, mouseY, 0);
                             }
                             else if (state != null)
                             {
-                                renderBlockModelToGUI(state, iconX + 8, iconY + 8, 16);
+                                BlockElement blockIcon = new BlockElement(state).size(16);
+                                blockIcon.setComputedPosition(iconX + 8, iconY + 8);
+                                blockIcon.setComputedSize(16, 16);
+                                blockIcon.draw(fontRenderer, mouseX, mouseY, 0);
                             }
                         }
                     }
@@ -695,14 +706,17 @@ public class GuiOneBlock extends GuiContainer
                             if (entity != null && entity.world == null) {
                                 entity.world = mcWorld;
                             }
-                            if (entity instanceof EntityLivingBase)
-                            {
-                                int centerX = cellX + cellSize / 2;
-                                int centerY = cellY + cellSize / 2 + cellPadding;
-                                drawEntityOnScreen(centerX, centerY, entity, cellSize - 2 * cellPadding);
-                            }
                         }
                         catch (Exception ignored) { }
+
+                        if (entity instanceof EntityLivingBase)
+                        {
+                            int iconScale = cellSize - 2 * cellPadding;
+                            EntityRendererElement mobIcon = new EntityRendererElement(entity).scale(iconScale);
+                            mobIcon.setComputedPosition(cellX + cellPadding, cellY - cellSize / 2 + 3 * cellPadding);
+                            mobIcon.setComputedSize(iconScale, iconScale);
+                            mobIcon.draw(fontRenderer, mouseX, mouseY, 0);
+                        }
 
                         if (isMobHovered)
                         {
@@ -731,14 +745,14 @@ public class GuiOneBlock extends GuiContainer
                         int pw = fontRenderer.getStringWidth(percent);
                         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
                         int color = chance < 10 ? RED_COLOR : chance < 20 ? ORANGE_COLOR : GREEN_COLOR;
-                        fontRenderer.drawStringWithShadow(percent, cellX + (cellSize - pw) / 2, cellY + cellSize - fontRenderer.FONT_HEIGHT - 2, color);
+                        fontRenderer.drawStringWithShadow(percent, cellX + (float) (cellSize - pw) / 2, cellY + cellSize - fontRenderer.FONT_HEIGHT - 2, color);
                     }
                 }
 
                 if (mobMaxScroll > 0)
                 {
                     int mobScrollbarX = mobsStartX + mobsAreaWidth + 2;
-                    renderMobScrollBar(mobScrollbarX, gridStartY, areaHeight, localMobScroll, mobMaxScroll);
+                    renderScrollBar(mobScrollbarX, gridStartY, areaHeight, localMobScroll, mobMaxScroll);
                 }
             }
         }
@@ -808,62 +822,62 @@ public class GuiOneBlock extends GuiContainer
         tabs.activeTab(activeView == VIEW_SETS ? BUTTON_TAB_SETS :
                 activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
 
-        prevButton = new ButtonElement(BUTTON_PREV_SET, "<");
+        prevButton = new ButtonElement<>(BUTTON_PREV_SET, "<");
         prevButton.setComputedPosition(leftButtonX, infoButtonsY);
         prevButton.setComputedSize(20, BUTTON_HEIGHT);
         prevButton.createWidgets(buttonList, fontRenderer, null);
 
-        nextButton = new ButtonElement(BUTTON_NEXT_SET, ">");
+        nextButton = new ButtonElement<>(BUTTON_NEXT_SET, ">");
         nextButton.setComputedPosition(leftButtonX + 26, infoButtonsY);
         nextButton.setComputedSize(20, BUTTON_HEIGHT);
         nextButton.createWidgets(buttonList, fontRenderer, null);
 
-        selectButton = new ButtonElement(BUTTON_SELECT_SET, I18n.format("gui.oneblockultima.select"));
+        selectButton = new ButtonElement<>(BUTTON_SELECT_SET, I18n.format("gui.oneblockultima.select"));
         selectButton.setComputedPosition(leftButtonX, infoButtonsY + BUTTON_HEIGHT + BUTTON_GAP);
         selectButton.setComputedSize(selectWidth, BUTTON_HEIGHT);
         selectButton.createWidgets(buttonList, fontRenderer, null);
 
-        upgradeButton = new ButtonElement(BUTTON_UPGRADE_SET, I18n.format("gui.oneblockultima.upgrade"));
+        upgradeButton = new ButtonElement<>(BUTTON_UPGRADE_SET, I18n.format("gui.oneblockultima.upgrade"));
         upgradeButton.setComputedPosition(rightButtonX, infoButtonsY + BUTTON_HEIGHT + BUTTON_GAP);
         upgradeButton.setComputedSize(selectWidth, BUTTON_HEIGHT);
         upgradeButton.createWidgets(buttonList, fontRenderer, null);
 
-        toggleFluidButton = new ButtonElement(BUTTON_TOGGLE_FLUIDS, "");
+        toggleFluidButton = new ButtonElement<>(BUTTON_TOGGLE_FLUIDS, "");
         toggleFluidButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY);
         toggleFluidButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleFluidButton.createWidgets(buttonList, fontRenderer, null);
 
-        toggleMobsButton = new ButtonElement(BUTTON_TOGGLE_MOBS, "");
+        toggleMobsButton = new ButtonElement<>(BUTTON_TOGGLE_MOBS, "");
         toggleMobsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY);
         toggleMobsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleMobsButton.createWidgets(buttonList, fontRenderer, null);
 
-        toggleChestsButton = new ButtonElement(BUTTON_TOGGLE_CHESTS, "");
+        toggleChestsButton = new ButtonElement<>(BUTTON_TOGGLE_CHESTS, "");
         toggleChestsButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + BUTTON_HEIGHT + BUTTON_GAP);
         toggleChestsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleChestsButton.createWidgets(buttonList, fontRenderer, null);
 
-        toggleSaplingsButton = new ButtonElement(BUTTON_TOGGLE_SAPLINGS, "");
+        toggleSaplingsButton = new ButtonElement<>(BUTTON_TOGGLE_SAPLINGS, "");
         toggleSaplingsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + BUTTON_HEIGHT + BUTTON_GAP);
         toggleSaplingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         toggleSaplingsButton.createWidgets(buttonList, fontRenderer, null);
 
-        openPricesButton = new ButtonElement(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
+        openPricesButton = new ButtonElement<>(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
         openPricesButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
         openPricesButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openPricesButton.createWidgets(buttonList, fontRenderer, null);
 
-        openConfigEditorButton = new ButtonElement(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title"));
+        openConfigEditorButton = new ButtonElement<>(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title"));
         openConfigEditorButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 2);
         openConfigEditorButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openConfigEditorButton.createWidgets(buttonList, fontRenderer, null);
 
-        openUISettingsButton = new ButtonElement(BUTTON_OPEN_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title"));
+        openUISettingsButton = new ButtonElement<>(BUTTON_OPEN_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title"));
         openUISettingsButton.setComputedPosition(guiLeft + contentLeft, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 3);
         openUISettingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openUISettingsButton.createWidgets(buttonList, fontRenderer, null);
 
-        openMiscSettingsButton = new ButtonElement(BUTTON_OPEN_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title"));
+        openMiscSettingsButton = new ButtonElement<>(BUTTON_OPEN_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title"));
         openMiscSettingsButton.setComputedPosition(guiLeft + contentLeft + settingWidth / 2 + BUTTON_GAP, settingsButtonStartY + (BUTTON_HEIGHT + BUTTON_GAP) * 3);
         openMiscSettingsButton.setComputedSize(settingsButtonWidth, BUTTON_HEIGHT);
         openMiscSettingsButton.createWidgets(buttonList, fontRenderer, null);
@@ -871,10 +885,10 @@ public class GuiOneBlock extends GuiContainer
         int donateBtnX = guiLeft + contentLeft + 72;
         int donateBtnWidth = contentWidth - 72 - 4;
         int donateBtnY = guiTop + infoRowY + rowInterval * 5;
-        donateButtons = new ButtonElement[DonateMethod.METHODS.length];
+        donateButtons = new ButtonElement<?>[DonateMethod.METHODS.length];
         for (int i = 0; i < DonateMethod.METHODS.length; i++)
         {
-            donateButtons[i] = new ButtonElement(BUTTON_DONATE_BASE + i, DonateMethod.METHODS[i].text);
+            donateButtons[i] = new ButtonElement<>(BUTTON_DONATE_BASE + i, DonateMethod.METHODS[i].text);
             donateButtons[i].setComputedPosition(donateBtnX, donateBtnY + (BUTTON_HEIGHT + BUTTON_GAP) * i);
             donateButtons[i].setComputedSize(donateBtnWidth, BUTTON_HEIGHT);
             donateButtons[i].createWidgets(buttonList, fontRenderer, null);
@@ -911,7 +925,7 @@ public class GuiOneBlock extends GuiContainer
         if (toggleSaplingsButton != null) toggleSaplingsButton.visible(settingsView);
         if (donateButtons != null)
         {
-            for (ButtonElement btn : donateButtons)
+            for (ButtonElement<?> btn : donateButtons)
             {
                 btn.visible(donateView);
             }
@@ -983,7 +997,7 @@ public class GuiOneBlock extends GuiContainer
     }
 
     @Override
-    protected void actionPerformed(GuiButton button) {
+    protected void actionPerformed(@Nonnull GuiButton button) {
         if (visibleSets.isEmpty())
         {
             return;
@@ -1133,9 +1147,10 @@ public class GuiOneBlock extends GuiContainer
         int numberX = iconX + iconSize + 2;
         int numberY = iconY + 2;
 
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        mc.getTextureManager().bindTexture(COIN_TEXTURE);
-        drawModalRectWithCustomSizedTexture(iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
+        TextureElement coinIcon = new TextureElement(COIN_TEXTURE, iconSize, iconSize);
+        coinIcon.setComputedPosition(iconX, iconY);
+        coinIcon.setComputedSize(iconSize, iconSize);
+        coinIcon.draw(fontRenderer, mouseX, mouseY, 0);
         fontRenderer.drawString(balanceValue, numberX, numberY, GOLD_COLOR);
 
         TileEntityOneBlockGenerator generator = container.getGenerator();
@@ -1601,9 +1616,10 @@ public class GuiOneBlock extends GuiContainer
         int qrX = contentLeft + 4;
         int qrY = y;
 
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        mc.getTextureManager().bindTexture(SBP_TEXTURE);
-        drawModalRectWithCustomSizedTexture(qrX, qrY, 0, 0, qrSize, qrSize, qrSize, qrSize);
+        TextureElement qrIcon = new TextureElement(SBP_TEXTURE, qrSize, qrSize);
+        qrIcon.setComputedPosition(qrX, qrY);
+        qrIcon.setComputedSize(qrSize, qrSize);
+        qrIcon.draw(fontRenderer, 0, 0, 0);
 
         String sbpLabel = "SBP";
         int labelWidth = fontRenderer.getStringWidth(sbpLabel);
@@ -1695,23 +1711,14 @@ public class GuiOneBlock extends GuiContainer
     {
         if (maxScroll <= 0 || scrollHeight <= 0) return;
 
-        int barHeight = Math.max(8, (scrollHeight * scrollHeight) / (scrollHeight + maxScroll * cellSize));
-        if (barHeight > scrollHeight) barHeight = scrollHeight;
-        int barY = scrollY + (currentScroll * (scrollHeight - barHeight)) / maxScroll;
-
-        drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, DARK_GRAY_COLOR_2);
-        drawRect(scrollX, barY, scrollX + SCROLLBAR_WIDTH, barY + barHeight, Constants.GRAY_COLOR_1);
-    }
-
-    private void renderMobScrollBar(int scrollX, int scrollY, int scrollHeight, int currentScroll, int maxScroll)
-    {
-        if (maxScroll <= 0 || scrollHeight <= 0) return;
-
-        int barHeight = Math.max(8, (scrollHeight * scrollHeight) / (scrollHeight + maxScroll * cellSize));
-        if (barHeight > scrollHeight) barHeight = scrollHeight;
-        int barY = scrollY + (currentScroll * (scrollHeight - barHeight)) / maxScroll;
-
-        drawRect(scrollX, scrollY, scrollX + SCROLLBAR_WIDTH, scrollY + scrollHeight, DARK_GRAY_COLOR_2);
-        drawRect(scrollX, barY, scrollX + SCROLLBAR_WIDTH, barY + barHeight, Constants.GRAY_COLOR_1);
+        int visible = Math.max(1, scrollHeight / (cellSize + cellPadding));
+        ScrollbarElement sb = new ScrollbarElement()
+                .totalItems(maxScroll + visible)
+                .visibleItems(visible)
+                .scrollOffset(currentScroll)
+                .trackWidth(SCROLLBAR_WIDTH);
+        sb.setComputedPosition(scrollX, scrollY);
+        sb.setComputedSize(SCROLLBAR_WIDTH, scrollHeight);
+        sb.draw(fontRenderer, 0, 0, 0);
     }
 }

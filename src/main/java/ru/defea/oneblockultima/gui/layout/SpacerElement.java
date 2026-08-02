@@ -5,7 +5,8 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
-public class SpacerElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class SpacerElement extends ViewElement<SpacerElement> {
     private final int width;
     private final int height;
 

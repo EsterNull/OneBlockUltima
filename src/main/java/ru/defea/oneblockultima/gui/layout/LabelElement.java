@@ -8,7 +8,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
 
-public class LabelElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class LabelElement extends ViewElement<LabelElement> {
     private String text;
     private int color = WHITE_COLOR_1;
     private boolean centered = false;
@@ -35,12 +36,6 @@ public class LabelElement extends ViewElement {
 
     public LabelElement text(String text) {
         this.text = text;
-        return this;
-    }
-
-    @Override
-    public LabelElement width(int width) {
-        super.width(width);
         return this;
     }
 
@@ -84,8 +79,7 @@ public class LabelElement extends ViewElement {
 
     @Override
     public int getPreferredWidth() {
-        if (explicitWidth > 0) return explicitWidth;
-        return 0;
+        return Math.max(explicitWidth, 0);
     }
 
     @Override

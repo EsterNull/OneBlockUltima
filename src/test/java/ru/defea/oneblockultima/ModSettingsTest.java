@@ -7,10 +7,7 @@ import ru.defea.oneblockultima.config.ModSettings;
 
 import java.lang.reflect.Constructor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ModSettingsTest {
 
@@ -20,9 +17,9 @@ public class ModSettingsTest {
     }
 
     private ModSettings newInstance() throws Exception {
-        Constructor<ModSettings> ctor = ModSettings.class.getDeclaredConstructor();
-        ctor.setAccessible(true);
-        return ctor.newInstance();
+        Constructor<ModSettings> constructor = ModSettings.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
     }
 
     // --- BalancePosition enum ---
@@ -130,5 +127,35 @@ public class ModSettingsTest {
         settings.setMobWorldGeneration(true);
         settings.setMobWorldGeneration(false);
         assertFalse(settings.getMobWorldGeneration());
+    }
+
+    // --- inviteDurationTicks ---
+
+    @Test
+    public void defaultInviteDurationTicksIsTwelveHundred() throws Exception {
+        ModSettings settings = newInstance();
+        assertEquals(1200, settings.getInviteDurationTicks());
+    }
+
+    @Test
+    public void setInviteDurationTicksStoresValue() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setInviteDurationTicks(600);
+        assertEquals(600, settings.getInviteDurationTicks());
+    }
+
+    // --- nonPlayerBreakCooldownTicks ---
+
+    @Test
+    public void defaultNonPlayerBreakCooldownTicksIsTwenty() throws Exception {
+        ModSettings settings = newInstance();
+        assertEquals(20, settings.getNonPlayerBreakCooldownTicks());
+    }
+
+    @Test
+    public void setNonPlayerBreakCooldownTicksStoresValue() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setNonPlayerBreakCooldownTicks(40);
+        assertEquals(40, settings.getNonPlayerBreakCooldownTicks());
     }
 }

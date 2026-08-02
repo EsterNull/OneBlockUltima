@@ -31,10 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static ru.defea.oneblockultima.Constants.COIN_TEXTURE;
-import static ru.defea.oneblockultima.Constants.GOLD_COLOR;
-import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
-import static ru.defea.oneblockultima.Constants.TRANSPARENT_DARK_GRAY_COLOR_2;
+import static ru.defea.oneblockultima.Constants.*;
 
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = OneBlockUltima.MODID)
 public final class ModEventsClient

@@ -15,7 +15,6 @@ import java.util.*;
 public class ContainerBlockPrices
 {
     private final Map<String, Double> stagedPrices = new LinkedHashMap<>();
-    private List<Map.Entry<String, Double>> priceEntries = new ArrayList<>();
     private List<Map.Entry<String, Double>> filteredEntries = new ArrayList<>();
     private final List<SearchResult> searchResults = new ArrayList<>();
     private String searchQuery = "";
@@ -25,7 +24,6 @@ public class ContainerBlockPrices
     private String editingName = "";
     private int editingMeta = 0;
     private double editingPrice = 0;
-    private boolean editingExisting = false;
 
     public static class SearchResult
     {
@@ -62,7 +60,7 @@ public class ContainerBlockPrices
 
     public void reloadPriceEntries()
     {
-        priceEntries = new ArrayList<>(stagedPrices.entrySet());
+        List<Map.Entry<String, Double>> priceEntries = new ArrayList<>(stagedPrices.entrySet());
         filteredEntries = new ArrayList<>(priceEntries);
     }
 
@@ -75,7 +73,6 @@ public class ContainerBlockPrices
 
     public void startAddBlock()
     {
-        editingExisting = false;
         editingRegistry = "";
         editingName = "";
         editingMeta = 0;
@@ -96,7 +93,6 @@ public class ContainerBlockPrices
         editingRegistry = entryMeta > 0 ? entryKey.substring(0, entryKey.lastIndexOf(':')) : entryKey;
         editingMeta = entryMeta;
         editingPrice = e.getValue();
-        editingExisting = true;
         editingName = getBlockDisplayName(editingRegistry, editingMeta);
     }
 
@@ -108,34 +104,24 @@ public class ContainerBlockPrices
         editingName = r.name;
         String priceKey = editingMeta > 0 ? editingRegistry + ":" + editingMeta : editingRegistry;
         editingPrice = stagedPrices.getOrDefault(priceKey, 0.0);
-        editingExisting = stagedPrices.containsKey(priceKey);
     }
 
-    public boolean deletePriceEntry(int index)
+    public void deletePriceEntry(int index)
     {
-        if (index < 0 || index >= filteredEntries.size()) return false;
+        if (index < 0 || index >= filteredEntries.size()) return;
         Map.Entry<String, Double> e = filteredEntries.get(index);
         stagedPrices.remove(e.getKey());
         reloadPriceEntries();
-        return true;
     }
 
-    public boolean savePrice(String priceText)
+    public void savePrice(double price)
     {
-        double price = 0;
-        try
-        {
-            String text = priceText.trim().replace(',', '.');
-            price = Double.parseDouble(text);
-        }
-        catch (NumberFormatException e) {}
         price = Math.max(0, price);
 
-        if (editingRegistry.isEmpty()) return false;
+        if (editingRegistry.isEmpty()) return;
 
         String priceKey = editingMeta > 0 ? editingRegistry + ":" + editingMeta : editingRegistry;
         stagedPrices.put(priceKey, price);
-        return true;
     }
 
     public void flushToConfig()
@@ -176,7 +162,7 @@ public class ContainerBlockPrices
             if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
 
             Item item = Item.getItemFromBlock(block);
-            if (item == null || item == Items.AIR) continue;
+            if (item == Items.AIR) continue;
 
             NonNullList<ItemStack> subItems = NonNullList.create();
             item.getSubItems(CreativeTabs.SEARCH, subItems);
@@ -191,7 +177,7 @@ public class ContainerBlockPrices
 
                 String name = "";
                 try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
-                if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms)) continue;
+                if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
 
                 searchResults.add(new SearchResult(registry, name, subStack.copy()));
             }
@@ -223,7 +209,7 @@ public class ContainerBlockPrices
 
                 String name = "";
                 try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
-                if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms)) continue;
+                if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
 
                 searchResults.add(new SearchResult(registry, name, subStack.copy()));
             }
@@ -232,14 +218,14 @@ public class ContainerBlockPrices
         searchResults.sort(Comparator.comparing(r -> r.name.toLowerCase(Locale.ROOT)));
     }
 
-    private boolean matchesSearchTerms(String name, List<String> terms)
+    private boolean mismatchesSearchTerms(String name, List<String> terms)
     {
         String lowerName = name.toLowerCase(Locale.ROOT);
         for (String term : terms)
         {
-            if (!lowerName.contains(term)) return false;
+            if (!lowerName.contains(term)) return true;
         }
-        return true;
+        return false;
     }
 
     public String getBlockDisplayName(String registry, int meta)

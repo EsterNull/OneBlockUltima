@@ -4,11 +4,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class ButtonToggleElement extends ButtonElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
     private static final String CHECKMARK = "\u2714";
 
     public enum LabelPosition {
@@ -95,38 +97,9 @@ public class ButtonToggleElement extends ButtonElement {
         else return this.getTextColor();
     }
 
-    public ButtonToggleElement width(int width) {
-        this.width = width;
-        return this;
-    }
-
-    public ButtonToggleElement height(int height) {
-        this.height = height;
-        return this;
-    }
-
-    public ButtonToggleElement enabled(boolean enabled) {
-        this.enabled = enabled;
-        if (guiButton != null) guiButton.enabled = enabled;
-        return this;
-    }
-
-    @Override
-    public ButtonToggleElement visible(boolean visible) {
-        super.visible(visible);
-        if (guiButton != null) guiButton.visible = visible;
-        return this;
-    }
-
-    public ButtonToggleElement text(String text) {
-        this.text = text;
-        if (guiButton != null) guiButton.displayString = text;
-        return this;
-    }
-
     @Override
     public int getPreferredWidth() {
-        int boxW = width > 0 ? width : 0;
+        int boxW = Math.max(width, 0);
         if (label != null && !label.isEmpty()) {
             return boxW + labelGap + label.length() * 6;
         }
@@ -158,7 +131,7 @@ public class ButtonToggleElement extends ButtonElement {
 
         guiButton = new GuiButton(buttonId, computedX, computedY, computedWidth, computedHeight, text) {
             @Override
-            public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY, float partialTicks) {
                 if (!this.visible) {
                     return;
                 }
@@ -189,9 +162,5 @@ public class ButtonToggleElement extends ButtonElement {
         };
         guiButton.enabled = enabled;
         buttonList.add(guiButton);
-    }
-
-    @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
     }
 }

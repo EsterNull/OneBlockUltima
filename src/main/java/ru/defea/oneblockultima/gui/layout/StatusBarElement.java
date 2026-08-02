@@ -7,7 +7,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.SUCCESS_COLOR;
 
-public class StatusBarElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class StatusBarElement extends ViewElement<StatusBarElement> {
     private String text = "";
     private int textColor = SUCCESS_COLOR;
     private int timer = 0;

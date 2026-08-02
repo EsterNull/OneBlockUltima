@@ -8,7 +8,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class GridElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class GridElement extends ViewElement<GridElement> {
     public interface CellRenderer {
         void draw(int x, int y, int cellWidth, int cellHeight, int row, int col,
                   boolean hovered, boolean selected, FontRenderer fr, int mouseX, int mouseY, float partialTicks);
@@ -26,8 +27,6 @@ public class GridElement extends ViewElement {
     private CellClickHandler clickHandler;
     private int selectedRow = -1;
     private int selectedCol = -1;
-    private int hoveredRow = -1;
-    private int hoveredCol = -1;
 
     public GridElement(int rows, int cols) {
         this.rows = rows;
@@ -69,8 +68,8 @@ public class GridElement extends ViewElement {
 
     @Override
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        hoveredRow = -1;
-        hoveredCol = -1;
+        int hoveredRow = -1;
+        int hoveredCol = -1;
 
         int actualCellSize = getActualCellSize();
         int totalW = cols * actualCellSize + (cols - 1) * cellGap;
@@ -85,11 +84,6 @@ public class GridElement extends ViewElement {
                 boolean hovered = mouseX >= cx && mouseX < cx + actualCellSize &&
                                   mouseY >= cy && mouseY < cy + actualCellSize;
                 boolean selected = r == selectedRow && c == selectedCol;
-
-                if (hovered) {
-                    hoveredRow = r;
-                    hoveredCol = c;
-                }
 
                 if (cellRenderer != null) {
                     cellRenderer.draw(cx, cy, actualCellSize, actualCellSize, r, c, hovered, selected, fr, mouseX, mouseY, partialTicks);

@@ -12,6 +12,7 @@ import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.gui.containers.ContainerBlockPrices;
 import ru.defea.oneblockultima.gui.layout.*;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,15 +36,14 @@ public class GuiBlockPrices extends GuiScreen
     private final ContainerBlockPrices container;
     private int currentView = VIEW_PRICES;
     private int scrollOffset = 0;
-    private String statusMessage = "";
-    private int statusTimer = 0;
     private int searchScrollOffset = 0;
 
     private ViewFactory factory;
+    private ViewSwitcherElement switcher;
     private ScrollableListElement priceList;
     private ScrollableListElement searchList;
     private TextFieldElement searchFieldElement;
-    private TextFieldElement priceFieldElement;
+    private DoubleStepperElement priceStepper;
     private StatusBarElement statusBar;
 
     public GuiBlockPrices(GuiScreen parent)
@@ -74,29 +74,45 @@ public class GuiBlockPrices extends GuiScreen
         if (priceList != null) scrollOffset = priceList.getScrollOffset();
         if (searchList != null) searchScrollOffset = searchList.getScrollOffset();
 
+        if (factory == null || factory.getScreenWidth() != width || factory.getScreenHeight() != height)
+        {
+            factory = new ViewFactory(width, height)
+                .margin(8).padding(2)
+                .gap(6)
+                .align(Alignment.CENTER);
+            switcher = new ViewSwitcherElement().widthPercent(100).flexible(true);
+            factory.add(switcher);
+        }
+
+        ColumnElement view = new ColumnElement().gap(6).align(Alignment.CENTER);
         if (currentView == VIEW_PRICES)
         {
             container.reloadPriceEntries();
-            buildPricesView();
+            buildPricesView(view);
         }
         else if (currentView == VIEW_ADD_BLOCK)
         {
-            buildAddBlockView();
+            buildAddBlockView(view);
         }
         else if (currentView == VIEW_EDIT_PRICE)
         {
-            buildEditPriceView();
+            buildEditPriceView(view);
         }
+
+        switcher.replaceView(currentView, view);
+        switcher.setView(currentView);
+        switcher.fitContent(currentView == VIEW_EDIT_PRICE);
+        if (currentView == VIEW_EDIT_PRICE) {
+            factory.panel(0, 0);
+        } else {
+            factory.panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
+        }
+        factory.build(buttonList, fontRenderer);
     }
 
-    private void buildPricesView()
+    private void buildPricesView(ColumnElement view)
     {
-        factory = new ViewFactory(width, height)
-            .margin(8).padding(2)
-            .gap(6)
-            .align(Alignment.CENTER);
-
-        factory.title("gui.oneblockultima.prices.title");
+        view.title("gui.oneblockultima.prices.title");
 
         List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
         for (int i = 0; i < container.getFilteredEntries().size(); i++)
@@ -176,9 +192,8 @@ public class GuiBlockPrices extends GuiScreen
 
                     if (localX >= delBtnX && localX <= delBtnX + delW && localY >= btnY && localY <= btnY + btnH) {
                         container.deletePriceEntry(idx);
-                        statusMessage = I18n.format("gui.oneblockultima.prices.price_removed");
-                        statusTimer = 60;
                         buildView();
+                        if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.price_removed"), 60);
                         return true;
                     }
                     return false;
@@ -191,41 +206,33 @@ public class GuiBlockPrices extends GuiScreen
             .scrollOffset(scrollOffset);
         priceList.visible(!entries.isEmpty());
         priceList.flexible(true);
-        factory.add(priceList);
+        view.add(priceList);
 
-        statusBar = new StatusBarElement();
-        factory.add(statusBar);
-
+        if (statusBar == null) statusBar = new StatusBarElement();
+        view.add(statusBar);
         String balanceModeLabel = container.getCurrentBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK
                 ? I18n.format("gui.oneblockultima.mod_settings.balance_mode.break_block")
                 : I18n.format("gui.oneblockultima.mod_settings.balance_mode.sell_block");
         String balanceToggleText = I18n.format("gui.oneblockultima.mod_settings.balance_mode") + ": " + balanceModeLabel;
-        factory.button(BUTTON_BALANCE_MODE, balanceToggleText);
+        view.button(BUTTON_BALANCE_MODE, balanceToggleText);
 
-        RowElement btnRow = factory.row(Alignment.CENTER).gap(4);
+        RowElement btnRow = view.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.prices.add"));
         btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-
-        factory.build(buttonList, fontRenderer);
     }
 
-    private void buildAddBlockView()
+    private void buildAddBlockView(ColumnElement view)
     {
-        factory = new ViewFactory(width, height)
-            .margin(8).padding(2)
-            .gap(6)
-            .align(Alignment.CENTER);
-
-        factory.title("gui.oneblockultima.prices.add");
+        view.title("gui.oneblockultima.prices.add");
 
         searchFieldElement = new TextFieldElement(0)
             .text(container.getSearchQuery())
             .focused(true)
             .widthPercent(60);
-        factory.add(searchFieldElement);
+        view.add(searchFieldElement);
 
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(GRAY_COLOR_1).centered());
+        view.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(GRAY_COLOR_1).centered());
 
         List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
         for (int i = 0; i < container.getSearchResults().size(); i++)
@@ -266,58 +273,60 @@ public class GuiBlockPrices extends GuiScreen
             .scrollOffset(searchScrollOffset);
         searchList.visible(!searchEntries.isEmpty());
         searchList.flexible(true);
-        factory.add(searchList);
+        view.add(searchList);
 
         if (searchEntries.isEmpty())
         {
-            factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(GRAY_COLOR_1).centered());
+            view.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(GRAY_COLOR_1).centered());
         }
 
-        factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-
-        factory.build(buttonList, fontRenderer);
+        view.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
     }
 
-    private void buildEditPriceView()
+    private void buildEditPriceView(ColumnElement view)
     {
-        factory = new ViewFactory(width, height)
-            .margin(8).padding(2)
-            .gap(6)
-            .align(Alignment.CENTER)
-            .centerVertical();
-
-        factory.title("gui.oneblockultima.prices.edit_title");
+        view.centerVertical();
+        view.title("gui.oneblockultima.prices.edit_title");
 
         net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack(container.getEditingRegistry(), container.getEditingMeta());
         if (!stack.isEmpty())
         {
-            factory.add(new ItemStackElement(stack).size(16).align(Alignment.CENTER));
+            RowElement infoRow = view.row(Alignment.CENTER).gap(6);
+            infoRow.add(new ItemStackElement(stack).size(24));
+
+            ColumnElement textCol = new ColumnElement().gap(0).align(Alignment.LEFT);
+            String displayName = container.getEditingName() != null && !container.getEditingName().isEmpty()
+                    ? container.getEditingName() : container.getEditingRegistry();
+            textCol.add(new LabelElement(displayName).color(WHITE_COLOR_1));
+            textCol.add(new LabelElement(container.getEditingRegistry()).color(GRAY_COLOR_1));
+            infoRow.add(textCol);
+        }
+        else
+        {
+            String displayName = container.getEditingName() != null && !container.getEditingName().isEmpty()
+                    ? container.getEditingName() : container.getEditingRegistry();
+            view.add(new LabelElement(displayName).color(WHITE_COLOR_1).centered());
+            view.add(new LabelElement(container.getEditingRegistry()).color(GRAY_COLOR_1).centered());
         }
 
-        String displayName = container.getEditingName() != null && !container.getEditingName().isEmpty()
-                ? container.getEditingName() : container.getEditingRegistry();
-        factory.add(new LabelElement(displayName).centered());
-        factory.add(new LabelElement(container.getEditingRegistry()).color(GRAY_COLOR_1).centered());
 
-        factory.add(new SpacerElement(10));
-        factory.add(new LabelElement(I18n.format("gui.oneblockultima.prices.price")).centered());
+        RowElement priceRow = view.row(Alignment.CENTER).gap(8);
+        priceRow.add(new LabelElement(I18n.format("gui.oneblockultima.prices.price")).color(GRAY_COLOR_1));
+        priceStepper = new DoubleStepperElement()
+            .value(container.getEditingPrice())
+            .min(0)
+            .step(1)
+            .fieldWidth(70)
+            .focused(true);
+        priceRow.add(priceStepper);
 
-        priceFieldElement = new TextFieldElement(0)
-            .text(ContainerBlockPrices.formatPrice(container.getEditingPrice()))
-            .focused(true)
-            .widthPercent(30);
-        factory.add(priceFieldElement);
-
-        factory.add(new SpacerElement(10));
-        RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
+        RowElement btnRow = view.row(Alignment.CENTER).gap(8);
         btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.done"));
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-
-        factory.build(buttonList, fontRenderer);
     }
 
     @Override
-    protected void actionPerformed(GuiButton button)
+    protected void actionPerformed(@Nonnull GuiButton button)
     {
         factory.actionPerformed(button);
 
@@ -352,20 +361,20 @@ public class GuiBlockPrices extends GuiScreen
 
         if (button.id == BUTTON_SAVE && currentView == VIEW_EDIT_PRICE)
         {
-            if (priceFieldElement != null) container.savePrice(priceFieldElement.getText());
-            statusMessage = I18n.format("gui.oneblockultima.prices.price_saved");
-            statusTimer = 60;
+            if (priceStepper != null)
+            {
+                priceStepper.commit();
+                container.savePrice(priceStepper.getValue());
+            }
             changeView(VIEW_PRICES);
+            if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.price_saved"), 60);
             return;
         }
 
         if (button.id == BUTTON_SAVE && currentView == VIEW_PRICES)
         {
             container.flushToConfig();
-            statusMessage = I18n.format("gui.oneblockultima.prices.table_saved");
-            statusTimer = 60;
-            if (statusBar != null) statusBar.text(statusMessage, statusTimer);
-            return;
+            if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.table_saved"), 60);
         }
     }
 
@@ -435,7 +444,6 @@ public class GuiBlockPrices extends GuiScreen
     {
         super.updateScreen();
         factory.updateScreen();
-        if (statusTimer > 0) statusTimer--;
     }
 
     @Override
@@ -461,7 +469,4 @@ public class GuiBlockPrices extends GuiScreen
     {
         return Math.max(1, (height - 110) / 20);
     }
-
-    @Override
-    public boolean doesGuiPauseGame() { return true; }
 }

@@ -9,29 +9,29 @@ import net.minecraft.util.ResourceLocation;
 
 import java.util.List;
 
-public class TextureElement extends ViewElement {
-    private ResourceLocation texture;
-    private int textureWidth;
-    private int textureHeight;
-    private float u;
-    private float v;
-    private float uWidth;
-    private float vHeight;
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class TextureElement extends ViewElement<TextureElement> {
+    private final ResourceLocation texture;
+    private final int width;
+    private final int height;
+    private final float u;
+    private final float v;
 
-    public TextureElement(ResourceLocation texture, int textureWidth, int textureHeight,
-                          float u, float v, float uWidth, float vHeight) {
+    public TextureElement(ResourceLocation texture, int textureWidth, int textureHeight) {
         this.texture = texture;
-        this.textureWidth = textureWidth;
-        this.textureHeight = textureHeight;
-        this.u = u;
-        this.v = v;
-        this.uWidth = uWidth;
-        this.vHeight = vHeight;
+        this.width = textureWidth;
+        this.height = textureHeight;
+        this.u = 0;
+        this.v = 0;
     }
 
-    public TextureElement size(int width, int height) {
-        setComputedSize(width, height);
-        return this;
+    public TextureElement(ResourceLocation texture, int textureWidth, int textureHeight,
+                          float u, float v) {
+        this.texture = texture;
+        this.width = textureWidth;
+        this.height = textureHeight;
+        this.u = u;
+        this.v = v;
     }
 
     @Override
@@ -45,17 +45,17 @@ public class TextureElement extends ViewElement {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         Gui.drawModalRectWithCustomSizedTexture(
             computedX, computedY, u, v,
-            computedWidth, computedHeight, textureWidth, textureHeight
+            computedWidth, computedHeight, width, height
         );
     }
 
     @Override
     public int getPreferredWidth() {
-        return computedWidth > 0 ? computedWidth : textureWidth;
+        return width;
     }
 
     @Override
     public int getPreferredHeight() {
-        return computedHeight > 0 ? computedHeight : textureHeight;
+        return height;
     }
 }

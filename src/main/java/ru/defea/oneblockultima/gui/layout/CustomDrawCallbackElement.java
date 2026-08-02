@@ -5,7 +5,8 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
-public class CustomDrawCallbackElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class CustomDrawCallbackElement extends ViewElement<CustomDrawCallbackElement> {
     public interface DrawCallback {
         void draw(int x, int y, int width, int height, FontRenderer fr, int mouseX, int mouseY, float partialTicks);
     }
@@ -15,7 +16,7 @@ public class CustomDrawCallbackElement extends ViewElement {
         int getHeight();
     }
 
-    private DrawCallback drawCallback;
+    private final DrawCallback drawCallback;
     private int fixedWidth;
     private int fixedHeight;
     private SizeCallback sizeCallback;

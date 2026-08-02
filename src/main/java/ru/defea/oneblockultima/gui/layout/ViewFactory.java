@@ -11,6 +11,7 @@ import java.util.List;
 import static ru.defea.oneblockultima.Constants.DARK_GRAY_COLOR_1;
 import static ru.defea.oneblockultima.Constants.TRANSPARENT_DARK_GRAY_COLOR_1;
 
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ViewFactory {
     private final int screenWidth;
     private final int screenHeight;
@@ -25,7 +26,7 @@ public class ViewFactory {
     private int panelBorderColor = DARK_GRAY_COLOR_1;
     private int margin = 0;
     private boolean fitContent = false;
-    private final List<ViewElement> elements = new ArrayList<>();
+    private final List<ViewElement<?>> elements = new ArrayList<>();
     private final List<GuiTextField> textFields = new ArrayList<>();
     private int totalContentHeight = 0;
 
@@ -89,6 +90,11 @@ public class ViewFactory {
         return this;
     }
 
+    public ViewFactory fitContent(boolean fitContent) {
+        this.fitContent = fitContent;
+        return this;
+    }
+
     public ViewFactory title(String key) {
         elements.add(new TitleElement(key));
         return this;
@@ -111,20 +117,20 @@ public class ViewFactory {
         return e;
     }
 
-    public ButtonElement button(int id, String text) {
-        ButtonElement e = new ButtonElement(id, text);
+    public ButtonElement<?> button(int id, String text) {
+        ButtonElement<?> e = new ButtonElement<>(id, text);
         elements.add(e);
         return e;
     }
 
-    public ButtonElement button(int id, int width, String text) {
-        ButtonElement e = new ButtonElement(id, text).width(width);
+    public ButtonElement<?> button(int id, int width, String text) {
+        ButtonElement<?> e = new ButtonElement<>(id, text).width(width);
         elements.add(e);
         return e;
     }
 
-    public ButtonElement button(String text) {
-        ButtonElement e = new ButtonElement(text);
+    public ButtonElement<?> button(String text) {
+        ButtonElement<?> e = new ButtonElement<>(text);
         elements.add(e);
         return e;
     }
@@ -173,16 +179,22 @@ public class ViewFactory {
         return this;
     }
 
-    public ViewFactory add(ViewElement element) {
+    public ViewFactory add(ViewElement<?> element) {
         elements.add(element);
         return this;
     }
 
     public void build(List<GuiButton> buttonList, FontRenderer fontRenderer) {
+        build(buttonList, fontRenderer, 0, 0, screenWidth, screenHeight);
+    }
+
+    public void build(List<GuiButton> buttonList, FontRenderer fontRenderer, int originX, int originY, int maxWidth, int maxHeight) {
         textFields.clear();
-        int contentY = margin + paddingTop;
-        int maxContentWidth = screenWidth - margin * 2 - paddingLeft - paddingRight;
-        int availableHeight = screenHeight - margin * 2 - paddingTop - paddingBottom;
+        int boxWidth = Math.min(screenWidth, maxWidth);
+        int boxHeight = Math.min(screenHeight, maxHeight);
+        int contentY = originY + margin + paddingTop;
+        int maxContentWidth = boxWidth - margin * 2 - paddingLeft - paddingRight;
+        int availableHeight = boxHeight - margin * 2 - paddingTop - paddingBottom;
         int visibleCount = 0;
         int fixedHeight = 0;
         int flexCount = 0;
@@ -192,22 +204,19 @@ public class ViewFactory {
         if (fitContent) {
             contentWidth = computeNaturalContentWidth(fontRenderer);
             if (contentWidth <= 0 || contentWidth > maxContentWidth) contentWidth = maxContentWidth;
-            contentX = margin + paddingLeft + (maxContentWidth - contentWidth) / 2;
+            contentX = originX + margin + paddingLeft + (maxContentWidth - contentWidth) / 2;
         } else {
             contentWidth = maxContentWidth;
-            contentX = margin + paddingLeft;
+            contentX = originX + margin + paddingLeft;
         }
 
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             visibleCount++;
             if (e.isFlexible()) {
                 flexCount++;
             } else {
-                int elemHeight = e.getHeightPercent() >= 0
-                        ? availableHeight * e.getHeightPercent() / 100
-                        : e.getPreferredHeight(fontRenderer);
-                fixedHeight += elemHeight + gap;
+                fixedHeight += computeElementHeight(fontRenderer, e, availableHeight) + gap;
             }
         }
         if (visibleCount > 0) fixedHeight -= gap;
@@ -222,22 +231,14 @@ public class ViewFactory {
             cursorY = contentY;
         }
 
-        int maxY = screenHeight - margin - paddingBottom;
+        int maxY = originY + boxHeight - margin - paddingBottom;
 
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
 
-            int elemWidth = e.getWidthPercent() >= 0
-                    ? contentWidth * e.getWidthPercent() / 100
-                    : e.getPreferredWidth(fontRenderer);
+            int elemWidth = computeElementWidth(fontRenderer, e, contentWidth);
             int elemHeight = e.isFlexible() ? flexHeight
-                    : (e.getHeightPercent() >= 0
-                            ? availableHeight * e.getHeightPercent() / 100
-                            : e.getPreferredHeight(fontRenderer));
-
-            if (elemWidth <= 0) elemWidth = contentWidth;
-            if (elemWidth > contentWidth) elemWidth = contentWidth;
-            if (elemHeight < 0) elemHeight = 0;
+                    : computeElementHeight(fontRenderer, e, availableHeight);
 
             int x;
             Alignment align = e.getAlignment() != null ? e.getAlignment() : defaultAlignment;
@@ -269,9 +270,27 @@ public class ViewFactory {
         return totalContentHeight;
     }
 
-    private int computeNaturalContentWidth(FontRenderer fr) {
+    public static int computeElementWidth(FontRenderer fr, ViewElement<?> e, int containerWidth) {
+        int elemWidth = e.getWidthPercent() >= 0
+                ? containerWidth * e.getWidthPercent() / 100
+                : e.getPreferredWidth(fr);
+        if (elemWidth <= 0) elemWidth = containerWidth;
+        if (elemWidth > containerWidth) elemWidth = containerWidth;
+        if (e.isStretchToContent()) elemWidth = containerWidth;
+        return elemWidth;
+    }
+
+    public static int computeElementHeight(FontRenderer fr, ViewElement<?> e, int containerHeight) {
+        int elemHeight = e.getHeightPercent() >= 0
+                ? containerHeight * e.getHeightPercent() / 100
+                : e.getPreferredHeight(fr);
+        if (elemHeight < 0) elemHeight = 0;
+        return elemHeight;
+    }
+
+    public int computeNaturalContentWidth(FontRenderer fr) {
         int maxWidth = 0;
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.getWidthPercent() >= 0) return -1;
             int w = e.getPreferredWidth(fr);
@@ -280,9 +299,22 @@ public class ViewFactory {
         return maxWidth;
     }
 
+    public int computeNaturalContentHeight(FontRenderer fr) {
+        int total = 0;
+        int count = 0;
+        for (ViewElement<?> e : elements) {
+            if (!e.isVisible()) continue;
+            if (e.isFlexible()) return -1;
+            total += computeElementHeight(fr, e, screenHeight) + gap;
+            count++;
+        }
+        if (count > 0) total -= gap;
+        return total;
+    }
+
     public int getContentMinX() {
         int minX = Integer.MAX_VALUE;
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.computedX < minX) minX = e.computedX;
         }
@@ -291,7 +323,7 @@ public class ViewFactory {
 
     public int getContentMaxX() {
         int maxX = Integer.MIN_VALUE;
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.computedX + e.computedWidth > maxX) maxX = e.computedX + e.computedWidth;
         }
@@ -300,7 +332,7 @@ public class ViewFactory {
 
     public int getContentMinY() {
         int minY = Integer.MAX_VALUE;
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.computedY < minY) minY = e.computedY;
         }
@@ -309,7 +341,7 @@ public class ViewFactory {
 
     public int getContentMaxY() {
         int maxY = Integer.MIN_VALUE;
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.computedY + e.computedHeight > maxY) maxY = e.computedY + e.computedHeight;
         }
@@ -317,16 +349,22 @@ public class ViewFactory {
     }
 
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+        draw(fr, mouseX, mouseY, partialTicks, 0, 0, screenWidth, screenHeight);
+    }
+
+    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks, int originX, int originY, int maxWidth, int maxHeight) {
+        int boxWidth = Math.min(screenWidth, maxWidth);
+        int boxHeight = Math.min(screenHeight, maxHeight);
         if (panelColor != 0) {
-            int px = margin;
+            int px = originX + margin;
             int py;
-            int pw = screenWidth - margin * 2;
+            int pw = boxWidth - margin * 2;
             int ph;
 
             if (fitContent) {
                 int firstX = getContentMinX() - 4;
                 int lastX = getContentMaxX() + 4;
-                if (firstX < margin) firstX = margin;
+                if (firstX < originX + margin) firstX = originX + margin;
                 px = firstX;
                 pw = lastX - firstX;
                 int firstY = getContentMinY() - 4;
@@ -334,8 +372,8 @@ public class ViewFactory {
                 py = firstY;
                 ph = lastY - firstY;
             } else {
-                py = margin;
-                ph = screenHeight - margin * 2;
+                py = originY + margin;
+                ph = boxHeight - margin * 2;
             }
 
             Gui.drawRect(px, py, px + pw, py + ph, panelColor);
@@ -347,21 +385,21 @@ public class ViewFactory {
             }
         }
 
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             e.draw(fr, mouseX, mouseY, partialTicks);
         }
     }
 
     public boolean actionPerformed(GuiButton button) {
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (e.actionPerformed(button)) return true;
         }
         return false;
     }
 
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.mouseClicked(mouseX, mouseY, mouseButton)) return true;
         }
@@ -372,7 +410,7 @@ public class ViewFactory {
     }
 
     public boolean keyTyped(char typedChar, int keyCode) {
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.keyTyped(typedChar, keyCode)) return true;
         }
@@ -380,7 +418,7 @@ public class ViewFactory {
     }
 
     public boolean mouseReleased(int mouseX, int mouseY, int state) {
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.mouseReleased(mouseX, mouseY, state)) return true;
         }
@@ -388,7 +426,7 @@ public class ViewFactory {
     }
 
     public boolean handleMouseInput(int dWheel) {
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.handleMouseInput(dWheel)) return true;
         }
@@ -396,8 +434,9 @@ public class ViewFactory {
     }
 
     public void updateScreen() {
-        for (ViewElement e : elements) {
+        for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
+            e.tick();
             e.updateCursorCounter();
         }
     }
@@ -407,7 +446,7 @@ public class ViewFactory {
         textFields.clear();
     }
 
-    public void removeElement(ViewElement element) {
+    public void removeElement(ViewElement<?> element) {
         elements.remove(element);
     }
 
@@ -419,7 +458,7 @@ public class ViewFactory {
         return textFields;
     }
 
-    public List<ViewElement> getElements() {
+    public List<ViewElement<?>> getElements() {
         return elements;
     }
 

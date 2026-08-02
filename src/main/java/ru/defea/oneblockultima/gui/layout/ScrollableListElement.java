@@ -9,7 +9,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class ScrollableListElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class ScrollableListElement extends ViewElement<ScrollableListElement> {
     private final int itemHeight;
     private int scrollOffset = 0;
     private int maxScroll = 0;

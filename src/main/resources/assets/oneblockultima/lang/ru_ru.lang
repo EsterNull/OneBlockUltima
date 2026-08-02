@@ -287,6 +287,8 @@ gui.oneblockultima.prices.price_removed=Цена удалена
 # Misc settings GUI
 gui.oneblockultima.misc.title=Разное
 gui.oneblockultima.misc.mob_world_generation=Генерация мобов в Верхнем мире
+gui.oneblockultima.misc.invite_duration=Длительность приглашения (тики):
+gui.oneblockultima.misc.non_player_break_cooldown=Задержка генерации для не игрока (тики):
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Блок добыт из генератора

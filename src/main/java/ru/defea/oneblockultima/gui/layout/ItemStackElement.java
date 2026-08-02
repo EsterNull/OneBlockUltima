@@ -8,7 +8,8 @@ import net.minecraft.item.ItemStack;
 
 import java.util.List;
 
-public class ItemStackElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class ItemStackElement extends ViewElement<ItemStackElement> {
     private ItemStack stack;
     private int size = 16;
 

@@ -43,7 +43,7 @@ public class GuiHandler implements IGuiHandler
 
         if (ID == CLAIM_GENERATOR_GUI)
         {
-            return new GuiClaimGenerator(player, world, new BlockPos(x, y, z));
+            return new GuiClaimGenerator(new BlockPos(x, y, z));
         }
 
         return null;

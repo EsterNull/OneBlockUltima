@@ -4,12 +4,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
-import static ru.defea.oneblockultima.Constants.DARK_GRAY_COLOR_1;
 
-public class ButtonElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class ButtonElement<T extends ButtonElement<T>> extends ViewElement<T> {
     public static final int BUTTON_PADDING = 16;
     public static final int BUTTON_HEIGHT_PADDING = 8;
 
@@ -72,33 +73,33 @@ public class ButtonElement extends ViewElement {
         this.borderSize = borderSize;
     }
 
-    public ButtonElement width(int width) {
+    public T width(int width) {
         this.width = width;
-        return this;
+        return self();
     }
 
-    public ButtonElement height(int height) {
+    public T height(int height) {
         this.height = height;
-        return this;
+        return self();
     }
 
-    public ButtonElement enabled(boolean enabled) {
+    public T enabled(boolean enabled) {
         this.enabled = enabled;
         if (guiButton != null) guiButton.enabled = enabled;
-        return this;
+        return self();
     }
 
     @Override
-    public ButtonElement visible(boolean visible) {
+    public T visible(boolean visible) {
         super.visible(visible);
         if (guiButton != null) guiButton.visible = visible;
-        return this;
+        return self();
     }
 
-    public ButtonElement text(String text) {
+    public T text(String text) {
         this.text = text;
         if (guiButton != null) guiButton.displayString = text;
-        return this;
+        return self();
     }
 
     public int getId() {
@@ -178,7 +179,7 @@ public class ButtonElement extends ViewElement {
         int btnHeight = height > 0 ? height : computedHeight;
         guiButton = new GuiButton(id, computedX, computedY, btnWidth, btnHeight, text) {
             @Override
-            public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY, float partialTicks) {
                 if (this.visible) {
                     this.hovered = mouseX >= this.x && mouseY >= this.y &&
                             mouseX < this.x + this.width && mouseY < this.y + this.height;

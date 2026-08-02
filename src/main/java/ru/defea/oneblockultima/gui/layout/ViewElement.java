@@ -5,7 +5,8 @@ import net.minecraft.client.gui.GuiButton;
 
 import java.util.List;
 
-public abstract class ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public abstract class ViewElement<T extends ViewElement<T>> {
     protected int computedX;
     protected int computedY;
     protected int computedWidth;
@@ -16,6 +17,7 @@ public abstract class ViewElement {
     protected int explicitWidth = -1;
     protected int widthPercent = -1;
     protected int heightPercent = -1;
+    protected boolean stretchToContent = false;
 
     public abstract void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory);
 
@@ -44,6 +46,9 @@ public abstract class ViewElement {
     public void updateCursorCounter() {
     }
 
+    public void tick() {
+    }
+
     public void setComputedPosition(int x, int y) {
         this.computedX = x;
         this.computedY = y;
@@ -66,27 +71,32 @@ public abstract class ViewElement {
         return getPreferredHeight();
     }
 
+    @SuppressWarnings("unchecked")
+    protected final T self() {
+        return (T) this;
+    }
+
     public Alignment getAlignment() {
         return alignment;
     }
 
-    public ViewElement align(Alignment alignment) {
+    public T align(Alignment alignment) {
         this.alignment = alignment;
-        return this;
+        return self();
     }
 
     public boolean isVisible() {
         return visible;
     }
 
-    public ViewElement visible(boolean visible) {
+    public T visible(boolean visible) {
         this.visible = visible;
-        return this;
+        return self();
     }
 
-    public ViewElement flexible(boolean flexible) {
+    public T flexible(boolean flexible) {
         this.flexible = flexible;
-        return this;
+        return self();
     }
 
     public boolean isFlexible() {
@@ -97,27 +107,41 @@ public abstract class ViewElement {
         return widthPercent;
     }
 
-    public ViewElement width(int width) {
+    public T width(int width) {
         this.explicitWidth = width;
-        return this;
+        return self();
     }
 
     public int getExplicitWidth() {
         return explicitWidth;
     }
 
-    public ViewElement widthPercent(int percent) {
+    public T widthPercent(int percent) {
         this.widthPercent = percent;
-        return this;
+        return self();
     }
 
     public int getHeightPercent() {
         return heightPercent;
     }
 
-    public ViewElement heightPercent(int percent) {
+    public T heightPercent(int percent) {
         this.heightPercent = percent;
-        return this;
+        return self();
+    }
+
+    public T stretchToContent() {
+        this.stretchToContent = true;
+        return self();
+    }
+
+    public T stretchToContent(boolean stretch) {
+        this.stretchToContent = stretch;
+        return self();
+    }
+
+    public boolean isStretchToContent() {
+        return stretchToContent;
     }
 
     public int getComputedX() {

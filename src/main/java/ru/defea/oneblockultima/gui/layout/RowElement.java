@@ -6,9 +6,10 @@ import net.minecraft.client.gui.GuiButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RowElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class RowElement extends ViewElement<RowElement> {
     private final Alignment rowAlignment;
-    private final List<ViewElement> children = new ArrayList<>();
+    private final List<ViewElement<?>> children = new ArrayList<>();
     private int rowHeight = 20;
     private int rowGap = 4;
     private boolean topAlign = false;
@@ -32,20 +33,14 @@ public class RowElement extends ViewElement {
         return this;
     }
 
-    @Override
-    public RowElement widthPercent(int percent) {
-        super.widthPercent(percent);
-        return this;
-    }
-
-    public ButtonElement button(int id, String text) {
-        ButtonElement e = new ButtonElement(id, text);
+    public ButtonElement<?> button(int id, String text) {
+        ButtonElement<?> e = new ButtonElement<>(id, text);
         children.add(e);
         return e;
     }
 
-    public ButtonElement button(int id, String text, int width) {
-        ButtonElement e = new ButtonElement(id, text).width(width);
+    public ButtonElement<?> button(int id, String text, int width) {
+        ButtonElement<?> e = new ButtonElement<>(id, text).width(width);
         children.add(e);
         return e;
     }
@@ -72,22 +67,46 @@ public class RowElement extends ViewElement {
         return this;
     }
 
-    public RowElement add(ViewElement element) {
+    public RowElement add(ViewElement<?> element) {
         children.add(element);
         return this;
     }
 
-    public List<ViewElement> getChildren() {
+    public List<ViewElement<?>> getChildren() {
         return children;
     }
 
     @Override
     public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
-        int totalWidth = 0;
-        for (ViewElement child : children) {
-            totalWidth += child.getPreferredWidth(fontRenderer);
+        int naturalWidth = 0;
+        for (ViewElement<?> child : children) {
+            naturalWidth += child.getPreferredWidth(fontRenderer);
         }
-        totalWidth += rowGap * Math.max(0, children.size() - 1);
+
+        int actualHeight = Math.max(rowHeight, computedHeight);
+
+        if (rowAlignment == Alignment.SPACE_BETWEEN && children.size() > 1) {
+            int freeSpace = computedWidth - naturalWidth;
+            float gapBetween = freeSpace > 0 ? (float) freeSpace / (children.size() - 1) : rowGap;
+            float cx = computedX;
+            for (ViewElement<?> child : children) {
+                int childWidth = child.getPreferredWidth(fontRenderer);
+                int childHeight = child.getPreferredHeight(fontRenderer);
+                int y;
+                if (topAlign) {
+                    y = computedY;
+                } else {
+                    y = computedY + (actualHeight - childHeight) / 2;
+                }
+                child.setComputedPosition(Math.round(cx), y);
+                child.setComputedSize(childWidth, childHeight);
+                child.createWidgets(buttonList, fontRenderer, factory);
+                cx += childWidth + gapBetween;
+            }
+            return;
+        }
+
+        int totalWidth = naturalWidth + rowGap * Math.max(0, children.size() - 1);
 
         int startX;
         Alignment align = rowAlignment != null ? rowAlignment : Alignment.CENTER;
@@ -103,9 +122,8 @@ public class RowElement extends ViewElement {
                 break;
         }
 
-        int actualHeight = Math.max(rowHeight, computedHeight);
         int cx = startX;
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             int childWidth = child.getPreferredWidth(fontRenderer);
             int childHeight = child.getPreferredHeight(fontRenderer);
             int y;
@@ -123,14 +141,14 @@ public class RowElement extends ViewElement {
 
     @Override
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             if (child.isVisible()) child.draw(fr, mouseX, mouseY, partialTicks);
         }
     }
 
     @Override
     public boolean actionPerformed(GuiButton button) {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             if (child.actionPerformed(button)) return true;
         }
         return false;
@@ -138,7 +156,7 @@ public class RowElement extends ViewElement {
 
     @Override
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             if (child.mouseClicked(mouseX, mouseY, mouseButton)) return true;
         }
         return false;
@@ -146,7 +164,7 @@ public class RowElement extends ViewElement {
 
     @Override
     public boolean mouseReleased(int mouseX, int mouseY, int state) {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             if (child.mouseReleased(mouseX, mouseY, state)) return true;
         }
         return false;
@@ -154,7 +172,7 @@ public class RowElement extends ViewElement {
 
     @Override
     public boolean handleMouseInput(int dWheel) {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             if (child.handleMouseInput(dWheel)) return true;
         }
         return false;
@@ -162,7 +180,7 @@ public class RowElement extends ViewElement {
 
     @Override
     public boolean keyTyped(char typedChar, int keyCode) {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             if (child.keyTyped(typedChar, keyCode)) return true;
         }
         return false;
@@ -170,15 +188,22 @@ public class RowElement extends ViewElement {
 
     @Override
     public void updateCursorCounter() {
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             child.updateCursorCounter();
+        }
+    }
+
+    @Override
+    public void tick() {
+        for (ViewElement<?> child : children) {
+            child.tick();
         }
     }
 
     @Override
     public int getPreferredWidth() {
         int total = 0;
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             total += child.getPreferredWidth();
         }
         total += rowGap * Math.max(0, children.size() - 1);
@@ -188,7 +213,7 @@ public class RowElement extends ViewElement {
     @Override
     public int getPreferredWidth(FontRenderer fr) {
         int total = 0;
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             total += child.getPreferredWidth(fr);
         }
         total += rowGap * Math.max(0, children.size() - 1);
@@ -203,7 +228,7 @@ public class RowElement extends ViewElement {
     @Override
     public int getPreferredHeight(FontRenderer fr) {
         int max = rowHeight;
-        for (ViewElement child : children) {
+        for (ViewElement<?> child : children) {
             int h = child.getPreferredHeight(fr);
             if (h > max) max = h;
         }

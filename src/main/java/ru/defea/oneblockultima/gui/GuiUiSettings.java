@@ -1,6 +1,5 @@
 package ru.defea.oneblockultima.gui;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -17,10 +16,6 @@ public class GuiUiSettings extends GuiScreen
 {
     private static final int BUTTON_SAVE = 0;
     private static final int BUTTON_BACK = 1;
-    private static final int BUTTON_H_OFFSET_DEC = 21;
-    private static final int BUTTON_H_OFFSET_INC = 22;
-    private static final int BUTTON_V_OFFSET_DEC = 23;
-    private static final int BUTTON_V_OFFSET_INC = 24;
     private static final int BUTTON_SHOW_BALANCE = 25;
 
     private final GuiScreen parent;
@@ -30,8 +25,6 @@ public class GuiUiSettings extends GuiScreen
     private int vOffset;
     private boolean isShowBalance;
     private ViewFactory factory;
-    private TextFieldElement hOffsetField;
-    private TextFieldElement vOffsetField;
     private ButtonToggleElement showBalanceToggle;
 
     private LabelElement positionLabel;
@@ -129,13 +122,21 @@ public class GuiUiSettings extends GuiScreen
         showBalanceToggle = toggleControls.buttonToggle(BUTTON_SHOW_BALANCE, isShowBalance).label(showBalanceLabel);
         factory.add(toggleControls);
 
-        hOffsetField = new TextFieldElement(fieldWidth)
-                .text(String.valueOf(hOffset))
-                .enabled(false);
+        StepperElement hStepper = new StepperElement()
+                .value(hOffset)
+                .min(0)
+                .max(50)
+                .step(1)
+                .fieldWidth(fieldWidth)
+                .onChange(v -> hOffset = v);
 
-        vOffsetField = new TextFieldElement(fieldWidth)
-                .text(String.valueOf(vOffset))
-                .enabled(false);
+        StepperElement vStepper = new StepperElement()
+                .value(vOffset)
+                .min(0)
+                .max(50)
+                .step(1)
+                .fieldWidth(fieldWidth)
+                .onChange(v -> vOffset = v);
 
         int hLabelW = fontRenderer.getStringWidth(hLabel);
         int vLabelW = fontRenderer.getStringWidth(vLabel);
@@ -144,16 +145,12 @@ public class GuiUiSettings extends GuiScreen
         RowElement hControls = new RowElement(Alignment.LEFT).gap(5);
         hControls.label(hLabel);
         hControls.spacer(maxLabelW - hLabelW);
-        hControls.button(BUTTON_H_OFFSET_DEC, "-");
-        hControls.add(hOffsetField);
-        hControls.button(BUTTON_H_OFFSET_INC, "+");
+        hControls.add(hStepper);
 
         RowElement vControls = new RowElement(Alignment.LEFT).gap(5);
         vControls.label(vLabel);
         vControls.spacer(maxLabelW - vLabelW);
-        vControls.button(BUTTON_V_OFFSET_DEC, "-");
-        vControls.add(vOffsetField);
-        vControls.button(BUTTON_V_OFFSET_INC, "+");
+        vControls.add(vStepper);
 
         ColumnElement offsetsColumn = new ColumnElement().gap(4).align(Alignment.LEFT);
         offsetsColumn.add(hControls);
@@ -191,27 +188,6 @@ public class GuiUiSettings extends GuiScreen
         if (button.id == BUTTON_BACK)
         {
             mc.displayGuiScreen(parent);
-            return;
-        }
-        if (button.id == BUTTON_H_OFFSET_DEC)
-        {
-            hOffset = Math.max(0, hOffset - 1);
-            if (hOffsetField != null) hOffsetField.setText(String.valueOf(hOffset));
-        }
-        else if (button.id == BUTTON_H_OFFSET_INC)
-        {
-            hOffset = Math.min(50, hOffset + 1);
-            if (hOffsetField != null) hOffsetField.setText(String.valueOf(hOffset));
-        }
-        else if (button.id == BUTTON_V_OFFSET_DEC)
-        {
-            vOffset = Math.max(0, vOffset - 1);
-            if (vOffsetField != null) vOffsetField.setText(String.valueOf(vOffset));
-        }
-        else if (button.id == BUTTON_V_OFFSET_INC)
-        {
-            vOffset = Math.min(50, vOffset + 1);
-            if (vOffsetField != null) vOffsetField.setText(String.valueOf(vOffset));
         }
         else if (button.id == BUTTON_SHOW_BALANCE)
         {
@@ -311,8 +287,10 @@ public class GuiUiSettings extends GuiScreen
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         GlStateManager.enableBlend();
-        Minecraft.getMinecraft().getTextureManager().bindTexture(COIN_TEXTURE);
-        Gui.drawModalRectWithCustomSizedTexture(boxX + hMargin, boxY + vMargin, 0, 0, coinSize, coinSize, coinSize, coinSize);
+        TextureElement coinIcon = new TextureElement(COIN_TEXTURE, coinSize, coinSize);
+        coinIcon.setComputedPosition(boxX + hMargin, boxY + vMargin);
+        coinIcon.setComputedSize(coinSize, coinSize);
+        coinIcon.draw(fr, 0, 0, 0);
         GlStateManager.disableBlend();
         fr.drawString(sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin - fr.FONT_HEIGHT / 4, GOLD_COLOR);
     }

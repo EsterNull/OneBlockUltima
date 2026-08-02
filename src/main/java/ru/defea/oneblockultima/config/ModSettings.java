@@ -20,7 +20,7 @@ public final class ModSettings
         BOTTOM_RIGHT,
         BOTTOM,
         BOTTOM_LEFT,
-        LEFT;
+        LEFT
     }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -32,6 +32,8 @@ public final class ModSettings
     private int vOffset = 3;
     private boolean isShowBalance = true;
     private boolean mobWorldGeneration = false;
+    private int inviteDurationTicks = 1200;
+    private int nonPlayerBreakCooldownTicks = 20;
 
     public static ModSettings get()
     {
@@ -47,12 +49,16 @@ public final class ModSettings
     public int getVOffset() { return vOffset; }
     public boolean isShowBalance() { return isShowBalance; }
     public boolean getMobWorldGeneration() { return mobWorldGeneration; }
+    public int getInviteDurationTicks() { return inviteDurationTicks; }
+    public int getNonPlayerBreakCooldownTicks() { return nonPlayerBreakCooldownTicks; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { this.hOffset = offset; save(); }
     public void setVOffset(int offset) { this.vOffset = offset; save(); }
     public void setShowBalance(boolean isShowBalance) { this.isShowBalance = isShowBalance; save(); }
     public void setMobWorldGeneration(boolean mobWorldGeneration) { this.mobWorldGeneration = mobWorldGeneration; save(); }
+    public void setInviteDurationTicks(int inviteDurationTicks) { this.inviteDurationTicks = inviteDurationTicks; save(); }
+    public void setNonPlayerBreakCooldownTicks(int nonPlayerBreakCooldownTicks) { this.nonPlayerBreakCooldownTicks = nonPlayerBreakCooldownTicks; save(); }
 
     private static File getFile()
     {

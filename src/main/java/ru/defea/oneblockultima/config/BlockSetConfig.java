@@ -21,13 +21,13 @@ import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import static ru.defea.oneblockultima.Constants.MINECRAFT_DOMAIN;
-
 import javax.annotation.Nonnull;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
+
+import static ru.defea.oneblockultima.Constants.MINECRAFT_DOMAIN;
 
 public final class BlockSetConfig
 {
@@ -82,15 +82,14 @@ public final class BlockSetConfig
         return configFile;
     }
 
-    public static boolean saveCurrentConfig()
+    public static void saveCurrentConfig()
     {
         if (instance == null || configFile == null)
         {
-            return false;
+            return;
         }
 
         saveToFile(configFile, instance);
-        return true;
     }
 
     public static void applySets(List<BlockSetDefinition> newSets)
@@ -141,7 +140,7 @@ public final class BlockSetConfig
             loaded = new BlockSetConfig();
         }
 
-        if (loaded != null && loaded.getSets().isEmpty())
+        if (loaded.getSets().isEmpty())
         {
             saveToFile(configFile, loaded);
         }
@@ -415,11 +414,11 @@ public final class BlockSetConfig
         return "";
     }
 
-    public static boolean isRegistryModLoaded(String registry)
+    public static boolean isRegistryModUnloaded(String registry)
     {
         if (registry == null || registry.isEmpty())
         {
-            return false;
+            return true;
         }
 
         try
@@ -428,23 +427,23 @@ public final class BlockSetConfig
             String domain = loc.getResourceDomain();
             if (MINECRAFT_DOMAIN.equals(domain))
             {
-                return true;
+                return false;
             }
             if (Loader.instance() == null)
             {
-                return false;
+                return true;
             }
-            return Loader.isModLoaded(domain);
+            return !Loader.isModLoaded(domain);
         }
         catch (Exception e)
         {
-            return false;
+            return true;
         }
     }
 
     public static boolean isBlockAvailable(String registry)
     {
-        if (!isRegistryModLoaded(registry))
+        if (isRegistryModUnloaded(registry))
         {
             return false;
         }
@@ -454,7 +453,7 @@ public final class BlockSetConfig
 
     public static boolean isMobAvailable(String registry)
     {
-        if (!isRegistryModLoaded(registry))
+        if (isRegistryModUnloaded(registry))
         {
             return false;
         }

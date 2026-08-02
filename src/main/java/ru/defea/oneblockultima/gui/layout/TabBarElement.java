@@ -9,7 +9,8 @@ import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class TabBarElement extends ViewElement {
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class TabBarElement extends ViewElement<TabBarElement> {
     private final List<Tab> tabs = new ArrayList<>();
     private int activeTab = 0;
 
