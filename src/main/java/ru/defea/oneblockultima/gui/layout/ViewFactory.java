@@ -273,7 +273,7 @@ public class ViewFactory {
     public static int computeElementWidth(FontRenderer fr, ViewElement<?> e, int containerWidth) {
         int elemWidth = e.getWidthPercent() >= 0
                 ? containerWidth * e.getWidthPercent() / 100
-                : e.getPreferredWidth(fr);
+                : e.getExplicitWidth() > 0 ? e.getExplicitWidth() : e.getPreferredWidth(fr);
         if (elemWidth <= 0) elemWidth = containerWidth;
         if (elemWidth > containerWidth) elemWidth = containerWidth;
         if (e.isStretchToContent()) elemWidth = containerWidth;

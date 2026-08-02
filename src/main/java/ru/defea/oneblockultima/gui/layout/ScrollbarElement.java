@@ -19,8 +19,6 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
     private int thumbY;
     private int thumbHeight;
     private int trackX;
-    private int trackY;
-    private int trackHeight;
     private int trackWidth = 6;
 
     public ScrollbarElement totalItems(int total) {
@@ -63,6 +61,10 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
         if (scrollOffset > max) scrollOffset = max;
     }
 
+    public int getScrollOffset() {
+        return scrollOffset;
+    }
+
     @Override
     public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
     }
@@ -72,8 +74,8 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
         if (totalItems <= visibleItems) return;
 
         trackX = computedX;
-        trackY = computedY;
-        trackHeight = computedHeight;
+        int trackY = computedY;
+        int trackHeight = computedHeight;
 
         Gui.drawRect(trackX, trackY, trackX + trackWidth, trackY + trackHeight, trackColor);
 
@@ -89,11 +91,12 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
 
     @Override
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        if (mouseButton != 0) return false;
         if (totalItems <= visibleItems) return false;
-        if (mouseX >= trackX && mouseX <= trackX + trackWidth &&
-            mouseY >= trackY && mouseY <= trackY + trackHeight) {
-            int clickY = mouseY - trackY - thumbHeight / 2;
-            float ratio = (float) clickY / (trackHeight - thumbHeight);
+        if (mouseX >= computedX && mouseX <= computedX + trackWidth &&
+            mouseY >= computedY && mouseY <= computedY + computedHeight) {
+            int clickY = mouseY - computedY - thumbHeight / 2;
+            float ratio = (float) clickY / (computedHeight - thumbHeight);
             scrollOffset = Math.round(ratio * getMaxScroll());
             clampScroll();
             return true;
