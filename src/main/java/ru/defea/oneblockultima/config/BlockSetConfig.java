@@ -16,7 +16,7 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import ru.defea.oneblockultima.NBTTagCompoundAdapter;
+import ru.defea.oneblockultima.util.NBTTagCompoundAdapter;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
@@ -263,7 +263,7 @@ public final class BlockSetConfig
         public List<Integer> metas = new ArrayList<>();
         public int baseLevel = 1;
         public int baseChance = 0;
-        String dropItem = null;
+        public String dropItem = null;
         public NBTTagCompound nbtTags = new NBTTagCompound();
 
         public List<Integer> getMetaValues()
@@ -328,7 +328,8 @@ public final class BlockSetConfig
         {
             if (block == null) continue;
 
-            String key = block.registry + "@" + block.baseLevel + "@" + block.baseChance;
+            String key = block.registry + "@" + block.baseLevel + "@" + block.baseChance + "@"
+                    + (block.nbtTags == null ? "" : block.nbtTags.toString());
             BlockElementDefinition existing = merged.get(key);
 
             if (existing == null)
@@ -1174,7 +1175,7 @@ public final class BlockSetConfig
                     net.minecraft.item.ItemStack pickStack = block.getPickBlock(state, null, null, null, null);
                     if (!pickStack.isEmpty())
                     {
-                        return pickStack;
+                        return applyNbtToStack(pickStack);
                     }
                 }
                 catch (Exception ignored) {}
@@ -1184,13 +1185,24 @@ public final class BlockSetConfig
                 {
                     try
                     {
-                        return new net.minecraft.item.ItemStack(blockItem, 1, meta);
+                        return applyNbtToStack(new net.minecraft.item.ItemStack(blockItem, 1, meta));
                     }
                     catch (Exception ignored) {}
                 }
             }
 
             return net.minecraft.item.ItemStack.EMPTY;
+        }
+
+        private net.minecraft.item.ItemStack applyNbtToStack(net.minecraft.item.ItemStack stack)
+        {
+            if (stack != null && !stack.isEmpty() && nbtTags != null && !nbtTags.hasNoTags())
+            {
+                net.minecraft.item.ItemStack copy = stack.copy();
+                copy.setTagCompound(nbtTags.copy());
+                return copy;
+            }
+            return stack;
         }
     }
 

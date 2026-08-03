@@ -936,9 +936,7 @@ public class GuiOneBlock extends GuiContainer
                             try {
                                 stack = new ItemStack(itemForIcon, 1, entry.meta);
                                 if (entry.nbtTags != null && !entry.nbtTags.hasNoTags()) {
-                                    if (entry.registry != null && entry.registry.toLowerCase().contains("forestry")) {
-                                        stack.setTagCompound(entry.nbtTags.copy());
-                                    }
+                                    stack.setTagCompound(entry.nbtTags.copy());
                                 }
                             } catch (Exception ignored) {
                                 stack = new ItemStack(itemForIcon);

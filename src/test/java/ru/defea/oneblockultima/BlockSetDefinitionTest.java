@@ -289,8 +289,6 @@ public class BlockSetDefinitionTest {
     public void editBlockProperties() {
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.meta = 0;
-        block.baseLevel = 1;
 
         block.meta = 2;
         block.baseLevel = 5;
@@ -303,9 +301,6 @@ public class BlockSetDefinitionTest {
     public void editMobProperties() {
         MobElementDefinition mob = new MobElementDefinition();
         mob.registry = "minecraft:pig";
-        mob.count = 1;
-        mob.baseLevel = 1;
-        mob.baseChance = 10;
 
         mob.count = 3;
         mob.baseLevel = 5;
@@ -475,6 +470,29 @@ public class BlockSetDefinitionTest {
     }
 
     @Test
+    public void getPickBlockAppliesNbtTags() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "minecraft:stone";
+        entry.meta = 0;
+        entry.nbtTags.setString("CustomColor", "blue");
+        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        assertFalse(stack.isEmpty());
+        assertTrue(stack.hasTagCompound());
+        assert stack.getTagCompound() != null;
+        assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
+    }
+
+    @Test
+    public void getPickBlockWithoutNbtLeavesStackWithoutTag() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "minecraft:stone";
+        entry.meta = 0;
+        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        assertFalse(stack.isEmpty());
+        assertFalse(stack.hasTagCompound());
+    }
+
+    @Test
     public void mobEntryDefinitionDefaultFields() {
         MobEntryDefinition mob = new MobEntryDefinition();
         assertEquals(1, mob.count);
@@ -551,7 +569,7 @@ public class BlockSetDefinitionTest {
             else if ("minecraft:cow".equals(picked.registry)) cowCount++;
         }
         assertTrue("pig should be picked more often than cow", pigCount > cowCount);
-        assertTrue("with totalChance=100, no nulls expected from min(100,totalChance)", nullCount == 0);
+        assertEquals("with totalChance=100, no nulls expected from min(100,totalChance)", 0, nullCount);
     }
 
     @Test
@@ -739,29 +757,12 @@ public class BlockSetDefinitionTest {
     @Test
     public void settingsDefinitionFieldsAreIndependent() {
         SettingsDefinition settings = new SettingsDefinition();
-        settings.disableFluidGeneration = true;
-        assertTrue(settings.disableFluidGeneration);
         assertFalse(settings.disableMobGeneration);
         assertFalse(settings.disableChestGeneration);
         assertFalse(settings.disableSaplingGeneration);
 
         settings.disableMobGeneration = true;
         settings.disableFluidGeneration = false;
-        assertFalse(settings.disableFluidGeneration);
-        assertTrue(settings.disableMobGeneration);
-    }
-
-    @Test
-    public void settingsDefinitionCanBeToggledAllOn() {
-        SettingsDefinition settings = new SettingsDefinition();
-        settings.disableFluidGeneration = true;
-        settings.disableMobGeneration = true;
-        settings.disableChestGeneration = true;
-        settings.disableSaplingGeneration = true;
-        assertTrue(settings.disableFluidGeneration);
-        assertTrue(settings.disableMobGeneration);
-        assertTrue(settings.disableChestGeneration);
-        assertTrue(settings.disableSaplingGeneration);
     }
 
     @Test

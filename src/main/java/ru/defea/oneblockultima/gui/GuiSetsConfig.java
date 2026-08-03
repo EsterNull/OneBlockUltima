@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.minecraftforge.common.util.Constants.NBT.*;
 import static ru.defea.oneblockultima.Constants.*;
 import static ru.defea.oneblockultima.gui.containers.ContainerSetsConfig.*;
 
@@ -54,7 +55,21 @@ public class GuiSetsConfig extends GuiScreen
     private static final int BUTTON_EDIT_UNLOCK_CONDITIONS = 23;
     private static final int BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE = 24;
     private static final int BUTTON_UNLOCK_CONDITIONS_CYCLE_SET = 25;
+    private static final int BUTTON_EDIT_NBT = 26;
+    private static final int BUTTON_NBT_ADD = 27;
+    private static final int BUTTON_NBT_BACK = 28;
+    private static final int BUTTON_NBT_DONE = 29;
+    private static final int BUTTON_NBT_CANCEL = 30;
+    private static final int BUTTON_NBT_CYCLE_TYPE = 31;
+    private static final int BUTTON_NBT_CYCLE_ELEM_TYPE = 32;
     private static final int ENTRY_HEIGHT = 22;
+    private static final int NBT_ROW_PADDING = 4;
+    private static final int NBT_ROW_BUTTON_HEIGHT = 14;
+    private static final int NBT_ROW_TRASH_WIDTH = 18;
+    private static final int NBT_ROW_BUTTON_TEXT_PADDING = 10;
+    private static final int NBT_ROW_TEXT_TOP = 2;
+    private static final int NBT_ROW_TEXT_LINE_GAP = 1;
+    private static final int NBT_ROW_TRUNCATION_SLACK = 30;
 
     private final GuiScreen parent;
     private final ContainerSetsConfig container;
@@ -73,6 +88,8 @@ public class GuiSetsConfig extends GuiScreen
     private TextFieldElement editChanceElement;
     private TextFieldElement unlockLevelElement;
     private TextFieldElement unlockCountElement;
+    private TextFieldElement nbtKeyElement;
+    private TextFieldElement nbtValueElement;
 
     private ScrollableListElement setsList;
     private TwoColumnListElement entriesList;
@@ -80,6 +97,7 @@ public class GuiSetsConfig extends GuiScreen
     private ScrollableListElement requiredModsList;
     private ScrollableListElement addModsList;
     private ScrollableListElement conditionsList;
+    private ScrollableListElement nbtList;
 
     private int setsScrollOffset = 0;
     private int entriesScrollOffset = 0;
@@ -87,6 +105,7 @@ public class GuiSetsConfig extends GuiScreen
     private int modsScrollOffset = 0;
     private int addModsScrollOffset = 0;
     private int conditionsScrollOffset = 0;
+    private int nbtScrollOffset = 0;
 
     private boolean suppressMouseUntilRelease = false;
     private boolean suppressNextMouseClick = false;
@@ -138,6 +157,8 @@ public class GuiSetsConfig extends GuiScreen
             case VIEW_REQUIRED_MODS_EDITOR: buildRequiredModsEditorView(); break;
             case VIEW_REQUIRED_MODS_ADD: buildRequiredModsAddView(); break;
             case VIEW_UNLOCK_CONDITIONS: buildUnlockConditionsView(); break;
+            case VIEW_EDIT_NBT: buildEditNbtView(); break;
+            case VIEW_NBT_ADD: buildNbtAddView(); break;
         }
 
         int view = container.getCurrentView();
@@ -154,6 +175,7 @@ public class GuiSetsConfig extends GuiScreen
         if (requiredModsList != null) modsScrollOffset = requiredModsList.getScrollOffset();
         if (addModsList != null) addModsScrollOffset = addModsList.getScrollOffset();
         if (conditionsList != null) conditionsScrollOffset = conditionsList.getScrollOffset();
+        if (nbtList != null) nbtScrollOffset = nbtList.getScrollOffset();
     }
 
     @Override
@@ -203,6 +225,21 @@ public class GuiSetsConfig extends GuiScreen
 
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (rootFactory != null) rootFactory.mouseClicked(mouseX, mouseY, mouseButton);
+
+        if (container.getCurrentView() == VIEW_NBT_ADD && nbtKeyElement != null && nbtValueElement != null)
+        {
+            boolean keyFocused = nbtKeyElement.isFocused();
+            boolean valueFocused = nbtValueElement.isFocused();
+            if (keyFocused && valueFocused)
+            {
+                net.minecraft.client.gui.GuiTextField kf = nbtKeyElement.getTextField();
+                boolean clickedKey = kf != null
+                        && mouseX >= kf.x && mouseX <= kf.x + kf.width
+                        && mouseY >= kf.y && mouseY <= kf.y + kf.height;
+                if (clickedKey) nbtValueElement.focused(false);
+                else nbtKeyElement.focused(false);
+            }
+        }
     }
 
     @Override
@@ -243,6 +280,11 @@ public class GuiSetsConfig extends GuiScreen
             boolean wasFocused = entrySearchElement.isFocused();
             initGui();
             if (entrySearchElement != null) entrySearchElement.focused(wasFocused);
+        }
+        if (view == VIEW_NBT_ADD)
+        {
+            if (nbtKeyElement != null && nbtKeyElement.isFocused()) container.setNbtEditorKeyText(nbtKeyElement.getText());
+            if (nbtValueElement != null && nbtValueElement.isFocused()) container.setNbtEditorValueText(nbtValueElement.getText());
         }
     }
 
@@ -294,6 +336,8 @@ public class GuiSetsConfig extends GuiScreen
         if (editChanceElement != null) editChanceElement.focused(false);
         if (unlockLevelElement != null) unlockLevelElement.focused(false);
         if (unlockCountElement != null) unlockCountElement.focused(false);
+        if (nbtKeyElement != null) nbtKeyElement.focused(false);
+        if (nbtValueElement != null) nbtValueElement.focused(false);
     }
 
     @Override
@@ -329,7 +373,14 @@ public class GuiSetsConfig extends GuiScreen
         if (button.id == BUTTON_UNLOCK_CONDITIONS_ADD) { handleUnlockConditionsAdd(); return; }
         if (button.id == BUTTON_UNLOCK_CONDITIONS_DELETE) { handleUnlockConditionsDelete(); return; }
         if (button.id == BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE) { container.cycleUnlockConditionType(); initGui(); return; }
-        if (button.id == BUTTON_UNLOCK_CONDITIONS_CYCLE_SET) { container.cycleUnlockConditionSet(); initGui(); }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_CYCLE_SET) { container.cycleUnlockConditionSet(); initGui(); return; }
+        if (button.id == BUTTON_EDIT_NBT) { container.nbtEditorStartAdd(); changeView(VIEW_EDIT_NBT); return; }
+        if (button.id == BUTTON_NBT_ADD) { container.nbtEditorStartAdd(); changeView(VIEW_NBT_ADD); return; }
+        if (button.id == BUTTON_NBT_BACK) { handleNbtBack(); return; }
+        if (button.id == BUTTON_NBT_DONE) { handleNbtSave(); return; }
+        if (button.id == BUTTON_NBT_CANCEL) { changeView(VIEW_EDIT_NBT); return; }
+        if (button.id == BUTTON_NBT_CYCLE_TYPE) { container.cycleNbtEditorAddType(); initGui(); return; }
+        if (button.id == BUTTON_NBT_CYCLE_ELEM_TYPE) { container.cycleNbtEditorListElementType(); initGui(); }
     }
 
     private void handleBack()
@@ -342,6 +393,8 @@ public class GuiSetsConfig extends GuiScreen
         }
         else if (v == VIEW_ADD_ENTRY) changeView(VIEW_SET_DETAILS);
         else if (v == VIEW_REQUIRED_MODS_ADD) changeView(VIEW_REQUIRED_MODS_EDITOR);
+        else if (v == VIEW_EDIT_NBT) handleNbtBack();
+        else if (v == VIEW_NBT_ADD) changeView(VIEW_EDIT_NBT);
         else mc.displayGuiScreen(parent);
     }
 
@@ -365,6 +418,34 @@ public class GuiSetsConfig extends GuiScreen
             if (container.saveCurrency(level, chance)) changeView(VIEW_SET_DETAILS);
             else initGui();
         } catch (NumberFormatException e) { initGui(); }
+    }
+
+    private void handleNbtBack()
+    {
+        if (container.nbtEditorAtRoot())
+        {
+            changeView(VIEW_EDIT);
+        }
+        else
+        {
+            container.nbtEditorPop();
+            initGui();
+        }
+    }
+
+    private void handleNbtSave()
+    {
+        String key = nbtKeyElement != null ? nbtKeyElement.getText() : "";
+        String value = nbtValueElement != null ? nbtValueElement.getText() : "";
+        if (container.nbtEditorApply(key, value))
+        {
+            changeView(VIEW_EDIT_NBT);
+        }
+        else
+        {
+            if (key != null && !key.trim().isEmpty()) container.setNbtEditorValueText("");
+            initGui();
+        }
     }
 
     private void handleRequiredModsBack()
@@ -606,12 +687,19 @@ public class GuiSetsConfig extends GuiScreen
                         if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
 
                         ItemStack stack = container.getItemStackFromEntry(block, bde.meta);
+
+                        final int cellPadding = 2;
+                        final int itemIconSize = 16;
+                        final int textGap = 4;
+                        final int fontHeight = fr.FONT_HEIGHT;
+                        final int badgeTextPadding = 2;
+
                         if (!stack.isEmpty())
                         {
                             GlStateManager.enableDepth();
                             RenderHelper.enableGUIStandardItemLighting();
                             GlStateManager.enableRescaleNormal();
-                            Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(stack, x + 2, y + 2);
+                            Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(stack, x + cellPadding, y + cellPadding);
                             RenderHelper.disableStandardItemLighting();
                             GlStateManager.disableRescaleNormal();
                             GlStateManager.disableDepth();
@@ -621,32 +709,44 @@ public class GuiSetsConfig extends GuiScreen
                             Fluid fluid = container.getFluidForRegistry(block.registry);
                             if (fluid != null)
                             {
-                                int iconSize = Math.min(16, height - 4);
+                                int iconSize = Math.min(itemIconSize, height - 2 * cellPadding);
                                 FluidElement fluidIcon = new FluidElement(fluid).size(iconSize);
-                                fluidIcon.setComputedPosition(x + 2, y + 2);
+                                fluidIcon.setComputedPosition(x + cellPadding, y + cellPadding);
                                 fluidIcon.setComputedSize(iconSize, iconSize);
                                 fluidIcon.draw(fr, mouseX, mouseY, 0);
                             }
                         }
 
                         String name = container.getLocalizedNameForBlock(block, bde.meta);
-                        int btnSize = height - 4;
-                        int rightBound = x + width - btnSize - 4;
-                        int maxNameW = Math.max(10, rightBound - (x + 20) - 6);
+                        int btnSize = height - 2 * cellPadding;
+                        int rightBound = x + width - btnSize - 2 * cellPadding;
+                        int textX = x + cellPadding + itemIconSize + cellPadding;
+                        int maxNameW = Math.max(10, rightBound - textX - textGap - cellPadding);
                         String displayName = name;
                         if (fr.getStringWidth(displayName) > maxNameW)
                             displayName = fr.trimStringToWidth(displayName, maxNameW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(displayName, x + 20, y + 2, GRAY_COLOR_5);
+                        fr.drawString(displayName, textX, y + cellPadding, GRAY_COLOR_5);
                         String levelInfo = I18n.format("gui.oneblockultima.config.base_level") + ": " + block.baseLevel;
-                        fr.drawString(levelInfo, x + 20 + fr.getStringWidth(displayName) + 4, y + 2, GRAY_COLOR_7);
+                        fr.drawString(levelInfo, textX + fr.getStringWidth(displayName) + textGap, y + cellPadding, GRAY_COLOR_7);
+                        int infoX = textX;
+                        boolean hasNbt = block.nbtTags != null && !block.nbtTags.hasNoTags();
+                        if (hasNbt)
+                        {
+                            String nbtLabel = "NBT";
+                            int badgeW = fr.getStringWidth(nbtLabel) + 2 * badgeTextPadding;
+                            int badgeY = y + height - fontHeight;
+                            Gui.drawRect(infoX, badgeY, infoX + badgeW, badgeY + fontHeight, DARK_BLUE_GRAY_COLOR_1);
+                            fr.drawString(nbtLabel, infoX + badgeTextPadding, badgeY + 1, GOLD_COLOR);
+                            infoX += badgeW + 2 * badgeTextPadding;
+                        }
                         String registryInfo = block.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": " + block.baseChance + "%";
-                        int maxRegW = Math.max(10, rightBound - (x + 20));
+                        int maxRegW = Math.max(10, rightBound - infoX);
                         if (fr.getStringWidth(registryInfo) > maxRegW)
                             registryInfo = fr.trimStringToWidth(registryInfo, maxRegW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(registryInfo, x + 20, y + 14, GRAY_COLOR_1);
+                        fr.drawString(registryInfo, infoX, y + height - fontHeight + 1, GRAY_COLOR_1);
 
-                        int editX = x + width - btnSize - 2;
-                        editButton.setComputedPosition(editX, y + 2);
+                        int editX = x + width - btnSize - cellPadding;
+                        editButton.setComputedPosition(editX, y + cellPadding);
                         editButton.setComputedSize(btnSize, btnSize);
                         editButton.draw(fr, mouseX, mouseY, 0);
                     }
@@ -891,14 +991,13 @@ public class GuiSetsConfig extends GuiScreen
         int editingCurrencyIndex = container.getEditingCurrencyIndex();
         EntryType editingEntryType = container.getEditingEntryType();
 
-        String entryName = "";
+        String entryName = container.getEditingEntryDisplayName();
         int currentLevel = 1;
         int currentChance = 1;
         if (editingEntryType == EntryType.BLOCK && editingSet != null && editingSet.blocks != null
                 && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.blocks.size())
         {
             BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
-            entryName = container.getLocalizedNameForBlock(entry, container.getSelectedBlockMeta() >= 0 ? container.getSelectedBlockMeta() : entry.meta);
             currentLevel = entry.baseLevel;
             currentChance = entry.baseChance;
         }
@@ -906,7 +1005,6 @@ public class GuiSetsConfig extends GuiScreen
                 && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.mobs.size())
         {
             BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
-            entryName = container.getLocalizedNameForMob(entry);
             currentLevel = entry.baseLevel;
             currentChance = entry.baseChance;
         }
@@ -936,8 +1034,248 @@ public class GuiSetsConfig extends GuiScreen
         formRow.add(fieldCol);
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_EDIT_NBT, I18n.format("gui.oneblockultima.config.nbt_edit"));
         btnRow.button(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done"));
         btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
+    }
+
+    private void buildEditNbtView()
+    {
+        String entryName = container.getEditingEntryDisplayName();
+        boolean atRoot = container.nbtEditorAtRoot();
+        boolean atList = container.nbtEditorIsListContext();
+        boolean atArray = container.nbtEditorIsArrayContext();
+        boolean atContainer = atList || atArray;
+
+        if (atRoot)
+        {
+            factory.title("gui.oneblockultima.config.nbt_title");
+            if (!entryName.isEmpty())
+            {
+                factory.add(new LabelElement(entryName).centered());
+            }
+        }
+        else
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_subtitle", container.nbtEditorPathLabel()));
+        }
+
+        List<NbtTagEntry> tags = container.getNbtTags();
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        for (final NbtTagEntry tag : tags)
+        {
+            entries.add(new ScrollableListElement.ScrollableListEntry()
+            {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY)
+                {
+                    boolean navigable = tag.isCompound() || tag.isList() || tag.isArray();
+                    String typeLabel = getNbtTypeLabel(tag.getTypeId());
+                    String preview = nbtValuePreview(tag.value);
+
+                    int btnY = y + (height - NBT_ROW_BUTTON_HEIGHT) / 2;
+                    int trashX = x + width - NBT_ROW_PADDING - NBT_ROW_TRASH_WIDTH;
+                    boolean trashHov = mouseX >= trashX && mouseX <= trashX + NBT_ROW_TRASH_WIDTH
+                            && mouseY >= btnY && mouseY <= btnY + NBT_ROW_BUTTON_HEIGHT;
+
+                    String actionLabel = navigable
+                            ? I18n.format("gui.oneblockultima.config.nbt_open")
+                            : I18n.format("gui.oneblockultima.config.nbt_edit_value");
+                    int actionW = fr.getStringWidth(actionLabel) + NBT_ROW_BUTTON_TEXT_PADDING;
+                    int actionX = trashX - NBT_ROW_PADDING - actionW;
+                    boolean actionHov = mouseX >= actionX && mouseX <= actionX + actionW
+                            && mouseY >= btnY && mouseY <= btnY + NBT_ROW_BUTTON_HEIGHT;
+
+                    if (navigable && hovered && !trashHov && !actionHov)
+                    {
+                        Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    }
+
+                    fr.drawString(tag.key, x + NBT_ROW_PADDING, y + NBT_ROW_TEXT_TOP, navigable ? WHITE_COLOR_1 : WHITE_COLOR_2);
+                    String detail = typeLabel + ": " + preview;
+                    int maxDetailW = width - actionW - NBT_ROW_TRASH_WIDTH - NBT_ROW_TRUNCATION_SLACK;
+                    if (fr.getStringWidth(detail) > maxDetailW)
+                    {
+                        detail = fr.trimStringToWidth(detail, maxDetailW) + "...";
+                    }
+                    fr.drawString(detail, x + NBT_ROW_PADDING, y + NBT_ROW_TEXT_TOP + fr.FONT_HEIGHT + NBT_ROW_TEXT_LINE_GAP, GRAY_COLOR_5);
+
+                    Gui.drawRect(trashX, btnY, trashX + NBT_ROW_TRASH_WIDTH, btnY + NBT_ROW_BUTTON_HEIGHT, trashHov ? DARK_RED_COLOR_1 : DARK_RED_COLOR_2);
+                    drawXIcon(trashX, btnY, trashHov ? REDDISH_COLOR : GRAY_COLOR_5);
+
+                    Gui.drawRect(actionX, btnY, actionX + actionW, btnY + NBT_ROW_BUTTON_HEIGHT, actionHov ? BLUE_GRAY_COLOR : DARK_BLUE_GRAY_COLOR_1);
+                    drawCenteredString(fr, actionLabel, actionX + actionW / 2, btnY + (NBT_ROW_BUTTON_HEIGHT - fr.FONT_HEIGHT) / 2 + 1, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton)
+                {
+                    if (mouseButton != 0) return false;
+                    int btnY = (entryHeight - NBT_ROW_BUTTON_HEIGHT) / 2;
+                    int trashX = entryWidth - NBT_ROW_PADDING - NBT_ROW_TRASH_WIDTH;
+
+                    if (mouseXOffset >= trashX && mouseXOffset <= trashX + NBT_ROW_TRASH_WIDTH
+                            && mouseYOffset >= btnY && mouseYOffset <= btnY + NBT_ROW_BUTTON_HEIGHT)
+                    {
+                        if (tag.index >= 0) container.nbtEditorRemoveIndex(tag.index);
+                        else container.nbtEditorRemove(tag.key);
+                        initGui();
+                        return true;
+                    }
+
+                    if (tag.isCompound() || tag.isList() || tag.isArray())
+                    {
+                        if (tag.index >= 0) container.nbtEditorPushIndex(tag.index);
+                        else container.nbtEditorPush(tag.key);
+                        initGui();
+                        return true;
+                    }
+
+                    if (tag.index >= 0) container.nbtEditorStartEditIndex(tag.index);
+                    else container.nbtEditorStartEdit(tag.key);
+                    changeView(VIEW_NBT_ADD);
+                    return true;
+                }
+            });
+        }
+
+        nbtList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(nbtScrollOffset);
+        nbtList.flexible(true);
+        factory.add(nbtList);
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_NBT_ADD, I18n.format(atContainer
+                ? "gui.oneblockultima.config.nbt_add_element"
+                : "gui.oneblockultima.config.nbt_add_tag"));
+        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.config.nbt_back"));
+    }
+
+    private void buildNbtAddView()
+    {
+        factory.fitContent();
+        factory.centerVertical();
+
+        boolean atList = container.nbtEditorIsListContext();
+        boolean atArray = container.nbtEditorIsArrayContext();
+        boolean atContainer = atList || atArray;
+        boolean editing = container.nbtEditorIsEditing();
+
+        if (editing)
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_edit_value"));
+        }
+        else if (atContainer)
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_add_element"));
+        }
+        else
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_add_tag"));
+        }
+
+        int formWidth = Math.max(160, Math.min(280, width / 2));
+
+        boolean showKeyField = !atContainer;
+        boolean focusKey = showKeyField && !editing;
+
+        String keyLabel = I18n.format("gui.oneblockultima.config.nbt_key") + ":";
+        String valueLabel = I18n.format("gui.oneblockultima.config.nbt_value") + ":";
+        int formLabelWidth = Math.max(fontRenderer.getStringWidth(keyLabel), fontRenderer.getStringWidth(valueLabel));
+
+        if (showKeyField)
+        {
+            nbtKeyElement = new TextFieldElement(formWidth)
+                    .text(container.nbtEditorGetKeyText())
+                    .focused(focusKey);
+            RowElement keyRow = factory.row(Alignment.CENTER).gap(6);
+            keyRow.add(new LabelElement(keyLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            keyRow.add(nbtKeyElement);
+        }
+        else
+        {
+            nbtKeyElement = null;
+        }
+
+        int valueTypeId;
+        boolean typeFixed;
+        boolean showValueField;
+        if (editing)
+        {
+            valueTypeId = container.nbtEditorGetEditingTypeId();
+            typeFixed = true;
+        }
+        else if (atArray)
+        {
+            valueTypeId = container.nbtEditorGetArrayElementType();
+            typeFixed = true;
+        }
+        else if (atList)
+        {
+            valueTypeId = container.getNbtEditorListElementType();
+            typeFixed = container.nbtEditorListTypeIsFixed();
+        }
+        else
+        {
+            valueTypeId = container.getNbtEditorAddType();
+            typeFixed = false;
+        }
+        showValueField = isScalarNbtType(valueTypeId);
+
+        RowElement typeRow = factory.row(Alignment.CENTER).gap(6);
+        if (typeFixed)
+        {
+            typeRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_type") + ":").color(GRAY_COLOR_5));
+            typeRow.add(new LabelElement(getNbtTypeLabel(valueTypeId)).color(WHITE_COLOR_1));
+        }
+        else if (atList)
+        {
+            typeRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_element_type") + ":").color(GRAY_COLOR_5));
+            typeRow.button(BUTTON_NBT_CYCLE_ELEM_TYPE, getNbtTypeLabel(container.getNbtEditorListElementType()));
+        }
+        else
+        {
+            typeRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_type") + ":").color(GRAY_COLOR_5));
+            typeRow.button(BUTTON_NBT_CYCLE_TYPE, getNbtTypeLabel(container.getNbtEditorAddType()));
+        }
+
+        if (showValueField)
+        {
+            nbtValueElement = new TextFieldElement(formWidth)
+                    .text(container.nbtEditorGetValueText())
+                    .focused(!focusKey);
+            RowElement valueRow = factory.row(Alignment.CENTER).gap(6);
+            valueRow.add(new LabelElement(valueLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            valueRow.add(nbtValueElement);
+        }
+        else
+        {
+            nbtValueElement = null;
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_hint_container"))
+                    .color(GRAY_COLOR_5).centered());
+        }
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_NBT_DONE, I18n.format("gui.oneblockultima.done"));
+        btnRow.button(BUTTON_NBT_CANCEL, I18n.format("gui.oneblockultima.cancel"));
+    }
+
+    private static boolean isScalarNbtType(int typeId)
+    {
+        return typeId != TAG_COMPOUND && typeId != TAG_LIST
+                && typeId != TAG_BYTE_ARRAY && typeId != TAG_INT_ARRAY;
+    }
+
+    private void drawXIcon(int x, int y, int color)
+    {
+        int cx = x + GuiSetsConfig.NBT_ROW_TRASH_WIDTH / 2;
+        int cy = y + GuiSetsConfig.NBT_ROW_BUTTON_HEIGHT / 2;
+        for (int i = 0; i < 5; i++)
+        {
+            Gui.drawRect(cx - 3 + i, cy - 3 + i, cx - 2 + i, cy - 2 + i, color);
+            Gui.drawRect(cx + 2 - i, cy - 3 + i, cx + 3 - i, cy - 2 + i, color);
+        }
     }
 
     private void buildRequiredModsEditorView()

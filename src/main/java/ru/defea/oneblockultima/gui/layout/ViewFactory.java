@@ -180,7 +180,7 @@ public class ViewFactory {
     }
 
     public ViewFactory add(ViewElement<?> element) {
-        elements.add(element);
+        if (!elements.contains(element)) elements.add(element);
         return this;
     }
 

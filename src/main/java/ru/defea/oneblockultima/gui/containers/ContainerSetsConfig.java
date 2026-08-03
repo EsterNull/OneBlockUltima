@@ -9,8 +9,21 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagByte;
+import net.minecraft.nbt.NBTTagByteArray;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagDouble;
+import net.minecraft.nbt.NBTTagFloat;
+import net.minecraft.nbt.NBTTagInt;
+import net.minecraft.nbt.NBTTagIntArray;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagLong;
+import net.minecraft.nbt.NBTTagShort;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import static net.minecraftforge.common.util.Constants.NBT.*;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -36,6 +49,14 @@ public class ContainerSetsConfig
     public static final int VIEW_REQUIRED_MODS_EDITOR = 5;
     public static final int VIEW_REQUIRED_MODS_ADD = 6;
     public static final int VIEW_UNLOCK_CONDITIONS = 7;
+    public static final int VIEW_EDIT_NBT = 8;
+    public static final int VIEW_NBT_ADD = 9;
+
+    private static final int[] NBT_ADDABLE_TYPES = {
+            TAG_STRING, TAG_BYTE, TAG_SHORT, TAG_INT, TAG_LONG,
+            TAG_FLOAT, TAG_DOUBLE, TAG_BYTE_ARRAY, TAG_INT_ARRAY,
+            TAG_COMPOUND, TAG_LIST
+    };
 
     public enum SearchType { BLOCKS, MOBS }
     public enum EntryType { BLOCK, MOB }
@@ -80,11 +101,11 @@ public class ContainerSetsConfig
         }
     }
 
-    private static Map<String, Map<String, String>> staticSetLocalizedNames = new HashMap<>();
+    private static final Map<String, Map<String, String>> staticSetLocalizedNames = new HashMap<>();
 
     private int currentView = VIEW_SETS;
     private BlockSetConfig config;
-    private List<BlockSetConfig.BlockSetDefinition> sets = new ArrayList<>();
+    private final List<BlockSetConfig.BlockSetDefinition> sets = new ArrayList<>();
     private List<BlockSetConfig.BlockSetDefinition> filteredSets = new ArrayList<>();
     private List<SearchResult> searchResults = new ArrayList<>();
 
@@ -97,12 +118,6 @@ public class ContainerSetsConfig
     private int editingSetSourceIndex = -1;
     private EntryType editingEntryType = EntryType.BLOCK;
 
-    private int scrollOffset = 0;
-    private int entryScrollOffset = 0;
-    private int searchScrollOffset = 0;
-    private int requiredModsScrollOffset = 0;
-    private int unlockConditionsScrollOffset = 0;
-
     private BlockSetConfig.BlockSetDefinition editingSet = null;
     private boolean isNewSet = false;
     private String statusMessage = "";
@@ -111,13 +126,12 @@ public class ContainerSetsConfig
     private String savedNewSetName = "";
     private String savedNewSetId = "";
     private String savedNewSetCost = "0";
-    private String savedNewSetMods = "";
 
     private String searchQuery = "";
     private SearchType currentSearchType = SearchType.BLOCKS;
     private EntryType currentEntryType = EntryType.BLOCK;
 
-    private List<String> requiredModsEditorMods = new ArrayList<>();
+    private final List<String> requiredModsEditorMods = new ArrayList<>();
     private BlockSetConfig.SetRequiredModsDefinition.TYPE requiredModsEditorType = BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL;
     private boolean requiredModsEditorInitialized = false;
     private final Set<String> selectedRequiredModsForRemoval = new LinkedHashSet<>();
@@ -126,9 +140,17 @@ public class ContainerSetsConfig
     private String unlockConditionsEditorMode = "any";
     private final List<BlockSetConfig.UnlockConditionDefinition> unlockConditionsEditorConditions = new ArrayList<>();
     private int selectedUnlockConditionIndex = -1;
-    private List<BlockSetConfig.BlockSetDefinition> availableSetsForConditions = new ArrayList<>();
+    private final List<BlockSetConfig.BlockSetDefinition> availableSetsForConditions = new ArrayList<>();
     private String newConditionTypeToAdd = "broken_blocks_total";
     private String newConditionSetId = "";
+
+    private final List<NbtEditorSegment> nbtEditorPath = new ArrayList<>();
+    private int nbtEditorAddType = TAG_STRING;
+    private int nbtEditorListElementType = TAG_BYTE;
+    private String nbtEditorEditingKey = null;
+    private int nbtEditorEditingIndex = -1;
+    private String nbtEditorValueText = "";
+    private String nbtEditorKeyText = "";
 
     public ContainerSetsConfig()
     {
@@ -148,41 +170,38 @@ public class ContainerSetsConfig
     public int getEditingCurrencyIndex() { return editingCurrencyIndex; }
     public EntryType getEditingEntryType() { return editingEntryType; }
 
-    public int getScrollOffset() { return scrollOffset; }
-    public void setScrollOffset(int v) { scrollOffset = v; }
-    public int getEntryScrollOffset() { return entryScrollOffset; }
-    public void setEntryScrollOffset(int v) { entryScrollOffset = v; }
-    public int getSearchScrollOffset() { return searchScrollOffset; }
-    public void setSearchScrollOffset(int v) { searchScrollOffset = v; }
-    public int getRequiredModsScrollOffset() { return requiredModsScrollOffset; }
-    public void setRequiredModsScrollOffset(int v) { requiredModsScrollOffset = v; }
-    public int getUnlockConditionsScrollOffset() { return unlockConditionsScrollOffset; }
-    public void setUnlockConditionsScrollOffset(int v) { unlockConditionsScrollOffset = v; }
-
     public BlockSetConfig.BlockSetDefinition getEditingSet() { return editingSet; }
     public boolean isNewSet() { return isNewSet; }
     public String getStatusMessage() { return statusMessage; }
     public int getStatusTimer() { return statusTimer; }
     public void setStatusTimer(int t) { statusTimer = t; }
 
+    private static String safeFormat(String key, Object... args)
+    {
+        try
+        {
+            return I18n.format(key, args);
+        }
+        catch (Exception e)
+        {
+            return key;
+        }
+    }
+
     public String getSavedNewSetName() { return savedNewSetName; }
     public String getSavedNewSetId() { return savedNewSetId; }
     public String getSavedNewSetCost() { return savedNewSetCost; }
-    public String getSavedNewSetMods() { return savedNewSetMods; }
 
     public String getSearchQuery() { return searchQuery; }
     public void setSearchQuery(String q) { searchQuery = q; }
-    public SearchType getCurrentSearchType() { return currentSearchType; }
     public void setCurrentSearchType(SearchType t) { currentSearchType = t; }
     public EntryType getCurrentEntryType() { return currentEntryType; }
     public void setCurrentEntryType(EntryType t) { currentEntryType = t; }
 
-    public List<String> getRequiredModsEditorMods() { return requiredModsEditorMods; }
     public BlockSetConfig.SetRequiredModsDefinition.TYPE getRequiredModsEditorType() { return requiredModsEditorType; }
     public void setRequiredModsEditorType(BlockSetConfig.SetRequiredModsDefinition.TYPE t) { requiredModsEditorType = t; }
     public boolean isRequiredModsEditorInitialized() { return requiredModsEditorInitialized; }
     public void setRequiredModsEditorInitialized(boolean v) { requiredModsEditorInitialized = v; }
-    public Set<String> getSelectedRequiredModsForRemoval() { return selectedRequiredModsForRemoval; }
     public Set<String> getSelectedRequiredModsToAdd() { return selectedRequiredModsToAdd; }
 
     public String getUnlockConditionsEditorMode() { return unlockConditionsEditorMode; }
@@ -192,9 +211,7 @@ public class ContainerSetsConfig
     public void setSelectedUnlockConditionIndex(int v) { selectedUnlockConditionIndex = v; }
     public List<BlockSetConfig.BlockSetDefinition> getAvailableSetsForConditions() { return availableSetsForConditions; }
     public String getNewConditionTypeToAdd() { return newConditionTypeToAdd; }
-    public void setNewConditionTypeToAdd(String v) { newConditionTypeToAdd = v; }
     public String getNewConditionSetId() { return newConditionSetId; }
-    public void setNewConditionSetId(String v) { newConditionSetId = v; }
 
     public List<BlockSetConfig.BlockSetDefinition> getSets() { return sets; }
     public List<BlockSetConfig.BlockSetDefinition> getFilteredSets() { return filteredSets; }
@@ -219,7 +236,6 @@ public class ContainerSetsConfig
                 requiredModsEditorInitialized = false;
             }
             currentView = view;
-            scrollOffset = 0;
         }
     }
 
@@ -266,24 +282,6 @@ public class ContainerSetsConfig
         return entries;
     }
 
-    public Set<String> getExistingBlockRegistries()
-    {
-        Set<String> result = new HashSet<>();
-        if (editingSet != null && editingSet.blocks != null)
-        {
-            for (BlockSetConfig.BlockElementDefinition block : editingSet.blocks)
-            {
-                if (block != null && block.registry != null && !block.registry.isEmpty())
-                {
-                    List<Integer> metas = block.getMetaValues();
-                    if (metas.isEmpty()) result.add(block.registry);
-                    else for (int m : metas) result.add(block.registry + ":" + m);
-                }
-            }
-        }
-        return result;
-    }
-
     public Set<String> getExistingMobRegistries()
     {
         Set<String> result = new HashSet<>();
@@ -306,11 +304,9 @@ public class ContainerSetsConfig
         selectedBlockIndex = -1;
         selectedBlockMeta = -1;
         selectedMobIndex = -1;
-        entryScrollOffset = 0;
         savedNewSetName = "";
         savedNewSetId = "";
         savedNewSetCost = "0";
-        savedNewSetMods = "";
     }
 
     public void addNewSet()
@@ -329,11 +325,9 @@ public class ContainerSetsConfig
         selectedBlockIndex = -1;
         selectedBlockMeta = -1;
         selectedMobIndex = -1;
-        entryScrollOffset = 0;
         savedNewSetName = "";
         savedNewSetId = "";
         savedNewSetCost = "0";
-        savedNewSetMods = "";
     }
 
     public boolean saveSetDetails(String name, String id, String costStr)
@@ -379,8 +373,6 @@ public class ContainerSetsConfig
             savedNewSetName = "";
             savedNewSetId = "";
             savedNewSetCost = "0";
-            savedNewSetMods = "";
-            return true;
         }
         else
         {
@@ -400,8 +392,8 @@ public class ContainerSetsConfig
             editingSet.computedLevels = null;
             editingSetSourceIndex = -1;
             updateFilteredSets();
-            return true;
         }
+        return true;
     }
 
     public void confirmDeleteSet(int index)
@@ -434,7 +426,6 @@ public class ContainerSetsConfig
         }
         else requiredModsEditorType = BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL;
         requiredModsEditorInitialized = true;
-        requiredModsScrollOffset = 0;
     }
 
     public void applyRequiredModsToEditingSet()
@@ -447,19 +438,6 @@ public class ContainerSetsConfig
         editingSet.requiredMods.setType(requiredModsEditorType);
     }
 
-    public List<String> getAllModIds()
-    {
-        List<String> result = new ArrayList<>();
-        for (ModContainer mod : Loader.instance().getActiveModList())
-        {
-            String modId = mod.getModId();
-            if (!modId.equals("minecraft") && !modId.equals("forge") && !modId.equals("mcp"))
-                result.add(modId);
-        }
-        Collections.sort(result);
-        return result;
-    }
-
     public void addEntryToCurrentSet(EntryType type, SearchResult result, int baseLevel, int baseChance)
     {
         if (editingSet == null) return;
@@ -470,9 +448,12 @@ public class ContainerSetsConfig
             entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
             entry.baseLevel = baseLevel;
             entry.baseChance = baseChance;
+            entry.nbtTags = result.stack != null && result.stack.getTagCompound() != null
+                    ? result.stack.getTagCompound().copy()
+                    : new NBTTagCompound();
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             editingSet.blocks.add(entry);
-            statusMessage = I18n.format("gui.oneblockultima.config.block_added", result.name);
+            statusMessage = safeFormat("gui.oneblockultima.config.block_added", result.name);
         }
         else
         {
@@ -483,7 +464,7 @@ public class ContainerSetsConfig
             entry.count = 1;
             if (editingSet.mobs == null) editingSet.mobs = new ArrayList<>();
             editingSet.mobs.add(entry);
-            statusMessage = I18n.format("gui.oneblockultima.config.mob_added", result.name);
+            statusMessage = safeFormat("gui.oneblockultima.config.mob_added", result.name);
         }
         statusTimer = 60;
         editingSet.computedLevels = null;
@@ -521,6 +502,776 @@ public class ContainerSetsConfig
         editingCurrencyIndex = index;
     }
 
+    public String getEditingEntryDisplayName()
+    {
+        if (editingSet == null || editingCurrencyIndex < 0) return "";
+        if (editingEntryType == EntryType.BLOCK && editingSet.blocks != null && editingCurrencyIndex < editingSet.blocks.size())
+        {
+            BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
+            return getLocalizedNameForBlock(entry, getSelectedBlockMeta() >= 0 ? getSelectedBlockMeta() : entry.meta);
+        }
+        if (editingEntryType == EntryType.MOB && editingSet.mobs != null && editingCurrencyIndex < editingSet.mobs.size())
+        {
+            return getLocalizedNameForMob(editingSet.mobs.get(editingCurrencyIndex));
+        }
+        return "";
+    }
+
+    public NBTTagCompound getEditingEntryNbt()
+    {
+        NBTTagCompound tags = getEditingEntryNbtOrNull();
+        return tags != null ? tags.copy() : new NBTTagCompound();
+    }
+
+    // ======== Structured NBT editor ========
+
+    public static class NbtTagEntry
+    {
+        public final String key;
+        public final int index;
+        public final NBTBase value;
+
+        public NbtTagEntry(String key, int index, NBTBase value)
+        {
+            this.key = key;
+            this.index = index;
+            this.value = value;
+        }
+
+        public int getTypeId()
+        {
+            return value != null ? value.getId() : TAG_END;
+        }
+
+        public boolean isCompound()
+        {
+            return value instanceof NBTTagCompound;
+        }
+
+        public boolean isList()
+        {
+            return value instanceof NBTTagList;
+        }
+
+        public boolean isArray()
+        {
+            return value instanceof NBTTagByteArray || value instanceof NBTTagIntArray;
+        }
+
+        public boolean isScalar()
+        {
+            return value != null && !isCompound() && !isList() && !isArray();
+        }
+    }
+
+    private static class NbtEditorSegment
+    {
+        boolean list;
+        String key;
+        int index;
+
+        NbtEditorSegment(String key)
+        {
+            this.list = false;
+            this.key = key;
+            this.index = -1;
+        }
+
+        NbtEditorSegment(int index)
+        {
+            this.list = true;
+            this.key = null;
+            this.index = index;
+        }
+
+        String label()
+        {
+            return list ? "[" + index + "]" : key;
+        }
+    }
+
+    public List<NbtTagEntry> getNbtTags()
+    {
+        List<NbtTagEntry> result = new ArrayList<>();
+        NBTBase node = getNbtEditorCurrent();
+        if (node instanceof NBTTagCompound)
+        {
+            NBTTagCompound compound = (NBTTagCompound) node;
+            for (String key : compound.getKeySet())
+            {
+                result.add(new NbtTagEntry(key, -1, compound.getTag(key)));
+            }
+        }
+        else if (node instanceof NBTTagList)
+        {
+            NBTTagList list = (NBTTagList) node;
+            for (int i = 0; i < list.tagCount(); i++)
+            {
+                result.add(new NbtTagEntry("[" + i + "]", i, list.get(i)));
+            }
+        }
+        else if (node instanceof NBTTagByteArray)
+        {
+            byte[] arr = ((NBTTagByteArray) node).getByteArray();
+            for (int i = 0; i < arr.length; i++)
+            {
+                result.add(new NbtTagEntry("[" + i + "]", i, new NBTTagByte(arr[i])));
+            }
+        }
+        else if (node instanceof NBTTagIntArray)
+        {
+            int[] arr = ((NBTTagIntArray) node).getIntArray();
+            for (int i = 0; i < arr.length; i++)
+            {
+                result.add(new NbtTagEntry("[" + i + "]", i, new NBTTagInt(arr[i])));
+            }
+        }
+        return result;
+    }
+
+    public boolean nbtEditorAtRoot()
+    {
+        return nbtEditorPath.isEmpty();
+    }
+
+    public boolean nbtEditorIsListContext()
+    {
+        return getNbtEditorCurrent() instanceof NBTTagList;
+    }
+
+    public boolean nbtEditorIsArrayContext()
+    {
+        NBTBase node = getNbtEditorCurrent();
+        return node instanceof NBTTagByteArray || node instanceof NBTTagIntArray;
+    }
+
+    public int nbtEditorGetArrayElementType()
+    {
+        NBTBase node = getNbtEditorCurrent();
+        return node instanceof NBTTagIntArray ? TAG_INT : TAG_BYTE;
+    }
+
+    public String nbtEditorPathLabel()
+    {
+        StringBuilder sb = new StringBuilder();
+        for (NbtEditorSegment seg : nbtEditorPath)
+        {
+            if (sb.length() > 0) sb.append(" / ");
+            sb.append(seg.label());
+        }
+        return sb.toString();
+    }
+
+    public void nbtEditorPush(String key)
+    {
+        NBTBase node = getNbtEditorCurrent();
+        if (!(node instanceof NBTTagCompound)) return;
+        NBTTagCompound compound = (NBTTagCompound) node;
+        if (!compound.hasKey(key)) return;
+        NBTBase target = compound.getTag(key);
+        if (!isContainer(target)) return;
+        nbtEditorPath.add(new NbtEditorSegment(key));
+    }
+
+    public void nbtEditorPushIndex(int index)
+    {
+        NBTBase node = getNbtEditorCurrent();
+        if (!(node instanceof NBTTagList)) return;
+        NBTTagList list = (NBTTagList) node;
+        if (index < 0 || index >= list.tagCount()) return;
+        NBTBase target = list.get(index);
+        if (!isContainer(target)) return;
+        nbtEditorPath.add(new NbtEditorSegment(index));
+    }
+
+    private static boolean isContainer(NBTBase value)
+    {
+        return value instanceof NBTTagCompound
+                || value instanceof NBTTagList
+                || value instanceof NBTTagByteArray
+                || value instanceof NBTTagIntArray;
+    }
+
+    public void nbtEditorPop()
+    {
+        if (!nbtEditorPath.isEmpty()) nbtEditorPath.remove(nbtEditorPath.size() - 1);
+    }
+
+    public int getNbtEditorAddType()
+    {
+        return nbtEditorAddType;
+    }
+
+    public void cycleNbtEditorAddType()
+    {
+        for (int i = 0; i < NBT_ADDABLE_TYPES.length; i++)
+        {
+            if (NBT_ADDABLE_TYPES[i] == nbtEditorAddType)
+            {
+                nbtEditorAddType = NBT_ADDABLE_TYPES[(i + 1) % NBT_ADDABLE_TYPES.length];
+                return;
+            }
+        }
+        nbtEditorAddType = NBT_ADDABLE_TYPES[0];
+    }
+
+    public int getNbtEditorListElementType()
+    {
+        NBTBase node = getNbtEditorCurrent();
+        if (node instanceof NBTTagList && ((NBTTagList) node).tagCount() > 0)
+        {
+            return ((NBTTagList) node).getTagType();
+        }
+        return nbtEditorListElementType;
+    }
+
+    public boolean nbtEditorListTypeIsFixed()
+    {
+        NBTBase node = getNbtEditorCurrent();
+        return node instanceof NBTTagList && ((NBTTagList) node).tagCount() > 0;
+    }
+
+    public void cycleNbtEditorListElementType()
+    {
+        for (int i = 0; i < NBT_ADDABLE_TYPES.length; i++)
+        {
+            if (NBT_ADDABLE_TYPES[i] == nbtEditorListElementType)
+            {
+                nbtEditorListElementType = NBT_ADDABLE_TYPES[(i + 1) % NBT_ADDABLE_TYPES.length];
+                return;
+            }
+        }
+        nbtEditorListElementType = NBT_ADDABLE_TYPES[0];
+    }
+
+    public void nbtEditorStartAdd()
+    {
+        nbtEditorEditingKey = null;
+        nbtEditorEditingIndex = -1;
+        nbtEditorAddType = TAG_STRING;
+        nbtEditorListElementType = TAG_BYTE;
+        nbtEditorValueText = "";
+        nbtEditorKeyText = "";
+    }
+
+    public String nbtEditorGetValueText()
+    {
+        return nbtEditorValueText;
+    }
+
+    public void setNbtEditorValueText(String text)
+    {
+        nbtEditorValueText = text == null ? "" : text;
+    }
+
+    public String nbtEditorGetKeyText()
+    {
+        return nbtEditorKeyText;
+    }
+
+    public void setNbtEditorKeyText(String text)
+    {
+        nbtEditorKeyText = text == null ? "" : text;
+    }
+
+    public void nbtEditorStartEdit(String key)
+    {
+        NBTBase node = getNbtEditorCurrent();
+        if (!(node instanceof NBTTagCompound)) return;
+        NBTTagCompound compound = (NBTTagCompound) node;
+        if (!compound.hasKey(key)) return;
+        NBTBase target = compound.getTag(key);
+        if (isContainer(target)) return;
+        nbtEditorEditingKey = key;
+        nbtEditorEditingIndex = -1;
+        nbtEditorAddType = target.getId();
+        nbtEditorKeyText = key;
+        nbtEditorValueText = formatNbtValue(target);
+    }
+
+    public void nbtEditorStartEditIndex(int index)
+    {
+        NBTBase node = getNbtEditorCurrent();
+        if (node instanceof NBTTagList)
+        {
+            NBTTagList list = (NBTTagList) node;
+            if (index < 0 || index >= list.tagCount()) return;
+            if (isContainer(list.get(index))) return;
+            nbtEditorEditingIndex = index;
+            nbtEditorEditingKey = null;
+            nbtEditorAddType = list.get(index).getId();
+            nbtEditorKeyText = "";
+            nbtEditorValueText = formatNbtValue(list.get(index));
+        }
+        else if (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray)
+        {
+            int size = getArraySize(node);
+            if (index < 0 || index >= size) return;
+            nbtEditorEditingIndex = index;
+            nbtEditorEditingKey = null;
+            nbtEditorAddType = nbtEditorGetArrayElementType();
+            nbtEditorKeyText = "";
+            nbtEditorValueText = formatNbtValue(getArrayElement(node, index));
+        }
+    }
+
+    public boolean nbtEditorIsEditing()
+    {
+        return nbtEditorEditingKey != null || nbtEditorEditingIndex >= 0;
+    }
+
+    public boolean nbtEditorIsEditingListElement()
+    {
+        return nbtEditorEditingIndex >= 0;
+    }
+
+    public int nbtEditorGetEditingTypeId()
+    {
+        return nbtEditorAddType;
+    }
+
+    public String nbtEditorGetEditingKey()
+    {
+        return nbtEditorEditingKey != null ? nbtEditorEditingKey : "";
+    }
+
+    public String nbtEditorGetValue()
+    {
+        NBTBase target = null;
+        NBTBase node = getNbtEditorCurrent();
+        if (nbtEditorEditingKey != null && node instanceof NBTTagCompound)
+        {
+            target = ((NBTTagCompound) node).getTag(nbtEditorEditingKey);
+        }
+        else if (nbtEditorEditingIndex >= 0 && node instanceof NBTTagList)
+        {
+            NBTTagList list = (NBTTagList) node;
+            if (nbtEditorEditingIndex < list.tagCount()) target = list.get(nbtEditorEditingIndex);
+        }
+        else if (nbtEditorEditingIndex >= 0 && (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray))
+        {
+            if (nbtEditorEditingIndex < getArraySize(node)) target = getArrayElement(node, nbtEditorEditingIndex);
+        }
+        if (target == null) return "";
+        return formatNbtValue(target);
+    }
+
+    public boolean nbtEditorApply(String key, String valueText)
+    {
+        try
+        {
+            if (nbtEditorIsListContext())
+            {
+                NBTTagList list = getNbtEditorList();
+                if (list == null) return false;
+                int elementType = list.tagCount() > 0 ? list.getTagType() : nbtEditorListElementType;
+                NBTBase value = parseNbtValue(elementType, valueText);
+                if (nbtEditorEditingIndex >= 0)
+                {
+                    if (nbtEditorEditingIndex >= list.tagCount()) return false;
+                    list.set(nbtEditorEditingIndex, value);
+                }
+                else if (list.tagCount() == 0)
+                {
+                    NBTTagList fresh = new NBTTagList();
+                    fresh.appendTag(value);
+                    if (!setNbtEditorCurrent(fresh)) return false;
+                }
+                else
+                {
+                    list.appendTag(value);
+                }
+                nbtEditorEditingIndex = -1;
+                nbtEditorEditingKey = null;
+                nbtEditorValueText = "";
+                nbtEditorKeyText = "";
+                nbtEditorMarkDirty();
+                return true;
+            }
+
+            if (nbtEditorIsArrayContext())
+            {
+                NBTBase node = getNbtEditorCurrent();
+                if (node == null) return false;
+                NBTBase value = parseNbtValue(nbtEditorGetArrayElementType(), valueText);
+                NBTBase replacement = nbtEditorEditingIndex >= 0
+                        ? setArrayElement(node, nbtEditorEditingIndex, value)
+                        : appendArrayElement(node, value);
+                if (replacement == null) return false;
+                if (!setNbtEditorCurrent(replacement)) return false;
+                nbtEditorEditingIndex = -1;
+                nbtEditorEditingKey = null;
+                nbtEditorValueText = "";
+                nbtEditorKeyText = "";
+                nbtEditorMarkDirty();
+                return true;
+            }
+
+            NBTTagCompound compound = getNbtEditorCompound();
+            if (compound == null) return false;
+
+            if (nbtEditorEditingKey != null)
+            {
+                String newKey = key == null ? "" : key.trim();
+                if (newKey.isEmpty())
+                {
+                    statusMessage = safeFormat("gui.oneblockultima.config.nbt_error_empty_key");
+                    statusTimer = 100;
+                    return false;
+                }
+                NBTBase value = parseNbtValue(nbtEditorAddType, valueText);
+                compound.removeTag(nbtEditorEditingKey);
+                compound.setTag(newKey, value);
+                nbtEditorEditingKey = null;
+                nbtEditorValueText = "";
+                nbtEditorKeyText = "";
+                nbtEditorMarkDirty();
+                return true;
+            }
+
+            String trimmedKey = key == null ? "" : key.trim();
+            if (trimmedKey.isEmpty())
+            {
+                statusMessage = safeFormat("gui.oneblockultima.config.nbt_error_empty_key");
+                statusTimer = 100;
+                return false;
+            }
+            NBTBase value = parseNbtValue(nbtEditorAddType, valueText);
+            compound.setTag(trimmedKey, value);
+            nbtEditorValueText = "";
+            nbtEditorKeyText = "";
+            nbtEditorMarkDirty();
+            return true;
+        }
+        catch (NumberFormatException e)
+        {
+            statusMessage = safeFormat("gui.oneblockultima.config.nbt_error_invalid_value");
+            statusTimer = 100;
+            return false;
+        }
+    }
+
+    public boolean nbtEditorRemove(String key)
+    {
+        NBTTagCompound compound = getNbtEditorCompound();
+        if (compound == null || !compound.hasKey(key)) return false;
+        compound.removeTag(key);
+        nbtEditorMarkDirty();
+        return true;
+    }
+
+    public boolean nbtEditorRemoveIndex(int index)
+    {
+        NBTBase node = getNbtEditorCurrent();
+        if (node instanceof NBTTagList)
+        {
+            NBTTagList list = (NBTTagList) node;
+            if (index < 0 || index >= list.tagCount()) return false;
+            list.removeTag(index);
+            nbtEditorMarkDirty();
+            return true;
+        }
+        if (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray)
+        {
+            NBTBase replacement = removeArrayElement(node, index);
+            if (replacement == null) return false;
+            if (!setNbtEditorCurrent(replacement)) return false;
+            nbtEditorMarkDirty();
+            return true;
+        }
+        return false;
+    }
+
+    private void nbtEditorMarkDirty()
+    {
+        if (editingSet != null) editingSet.computedLevels = null;
+    }
+
+    private NBTTagCompound getNbtEditorCompound()
+    {
+        NBTBase node = getNbtEditorCurrent();
+        return node instanceof NBTTagCompound ? (NBTTagCompound) node : null;
+    }
+
+    private NBTTagList getNbtEditorList()
+    {
+        NBTBase node = getNbtEditorCurrent();
+        return node instanceof NBTTagList ? (NBTTagList) node : null;
+    }
+
+    private NBTBase getNbtEditorCurrent()
+    {
+        NBTBase node = getEditingEntryNbtOrNull();
+        if (node == null) return null;
+        for (NbtEditorSegment seg : nbtEditorPath)
+        {
+            if (seg.list)
+            {
+                if (!(node instanceof NBTTagList)) return null;
+                NBTTagList list = (NBTTagList) node;
+                if (seg.index < 0 || seg.index >= list.tagCount()) return null;
+                node = list.get(seg.index);
+            }
+            else
+            {
+                if (!(node instanceof NBTTagCompound)) return null;
+                NBTTagCompound compound = (NBTTagCompound) node;
+                if (!compound.hasKey(seg.key)) return null;
+                node = compound.getTag(seg.key);
+            }
+        }
+        return node;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean setNbtEditorCurrent(NBTBase newNode)
+    {
+        if (nbtEditorPath.isEmpty()) return false;
+        NbtEditorSegment last = nbtEditorPath.get(nbtEditorPath.size() - 1);
+        NBTBase parent = getNbtEditorParent();
+        if (parent instanceof NBTTagCompound)
+        {
+            ((NBTTagCompound) parent).setTag(last.key, newNode);
+            return true;
+        }
+        if (parent instanceof NBTTagList)
+        {
+            ((NBTTagList) parent).set(last.index, newNode);
+            return true;
+        }
+        return false;
+    }
+
+    private static int getArraySize(NBTBase node)
+    {
+        if (node instanceof NBTTagByteArray) return ((NBTTagByteArray) node).getByteArray().length;
+        if (node instanceof NBTTagIntArray) return ((NBTTagIntArray) node).getIntArray().length;
+        return 0;
+    }
+
+    private static NBTBase getArrayElement(NBTBase node, int index)
+    {
+        if (node instanceof NBTTagByteArray) return new NBTTagByte(((NBTTagByteArray) node).getByteArray()[index]);
+        if (node instanceof NBTTagIntArray) return new NBTTagInt(((NBTTagIntArray) node).getIntArray()[index]);
+        return null;
+    }
+
+    private static NBTBase setArrayElement(NBTBase node, int index, NBTBase value)
+    {
+        if (node instanceof NBTTagByteArray)
+        {
+            byte[] src = ((NBTTagByteArray) node).getByteArray();
+            if (index < 0 || index >= src.length) return null;
+            byte[] dst = src.clone();
+            dst[index] = ((NBTTagByte) value).getByte();
+            return new NBTTagByteArray(dst);
+        }
+        if (node instanceof NBTTagIntArray)
+        {
+            int[] src = ((NBTTagIntArray) node).getIntArray();
+            if (index < 0 || index >= src.length) return null;
+            int[] dst = src.clone();
+            dst[index] = ((NBTTagInt) value).getInt();
+            return new NBTTagIntArray(dst);
+        }
+        return null;
+    }
+
+    private static NBTBase appendArrayElement(NBTBase node, NBTBase value)
+    {
+        if (node instanceof NBTTagByteArray)
+        {
+            byte[] src = ((NBTTagByteArray) node).getByteArray();
+            byte[] dst = Arrays.copyOf(src, src.length + 1);
+            dst[src.length] = ((NBTTagByte) value).getByte();
+            return new NBTTagByteArray(dst);
+        }
+        if (node instanceof NBTTagIntArray)
+        {
+            int[] src = ((NBTTagIntArray) node).getIntArray();
+            int[] dst = Arrays.copyOf(src, src.length + 1);
+            dst[src.length] = ((NBTTagInt) value).getInt();
+            return new NBTTagIntArray(dst);
+        }
+        return null;
+    }
+
+    private static NBTBase removeArrayElement(NBTBase node, int index)
+    {
+        if (node instanceof NBTTagByteArray)
+        {
+            byte[] src = ((NBTTagByteArray) node).getByteArray();
+            if (index < 0 || index >= src.length) return null;
+            byte[] dst = new byte[src.length - 1];
+            System.arraycopy(src, 0, dst, 0, index);
+            System.arraycopy(src, index + 1, dst, index, src.length - index - 1);
+            return new NBTTagByteArray(dst);
+        }
+        if (node instanceof NBTTagIntArray)
+        {
+            int[] src = ((NBTTagIntArray) node).getIntArray();
+            if (index < 0 || index >= src.length) return null;
+            int[] dst = new int[src.length - 1];
+            System.arraycopy(src, 0, dst, 0, index);
+            System.arraycopy(src, index + 1, dst, index, src.length - index - 1);
+            return new NBTTagIntArray(dst);
+        }
+        return null;
+    }
+
+    private NBTBase getNbtEditorParent()
+    {
+        NBTBase node = getEditingEntryNbtOrNull();
+        if (node == null) return null;
+        for (int i = 0; i < nbtEditorPath.size() - 1; i++)
+        {
+            NbtEditorSegment seg = nbtEditorPath.get(i);
+            if (seg.list)
+            {
+                if (!(node instanceof NBTTagList)) return null;
+                NBTTagList list = (NBTTagList) node;
+                if (seg.index < 0 || seg.index >= list.tagCount()) return null;
+                node = list.get(seg.index);
+            }
+            else
+            {
+                if (!(node instanceof NBTTagCompound)) return null;
+                NBTTagCompound compound = (NBTTagCompound) node;
+                if (!compound.hasKey(seg.key)) return null;
+                node = compound.getTag(seg.key);
+            }
+        }
+        return node;
+    }
+
+    private static NBTBase parseNbtValue(int typeId, String text)
+    {
+        switch (typeId)
+        {
+            case TAG_STRING: return new NBTTagString(text);
+            case TAG_BYTE: return new NBTTagByte(Byte.parseByte(text.trim()));
+            case TAG_SHORT: return new NBTTagShort(Short.parseShort(text.trim()));
+            case TAG_INT: return new NBTTagInt(Integer.parseInt(text.trim()));
+            case TAG_LONG: return new NBTTagLong(Long.parseLong(text.trim()));
+            case TAG_FLOAT: return new NBTTagFloat(Float.parseFloat(text.trim()));
+            case TAG_DOUBLE: return new NBTTagDouble(Double.parseDouble(text.trim()));
+            case TAG_BYTE_ARRAY:
+            {
+                if (text.trim().isEmpty()) return new NBTTagByteArray(new byte[0]);
+                String[] parts = text.split(",");
+                byte[] arr = new byte[parts.length];
+                for (int i = 0; i < parts.length; i++) arr[i] = (byte) Integer.parseInt(parts[i].trim());
+                return new NBTTagByteArray(arr);
+            }
+            case TAG_INT_ARRAY:
+            {
+                if (text.trim().isEmpty()) return new NBTTagIntArray(new int[0]);
+                String[] parts = text.split(",");
+                int[] arr = new int[parts.length];
+                for (int i = 0; i < parts.length; i++) arr[i] = Integer.parseInt(parts[i].trim());
+                return new NBTTagIntArray(arr);
+            }
+            case TAG_COMPOUND: return new NBTTagCompound();
+            case TAG_LIST: return new NBTTagList();
+            default: throw new NumberFormatException("unsupported type " + typeId);
+        }
+    }
+
+    private static String formatNbtValue(NBTBase target)
+    {
+        switch (target.getId())
+        {
+            case TAG_STRING: return ((NBTTagString) target).getString();
+            case TAG_BYTE: return Byte.toString(((NBTTagByte) target).getByte());
+            case TAG_SHORT: return Short.toString(((NBTTagShort) target).getShort());
+            case TAG_INT: return Integer.toString(((NBTTagInt) target).getInt());
+            case TAG_LONG: return Long.toString(((NBTTagLong) target).getLong());
+            case TAG_FLOAT: return Float.toString(((NBTTagFloat) target).getFloat());
+            case TAG_DOUBLE: return Double.toString(((NBTTagDouble) target).getDouble());
+            case TAG_BYTE_ARRAY:
+            {
+                byte[] arr = ((NBTTagByteArray) target).getByteArray();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < arr.length; i++)
+                {
+                    if (i > 0) sb.append(',');
+                    sb.append(arr[i]);
+                }
+                return sb.toString();
+            }
+            case TAG_INT_ARRAY:
+            {
+                int[] arr = ((NBTTagIntArray) target).getIntArray();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < arr.length; i++)
+                {
+                    if (i > 0) sb.append(',');
+                    sb.append(arr[i]);
+                }
+                return sb.toString();
+            }
+            default: return target.toString();
+        }
+    }
+
+    public static String getNbtTypeLabel(int typeId)
+    {
+        return safeFormat("gui.oneblockultima.config.nbt.type." + nbtTypeKey(typeId));
+    }
+
+    public static String nbtTypeKey(int typeId)
+    {
+        switch (typeId)
+        {
+            case TAG_BYTE: return "byte";
+            case TAG_SHORT: return "short";
+            case TAG_INT: return "int";
+            case TAG_LONG: return "long";
+            case TAG_FLOAT: return "float";
+            case TAG_DOUBLE: return "double";
+            case TAG_BYTE_ARRAY: return "byte_array";
+            case TAG_INT_ARRAY: return "int_array";
+            case TAG_LIST: return "list";
+            case TAG_COMPOUND: return "compound";
+            case TAG_STRING: return "string";
+            default: return "end";
+        }
+    }
+
+    public static String nbtValuePreview(NBTBase value)
+    {
+        if (value == null) return "";
+        if (value instanceof NBTTagCompound)
+        {
+            int n = ((NBTTagCompound) value).getKeySet().size();
+            return "{" + n + "}";
+        }
+        if (value instanceof NBTTagList)
+        {
+            int n = ((NBTTagList) value).tagCount();
+            return "[" + n + "]";
+        }
+        if (value instanceof NBTTagByteArray) return "byte[" + ((NBTTagByteArray) value).getByteArray().length + "]";
+        if (value instanceof NBTTagIntArray) return "int[" + ((NBTTagIntArray) value).getIntArray().length + "]";
+        String preview = formatNbtValue(value);
+        if (preview.length() > 24) preview = preview.substring(0, 21) + "...";
+        return preview;
+    }
+
+    private NBTTagCompound getEditingEntryNbtOrNull()
+    {
+        if (editingSet == null || editingCurrencyIndex < 0) return null;
+        if (editingEntryType == EntryType.BLOCK && editingSet.blocks != null && editingCurrencyIndex < editingSet.blocks.size())
+        {
+            return editingSet.blocks.get(editingCurrencyIndex).nbtTags;
+        }
+        if (editingEntryType == EntryType.MOB && editingSet.mobs != null && editingCurrencyIndex < editingSet.mobs.size())
+        {
+            return editingSet.mobs.get(editingCurrencyIndex).nbtTags;
+        }
+        return null;
+    }
+
     public boolean saveCurrency(int newLevel, int newChance)
     {
         if (editingSet == null || editingCurrencyIndex < 0) return false;
@@ -542,7 +1293,8 @@ public class ContainerSetsConfig
                     split.metas.add(selectedBlockMeta);
                     split.baseLevel = newLevel;
                     split.baseChance = newChance;
-                    split.nbtTags = entry.nbtTags;
+                    split.nbtTags = entry.nbtTags.copy();
+                    split.dropItem = entry.dropItem;
                     editingSet.blocks.add(editingCurrencyIndex + 1, split);
                 }
                 else
@@ -558,14 +1310,14 @@ public class ContainerSetsConfig
                 entry.baseChance = newChance;
             }
             else return false;
-            editingSet.computedLevels = null;
-            statusMessage = I18n.format("gui.oneblockultima.config.level_chance_updated");
-            statusTimer = 60;
-            return true;
+        editingSet.computedLevels = null;
+        statusMessage = safeFormat("gui.oneblockultima.config.level_chance_updated");
+        statusTimer = 60;
+        return true;
         }
         catch (NumberFormatException e)
         {
-            statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_level_chance");
+            statusMessage = safeFormat("gui.oneblockultima.config.error.invalid_level_chance");
             statusTimer = 100;
             return false;
         }
@@ -582,7 +1334,6 @@ public class ContainerSetsConfig
         }
         else unlockConditionsEditorMode = "any";
         selectedUnlockConditionIndex = -1;
-        unlockConditionsScrollOffset = 0;
         availableSetsForConditions.clear();
         for (BlockSetConfig.BlockSetDefinition s : sets)
             if (!s.id.equals(editingSet.id)) availableSetsForConditions.add(s);
@@ -657,6 +1408,7 @@ public class ContainerSetsConfig
                 return;
             }
             if (file.getParentFile() != null && !file.getParentFile().exists())
+                //noinspection ResultOfMethodCallIgnored
                 file.getParentFile().mkdirs();
             try (java.io.InputStream input = BlockSetConfig.class.getResourceAsStream("/assets/oneblockultima/blocksets.json"))
             {
@@ -703,7 +1455,6 @@ public class ContainerSetsConfig
 
         if (currentSearchType == SearchType.BLOCKS)
         {
-            Set<String> existingBlocks = getExistingBlockRegistries();
             for (Block block : ForgeRegistries.BLOCKS)
             {
                 ResourceLocation reg = block.getRegistryName();
@@ -717,25 +1468,23 @@ public class ContainerSetsConfig
                 Fluid fluid = block instanceof IFluidBlock ? ((IFluidBlock) block).getFluid() : FluidRegistry.lookupFluidForBlock(block);
                 if (fluid != null)
                 {
-                    if (existingBlocks.contains(registry)) continue;
                     String name = fluid.getLocalizedName(new FluidStack(fluid, 1000));
-                    if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms)) continue;
+                    if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
                     searchResults.add(new SearchResult(registry, name, modId, fluid));
                     continue;
                 }
 
                 Item item = Item.getItemFromBlock(block);
-                if (item == null || item == Items.AIR) continue;
+                if (item == Items.AIR) continue;
                 NonNullList<ItemStack> subItems = NonNullList.create();
                 item.getSubItems(CreativeTabs.SEARCH, subItems);
                 if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
                 for (ItemStack subStack : subItems)
                 {
                     if (subStack.isEmpty() || subStack.getItem() != item) continue;
-                    if (existingBlocks.contains(registry + ":" + subStack.getMetadata())) continue;
                     String name = "";
                     try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
-                    if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms)) continue;
+                    if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
                     searchResults.add(new SearchResult(registry, name, modId, subStack.copy()));
                 }
             }
@@ -751,10 +1500,9 @@ public class ContainerSetsConfig
                 String modId = reg.getResourceDomain();
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-                if (existingBlocks.contains(registry + ":0")) continue;
                 String name = "";
                 try { name = new ItemStack(item, 1).getDisplayName(); } catch (Exception ignored) {}
-                if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms)) continue;
+                if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
                 searchResults.add(new SearchResult(registry, name, modId, new ItemStack(item, 1)));
             }
         }
@@ -763,32 +1511,27 @@ public class ContainerSetsConfig
         {
             Set<String> existingMobs = getExistingMobRegistries();
             Set<ResourceLocation> entityNames = EntityList.getEntityNameList();
-            if (entityNames != null)
-            {
-                for (ResourceLocation reg : entityNames)
-                {
-                    String registry = reg.toString();
-                    if (existingMobs.contains(registry)) continue;
-                    String registryId = reg.getResourcePath();
-                    String modId = reg.getResourceDomain();
-                    if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
-                    if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-                    String name = registry;
-                    try
-                    {
-                        String entityName = EntityList.getTranslationName(reg);
-                        if (entityName != null && !entityName.isEmpty())
-                        {
-                            String translationKey = "entity." + entityName + ".name";
-                            String localized = I18n.format(translationKey);
-                            if (!localized.equals(translationKey)) name = localized;
-                        }
-                    } catch (Exception ignored) {}
-                    if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms)) continue;
-                    Class<?> entityClass = EntityList.getClass(reg);
-                    if (entityClass != null && EntityLivingBase.class.isAssignableFrom(entityClass))
-                        searchResults.add(new SearchResult(registry, name, modId, entityClass));
+            for (ResourceLocation reg : entityNames) {
+                String registry = reg.toString();
+                if (existingMobs.contains(registry)) continue;
+                String registryId = reg.getResourcePath();
+                String modId = reg.getResourceDomain();
+                if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
+                if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
+                String name = registry;
+                try {
+                    String entityName = EntityList.getTranslationName(reg);
+                    if (entityName != null && !entityName.isEmpty()) {
+                        String translationKey = "entity." + entityName + ".name";
+                        String localized = I18n.format(translationKey);
+                        if (!localized.equals(translationKey)) name = localized;
+                    }
+                } catch (Exception ignored) {
                 }
+                if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
+                Class<?> entityClass = EntityList.getClass(reg);
+                if (entityClass != null && EntityLivingBase.class.isAssignableFrom(entityClass))
+                    searchResults.add(new SearchResult(registry, name, modId, entityClass));
             }
         }
 
@@ -796,16 +1539,16 @@ public class ContainerSetsConfig
         if (searchResults.size() > 200) searchResults = searchResults.subList(0, 200);
     }
 
-    private boolean matchesSearchTerms(String name, List<String> searchTerms)
+    private boolean mismatchesSearchTerms(String name, List<String> searchTerms)
     {
-        if (searchTerms == null || searchTerms.isEmpty()) return true;
+        if (searchTerms == null || searchTerms.isEmpty()) return false;
         String lowerName = name == null ? "" : name.toLowerCase(Locale.ROOT);
         for (String term : searchTerms)
         {
             if (term.isEmpty()) continue;
-            if (!lowerName.contains(term)) return false;
+            if (!lowerName.contains(term)) return true;
         }
-        return true;
+        return false;
     }
 
     public void saveConfigToFile()
@@ -838,11 +1581,15 @@ public class ContainerSetsConfig
             {
                 Fluid fluid = getFluidForRegistry(entry.registry);
                 if (fluid != null) return ItemStack.EMPTY;
+                //noinspection deprecation
                 net.minecraft.block.state.IBlockState state = block.getStateFromMeta(meta);
+                //noinspection DataFlowIssue
                 stack = block.getPickBlock(state, null, null, null, null);
-                if (!stack.isEmpty()) return stack;
-                Item item = Item.getItemFromBlock(block);
-                if (item != null && item != Items.AIR) stack = new ItemStack(item, 1, meta);
+                if (stack.isEmpty())
+                {
+                    Item item = Item.getItemFromBlock(block);
+                    if (item != Items.AIR) stack = new ItemStack(item, 1, meta);
+                }
             }
             if (stack.isEmpty())
             {
@@ -850,12 +1597,12 @@ public class ContainerSetsConfig
                 if (item != null && item != Items.AIR) stack = new ItemStack(item, 1, meta);
             }
         } catch (Exception ignored) {}
+        if (!stack.isEmpty() && entry.nbtTags != null && !entry.nbtTags.hasNoTags())
+        {
+            stack = stack.copy();
+            stack.setTagCompound(entry.nbtTags.copy());
+        }
         return stack;
-    }
-
-    public ItemStack getItemStackFromEntry(BlockSetConfig.BlockElementDefinition entry)
-    {
-        return getItemStackFromEntry(entry, entry.meta);
     }
 
     public Fluid getFluidForRegistry(String registry)
@@ -903,11 +1650,6 @@ public class ContainerSetsConfig
         return entry.registry + ":" + meta;
     }
 
-    public String getLocalizedNameForBlock(BlockSetConfig.BlockElementDefinition entry)
-    {
-        return getLocalizedNameForBlock(entry, entry.meta);
-    }
-
     public String getLocalizedNameForMob(BlockSetConfig.MobElementDefinition entry)
     {
         try
@@ -950,20 +1692,6 @@ public class ContainerSetsConfig
         return I18n.format(requiredModsEditorType == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL ? "gui.oneblockultima.config.all" : "gui.oneblockultima.config.any");
     }
 
-    public List<String> getModNamesForSelector()
-    {
-        List<String> result = new ArrayList<>();
-        for (ModContainer mod : Loader.instance().getActiveModList())
-        {
-            String modId = mod.getModId();
-            String modName = mod.getName();
-            if (modId.equalsIgnoreCase("minecraft") || modId.equalsIgnoreCase("forge") || modId.equalsIgnoreCase("mcp") || modId.equalsIgnoreCase("fml") || modId.equals("oneblockultima") || "Forge Mod Loader".equals(modName)) continue;
-            result.add(modName + " (" + modId + ")");
-        }
-        Collections.sort(result);
-        return result;
-    }
-
     public static class RequiredModEntry
     {
         public final String modId;
@@ -997,15 +1725,8 @@ public class ContainerSetsConfig
             if (!requiredModsEditorMods.contains(modId))
                 result.add(new RequiredModEntry(modId, modName));
         }
-        Collections.sort(result, (a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+        result.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
         return result;
-    }
-
-    public void selectRequiredModForRemoval(String modId)
-    {
-        if (selectedRequiredModsForRemoval.contains(modId))
-            selectedRequiredModsForRemoval.remove(modId);
-        else selectedRequiredModsForRemoval.add(modId);
     }
 
     public void selectRequiredModToAdd(String modId)
@@ -1019,17 +1740,15 @@ public class ContainerSetsConfig
     {
         requiredModsEditorMods.addAll(selectedRequiredModsToAdd);
         selectedRequiredModsToAdd.clear();
-        requiredModsScrollOffset = 0;
     }
 
     public void deleteSelectedRequiredMods()
     {
         requiredModsEditorMods.removeAll(selectedRequiredModsForRemoval);
         selectedRequiredModsForRemoval.clear();
-        requiredModsScrollOffset = 0;
     }
 
-    public String cycleUnlockConditionType()
+    public void cycleUnlockConditionType()
     {
         String[] types = {"broken_blocks_total", "broken_blocks", "set_level"};
         int idx = 0;
@@ -1038,30 +1757,28 @@ public class ContainerSetsConfig
         newConditionTypeToAdd = types[idx];
         if ("broken_blocks".equals(newConditionTypeToAdd) || "set_level".equals(newConditionTypeToAdd))
             advanceToNextUnusedSet(newConditionTypeToAdd);
-        return newConditionTypeToAdd;
     }
 
-    public String cycleUnlockConditionSet()
+    public void cycleUnlockConditionSet()
     {
-        if (availableSetsForConditions.isEmpty()) return newConditionSetId;
+        if (availableSetsForConditions.isEmpty()) return;
         Set<String> used = getUsedSetIdsForType(newConditionTypeToAdd);
         List<BlockSetConfig.BlockSetDefinition> unused = new ArrayList<>();
         for (BlockSetConfig.BlockSetDefinition s : availableSetsForConditions)
             if (!used.contains(s.id)) unused.add(s);
-        if (unused.isEmpty()) { newConditionSetId = ""; return newConditionSetId; }
+        if (unused.isEmpty()) { newConditionSetId = ""; return; }
         int idx = 0;
         for (int i = 0; i < unused.size(); i++)
         {
             if (unused.get(i).id.equals(newConditionSetId)) { idx = (i + 1) % unused.size(); break; }
         }
         newConditionSetId = unused.get(idx).id;
-        return newConditionSetId;
     }
 
     public void saveLocalizedName(String setId, String name)
     {
         String langCode = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode().toLowerCase();
-        if (langCode == null || langCode.isEmpty()) langCode = "en_us";
+        if (langCode.isEmpty()) langCode = "en_us";
         staticSetLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>()).put(langCode, name);
         saveCustomNames();
     }
@@ -1071,7 +1788,8 @@ public class ContainerSetsConfig
         try
         {
             File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
-            if (!langDir.exists()) langDir.mkdirs();
+            if (!langDir.exists()) //noinspection ResultOfMethodCallIgnored
+                langDir.mkdirs();
             Map<String, List<String>> langLines = new HashMap<>();
             for (Map.Entry<String, Map<String, String>> setEntry : staticSetLocalizedNames.entrySet())
             {
@@ -1095,7 +1813,7 @@ public class ContainerSetsConfig
         {
             File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
             if (!langDir.exists()) return;
-            for (File langFile : langDir.listFiles())
+            for (File langFile : Objects.requireNonNull(langDir.listFiles()))
             {
                 if (!langFile.getName().endsWith(".lang")) continue;
                 String langCode = langFile.getName().replace(".lang", "").toLowerCase();

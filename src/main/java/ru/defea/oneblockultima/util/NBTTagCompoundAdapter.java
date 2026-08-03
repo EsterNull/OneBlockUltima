@@ -1,4 +1,4 @@
-package ru.defea.oneblockultima;
+package ru.defea.oneblockultima.util;
 
 import com.google.gson.*;
 import net.minecraft.nbt.*;

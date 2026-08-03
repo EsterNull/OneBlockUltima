@@ -174,8 +174,7 @@ public class BlockSetConfigSyncTest {
 
     @Test
     public void loadFromServerJsonReplacesInstance() {
-        BlockSetConfig original = BlockSetConfig.get();
-        int originalCount = original.getSets().size();
+        BlockSetConfig.get();
 
         BlockSetDefinition customSet = new BlockSetDefinition();
         customSet.id = "server_only_set";
@@ -353,6 +352,68 @@ public class BlockSetConfigSyncTest {
 
             List<Integer> restoredMetas = restored.getSet("metas_test").blocks.get(0).getMetaValues();
             assertEquals(4, restoredMetas.size());
+        } finally {
+            restore();
+        }
+    }
+
+    @Test
+    public void mergeKeepsSameMetaDifferentNbtSeparate() {
+        BlockElementDefinition a = new BlockElementDefinition();
+        a.registry = "minecraft:stone";
+        a.meta = 0;
+        a.baseLevel = 1;
+        a.baseChance = 100;
+        a.nbtTags.setString("Type", "A");
+
+        BlockElementDefinition b = new BlockElementDefinition();
+        b.registry = "minecraft:stone";
+        b.meta = 0;
+        b.baseLevel = 1;
+        b.baseChance = 100;
+        b.nbtTags.setString("Type", "B");
+
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "nbt_variants";
+        set.blocks.add(a);
+        set.blocks.add(b);
+
+        saveAndApply(set);
+
+        try {
+            assertEquals(2, BlockSetConfig.get().getSet("nbt_variants").blocks.size());
+        } finally {
+            restore();
+        }
+    }
+
+    @Test
+    public void mergeCombinesSameMetaSameNbt() {
+        BlockElementDefinition a = new BlockElementDefinition();
+        a.registry = "minecraft:stone";
+        a.meta = 0;
+        a.baseLevel = 1;
+        a.baseChance = 100;
+        a.nbtTags.setString("Type", "A");
+
+        BlockElementDefinition b = new BlockElementDefinition();
+        b.registry = "minecraft:stone";
+        b.meta = 1;
+        b.baseLevel = 1;
+        b.baseChance = 100;
+        b.nbtTags.setString("Type", "A");
+
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "merge_same_nbt";
+        set.blocks.add(a);
+        set.blocks.add(b);
+
+        saveAndApply(set);
+
+        try {
+            List<BlockElementDefinition> blocks = BlockSetConfig.get().getSet("merge_same_nbt").blocks;
+            assertEquals(1, blocks.size());
+            assertEquals(2, blocks.get(0).getMetaValues().size());
         } finally {
             restore();
         }
