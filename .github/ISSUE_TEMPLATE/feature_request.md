@@ -1,7 +1,7 @@
 ---
 name: Feature request
 about: Suggest an idea for this mod
-title: "[SUGGESTION]"
+title: "[SUGGESTION] "
 labels: check_required, enhancement
 assignees: XZSt4nce
 
