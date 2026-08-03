@@ -225,21 +225,6 @@ public class GuiSetsConfig extends GuiScreen
 
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (rootFactory != null) rootFactory.mouseClicked(mouseX, mouseY, mouseButton);
-
-        if (container.getCurrentView() == VIEW_NBT_ADD && nbtKeyElement != null && nbtValueElement != null)
-        {
-            boolean keyFocused = nbtKeyElement.isFocused();
-            boolean valueFocused = nbtValueElement.isFocused();
-            if (keyFocused && valueFocused)
-            {
-                net.minecraft.client.gui.GuiTextField kf = nbtKeyElement.getTextField();
-                boolean clickedKey = kf != null
-                        && mouseX >= kf.x && mouseX <= kf.x + kf.width
-                        && mouseY >= kf.y && mouseY <= kf.y + kf.height;
-                if (clickedKey) nbtValueElement.focused(false);
-                else nbtKeyElement.focused(false);
-            }
-        }
     }
 
     @Override
@@ -266,20 +251,46 @@ public class GuiSetsConfig extends GuiScreen
         int view = container.getCurrentView();
         if (view == VIEW_SETS && searchFieldElement != null && searchFieldElement.isFocused())
         {
-            container.setSearchQuery(searchFieldElement.getText());
-            container.updateFilteredSets();
-            boolean wasFocused = searchFieldElement.isFocused();
-            initGui();
-            if (searchFieldElement != null) searchFieldElement.focused(wasFocused);
+            String query = searchFieldElement.getText();
+            if (!query.equals(container.getSearchQuery()))
+            {
+                container.setSearchQuery(query);
+                container.updateFilteredSets();
+                int cursor = searchFieldElement.getTextField().getCursorPosition();
+                int selection = searchFieldElement.getTextField().getSelectionEnd();
+                initGui();
+                if (searchFieldElement != null)
+                {
+                    searchFieldElement.focused(true);
+                    if (searchFieldElement.getTextField() != null)
+                    {
+                        searchFieldElement.getTextField().setCursorPosition(cursor);
+                        searchFieldElement.getTextField().setSelectionPos(selection);
+                    }
+                }
+            }
         }
         if (view == VIEW_ADD_ENTRY && entrySearchElement != null && entrySearchElement.isFocused())
         {
-            pendingAddEntrySearchText = entrySearchElement.getText();
-            container.performSearch(pendingAddEntrySearchText);
-            searchScrollOffset = 0;
-            boolean wasFocused = entrySearchElement.isFocused();
-            initGui();
-            if (entrySearchElement != null) entrySearchElement.focused(wasFocused);
+            String text = entrySearchElement.getText();
+            if (!text.equals(pendingAddEntrySearchText))
+            {
+                pendingAddEntrySearchText = text;
+                container.performSearch(pendingAddEntrySearchText);
+                searchScrollOffset = 0;
+                int cursor = entrySearchElement.getTextField().getCursorPosition();
+                int selection = entrySearchElement.getTextField().getSelectionEnd();
+                initGui();
+                if (entrySearchElement != null)
+                {
+                    entrySearchElement.focused(true);
+                    if (entrySearchElement.getTextField() != null)
+                    {
+                        entrySearchElement.getTextField().setCursorPosition(cursor);
+                        entrySearchElement.getTextField().setSelectionPos(selection);
+                    }
+                }
+            }
         }
         if (view == VIEW_NBT_ADD)
         {

@@ -399,12 +399,12 @@ public class ViewFactory {
     }
 
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        for (GuiTextField tf : textFields) {
+            tf.mouseClicked(mouseX, mouseY, mouseButton);
+        }
         for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;
             if (e.mouseClicked(mouseX, mouseY, mouseButton)) return true;
-        }
-        for (GuiTextField tf : textFields) {
-            tf.mouseClicked(mouseX, mouseY, mouseButton);
         }
         return false;
     }

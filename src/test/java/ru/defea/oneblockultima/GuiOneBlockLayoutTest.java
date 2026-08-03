@@ -2,6 +2,7 @@ package ru.defea.oneblockultima;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class GuiOneBlockLayoutTest {
@@ -62,6 +64,49 @@ public class GuiOneBlockLayoutTest {
         @Override
         public int getPreferredHeight() {
             return prefH;
+        }
+    }
+
+    private static class ClickConsumingStub extends Stub {
+        ClickConsumingStub() {
+            super(1, 1);
+        }
+
+        @Override
+        public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+            return true;
+        }
+    }
+
+    private static class FakeTextField extends GuiTextField {
+        private int clicks;
+        private boolean fakeFocused;
+
+        FakeTextField(int id, int x, int y) {
+            //noinspection DataFlowIssue
+            super(id, null, x, y, 120, 20);
+        }
+
+        @Override
+        public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+            clicks++;
+            fakeFocused = mouseX >= this.x && mouseX < this.x + this.width
+                    && mouseY >= this.y && mouseY < this.y + this.height;
+            return fakeFocused;
+        }
+
+        @Override
+        public boolean isFocused() {
+            return fakeFocused;
+        }
+
+        @Override
+        public void setFocused(boolean focused) {
+            fakeFocused = focused;
+        }
+
+        int getClicks() {
+            return clicks;
         }
     }
 
@@ -364,6 +409,29 @@ public class GuiOneBlockLayoutTest {
             assertTrue(label + ": content row must be inside content area",
                     contentRow.getComputedY() + contentRow.getComputedHeight() <= guiTop + ySize);
         }
+    }
+
+    @Test
+    public void clickingTextFieldUnfocusesOtherTextFields() {
+        ViewFactory factory = createFactory();
+
+        FakeTextField first = new FakeTextField(0, GUI_LEFT + 100, GUI_TOP + 100);
+        FakeTextField second = new FakeTextField(1, GUI_LEFT + 300, GUI_TOP + 100);
+        factory.addTextField(first);
+        factory.addTextField(second);
+        factory.add(new ClickConsumingStub());
+
+        factory.mouseClicked(GUI_LEFT + 350, GUI_TOP + 110, 0);
+        assertEquals("every text field must receive the click even when an element consumes it",
+                1, first.getClicks());
+        assertEquals("every text field must receive the click even when an element consumes it",
+                1, second.getClicks());
+        assertTrue("clicked field must gain focus", second.isFocused());
+        assertFalse("other field must lose focus", first.isFocused());
+
+        factory.mouseClicked(GUI_LEFT + 150, GUI_TOP + 110, 0);
+        assertTrue("previously clicked field must regain focus", first.isFocused());
+        assertFalse("other field must lose focus", second.isFocused());
     }
 
     @Test
