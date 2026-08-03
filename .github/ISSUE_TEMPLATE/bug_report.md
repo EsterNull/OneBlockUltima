@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: "[BUG]"
-labels: check_required
+labels: bug, check_required
 assignees: XZSt4nce
 
 ---
@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Versions:**
  - OS: [e.g. Windows 11]
- - MC version [e.g. 1.12.2]
+ - MC version: [e.g. 1.12.2]
  - Mod version: [e.g. 2.1.2]
 
 **Additional context**
