@@ -25,6 +25,7 @@ import ru.defea.oneblockultima.gui.GuiHandler;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Random;
 
@@ -50,7 +51,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     }
 
     @Override
-    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ)
+    public boolean onBlockActivated(@Nonnull World world, @Nonnull BlockPos pos, @Nonnull IBlockState state, EntityPlayer player, @Nonnull EnumHand hand, @Nonnull EnumFacing facing, float hitX, float hitY, float hitZ)
     {
         if (player.isSneaking())
         {
@@ -86,71 +87,74 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     }
 
     @Override
-    public boolean hasTileEntity(IBlockState state)
+    public boolean hasTileEntity(@Nonnull IBlockState state)
     {
         return true;
     }
 
     @Nullable
     @Override
-    public TileEntity createNewTileEntity(World world, int meta)
+    public TileEntity createNewTileEntity(@Nonnull World world, int meta)
     {
         return new TileEntityOneBlockGenerator();
     }
 
     @Override
-    public EnumBlockRenderType getRenderType(IBlockState state)
+    @Nonnull
+    public EnumBlockRenderType getRenderType(@Nonnull IBlockState state)
     {
         return EnumBlockRenderType.INVISIBLE;
     }
 
     @Override
-    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos)
+    @Nonnull
+    public AxisAlignedBB getBoundingBox(@Nonnull IBlockState state, @Nonnull IBlockAccess source, @Nonnull BlockPos pos)
     {
         return new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.001D, 1.0D);
     }
 
     @Override
-    public AxisAlignedBB getSelectedBoundingBox(IBlockState state, World worldIn, BlockPos pos)
+    @Nonnull
+    public AxisAlignedBB getSelectedBoundingBox(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos)
     {
         return HIGHLIGHT_AABB.offset(pos);
     }
 
     @Nullable
     @Override
-    public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, IBlockAccess worldIn, BlockPos pos)
+    public AxisAlignedBB getCollisionBoundingBox(@Nonnull IBlockState blockState, @Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
     {
         return COLLISION_AABB;
     }
 
     @Override
-    public void addCollisionBoxToList(IBlockState state, World worldIn, BlockPos pos, AxisAlignedBB entityBox, java.util.List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean p_185477_7_)
+    public void addCollisionBoxToList(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull AxisAlignedBB entityBox, @Nonnull java.util.List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean p_185477_7_)
     {
         super.addCollisionBoxToList(state, worldIn, pos, entityBox, collidingBoxes, entityIn, p_185477_7_);
     }
 
     @Nullable
     @Override
-    public RayTraceResult collisionRayTrace(IBlockState blockState, World worldIn, BlockPos pos, Vec3d start, Vec3d end)
+    public RayTraceResult collisionRayTrace(@Nonnull IBlockState blockState, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Vec3d start, @Nonnull Vec3d end)
     {
         AxisAlignedBB bb = new AxisAlignedBB(0.0D, 1.0D, 0.0D, 1.0D, 2.0D, 1.0D);
         return rayTrace(pos, start, end, bb);
     }
 
     @Override
-    public boolean isOpaqueCube(IBlockState state)
+    public boolean isOpaqueCube(@Nonnull IBlockState state)
     {
         return false;
     }
 
     @Override
-    public boolean isFullBlock(IBlockState state)
+    public boolean isFullBlock(@Nonnull IBlockState state)
     {
         return false;
     }
 
     @Override
-    public boolean canSustainPlant(IBlockState state, IBlockAccess world, BlockPos pos, EnumFacing direction, IPlantable plantable)
+    public boolean canSustainPlant(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos, @Nonnull EnumFacing direction, @Nonnull IPlantable plantable)
     {
         if (direction != EnumFacing.UP)
         {
@@ -164,19 +168,14 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     }
 
     @Override
-    public void onBlockAdded(World world, BlockPos pos, IBlockState state)
+    public void onBlockAdded(World world, @Nonnull BlockPos pos, @Nonnull IBlockState state)
     {
         if (!world.isRemote)
         {
             ModEvents.applyPendingGeneratorOwner(world, pos);
 
             // Ставим барьер над генератором
-            OneBlockUltima.getLogger().info("[Generator] onBlockAdded: barrierPos=" + pos + ", block=" + world.getBlockState(pos).getBlock());
-            if (world.getBlockState(pos).getBlock() == Blocks.AIR && world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
-            {
-                world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
-                OneBlockUltima.getLogger().info("[Generator] BARRIER placed at " + pos);
-            }
+            ensureFluidBarrier(world, pos);
 
             world.scheduleUpdate(pos, this, 1);
         }
@@ -184,7 +183,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     }
 
     @Override
-    public void updateTick(World world, BlockPos pos, IBlockState state, Random rand)
+    public void updateTick(World world, @Nonnull BlockPos pos, @Nonnull IBlockState state, @Nonnull Random rand)
     {
         if (world.isRemote)
         {
@@ -192,11 +191,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
         }
 
         // Проверяем, нужно ли восстановить барьер
-        if (world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR && world.getBlockState(pos).getBlock() == Blocks.AIR)
-        {
-            world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 2);
-            OneBlockUltima.getLogger().info("[Generator] BARRIER restored at " + pos + " from updateTick");
-        }
+        ensureFluidBarrier(world, pos);
 
         TileEntity tileEntity = world.getTileEntity(pos);
         if (tileEntity instanceof TileEntityOneBlockGenerator)
@@ -207,7 +202,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     }
 
     @Override
-    public void neighborChanged(IBlockState state, World world, BlockPos pos, Block blockIn, BlockPos fromPos)
+    public void neighborChanged(@Nonnull IBlockState state, @Nonnull World world, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos)
     {
         super.neighborChanged(state, world, pos, blockIn, fromPos);
         if (world.isRemote)
@@ -222,6 +217,8 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
 
         if (world.getBlockState(fromPos.down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
+            ensureFluidBarrier(world, pos);
+
             TileEntity tileEntity = world.getTileEntity(pos);
             if (tileEntity instanceof TileEntityOneBlockGenerator)
             {
@@ -235,18 +232,20 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
                 }
             }
         }
-        else if (world.getBlockState(fromPos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+    }
+
+    private static void ensureFluidBarrier(World world, BlockPos generatorPos)
+    {
+        BlockPos barrierPos = generatorPos.up(2);
+        if (world.getBlockState(barrierPos).getBlock() == Blocks.AIR)
         {
-            if (world.getBlockState(fromPos).getBlock() == ModBlocks.FLUID_BARRIER)
-            {
-                world.setBlockState(fromPos, Blocks.AIR.getDefaultState(), 3);
-            }
-            world.setBlockState(fromPos, ModBlocks.FLUID_BARRIER.getDefaultState(), 2);
+            world.setBlockState(barrierPos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
+            OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {}", barrierPos);
         }
     }
 
     @Override
-    public void breakBlock(World world, BlockPos pos, IBlockState state)
+    public void breakBlock(World world, BlockPos pos, @Nonnull IBlockState state)
     {
         if (world.getBlockState(pos.down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {

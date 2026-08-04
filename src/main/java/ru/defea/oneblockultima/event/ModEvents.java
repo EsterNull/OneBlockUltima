@@ -1098,6 +1098,16 @@ public final class ModEvents
         World world = event.getWorld();
         BlockPos pos = event.getPos();
 
+        // Восстанавливаем барьер над генератором, если слот барьера снова стал AIR
+        // (например, после того как блок, поставленный над генератором, был сломан)
+        if (world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR
+                && world.getBlockState(pos).getBlock() == Blocks.AIR)
+        {
+            world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
+            OneBlockUltima.getLogger().info("[Generator] BARRIER restored at " + pos + " from NeighborNotify");
+            return;
+        }
+
         // Проверяем только блок над генератором
         if (world.getBlockState(event.getPos().down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
