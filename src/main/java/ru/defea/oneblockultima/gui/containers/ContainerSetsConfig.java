@@ -298,6 +298,24 @@ public class ContainerSetsConfig
         return result;
     }
 
+    public Set<String> getExistingBlockKeys()
+    {
+        Set<String> result = new HashSet<>();
+        if (editingSet != null && editingSet.blocks != null)
+        {
+            for (BlockSetConfig.BlockElementDefinition block : editingSet.blocks)
+            {
+                if (block == null || block.registry == null || block.registry.isEmpty()) continue;
+                if (block.nbtTags != null && !block.nbtTags.hasNoTags()) continue;
+                for (Integer meta : block.getMetaValues())
+                {
+                    result.add(block.registry + "@" + meta);
+                }
+            }
+        }
+        return result;
+    }
+
     public void loadSetDetails(int index)
     {
         if (index < 0 || index >= sets.size()) return;
@@ -1459,6 +1477,7 @@ public class ContainerSetsConfig
 
         if (currentSearchType == SearchType.BLOCKS)
         {
+            Set<String> existingBlocks = getExistingBlockKeys();
             for (Block block : ForgeRegistries.BLOCKS)
             {
                 ResourceLocation reg = block.getRegistryName();
@@ -1474,6 +1493,7 @@ public class ContainerSetsConfig
                 {
                     String name = fluid.getLocalizedName(new FluidStack(fluid, 1000));
                     if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
+                    if (existingBlocks.contains(registry + "@0")) continue;
                     searchResults.add(new SearchResult(registry, name, modId, fluid));
                     continue;
                 }
@@ -1489,6 +1509,7 @@ public class ContainerSetsConfig
                     String name = "";
                     try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
                     if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
+                    if (existingBlocks.contains(registry + "@" + subStack.getMetadata())) continue;
                     searchResults.add(new SearchResult(registry, name, modId, subStack.copy()));
                 }
             }
@@ -1507,6 +1528,7 @@ public class ContainerSetsConfig
                 String name = "";
                 try { name = new ItemStack(item, 1).getDisplayName(); } catch (Exception ignored) {}
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
+                if (existingBlocks.contains(registry + "@0")) continue;
                 searchResults.add(new SearchResult(registry, name, modId, new ItemStack(item, 1)));
             }
         }

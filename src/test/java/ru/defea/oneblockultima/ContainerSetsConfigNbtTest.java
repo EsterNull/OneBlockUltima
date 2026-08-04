@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static net.minecraftforge.common.util.Constants.NBT.*;
 import static org.junit.Assert.*;
@@ -598,5 +599,40 @@ public class ContainerSetsConfigNbtTest {
         assertTrue(stack.hasTagCompound());
         assert stack.getTagCompound() != null;
         assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
+    }
+
+    @Test
+    public void getExistingBlockKeysExcludesNbtTaggedBlocks() {
+        ContainerSetsConfig container = newContainer();
+        Set<String> keys = container.getExistingBlockKeys();
+        assertFalse(keys.contains("minecraft:stone@0"));
+        assertFalse(keys.contains("minecraft:stone@1"));
+    }
+
+    @Test
+    public void getExistingBlockKeysIncludesPlainAddedBlocks() {
+        ContainerSetsConfig container = newContainer();
+        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
+        container.addEntryToCurrentSet(ContainerSetsConfig.EntryType.BLOCK,
+                new ContainerSetsConfig.SearchResult("minecraft:stone", "Stone", "minecraft", stack), 1, 50);
+
+        Set<String> keys = container.getExistingBlockKeys();
+        assertTrue(keys.contains("minecraft:stone@0"));
+    }
+
+    @Test
+    public void getExistingBlockKeysCoversAllMetaValues() {
+        ContainerSetsConfig container = newContainer();
+        BlockSetConfig.BlockElementDefinition block = new BlockSetConfig.BlockElementDefinition();
+        block.registry = "minecraft:wool";
+        block.meta = 0;
+        block.metas = new ArrayList<>(Arrays.asList(0, 1, 2));
+        block.nbtTags = new NBTTagCompound();
+        container.getEditingSet().blocks.add(block);
+
+        Set<String> keys = container.getExistingBlockKeys();
+        assertTrue(keys.contains("minecraft:wool@0"));
+        assertTrue(keys.contains("minecraft:wool@1"));
+        assertTrue(keys.contains("minecraft:wool@2"));
     }
 }
