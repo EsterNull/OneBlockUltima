@@ -669,6 +669,7 @@ public final class ModEvents
                                         event.getWorld(), placePos, Objects.requireNonNull(event.getFace()), (float) (hitVec.x - placePos.getX()),
                                         (float) (hitVec.y - placePos.getY()), (float) (hitVec.z - placePos.getZ()),
                                         heldItem.getMetadata(), player, EnumHand.MAIN_HAND);
+                                placeState = BlockUtil.getReplacementStateForGeneratorPlacement(placeState, event.getWorld().getBlockState(placePos.down()));
                                 event.getWorld().setBlockState(placePos, placeState, 3);
                                 if (!player.isCreative())
                                 {

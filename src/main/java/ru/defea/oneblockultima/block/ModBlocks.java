@@ -1,18 +1,28 @@
 package ru.defea.oneblockultima.block;
 
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.util.BlockUtil;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
 public final class ModBlocks
 {
+    @SuppressWarnings("unused")
     public static final class RegisterBlock
     {
         private final Block block;
@@ -37,17 +47,24 @@ public final class ModBlocks
             this.variantIn = variantIn;
         }
 
+        private RegisterBlock(Block block, boolean isItem, String variantIn)
+        {
+            this.block = block;
+            this.isItem = isItem;
+            this.variantIn = variantIn;
+        }
+
         private RegisterBlock(Block block, int meta)
         {
             this.block = block;
             this.meta = meta;
         }
 
-        private RegisterBlock(Block block, boolean isItem, String variantIn)
+        private RegisterBlock(Block block, boolean isItem, int meta)
         {
             this.block = block;
             this.isItem = isItem;
-            this.variantIn = variantIn;
+            this.meta = meta;
         }
 
         private RegisterBlock(Block block, String variantIn, int meta)
@@ -70,11 +87,6 @@ public final class ModBlocks
             return this.block;
         }
 
-        public boolean getIsItem()
-        {
-            return this.isItem;
-        }
-
         public String getVariantIn()
         {
             return this.variantIn;
@@ -87,8 +99,6 @@ public final class ModBlocks
     }
 
     public static final BlockOneBlockGenerator ONE_BLOCK_GENERATOR = new BlockOneBlockGenerator();
-    public static final BlockCustomPortalFrame CUSTOM_PORTAL_FRAME = new BlockCustomPortalFrame();
-    public static final BlockCustomBedrock CUSTOM_BEDROCK = new BlockCustomBedrock();
     public static final BlockFluidBarrier FLUID_BARRIER = new BlockFluidBarrier();
     public static final BlockCompressedMineralBlock COMPRESSED_MINERAL_BLOCK = new BlockCompressedMineralBlock();
 
@@ -153,10 +163,8 @@ public final class ModBlocks
     public static final BlockCompressedQuadrupleNetherrack COMPRESSED_QUADRUPLE_NETHERRACK = new BlockCompressedQuadrupleNetherrack();
     public static final BlockCompressedQuintupleNetherrack COMPRESSED_QUINTUPLE_NETHERRACK = new BlockCompressedQuintupleNetherrack();
 
-    public static final RegisterBlock[] modBlocks = {
+    public static RegisterBlock[] modBlocks = {
         new RegisterBlock(ONE_BLOCK_GENERATOR, true),
-        new RegisterBlock(CUSTOM_PORTAL_FRAME),
-        new RegisterBlock(CUSTOM_BEDROCK, "normal"),
         new RegisterBlock(FLUID_BARRIER),
         new RegisterBlock(COMPRESSED_MINERAL_BLOCK, true, "normal"),
 
@@ -222,6 +230,84 @@ public final class ModBlocks
         new RegisterBlock(COMPRESSED_QUINTUPLE_NETHERRACK, true, "normal")
     };
 
+    public static final int CUSTOM_BREAKABLE_POOL_SIZE = 128;
+
+    public static final List<BlockCustomBreakable> CUSTOM_BREAKABLE_POOL = new ArrayList<>();
+
+    private static final Map<Block, BlockCustomBreakable> BREAKABLE_BY_EMULATED = new HashMap<>();
+
+    static
+    {
+        for (int i = 0; i < CUSTOM_BREAKABLE_POOL_SIZE; i++)
+        {
+            CUSTOM_BREAKABLE_POOL.add(new BlockCustomBreakable("custom_breakable_" + i));
+        }
+        RegisterBlock[] poolEntries = new RegisterBlock[CUSTOM_BREAKABLE_POOL.size()];
+        for (int i = 0; i < poolEntries.length; i++)
+        {
+            poolEntries[i] = new RegisterBlock(CUSTOM_BREAKABLE_POOL.get(i), "normal");
+        }
+        RegisterBlock[] combined = Arrays.copyOf(modBlocks, modBlocks.length + poolEntries.length);
+        System.arraycopy(poolEntries, 0, combined, modBlocks.length, poolEntries.length);
+        modBlocks = combined;
+    }
+
+    public static void bindBreakablePool()
+    {
+        for (Block block : ForgeRegistries.BLOCKS)
+        {
+            if (block == null || block.getRegistryName() == null || BREAKABLE_BY_EMULATED.containsKey(block))
+            {
+                continue;
+            }
+            if (BlockUtil.isBreakable(block))
+            {
+                continue;
+            }
+            BlockCustomBreakable slot = null;
+            for (BlockCustomBreakable cb : CUSTOM_BREAKABLE_POOL)
+            {
+                if (cb.getEmulated() == null)
+                {
+                    slot = cb;
+                    break;
+                }
+            }
+            if (slot == null)
+            {
+                OneBlockUltima.getLogger().warn("[Breakable] Custom breakable pool exhausted, {} stays unbreakable", block.getRegistryName());
+                continue;
+            }
+            slot.setEmulated(block);
+            BREAKABLE_BY_EMULATED.put(block, slot);
+            OneBlockUltima.getLogger().info("[Breakable] Bound {} -> {}", block.getRegistryName(), slot.getRegistryName());
+        }
+    }
+
+    @Nullable
+    public static BlockCustomBreakable getBreakableFor(Block block)
+    {
+        if (block == null || block == Blocks.AIR)
+        {
+            return null;
+        }
+        BlockCustomBreakable bound = BREAKABLE_BY_EMULATED.get(block);
+        if (bound != null)
+        {
+            return bound;
+        }
+        for (BlockCustomBreakable cb : CUSTOM_BREAKABLE_POOL)
+        {
+            if (cb.getEmulated() == null)
+            {
+                cb.setEmulated(block);
+                BREAKABLE_BY_EMULATED.put(block, cb);
+                return cb;
+            }
+        }
+        return null;
+    }
+
     private ModBlocks()
     {
     }
@@ -238,6 +324,7 @@ public final class ModBlocks
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event)
     {
+        bindBreakablePool();
         for (RegisterBlock modBlock : modBlocks)
         {
             if (modBlock.isItem) {
