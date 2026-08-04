@@ -176,6 +176,10 @@ public class ContainerSetsConfig
     public int getStatusTimer() { return statusTimer; }
     public void setStatusTimer(int t) { statusTimer = t; }
 
+    public void setSavedNewSetName(String name) { this.savedNewSetName = name; }
+    public void setSavedNewSetId(String id) { this.savedNewSetId = id; }
+    public void setSavedNewSetCost(String cost) { this.savedNewSetCost = cost; }
+
     private static String safeFormat(String key, Object... args)
     {
         try

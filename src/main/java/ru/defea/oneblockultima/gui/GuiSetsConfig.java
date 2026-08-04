@@ -325,6 +325,7 @@ public class GuiSetsConfig extends GuiScreen
 
     private void changeView(int view)
     {
+        saveCurrentFormState();
         int prev = getCurrentView();
         container.changeView(view);
         if (prev != view)
@@ -354,6 +355,7 @@ public class GuiSetsConfig extends GuiScreen
     @Override
     public void onGuiClosed()
     {
+        saveCurrentFormState();
         Keyboard.enableRepeatEvents(false);
     }
 
@@ -364,20 +366,20 @@ public class GuiSetsConfig extends GuiScreen
         if (button.id == BUTTON_SAVE) { handleSave(); return; }
         if (button.id == BUTTON_ADD_SET) { container.addNewSet(); changeView(VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_RESET) { container.resetToDefault(); initGui(); return; }
-        if (button.id == BUTTON_ADD_BLOCK) { container.setCurrentEntryType(EntryType.BLOCK); container.setCurrentSearchType(SearchType.BLOCKS); changeView(VIEW_ADD_ENTRY); return; }
-        if (button.id == BUTTON_ADD_MOB) { container.setCurrentEntryType(EntryType.MOB); container.setCurrentSearchType(SearchType.MOBS); changeView(VIEW_ADD_ENTRY); return; }
-        if (button.id == BUTTON_REMOVE_ENTRY) { container.removeSelectedEntry(); initGui(); return; }
+        if (button.id == BUTTON_ADD_BLOCK) { saveCurrentFormState(); container.setCurrentEntryType(EntryType.BLOCK); container.setCurrentSearchType(SearchType.BLOCKS); changeView(VIEW_ADD_ENTRY); return; }
+        if (button.id == BUTTON_ADD_MOB) { saveCurrentFormState(); container.setCurrentEntryType(EntryType.MOB); container.setCurrentSearchType(SearchType.MOBS); changeView(VIEW_ADD_ENTRY); return; }
+        if (button.id == BUTTON_REMOVE_ENTRY) { saveCurrentFormState(); container.removeSelectedEntry(); initGui(); return; }
         if (button.id == BUTTON_CONFIRM_DELETE) { container.executeDeleteSet(); changeView(VIEW_SETS); return; }
         if (button.id == BUTTON_CANCEL) { changeView(container.getCurrentView() == VIEW_CONFIRM_DELETE ? VIEW_SETS : VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_SAVE_CURRENCY) { handleSaveCurrency(); return; }
         if (button.id == BUTTON_CANCEL_CURRENCY) { changeView(VIEW_SET_DETAILS); return; }
-        if (button.id == BUTTON_EDIT_REQUIRED_MODS) { container.initRequiredModsEditor(); changeView(VIEW_REQUIRED_MODS_EDITOR); return; }
+        if (button.id == BUTTON_EDIT_REQUIRED_MODS) { saveCurrentFormState(); container.initRequiredModsEditor(); changeView(VIEW_REQUIRED_MODS_EDITOR); return; }
         if (button.id == BUTTON_REQUIRED_MODS_TOGGLE) { toggleRequiredModsType(); return; }
         if (button.id == BUTTON_REQUIRED_MODS_BACK) { handleRequiredModsBack(); return; }
         if (button.id == BUTTON_REQUIRED_MODS_SAVE) { handleRequiredModsSave(); return; }
         if (button.id == BUTTON_REQUIRED_MODS_DELETE) { container.deleteSelectedRequiredMods(); initGui(); return; }
         if (button.id == BUTTON_REQUIRED_MODS_ADD) { handleRequiredModsAdd(); return; }
-        if (button.id == BUTTON_EDIT_UNLOCK_CONDITIONS) { container.initUnlockConditionsEditor(); changeView(VIEW_UNLOCK_CONDITIONS); return; }
+        if (button.id == BUTTON_EDIT_UNLOCK_CONDITIONS) { saveCurrentFormState(); container.initUnlockConditionsEditor(); changeView(VIEW_UNLOCK_CONDITIONS); return; }
         if (button.id == BUTTON_UNLOCK_CONDITIONS_TOGGLE) { toggleUnlockConditionsMode(); return; }
         if (button.id == BUTTON_UNLOCK_CONDITIONS_BACK) { handleUnlockConditionsBack(); return; }
         if (button.id == BUTTON_UNLOCK_CONDITIONS_SAVE) { handleUnlockConditionsSave(); return; }
@@ -396,6 +398,7 @@ public class GuiSetsConfig extends GuiScreen
 
     private void handleBack()
     {
+        saveCurrentFormState();
         int v = getCurrentView();
         if (v == VIEW_SET_DETAILS)
         {
@@ -418,6 +421,25 @@ public class GuiSetsConfig extends GuiScreen
         boolean saved = container.saveSetDetails(name, id, cost);
         if (saved) changeView(VIEW_SETS);
         else initGui();
+    }
+
+    private void saveCurrentFormState()
+    {
+        if (getCurrentView() == VIEW_SET_DETAILS)
+        {
+            if (setNameElement != null)
+            {
+                container.setSavedNewSetName(setNameElement.getText());
+            }
+            if (setIdElement != null)
+            {
+                container.setSavedNewSetId(setIdElement.getText());
+            }
+            if (unlockCostElement != null)
+            {
+                container.setSavedNewSetCost(unlockCostElement.getText());
+            }
+        }
     }
 
     private void handleSaveCurrency()
