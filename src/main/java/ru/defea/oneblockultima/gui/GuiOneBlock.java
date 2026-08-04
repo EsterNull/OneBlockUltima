@@ -121,6 +121,10 @@ public class GuiOneBlock extends GuiContainer
     private int mobScroll = 0;
     private int blockScrollNext = 0;
     private int mobScrollNext = 0;
+    private int conditionsScroll = 0;
+    private int conditionsStartX = 0;
+    private int conditionsColumnWidth = 0;
+    private ScrollbarElement conditionsScrollbar;
 
     private final ScrollbarElement[] scrollbars = new ScrollbarElement[4];
     private final boolean[] scrollbarActive = new boolean[4];
@@ -148,6 +152,7 @@ public class GuiOneBlock extends GuiContainer
     private ViewSwitcherElement switcher;
     private TabBarElement tabs;
     private CustomDrawCallbackElement headerElement;
+    private CustomDrawCallbackElement infoElement;
     private CustomDrawCallbackElement panelsElement;
 
     public GuiOneBlock(EntityPlayer player, World world, BlockPos generatorPos)
@@ -339,12 +344,15 @@ public class GuiOneBlock extends GuiContainer
     private void buildSetsView(ColumnElement view)
     {
         CustomDrawCallbackElement infoElement = new CustomDrawCallbackElement(this::drawInfo, 0, computeInfoHeight()).widthPercent(100);
+        this.infoElement = infoElement;
         view.add(infoElement);
 
+        //noinspection SuspiciousNameCombination
+        int buttonSetChangerWidth = BUTTON_HEIGHT;
         RowElement row1 = view.row(Alignment.LEFT);
-        row1.button(BUTTON_PREV_SET, "<").width(20).height(BUTTON_HEIGHT);
+        row1.button(BUTTON_PREV_SET, "<").width(buttonSetChangerWidth).height(BUTTON_HEIGHT);
         row1.add(new SpacerElement(6, 0));
-        row1.button(BUTTON_NEXT_SET, ">").width(20).height(BUTTON_HEIGHT);
+        row1.button(BUTTON_NEXT_SET, ">").width(buttonSetChangerWidth).height(BUTTON_HEIGHT);
 
         RowElement row2 = view.row(Alignment.SPACE_BETWEEN).stretchToContent().gap(BUTTON_GAP);
         int selectWidth = (getContentAreaWidth() - BUTTON_GAP) / 2;
@@ -508,7 +516,7 @@ public class GuiOneBlock extends GuiContainer
         if (data != null && currentLevel <= 0 && set.unlockConditions != null &&
                 !set.unlockConditions.conditions.isEmpty())
         {
-            drawUnlockConditions(set, x, y + getRowInterval() * 3, width, generator);
+            drawUnlockConditions(set, x, y, width, height + BUTTON_HEIGHT, generator);
         }
 
         if (selectButton != null)
@@ -1290,11 +1298,13 @@ public class GuiOneBlock extends GuiContainer
         else if (button.id == BUTTON_PREV_SET)
         {
             selectedSetIndex = (selectedSetIndex - 1 + visibleSets.size()) % visibleSets.size();
+            conditionsScroll = 0;
             initBackgroundBlocks();
         }
         else if (button.id == BUTTON_NEXT_SET)
         {
             selectedSetIndex = (selectedSetIndex + 1) % visibleSets.size();
+            conditionsScroll = 0;
             initBackgroundBlocks();
         }
         else if (button.id == BUTTON_SELECT_SET)
@@ -1450,8 +1460,9 @@ public class GuiOneBlock extends GuiContainer
         }
     }
 
-    private void drawUnlockConditions(BlockSetConfig.BlockSetDefinition set, int x, int y, int width, TileEntityOneBlockGenerator generator)
+    private void drawUnlockConditions(BlockSetConfig.BlockSetDefinition set, int x, int y, int width, int height, TileEntityOneBlockGenerator generator)
     {
+        conditionsScrollbar = null;
         if (set == null || set.unlockConditions == null || set.unlockConditions.conditions == null ||
                 set.unlockConditions.conditions.isEmpty())
         {
@@ -1464,15 +1475,48 @@ public class GuiOneBlock extends GuiContainer
         int currentLevel = generator == null ? 0 : generator.getSetLevel(set.id);
         if (currentLevel > 0) return;
 
-        String title = I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config." + set.unlockConditions.mode);
-        int titleWidth = fontRenderer.getStringWidth(title);
-        int startX = x + (width - titleWidth) / 2;
-        fontRenderer.drawString(title, startX, y, LIGHT_BLUE_GRAY_COLOR);
-        y += fontRenderer.FONT_HEIGHT + 2;
-
+        int columnWidth = 0;
         for (BlockSetConfig.UnlockConditionDefinition condition : set.unlockConditions.conditions)
         {
-            if (condition == null) continue;
+            String conditionText = formatUnlockCondition(condition, data, generator);
+            String fullText = " - " + conditionText + " \u2713";
+
+            int textWidth = fontRenderer.getStringWidth(fullText);
+            columnWidth = Math.max(textWidth, columnWidth);
+        }
+
+        String title = I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config." + set.unlockConditions.mode);
+        int titleWidth = fontRenderer.getStringWidth(title);
+        columnWidth = Math.max(titleWidth, columnWidth);
+        int startX = x + (width - columnWidth) / 2;
+        conditionsStartX = startX;
+        conditionsColumnWidth = columnWidth;
+        int titleX = startX + titleWidth / 2;
+        fontRenderer.drawString(title, titleX, y, LIGHT_BLUE_GRAY_COLOR);
+
+        int lineSpacing = fontRenderer.FONT_HEIGHT + 1;
+        int areaTop = y + fontRenderer.FONT_HEIGHT + 2;
+        int areaBottom = y + height;
+        int areaHeight = areaBottom - areaTop;
+        if (areaHeight < lineSpacing) return;
+
+        List<BlockSetConfig.UnlockConditionDefinition> conditions = set.unlockConditions.conditions;
+        int visibleRows = areaHeight / lineSpacing;
+        int maxScroll = Math.max(0, conditions.size() - visibleRows);
+        if (conditionsScroll > maxScroll) conditionsScroll = maxScroll;
+        if (conditionsScroll < 0) conditionsScroll = 0;
+
+        int firstRow = conditionsScroll;
+        int lastRow = Math.min(conditions.size(), firstRow + visibleRows);
+        int textY = areaTop;
+        for (int i = firstRow; i < lastRow; i++)
+        {
+            BlockSetConfig.UnlockConditionDefinition condition = conditions.get(i);
+            if (condition == null)
+            {
+                textY += lineSpacing;
+                continue;
+            }
 
             String conditionText = formatUnlockCondition(condition, data, generator);
             boolean satisfied = condition.isSatisfied(data, generator);
@@ -1480,10 +1524,21 @@ public class GuiOneBlock extends GuiContainer
             String status = satisfied ? " \u2713" : " \u2717";
             String fullText = " - " + conditionText + status;
 
-            int textWidth = fontRenderer.getStringWidth(fullText);
-            int textX = x + (width - textWidth) / 2;
-            fontRenderer.drawString(fullText, textX, y, color);
-            y += fontRenderer.FONT_HEIGHT + 1;
+            fontRenderer.drawString(fullText, startX, textY, color);
+            textY += lineSpacing;
+        }
+
+        if (conditions.size() > visibleRows)
+        {
+            ScrollbarElement sb = new ScrollbarElement()
+                    .totalItems(conditions.size())
+                    .visibleItems(visibleRows)
+                    .scrollOffset(conditionsScroll)
+                    .trackWidth(SCROLLBAR_WIDTH);
+            sb.setComputedPosition(startX + columnWidth, areaTop);
+            sb.setComputedSize(SCROLLBAR_WIDTH, areaHeight);
+            sb.draw(fontRenderer, 0, 0, 0);
+            conditionsScrollbar = sb;
         }
     }
 
@@ -1536,6 +1591,19 @@ public class GuiOneBlock extends GuiContainer
         TileEntityOneBlockGenerator generator = container.getGenerator();
         int currentLevel = generator == null ? 0 : generator.getSetLevel(set.id);
         boolean canShowCurrent = currentLevel > 0;
+
+        boolean showConditions = currentLevel <= 0 && set.unlockConditions != null &&
+                set.unlockConditions.conditions != null && !set.unlockConditions.conditions.isEmpty();
+        if (showConditions && infoElement != null && conditionsColumnWidth > 0)
+        {
+            int infoY = infoElement.getComputedY();
+            if (mouseX >= conditionsStartX && mouseX <= conditionsStartX + conditionsColumnWidth &&
+                    mouseY >= infoY && mouseY <= infoY + infoElement.getComputedHeight())
+            {
+                conditionsScroll += delta;
+                return;
+            }
+        }
 
         int panelGap = getPanelGap();
         int panelWidth = getPanelWidth();
@@ -1724,6 +1792,7 @@ public class GuiOneBlock extends GuiContainer
         if (activeView == VIEW_SETS)
         {
             handleScrollbarClick(mouseX, mouseY, mouseButton);
+            handleConditionsScrollbarClick(mouseX, mouseY, mouseButton);
         }
         if (tabs != null)
         {
@@ -1781,6 +1850,15 @@ public class GuiOneBlock extends GuiContainer
                 }
             }
             return;
+        }
+    }
+
+    private void handleConditionsScrollbarClick(int mouseX, int mouseY, int mouseButton)
+    {
+        if (mouseButton != 0 || conditionsScrollbar == null) return;
+        if (conditionsScrollbar.mouseClicked(mouseX, mouseY, mouseButton))
+        {
+            conditionsScroll = conditionsScrollbar.getScrollOffset();
         }
     }
 
