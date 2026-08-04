@@ -306,7 +306,7 @@ gui.oneblockultima.mod_settings.balance_mode.sell_block=За продажу бл
 
 # Block prices GUI
 gui.oneblockultima.prices.title=Таблица цен блоков
-gui.oneblockultima.prices.add=Добавить блок
+gui.oneblockultima.prices.add=Добавить
 gui.oneblockultima.prices.edit=Редактировать
 gui.oneblockultima.prices.delete=Удалить
 gui.oneblockultima.prices.edit_title=Редактирование цены
