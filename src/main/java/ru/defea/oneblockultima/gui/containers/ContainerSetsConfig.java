@@ -1359,6 +1359,9 @@ public class ContainerSetsConfig
         availableSetsForConditions.clear();
         for (BlockSetConfig.BlockSetDefinition s : sets)
             if (!s.id.equals(editingSet.id)) availableSetsForConditions.add(s);
+        List<String> availableTypes = getAvailableUnlockConditionTypes();
+        if (!availableTypes.contains(newConditionTypeToAdd))
+            newConditionTypeToAdd = availableTypes.isEmpty() ? "broken_blocks_total" : availableTypes.get(0);
         if (!availableSetsForConditions.isEmpty())
             newConditionSetId = availableSetsForConditions.get(0).id;
     }
@@ -1371,7 +1374,17 @@ public class ContainerSetsConfig
         try { if (!levelStr.isEmpty()) cond.level = Integer.parseInt(levelStr); } catch (NumberFormatException ignored) {}
         try { if (!countStr.isEmpty()) cond.count = Integer.parseInt(countStr); } catch (NumberFormatException ignored) {}
         unlockConditionsEditorConditions.add(cond);
-        advanceToNextUnusedSet(type);
+        if ("broken_blocks_total".equals(type))
+        {
+            List<String> available = getAvailableUnlockConditionTypes();
+            newConditionTypeToAdd = available.isEmpty() ? "broken_blocks_total" : available.get(0);
+            if ("broken_blocks".equals(newConditionTypeToAdd) || "set_level".equals(newConditionTypeToAdd))
+                advanceToNextUnusedSet(newConditionTypeToAdd);
+        }
+        else
+        {
+            advanceToNextUnusedSet(type);
+        }
     }
 
     private Set<String> getUsedSetIdsForType(String type)
@@ -1776,13 +1789,32 @@ public class ContainerSetsConfig
 
     public void cycleUnlockConditionType()
     {
-        String[] types = {"broken_blocks_total", "broken_blocks", "set_level"};
+        List<String> types = getAvailableUnlockConditionTypes();
+        if (types.isEmpty()) return;
         int idx = 0;
-        for (int i = 0; i < types.length; i++) { if (types[i].equals(newConditionTypeToAdd)) { idx = i; break; } }
-        idx = (idx + 1) % types.length;
-        newConditionTypeToAdd = types[idx];
+        boolean found = false;
+        for (int i = 0; i < types.size(); i++)
+        {
+            if (types.get(i).equals(newConditionTypeToAdd)) { idx = i; found = true; break; }
+        }
+        if (found) idx = (idx + 1) % types.size();
+        newConditionTypeToAdd = types.get(idx);
         if ("broken_blocks".equals(newConditionTypeToAdd) || "set_level".equals(newConditionTypeToAdd))
             advanceToNextUnusedSet(newConditionTypeToAdd);
+    }
+
+    public List<String> getAvailableUnlockConditionTypes()
+    {
+        List<String> types = new ArrayList<>(Arrays.asList("broken_blocks_total", "broken_blocks", "set_level"));
+        for (BlockSetConfig.UnlockConditionDefinition cond : unlockConditionsEditorConditions)
+        {
+            if (cond != null && "broken_blocks_total".equalsIgnoreCase(cond.type))
+            {
+                types.remove("broken_blocks_total");
+                break;
+            }
+        }
+        return types;
     }
 
     public void cycleUnlockConditionSet()

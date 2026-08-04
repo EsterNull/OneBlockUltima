@@ -635,4 +635,40 @@ public class ContainerSetsConfigNbtTest {
         assertTrue(keys.contains("minecraft:wool@1"));
         assertTrue(keys.contains("minecraft:wool@2"));
     }
+
+    @Test
+    public void addBrokenBlocksTotalRemovesItFromAvailableTypes() {
+        ContainerSetsConfig container = newContainer();
+        container.initUnlockConditionsEditor();
+        container.addUnlockCondition("broken_blocks_total", "", "", "5");
+
+        assertFalse(container.getAvailableUnlockConditionTypes().contains("broken_blocks_total"));
+        assertNotEquals("broken_blocks_total", container.getNewConditionTypeToAdd());
+    }
+
+    @Test
+    public void cycleUnlockConditionTypeSkipsAlreadyUsedBrokenBlocksTotal() {
+        ContainerSetsConfig container = newContainer();
+        container.initUnlockConditionsEditor();
+        container.addUnlockCondition("broken_blocks_total", "", "", "5");
+
+        for (int i = 0; i < 6; i++)
+        {
+            container.cycleUnlockConditionType();
+            assertNotEquals("broken_blocks_total", container.getNewConditionTypeToAdd());
+        }
+    }
+
+    @Test
+    public void initUnlockConditionsEditorMovesOffUsedBrokenBlocksTotal() {
+        ContainerSetsConfig container = newContainer();
+        BlockSetConfig.UnlockConditionDefinition cond = new BlockSetConfig.UnlockConditionDefinition();
+        cond.type = "broken_blocks_total";
+        cond.count = 5;
+        container.getEditingSet().unlockConditions.conditions.add(cond);
+
+        container.initUnlockConditionsEditor();
+
+        assertNotEquals("broken_blocks_total", container.getNewConditionTypeToAdd());
+    }
 }

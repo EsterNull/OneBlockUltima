@@ -1481,8 +1481,8 @@ public class GuiSetsConfig extends GuiScreen
                                 availableSets.stream().filter(s -> s.id.equals(cond.setId)).findFirst().orElse(null));
                         info += " [" + setName + "]";
                     }
-                    if (cond.level > 0) info += " " + I18n.format("gui.oneblockultima.lv") + ":" + cond.level;
-                    if (cond.count > 0) info += " x" + cond.count;
+                    if (cond.level > 0) info += ": " + cond.level + " " + I18n.format("gui.oneblockultima.lv").toLowerCase();
+                    else if (cond.count > 0) info += ": x" + cond.count;
                     fr.drawStringWithShadow(info, x + 4, y + 4, WHITE_COLOR_1);
                 }
 
