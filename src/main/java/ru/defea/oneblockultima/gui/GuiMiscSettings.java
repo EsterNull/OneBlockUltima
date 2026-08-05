@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import org.lwjgl.input.Keyboard;
+import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
 
@@ -20,6 +21,9 @@ public class GuiMiscSettings extends GuiScreen {
     private static final int MIN_BREAK_COOLDOWN_TICKS = 0;
     private static final int MAX_BREAK_COOLDOWN_TICKS = 12000;
     private static final int BREAK_COOLDOWN_STEP_TICKS = 1;
+    private static final int MIN_MOB_SPAWN_PERCENT = 0;
+    private static final int MAX_MOB_SPAWN_PERCENT = 100;
+    private static final int MOB_SPAWN_STEP_PERCENT = 1;
 
     private final GuiScreen parent;
     private ViewFactory factory;
@@ -28,10 +32,12 @@ public class GuiMiscSettings extends GuiScreen {
     private boolean mobWorldGeneration;
     private int inviteDurationTicks;
     private int breakCooldownTicks;
+    private int mobSpawnPercent;
 
     private ButtonToggleElement mobWorldGenerationToggle;
     private StepperElement inviteDurationStepper;
     private StepperElement breakCooldownStepper;
+    private StepperElement mobSpawnPercentStepper;
 
     public GuiMiscSettings(GuiScreen parent)
     {
@@ -48,6 +54,7 @@ public class GuiMiscSettings extends GuiScreen {
         mobWorldGeneration = settings.getMobWorldGeneration();
         inviteDurationTicks = settings.getInviteDurationTicks();
         breakCooldownTicks = settings.getNonPlayerBreakCooldownTicks();
+        mobSpawnPercent = settings.getMaxMobSpawnPercent();
 
         buildView();
     }
@@ -90,6 +97,17 @@ public class GuiMiscSettings extends GuiScreen {
                 .gap(4);
         breakCooldownControls.add(breakCooldownStepper);
 
+        RowElement mobSpawnPercentControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
+        mobSpawnPercentControls.label(I18n.format("gui.oneblockultima.misc.max_mob_spawn_percent"));
+        mobSpawnPercentStepper = new StepperElement()
+                .value(mobSpawnPercent)
+                .min(MIN_MOB_SPAWN_PERCENT)
+                .max(MAX_MOB_SPAWN_PERCENT)
+                .step(MOB_SPAWN_STEP_PERCENT)
+                .fieldWidth(50)
+                .gap(4);
+        mobSpawnPercentControls.add(mobSpawnPercentStepper);
+
         RowElement btnRow = factory.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
@@ -109,6 +127,8 @@ public class GuiMiscSettings extends GuiScreen {
             settings.setMobWorldGeneration(mobWorldGeneration);
             settings.setInviteDurationTicks(inviteDurationStepper.getValue());
             settings.setNonPlayerBreakCooldownTicks(breakCooldownStepper.getValue());
+            settings.setMaxMobSpawnPercent(mobSpawnPercentStepper.getValue());
+            BlockSetConfig.invalidateComputedLevels();
             mc.displayGuiScreen(parent);
             return;
         }

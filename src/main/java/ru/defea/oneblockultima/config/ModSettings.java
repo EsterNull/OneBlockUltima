@@ -34,6 +34,7 @@ public final class ModSettings
     private boolean mobWorldGeneration = false;
     private int inviteDurationTicks = 1200;
     private int nonPlayerBreakCooldownTicks = 20;
+    private int maxMobSpawnPercent = 10;
 
     public static ModSettings get()
     {
@@ -51,6 +52,7 @@ public final class ModSettings
     public boolean getMobWorldGeneration() { return mobWorldGeneration; }
     public int getInviteDurationTicks() { return inviteDurationTicks; }
     public int getNonPlayerBreakCooldownTicks() { return nonPlayerBreakCooldownTicks; }
+    public int getMaxMobSpawnPercent() { return maxMobSpawnPercent; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { this.hOffset = offset; save(); }
@@ -59,6 +61,7 @@ public final class ModSettings
     public void setMobWorldGeneration(boolean mobWorldGeneration) { this.mobWorldGeneration = mobWorldGeneration; save(); }
     public void setInviteDurationTicks(int inviteDurationTicks) { this.inviteDurationTicks = inviteDurationTicks; save(); }
     public void setNonPlayerBreakCooldownTicks(int nonPlayerBreakCooldownTicks) { this.nonPlayerBreakCooldownTicks = nonPlayerBreakCooldownTicks; save(); }
+    public void setMaxMobSpawnPercent(int maxMobSpawnPercent) { this.maxMobSpawnPercent = maxMobSpawnPercent; save(); }
 
     private static File getFile()
     {

@@ -321,6 +321,7 @@ gui.oneblockultima.misc.title=Misc
 gui.oneblockultima.misc.mob_world_generation=Mob generation in Overworld
 gui.oneblockultima.misc.invite_duration=Invitation duration (ticks):
 gui.oneblockultima.misc.non_player_break_cooldown=Generation delay for non-player (ticks):
+gui.oneblockultima.misc.max_mob_spawn_percent=Max mob spawn percent:
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator

@@ -895,7 +895,7 @@ public final class BlockSetConfig
                 }
 
                 java.util.Map<String, Integer> proposedBlocks = computeLevelPercentages(availBlocks, prevPercBlocks, 100);
-                java.util.Map<String, Integer> proposedMobs = computeLevelPercentages(availMobs, prevPercMobs, 10);
+                java.util.Map<String, Integer> proposedMobs = computeLevelPercentages(availMobs, prevPercMobs, Math.max(0, ModSettings.get().getMaxMobSpawnPercent()));
 
                 SetLevelDefinition lvlDef = new SetLevelDefinition();
                 lvlDef.level = level;
