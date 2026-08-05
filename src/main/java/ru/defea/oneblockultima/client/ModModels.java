@@ -2,8 +2,10 @@ package ru.defea.oneblockultima.client;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.block.statemap.StateMapperBase;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelRegistryEvent;
@@ -18,6 +20,8 @@ import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.item.ModItems;
 
 import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = OneBlockUltima.MODID)
@@ -26,6 +30,11 @@ public final class ModModels
     private ModModels()
     {
     }
+
+    private static final ModelResourceLocation FALLBACK_LOCATION =
+            new ModelResourceLocation(new ResourceLocation(OneBlockUltima.MODID, "custom_breakable"), "normal");
+
+    private static final Map<ResourceLocation, Boolean> BLOCKSTATE_EXISTS_CACHE = new HashMap<>();
 
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
@@ -63,6 +72,10 @@ public final class ModModels
     @SideOnly(Side.CLIENT)
     private static void registerItemModel(net.minecraft.item.Item item, String variantIn, int meta)
     {
+        if (item == Items.AIR)
+        {
+            return;
+        }
         ModelLoader.setCustomModelResourceLocation(
                 item,
                 meta,
@@ -84,9 +97,9 @@ public final class ModModels
                         protected ModelResourceLocation getModelResourceLocation(@Nonnull IBlockState state)
                         {
                             Block emulated = customBreakable.getEmulated();
-                            if (emulated == null || emulated.getRegistryName() == null)
+                            if (emulated == null || emulated.getRegistryName() == null || hasNoBlockstateModel(emulated))
                             {
-                                return new ModelResourceLocation(new ResourceLocation(OneBlockUltima.MODID, "custom_breakable"), "normal");
+                                return FALLBACK_LOCATION;
                             }
                             IBlockState emuState = customBreakable.getEmulatedState(state);
                             return new ModelResourceLocation(
@@ -97,5 +110,35 @@ public final class ModModels
                     }
             );
         }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static boolean hasNoBlockstateModel(Block block)
+    {
+        ResourceLocation registryName = block.getRegistryName();
+        if (registryName == null)
+        {
+            return true;
+        }
+        Boolean cached = BLOCKSTATE_EXISTS_CACHE.get(registryName);
+        if (cached != null)
+        {
+            return cached;
+        }
+        boolean exists = false;
+        try
+        {
+            exists = !Minecraft.getMinecraft().getResourceManager().getAllResources(
+                    new ResourceLocation(
+                            registryName.getResourceDomain(),
+                            "blockstates/" + registryName.getResourcePath() + ".json"
+                    )
+            ).isEmpty();
+        }
+        catch (Exception ignored)
+        {
+        }
+        BLOCKSTATE_EXISTS_CACHE.put(registryName, exists);
+        return !exists;
     }
 }

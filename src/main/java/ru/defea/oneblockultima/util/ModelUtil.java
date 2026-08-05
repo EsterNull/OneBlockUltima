@@ -32,6 +32,7 @@ public final class ModelUtil {
             try {
                 GameProfile profile = new GameProfile(UUID.randomUUID(), "OBUDummy");
                 NetworkManager nm = new NetworkManager(EnumPacketDirection.CLIENTBOUND);
+                //noinspection DataFlowIssue
                 NetHandlerPlayClient handler = new NetHandlerPlayClient(
                     Minecraft.getMinecraft(), null, nm, profile);
                 dummyWorld = new WorldClient(handler,
@@ -51,6 +52,13 @@ public final class ModelUtil {
             Minecraft mc = Minecraft.getMinecraft();
             BlockRendererDispatcher blockRenderer = mc.getBlockRendererDispatcher();
 
+            net.minecraft.client.renderer.block.model.IBakedModel model = blockRenderer.getModelForState(state);
+            if (model == mc.getRenderItem().getItemModelMesher().getModelManager().getMissingModel())
+            {
+                renderBlockTextureAsIcon(state, x, y, size);
+                return;
+            }
+
             GlStateManager.pushMatrix();
             GlStateManager.translate(x, y, 100.0F);
             GlStateManager.scale(size / 16.0F, size / 16.0F, size / 16.0F);
@@ -61,6 +69,51 @@ public final class ModelUtil {
             GlStateManager.popMatrix();
         }
         catch (Exception ignored) { }
+    }
+
+    private static void renderBlockTextureAsIcon(net.minecraft.block.state.IBlockState state, int x, int y, int size)
+    {
+        Minecraft mc = Minecraft.getMinecraft();
+        net.minecraft.block.Block block = state.getBlock();
+        if (block.getRegistryName() == null)
+        {
+            return;
+        }
+        String registryPath = block.getRegistryName().getResourcePath();
+        TextureAtlasSprite sprite = mc.getTextureMapBlocks().getAtlasSprite("minecraft:items/" + registryPath);
+        if ("missingno".equals(sprite.getIconName()))
+        {
+            return;
+        }
+
+        float half = 8.0F * size / 16.0F;
+        float left = x - half;
+        float top = y - half;
+        float right = x + half;
+        float bottom = y + half;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(0.0F, 0.0F, 100.0F);
+        mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+        RenderHelper.enableGUIStandardItemLighting();
+        GlStateManager.enableAlpha();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buf = tess.getBuffer();
+        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        buf.pos(left, bottom, 0.0D).tex(sprite.getMinU(), sprite.getMaxV()).endVertex();
+        buf.pos(right, bottom, 0.0D).tex(sprite.getMaxU(), sprite.getMaxV()).endVertex();
+        buf.pos(right, top, 0.0D).tex(sprite.getMaxU(), sprite.getMinV()).endVertex();
+        buf.pos(left, top, 0.0D).tex(sprite.getMinU(), sprite.getMinV()).endVertex();
+        tess.draw();
+
+        GlStateManager.disableBlend();
+        GlStateManager.disableAlpha();
+        RenderHelper.disableStandardItemLighting();
+        GlStateManager.popMatrix();
     }
 
     public static void renderFluidSprite(net.minecraftforge.fluids.Fluid fluid, int x, int y, int w, int h)

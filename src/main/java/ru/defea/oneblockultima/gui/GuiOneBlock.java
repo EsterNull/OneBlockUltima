@@ -768,11 +768,16 @@ public class GuiOneBlock extends GuiContainer
             }
             catch (Exception ignored) {}
 
-            if (sprite == null)
+            if (sprite == null || "missingno".equals(sprite.getIconName()))
             {
                 try
                 {
-                    sprite = mc.getTextureMapBlocks().getAtlasSprite(Objects.requireNonNull(block.getRegistryName()).toString());
+                    ResourceLocation registryName = Objects.requireNonNull(block.getRegistryName());
+                    sprite = mc.getTextureMapBlocks().getAtlasSprite(registryName.toString());
+                    if ("missingno".equals(sprite.getIconName()))
+                    {
+                        sprite = mc.getTextureMapBlocks().getAtlasSprite("minecraft:items/" + registryName.getResourcePath());
+                    }
                 }
                 catch (Exception ignored) {}
             }

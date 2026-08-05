@@ -12,11 +12,15 @@ import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.client.ModModels;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -190,5 +194,34 @@ public class BlockCustomBreakable extends Block
     protected BlockStateContainer createBlockState()
     {
         return new BlockStateContainer(this, ORIGINAL_META);
+    }
+
+    @Override
+    @Nonnull
+    @SideOnly(Side.CLIENT)
+    public BlockRenderLayer getBlockLayer()
+    {
+        if (this.emulated != null)
+        {
+            if (this.emulated.getBlockLayer() != BlockRenderLayer.SOLID)
+            {
+                return this.emulated.getBlockLayer();
+            }
+            if (ModModels.hasNoBlockstateModel(this.emulated))
+            {
+                return BlockRenderLayer.TRANSLUCENT;
+            }
+        }
+        return super.getBlockLayer();
+    }
+
+    @Override
+    public boolean isOpaqueCube(@Nonnull IBlockState state)
+    {
+        if (this.emulated != null)
+        {
+            return this.emulated.isOpaqueCube(this.emulated.getDefaultState());
+        }
+        return super.isOpaqueCube(state);
     }
 }
