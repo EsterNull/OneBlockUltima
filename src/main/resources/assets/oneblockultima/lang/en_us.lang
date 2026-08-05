@@ -342,6 +342,7 @@ book.oneblockultima.overview.line2=Block sets change as you progress. Unlock and
 book.oneblockultima.overview.line3=Sell mined blocks or save coins to buy and upgrade sets.
 book.oneblockultima.overview.currency=Coins (OBU) are the main currency of the mod.
 book.oneblockultima.overview.sets=Each set has levels: higher level means better chances and variety.
+book.oneblockultima.overview.tip=Right-click the generator to open its settings.
 book.oneblockultima.command.obuSell.desc=Sell the generator-made item in your hand.
 book.oneblockultima.command.obuSellAll.desc=Sell all generator-made items of the same type as the item in your hand.
 book.oneblockultima.command.inviteGeneratorMember.desc=Invite a player to join your generator.

@@ -342,6 +342,7 @@ book.oneblockultima.overview.line2=Наборы блоков меняются п
 book.oneblockultima.overview.line3=Продавайте добытые блоки или накапливайте монеты для покупки и улучшения наборов.
 book.oneblockultima.overview.currency=Монеты (OBU) — основная валюта мода.
 book.oneblockultima.overview.sets=Каждый набор имеет уровни: с ростом уровня растут шансы и разнообразие блоков.
+book.oneblockultima.overview.tip=Правый клик по генератору открывает его настройки.
 book.oneblockultima.command.obuSell.desc=Продать предмет из руки, полученный из генератора.
 book.oneblockultima.command.obuSellAll.desc=Продать все предметы из генератора того же типа, что и предмет в руке.
 book.oneblockultima.command.inviteGeneratorMember.desc=Пригласить игрока стать участником генератора.
