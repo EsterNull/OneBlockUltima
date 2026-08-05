@@ -681,7 +681,7 @@ public class GuiSetsConfig extends GuiScreen
                 container.isNewSet() ? container.getSavedNewSetCost() : String.valueOf(editingSet.unlockCost));
         RowElement costRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
         costRow.add(new SpacerElement(formMargin, 20));
-        costRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_cost") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
+        costRow.add(new LabelElement(I18n.format("gui.oneblockultima.unlock_cost") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
         costRow.add(unlockCostElement);
         factory.add(costRow);
 
@@ -1182,7 +1182,7 @@ public class GuiSetsConfig extends GuiScreen
         btnRow.button(BUTTON_NBT_ADD, I18n.format(atContainer
                 ? "gui.oneblockultima.config.nbt_add_element"
                 : "gui.oneblockultima.config.nbt_add_tag"));
-        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.config.nbt_back"));
+        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.settings.back"));
     }
 
     private void buildNbtAddView()
@@ -1316,7 +1316,7 @@ public class GuiSetsConfig extends GuiScreen
         if (container.getEditingSet() == null) { changeView(VIEW_SET_DETAILS); return; }
         if (!container.isRequiredModsEditorInitialized()) container.initRequiredModsEditor();
 
-        factory.title("gui.oneblockultima.config.required_mods_title");
+        factory.title("gui.oneblockultima.config.required_mods");
 
         factory.button(BUTTON_REQUIRED_MODS_TOGGLE, container.getRequiredModsEditorTypeLabel());
 
@@ -1429,7 +1429,7 @@ public class GuiSetsConfig extends GuiScreen
         int fieldWidth = Math.max(40, width * 4 / 100);
         if ("set_level".equals(type))
         {
-            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_conditions_level") + ":"));
+            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ":"));
             unlockLevelElement = new TextFieldElement(fieldWidth).text("1");
             addRow.add(unlockLevelElement);
         }

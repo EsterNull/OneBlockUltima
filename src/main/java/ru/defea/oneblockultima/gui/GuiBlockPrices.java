@@ -153,8 +153,8 @@ public class GuiBlockPrices extends GuiScreen
                     fr.drawStringWithShadow(entry.getKey(), x + 24, y + 12, GRAY_COLOR_1);
 
                     String priceStr = ContainerBlockPrices.formatPrice(entry.getValue());
-                    String editText = I18n.format("gui.oneblockultima.prices.edit");
-                    String delText = I18n.format("gui.oneblockultima.prices.delete");
+                    String editText = I18n.format("gui.oneblockultima.config.edit");
+                    String delText = I18n.format("gui.oneblockultima.config.remove");
                     int editW = fr.getStringWidth(editText) + 8;
                     int delW = fr.getStringWidth(delText) + 8;
                     int btnH = 14;
@@ -181,8 +181,8 @@ public class GuiBlockPrices extends GuiScreen
 
                 @Override
                 public boolean mouseClicked(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton) {
-                    String editText = I18n.format("gui.oneblockultima.prices.edit");
-                    String delText = I18n.format("gui.oneblockultima.prices.delete");
+                    String editText = I18n.format("gui.oneblockultima.config.edit");
+                    String delText = I18n.format("gui.oneblockultima.config.remove");
                     int editW = fontRenderer.getStringWidth(editText) + 8;
                     int delW = fontRenderer.getStringWidth(delText) + 8;
                     int btnH = 14;
@@ -239,14 +239,14 @@ public class GuiBlockPrices extends GuiScreen
         setCostRow.add(setCostStepper);
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.prices.add"));
+        btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
     }
 
     private void buildAddBlockView(ColumnElement view)
     {
-        view.title("gui.oneblockultima.prices.add");
+        view.title("gui.oneblockultima.config.add");
 
         searchFieldElement = new TextFieldElement(0)
             .text(container.getSearchQuery())
@@ -254,7 +254,7 @@ public class GuiBlockPrices extends GuiScreen
             .widthPercent(60);
         view.add(searchFieldElement);
 
-        view.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.help")).color(GRAY_COLOR_1).centered());
+        view.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.help")).color(GRAY_COLOR_1).centered());
 
         List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
         for (int i = 0; i < container.getSearchResults().size(); i++)
@@ -308,7 +308,7 @@ public class GuiBlockPrices extends GuiScreen
     private void buildEditPriceView(ColumnElement view)
     {
         view.centerVertical();
-        view.title("gui.oneblockultima.prices.edit_title");
+        view.title("gui.oneblockultima.config.edit_title");
 
         net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack(container.getEditingRegistry(), container.getEditingMeta());
         if (!stack.isEmpty())

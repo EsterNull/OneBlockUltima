@@ -406,7 +406,7 @@ public class GuiGuideBook extends GuiScreen
         // The opening spread shows only the table of contents, so content starts
         // at page index 2 (index 1 is a filler that is never rendered).
         int offset = 2;
-        sectionStart.put("book.oneblockultima.tab.overview", offset);
+        sectionStart.put("book.oneblockultima.overview.title", offset);
         offset += overviewPages.size();
         sectionStart.put("book.oneblockultima.tab.commands", offset);
         offset += commandPages.size();
@@ -476,7 +476,7 @@ public class GuiGuideBook extends GuiScreen
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.sets"), LIGHT_GRAY_COLOR_1, CONTENT_W));
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.conditions"), LIGHT_GRAY_COLOR_1, CONTENT_W));
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.invites"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.tip"), GRAY_COLOR_5, CONTENT_W));
+        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.tip"), GRAY_COLOR_5, CONTENT_W));
         return paginate(elements);
     }
 
