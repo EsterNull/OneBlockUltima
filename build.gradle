@@ -43,6 +43,14 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
 
+test {
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        showStandardStreams = true
+        exceptionFormat 'full'
+    }
+}
+
 processResources {
     inputs.property 'version', project.version
     inputs.property 'mcversion', '1.12.2'

@@ -147,6 +147,8 @@ public class GuiOneBlock extends GuiContainer
     private String clientActiveSetId = null;
 
     private final List<BlockSetConfig.BlockEntryDefinition> backgroundBlocks = new ArrayList<>();
+    private final Map<BlockSetConfig.BlockEntryDefinition, TextureAtlasSprite> backgroundSpriteCache = new HashMap<>();
+    private final Map<BlockSetConfig.MobEntryDefinition, Entity> mobEntityCache = new HashMap<>();
 
     private ViewFactory factory;
     private ViewSwitcherElement switcher;
@@ -617,6 +619,8 @@ public class GuiOneBlock extends GuiContainer
     private void initBackgroundBlocks()
     {
         backgroundBlocks.clear();
+        backgroundSpriteCache.clear();
+        mobEntityCache.clear();
 
         BlockSetConfig.BlockSetDefinition currentSet = getBlockSetDefinition();
 
@@ -705,43 +709,90 @@ public class GuiOneBlock extends GuiContainer
         int extraCols = 2;
         int extraRows = 2;
 
-        for (int row = -extraRows; row <= rows + extraRows; row++)
+        Minecraft mc = Minecraft.getMinecraft();
+        mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+
+        GlStateManager.enableAlpha();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buf = tess.getBuffer();
+        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+
+        try
         {
-            for (int col = -extraCols; col <= cols + extraCols; col++)
+            for (int row = -extraRows; row <= rows + extraRows; row++)
             {
-                int blockIndex = ((row + col) * 7 + col * 3) % totalBlocks;
-                if (blockIndex < 0) blockIndex += totalBlocks;
+                for (int col = -extraCols; col <= cols + extraCols; col++)
+                {
+                    int blockIndex = ((row + col) * 7 + col * 3) % totalBlocks;
+                    if (blockIndex < 0) blockIndex += totalBlocks;
 
-                BlockSetConfig.BlockEntryDefinition entry = backgroundBlocks.get(blockIndex);
-                if (entry == null) continue;
+                    BlockSetConfig.BlockEntryDefinition entry = backgroundBlocks.get(blockIndex);
+                    if (entry == null) continue;
 
-                int x = startX + col * texSize;
-                int y = startY + row * texSize;
+                    TextureAtlasSprite sprite = resolveBackgroundSprite(entry);
+                    if (sprite == null) continue;
 
-                int drawX = Math.max(startX, x);
-                int drawY = Math.max(startY, y);
-                int drawX2 = Math.min(startX + width, x + texSize);
-                int drawY2 = Math.min(startY + height, y + texSize);
+                    int x = startX + col * texSize;
+                    int y = startY + row * texSize;
 
-                if (drawX >= drawX2 || drawY >= drawY2) continue;
+                    int drawX = Math.max(startX, x);
+                    int drawY = Math.max(startY, y);
+                    int drawX2 = Math.min(startX + width, x + texSize);
+                    int drawY2 = Math.min(startY + height, y + texSize);
 
-                float u1 = (drawX - x) / (float)texSize;
-                float v1 = (drawY - y) / (float)texSize;
-                float u2 = (drawX2 - x) / (float)texSize;
-                float v2 = (drawY2 - y) / (float)texSize;
+                    if (drawX >= drawX2 || drawY >= drawY2) continue;
 
-                renderBlockAsBackgroundClipped(entry, drawX, drawY, drawX2 - drawX, drawY2 - drawY, u1, v1, u2, v2);
+                    float u1 = (drawX - x) / (float)texSize;
+                    float v1 = (drawY - y) / (float)texSize;
+                    float u2 = (drawX2 - x) / (float)texSize;
+                    float v2 = (drawY2 - y) / (float)texSize;
+
+                    float minU = sprite.getMinU();
+                    float maxU = sprite.getMaxU();
+                    float minV = sprite.getMinV();
+                    float maxV = sprite.getMaxV();
+
+                    float uMin = minU + (maxU - minU) * u1;
+                    float uMax = minU + (maxU - minU) * u2;
+                    float vMin = minV + (maxV - minV) * v1;
+                    float vMax = minV + (maxV - minV) * v2;
+
+                    int quadWidth = drawX2 - drawX;
+                    int quadHeight = drawY2 - drawY;
+
+                    buf.pos(drawX, drawY + quadHeight, 0.0D).tex(uMin, vMax).endVertex();
+                    buf.pos(drawX + quadWidth, drawY + quadHeight, 0.0D).tex(uMax, vMax).endVertex();
+                    buf.pos(drawX + quadWidth, drawY, 0.0D).tex(uMax, vMin).endVertex();
+                    buf.pos(drawX, drawY, 0.0D).tex(uMin, vMin).endVertex();
+                }
             }
+
+            tess.draw();
         }
+        catch (Exception ignored) {}
+
+        GlStateManager.disableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    private void renderBlockAsBackgroundClipped(BlockSetConfig.BlockEntryDefinition entry, int x, int y, int width, int height, float u1, float v1, float u2, float v2)
+    private TextureAtlasSprite resolveBackgroundSprite(BlockSetConfig.BlockEntryDefinition entry)
     {
+        TextureAtlasSprite cached = backgroundSpriteCache.get(entry);
+        if (cached != null)
+        {
+            return cached;
+        }
+
         try
         {
             Minecraft mc = Minecraft.getMinecraft();
             net.minecraft.block.Block block = entry.resolveBlock();
-            if (block == null) return;
+            if (block == null) return null;
 
             net.minecraft.block.state.IBlockState state = null;
             try
@@ -757,7 +808,7 @@ public class GuiOneBlock extends GuiContainer
                 catch (Exception ignored) {}
             }
 
-            if (state == null) return;
+            if (state == null) return null;
 
             BlockRendererDispatcher blockRenderer = mc.getBlockRendererDispatcher();
             TextureAtlasSprite sprite = null;
@@ -782,39 +833,48 @@ public class GuiOneBlock extends GuiContainer
                 catch (Exception ignored) {}
             }
 
-            if (sprite == null) return;
+            if (sprite == null) return null;
 
-            mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-
-            float minU = sprite.getMinU();
-            float maxU = sprite.getMaxU();
-            float minV = sprite.getMinV();
-            float maxV = sprite.getMaxV();
-
-            float uMin = minU + (maxU - minU) * u1;
-            float uMax = minU + (maxU - minU) * u2;
-            float vMin = minV + (maxV - minV) * v1;
-            float vMax = minV + (maxV - minV) * v2;
-
-            GlStateManager.enableAlpha();
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-
-            Tessellator tess = Tessellator.getInstance();
-            BufferBuilder buf = tess.getBuffer();
-            buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-            buf.pos(x, y + height, 0.0D).tex(uMin, vMax).endVertex();
-            buf.pos(x + width, y + height, 0.0D).tex(uMax, vMax).endVertex();
-            buf.pos(x + width, y, 0.0D).tex(uMax, vMin).endVertex();
-            buf.pos(x, y, 0.0D).tex(uMin, vMin).endVertex();
-            tess.draw();
-
-            GlStateManager.disableBlend();
-            GlStateManager.disableAlpha();
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            backgroundSpriteCache.put(entry, sprite);
+            return sprite;
         }
-        catch (Exception ignored) {}
+        catch (Exception ignored)
+        {
+            return null;
+        }
+    }
+
+    private Entity resolveMobEntity(BlockSetConfig.MobEntryDefinition entry)
+    {
+        if (entry == null || entry.registry == null || entry.registry.isEmpty())
+        {
+            return null;
+        }
+
+        Entity cached = mobEntityCache.get(entry);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            World mcWorld = Minecraft.getMinecraft().world;
+            Entity entity = EntityList.createEntityByIDFromName(new ResourceLocation(entry.registry), mcWorld);
+            if (entity != null)
+            {
+                if (entity.world == null)
+                {
+                    entity.world = mcWorld;
+                }
+                mobEntityCache.put(entry, entity);
+            }
+            return entity;
+        }
+        catch (Exception ignored)
+        {
+            return null;
+        }
     }
 
     private void calculateColumns(int panelWidth)
@@ -1102,16 +1162,7 @@ public class GuiOneBlock extends GuiContainer
                         drawRect(cellX, cellY, cellX + 1, cellY + cellSize, mobBorderColor);
                         drawRect(cellX + cellSize - 1, cellY, cellX + cellSize, cellY + cellSize, mobBorderColor);
 
-                        Entity entity = null;
-                        try
-                        {
-                            World mcWorld = Minecraft.getMinecraft().world;
-                            entity = EntityList.createEntityByIDFromName(new ResourceLocation(mobEntry.registry), mcWorld);
-                            if (entity != null && entity.world == null) {
-                                entity.world = mcWorld;
-                            }
-                        }
-                        catch (Exception ignored) { }
+                        Entity entity = resolveMobEntity(mobEntry);
 
                         if (entity instanceof EntityLivingBase)
                         {

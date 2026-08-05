@@ -287,6 +287,17 @@ public final class ModEvents
         }
     }
 
+    @SubscribeEvent
+    public static void onWorldSave(WorldEvent.Save event)
+    {
+        if (event.getWorld() == null || event.getWorld().isRemote)
+        {
+            return;
+        }
+
+        GeneratedBlockRegistry.get(event.getWorld()).flushPendingDirty();
+    }
+
     private static void createWorldIcon(World world)
     {
         File worldDir = world.getSaveHandler().getWorldDirectory();
@@ -435,6 +446,11 @@ public final class ModEvents
         {
             net.minecraft.entity.player.EntityPlayer player = event.player;
             net.minecraft.world.World world = player.world;
+            if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
+                    || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+            {
+                return;
+            }
             GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
 
             int baseY = (int) Math.floor(player.posY - 0.1D);
@@ -475,11 +491,28 @@ public final class ModEvents
             return;
         }
 
-        for (TileEntity tileEntity : event.world.loadedTileEntityList)
+        if (event.world.provider.getDimension() != OVERWORLD_DIMENSION_ID
+                || event.world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
-            if (tileEntity instanceof TileEntityOneBlockGenerator)
+            return;
+        }
+
+        Set<TileEntityOneBlockGenerator> activeGenerators = TileEntityOneBlockGenerator.getActiveGenerators();
+        if (!activeGenerators.isEmpty())
+        {
+            synchronized (activeGenerators)
             {
-                ((TileEntityOneBlockGenerator) tileEntity).tickInvites();
+                Iterator<TileEntityOneBlockGenerator> iterator = activeGenerators.iterator();
+                while (iterator.hasNext())
+                {
+                    TileEntityOneBlockGenerator generator = iterator.next();
+                    if (generator == null || generator.isInvalid() || generator.getWorld() != event.world)
+                    {
+                        iterator.remove();
+                        continue;
+                    }
+                    generator.tickInvites();
+                }
             }
         }
 
@@ -648,6 +681,12 @@ public final class ModEvents
 
         EntityPlayer player = event.getEntityPlayer();
 
+        if (event.getWorld().provider.getDimension() != OVERWORLD_DIMENSION_ID
+                || event.getWorld().getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        {
+            return;
+        }
+
         BlockPos clickedPos = event.getPos();
         GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(event.getWorld());
 
@@ -807,17 +846,24 @@ public final class ModEvents
 
         BlockPos pos = event.getPos();
         World world = event.getWorld();
-        EntityPlayer breaker = event.getPlayer();
-
-        if (breaker != null && world.provider.getDimension() == OVERWORLD_DIMENSION_ID && world.getWorldInfo().getTerrainType() == OneBlockWorldType.ONE_BLOCK)
-        {
-            lastBreakPlayers.put(pos, breaker.getUniqueID());
-        }
 
         if (world.getBlockState(pos).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             event.setCanceled(true);
             return;
+        }
+
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
+                || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        {
+            return;
+        }
+
+        EntityPlayer breaker = event.getPlayer();
+
+        if (breaker != null)
+        {
+            lastBreakPlayers.put(pos, breaker.getUniqueID());
         }
 
         if (processingBlocks.getOrDefault(event.getPos(), false))
@@ -849,7 +895,7 @@ public final class ModEvents
         GeneratedBlockRegistry.GeneratedBlockEntry entry = registry.getEntry(event.getPos());
         if (entry == null)
         {
-            OneBlockUltima.getLogger().warn("[BreakDebug] No generated entry found for broken block {}", event.getPos());
+            OneBlockUltima.getLogger().debug("[BreakDebug] No generated entry found for broken block {}", event.getPos());
             return;
         }
 
@@ -868,7 +914,7 @@ public final class ModEvents
             }
         }
 
-        OneBlockUltima.getLogger().warn("[BreakDebug] Generated entry found for {} -> generator {} set={} level={}", event.getPos(), entry.generatorPos, entry.setId, entry.level);
+        OneBlockUltima.getLogger().debug("[BreakDebug] Generated entry found for {} -> generator {} set={} level={}", event.getPos(), entry.generatorPos, entry.setId, entry.level);
 
         pendingMobSpawnEntries.put(event.getPos(), entry);
 
@@ -941,6 +987,12 @@ public final class ModEvents
         }
 
         World world = event.getWorld();
+        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
+                || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        {
+            return;
+        }
+
         BlockPos pos = event.getPos();
         GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
         GeneratedBlockRegistry.GeneratedBlockEntry entry = registry.getEntry(pos);

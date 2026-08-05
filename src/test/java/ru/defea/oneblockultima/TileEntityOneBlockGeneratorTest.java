@@ -2,12 +2,15 @@ package ru.defea.oneblockultima;
 
 import net.minecraft.init.Bootstrap;
 import net.minecraft.nbt.NBTTagCompound;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
+import java.lang.reflect.Field;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -31,6 +34,12 @@ public class TileEntityOneBlockGeneratorTest
     private TileEntityOneBlockGenerator newGenerator()
     {
         return new TileEntityOneBlockGenerator();
+    }
+
+    @After
+    public void clearActiveGenerators()
+    {
+        TileEntityOneBlockGenerator.getActiveGenerators().clear();
     }
 
     // 1
@@ -590,5 +599,81 @@ public class TileEntityOneBlockGeneratorTest
         assertFalse(gen.hasAccess(MEMBER));
         assertTrue(gen.hasAccess(INVITEE));
         assertTrue(gen.hasAccess(OWNER));
+    }
+
+    // ------------------------------------------------------------------
+    // active-generator set (the set iterated by ModEvents.onWorldTick)
+    // ------------------------------------------------------------------
+
+    @Test
+    public void activeGeneratorsSetStartsEmpty()
+    {
+        assertTrue(TileEntityOneBlockGenerator.getActiveGenerators().isEmpty());
+    }
+
+    @Test
+    public void getActiveGeneratorsReturnsSharedSet()
+    {
+        assertSame("getActiveGenerators must expose the single static set",
+                TileEntityOneBlockGenerator.getActiveGenerators(),
+                TileEntityOneBlockGenerator.getActiveGenerators());
+    }
+
+    @Test
+    public void invalidateRemovesGeneratorFromActiveSet()
+    {
+        TileEntityOneBlockGenerator gen = newGenerator();
+        addToActiveSet(gen);
+
+        assertTrue("the generator must be tracked until it is invalidated",
+                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
+
+        gen.invalidate();
+
+        assertFalse("invalidate must unregister the generator from the active set",
+                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
+    }
+
+    @Test
+    public void onChunkUnloadRemovesGeneratorFromActiveSet()
+    {
+        TileEntityOneBlockGenerator gen = newGenerator();
+        addToActiveSet(gen);
+
+        gen.onChunkUnload();
+
+        assertFalse("onChunkUnload must unregister the generator from the active set",
+                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
+    }
+
+    @Test
+    public void invalidateLeavesOtherGeneratorsInActiveSet()
+    {
+        TileEntityOneBlockGenerator a = newGenerator();
+        TileEntityOneBlockGenerator b = newGenerator();
+        addToActiveSet(a);
+        addToActiveSet(b);
+
+        a.invalidate();
+
+        Set<TileEntityOneBlockGenerator> active = TileEntityOneBlockGenerator.getActiveGenerators();
+        assertFalse("the invalidated generator must be removed", active.contains(a));
+        assertTrue("unrelated generators must stay tracked", active.contains(b));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addToActiveSet(TileEntityOneBlockGenerator generator)
+    {
+        try
+        {
+            Field field = TileEntityOneBlockGenerator.class.getDeclaredField("ACTIVE_GENERATORS");
+            field.setAccessible(true);
+            Set<TileEntityOneBlockGenerator> active = (Set<TileEntityOneBlockGenerator>) field.get(null);
+            active.add(generator);
+        }
+        catch (Exception e)
+        {
+            throw new AssertionError("Unable to access ACTIVE_GENERATORS", e);
+        }
     }
 }

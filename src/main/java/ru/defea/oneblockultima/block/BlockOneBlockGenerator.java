@@ -37,6 +37,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
 
     private static final AxisAlignedBB COLLISION_AABB = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 2.0D, 1.0D);
     private static final AxisAlignedBB HIGHLIGHT_AABB = new AxisAlignedBB(0.0D, 1.0D, 0.0D, 1.0D, 2.0D, 1.0D);
+    private static final AxisAlignedBB BOUNDING_AABB = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.001D, 1.0D);
 
     public BlockOneBlockGenerator()
     {
@@ -110,7 +111,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     @Nonnull
     public AxisAlignedBB getBoundingBox(@Nonnull IBlockState state, @Nonnull IBlockAccess source, @Nonnull BlockPos pos)
     {
-        return new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.001D, 1.0D);
+        return BOUNDING_AABB;
     }
 
     @Override
@@ -137,8 +138,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     @Override
     public RayTraceResult collisionRayTrace(@Nonnull IBlockState blockState, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Vec3d start, @Nonnull Vec3d end)
     {
-        AxisAlignedBB bb = new AxisAlignedBB(0.0D, 1.0D, 0.0D, 1.0D, 2.0D, 1.0D);
-        return rayTrace(pos, start, end, bb);
+        return rayTrace(pos, start, end, HIGHLIGHT_AABB);
     }
 
     @Override

@@ -31,6 +31,8 @@ import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
 
 public class TileEntityOneBlockGenerator extends TileEntity
 {
+    private static final Set<TileEntityOneBlockGenerator> ACTIVE_GENERATORS = Collections.synchronizedSet(new HashSet<>());
+
     private String selectedSetId;
     private UUID ownerId;
     private final List<UUID> memberIds = new ArrayList<>();
@@ -46,6 +48,35 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
     public TileEntityOneBlockGenerator()
     {
+    }
+
+    @Override
+    public void onLoad()
+    {
+        super.onLoad();
+        if (world != null && !world.isRemote)
+        {
+            ACTIVE_GENERATORS.add(this);
+        }
+    }
+
+    @Override
+    public void onChunkUnload()
+    {
+        ACTIVE_GENERATORS.remove(this);
+        super.onChunkUnload();
+    }
+
+    @Override
+    public void invalidate()
+    {
+        ACTIVE_GENERATORS.remove(this);
+        super.invalidate();
+    }
+
+    public static Set<TileEntityOneBlockGenerator> getActiveGenerators()
+    {
+        return ACTIVE_GENERATORS;
     }
 
     public boolean canProcessNonPlayerBreak(long worldTick)
@@ -324,6 +355,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
         }
     }
 
+    private BlockSetConfig.SetLevelDefinition cachedWeightedLevel;
+    private int cachedDisableMask = -1;
+    private BlockSetConfig.BlockEntryDefinition[] cachedWeightedEntries;
+    private int cachedWeightedChance = -1;
+
     private BlockSetConfig.BlockEntryDefinition pickGenerationEntry(BlockSetConfig.SetLevelDefinition levelDefinition)
     {
         if (levelDefinition == null || levelDefinition.blocks == null || levelDefinition.blocks.isEmpty())
@@ -331,26 +367,34 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return null;
         }
 
-        List<BlockSetConfig.BlockEntryDefinition> allowed = new ArrayList<>();
-        int totalChance = 0;
-        for (BlockSetConfig.BlockEntryDefinition candidate : levelDefinition.blocks)
+        int disableMask = (disableFluidGeneration ? 1 : 0) | (disableChestGeneration ? 2 : 0) | (disableSaplingGeneration ? 4 : 0);
+        if (levelDefinition != cachedWeightedLevel || disableMask != cachedDisableMask)
         {
-            if (!isAllowedGenerationEntry(candidate))
+            List<BlockSetConfig.BlockEntryDefinition> allowed = new ArrayList<>();
+            int totalChance = 0;
+            for (BlockSetConfig.BlockEntryDefinition candidate : levelDefinition.blocks)
             {
-                continue;
+                if (!isAllowedGenerationEntry(candidate))
+                {
+                    continue;
+                }
+                totalChance += candidate.getChance();
+                allowed.add(candidate);
             }
-            totalChance += candidate.getChance();
-            allowed.add(candidate);
+            cachedWeightedLevel = levelDefinition;
+            cachedDisableMask = disableMask;
+            cachedWeightedChance = totalChance;
+            cachedWeightedEntries = allowed.toArray(new BlockSetConfig.BlockEntryDefinition[0]);
         }
 
-        if (allowed.isEmpty())
+        if (cachedWeightedEntries.length == 0 || cachedWeightedChance <= 0)
         {
             return null;
         }
 
-        int roll = world.rand.nextInt(Math.max(1, totalChance));
+        int roll = world.rand.nextInt(cachedWeightedChance);
         int current = 0;
-        for (BlockSetConfig.BlockEntryDefinition candidate : allowed)
+        for (BlockSetConfig.BlockEntryDefinition candidate : cachedWeightedEntries)
         {
             current += candidate.getChance();
             if (roll < current)
@@ -358,7 +402,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                 return candidate;
             }
         }
-        return allowed.get(allowed.size() - 1);
+        return cachedWeightedEntries[cachedWeightedEntries.length - 1];
     }
 
     private static NBTTagCompound ensureObuGenerated(NBTTagCompound nbtTags)
@@ -378,31 +422,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
         {
             return false;
         }
-        if (disableChestGeneration && isChestEntry(entry))
+        if (disableChestGeneration && entry.isChestEntry())
         {
             return false;
         }
-        return !disableSaplingGeneration || !isSaplingEntry(entry);
-    }
-
-    private boolean isChestEntry(BlockSetConfig.BlockEntryDefinition entry)
-    {
-        if (entry == null || entry.registry == null)
-        {
-            return false;
-        }
-        String registry = entry.registry.toLowerCase(Locale.ROOT);
-        return registry.contains("chest") || registry.contains("barrel");
-    }
-
-    private boolean isSaplingEntry(BlockSetConfig.BlockEntryDefinition entry)
-    {
-        if (entry == null || entry.registry == null)
-        {
-            return false;
-        }
-        String registry = entry.registry.toLowerCase(Locale.ROOT);
-        return registry.contains("sapling");
+        return !disableSaplingGeneration || !entry.isSaplingEntry();
     }
 
     private int resolveGenerationLevel()
@@ -742,6 +766,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
     public void tickInvites()
     {
+        if (pendingInvites.isEmpty())
+        {
+            return;
+        }
+
         Iterator<PendingInvite> iterator = pendingInvites.iterator();
         while (iterator.hasNext())
         {

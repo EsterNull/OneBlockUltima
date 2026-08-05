@@ -1,6 +1,9 @@
 package ru.defea.oneblockultima;
 
 import net.minecraft.init.Bootstrap;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
@@ -30,6 +33,19 @@ public class BlockSetConfigSyncTest {
 
     private void restore() {
         BlockSetConfig.applySets(previousConfig != null ? previousConfig.getSets() : Collections.emptyList());
+    }
+
+    private void quietLoadFromServerJson(String json) {
+        String loggerName = OneBlockUltima.MODID;
+        org.apache.logging.log4j.core.LoggerContext context =
+                (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+        Level previousLevel = context.getConfiguration().getLoggerConfig(loggerName).getLevel();
+        Configurator.setLevel(loggerName, Level.OFF);
+        try {
+            BlockSetConfig.loadFromServerJson(json);
+        } finally {
+            Configurator.setLevel(loggerName, previousLevel);
+        }
     }
 
     @Test
@@ -198,7 +214,7 @@ public class BlockSetConfigSyncTest {
         BlockSetConfig original = BlockSetConfig.get();
         int countBefore = original.getSets().size();
 
-        BlockSetConfig.loadFromServerJson("not valid json {{{");
+        quietLoadFromServerJson("not valid json {{{");
         BlockSetConfig after = BlockSetConfig.get();
 
         assertEquals(countBefore, after.getSets().size());
@@ -209,7 +225,7 @@ public class BlockSetConfigSyncTest {
         BlockSetConfig original = BlockSetConfig.get();
         int countBefore = original.getSets().size();
 
-        BlockSetConfig.loadFromServerJson("");
+        quietLoadFromServerJson("");
         BlockSetConfig after = BlockSetConfig.get();
 
         assertEquals(countBefore, after.getSets().size());

@@ -111,6 +111,8 @@ public class GuiSetsConfig extends GuiScreen
     private boolean suppressNextMouseClick = false;
     private String pendingAddEntrySearchText = "";
 
+    private final java.util.Map<String, Entity> mobEntityCache = new java.util.HashMap<>();
+
     public GuiSetsConfig(GuiScreen parent)
     {
         this.parent = parent;
@@ -122,7 +124,41 @@ public class GuiSetsConfig extends GuiScreen
     {
         Keyboard.enableRepeatEvents(true);
         buttonList.clear();
+        mobEntityCache.clear();
         buildView();
+    }
+
+    private Entity resolveEntity(String registry)
+    {
+        if (registry == null || registry.isEmpty())
+        {
+            return null;
+        }
+
+        Entity cached = mobEntityCache.get(registry);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        try
+        {
+            World renderWorld = ModelUtil.getWorldOrCreateDummy();
+            Entity entity = renderWorld != null ? EntityList.createEntityByIDFromName(new ResourceLocation(registry), renderWorld) : null;
+            if (entity != null)
+            {
+                if (entity.world == null)
+                {
+                    entity.world = renderWorld;
+                }
+                mobEntityCache.put(registry, entity);
+            }
+            return entity;
+        }
+        catch (Exception ignored)
+        {
+            return null;
+        }
     }
 
     private void buildView()
@@ -828,13 +864,7 @@ public class GuiSetsConfig extends GuiScreen
                         if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
 
                         int iconSize = Math.min(16, height - 4);
-                        EntityRendererElement mobIcon = new EntityRendererElement(null);
-                        try {
-                            World renderWorld = ModelUtil.getWorldOrCreateDummy();
-                            Entity entity = EntityList.createEntityByIDFromName(new ResourceLocation(mob.registry), renderWorld);
-                            if (entity != null && entity.world == null) entity.world = renderWorld;
-                            mobIcon.entity(entity);
-                        } catch (Exception ignored) { }
+                        EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(mob.registry));
                         mobIcon.scale(iconSize);
                         mobIcon.setComputedPosition(x + 2, y + 2);
                         mobIcon.setComputedSize(iconSize, iconSize);
@@ -948,13 +978,7 @@ public class GuiSetsConfig extends GuiScreen
                         fluidIcon.setComputedSize(iconSize, iconSize);
                         fluidIcon.draw(fr, mouseX, mouseY, 0);
                     } else if (result.isMob && result.entityClass != null) {
-                        EntityRendererElement mobIcon = new EntityRendererElement(null);
-                        try {
-                            World renderWorld = ModelUtil.getWorldOrCreateDummy();
-                            Entity entity = renderWorld != null ? EntityList.createEntityByIDFromName(new ResourceLocation(result.registry), renderWorld) : null;
-                            if (entity != null && entity.world == null) entity.world = renderWorld;
-                            mobIcon.entity(entity);
-                        } catch (Exception ignored) { }
+                        EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(result.registry));
                         mobIcon.scale(iconSize);
                         mobIcon.setComputedPosition(x + 2, y + 2);
                         mobIcon.setComputedSize(iconSize, iconSize);

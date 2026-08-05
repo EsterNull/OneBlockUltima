@@ -153,7 +153,7 @@ public final class ModBlocks
         new RegisterBlock(COMPRESSED_NETHERRACK, true, "normal", 0, "compressed_netherrack", BlockCompressedNetherrack.MAX_LEVEL)
     };
 
-    public static final int CUSTOM_BREAKABLE_POOL_SIZE = 128;
+    public static final int CUSTOM_BREAKABLE_POOL_SIZE = 32;
 
     public static final List<BlockCustomBreakable> CUSTOM_BREAKABLE_POOL = new ArrayList<>();
 

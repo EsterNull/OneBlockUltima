@@ -73,6 +73,7 @@ public class GuiBlockPrices extends GuiScreen
 
     private void buildView()
     {
+        buttonList.clear();
         if (priceList != null) scrollOffset = priceList.getScrollOffset();
         if (searchList != null) searchScrollOffset = searchList.getScrollOffset();
 

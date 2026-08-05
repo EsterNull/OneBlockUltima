@@ -9,6 +9,7 @@ import com.google.gson.stream.JsonWriter;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityList;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -55,6 +56,8 @@ public final class BlockSetConfig
     private SettingsDefinition settings = new SettingsDefinition();
 
     private transient Map<String, BlockSetDefinition> setsById = new HashMap<>();
+    private transient String cachedDefaultSetId;
+    private transient boolean defaultSetIdComputed;
 
     public static BlockSetConfig get()
     {
@@ -318,6 +321,7 @@ public final class BlockSetConfig
     private void buildIndex()
     {
         setsById = new HashMap<>();
+        defaultSetIdComputed = false;
         if (sets == null)
         {
             sets = new ArrayList<>();
@@ -404,6 +408,11 @@ public final class BlockSetConfig
     @Nonnull
     public String getDefaultSetId()
     {
+        if (defaultSetIdComputed)
+        {
+            return cachedDefaultSetId;
+        }
+
         BlockSetConfig current = get();
         if (current != null && current.sets != null && !current.sets.isEmpty())
         {
@@ -411,24 +420,32 @@ public final class BlockSetConfig
             {
                 if (set != null && set.isAvailable() && set.id != null && !set.id.isEmpty())
                 {
-                    return set.id;
+                    cachedDefaultSetId = set.id;
+                    defaultSetIdComputed = true;
+                    return cachedDefaultSetId;
                 }
             }
 
             BlockSetDefinition first = current.sets.get(0);
             if (first != null && first.id != null && !first.id.isEmpty())
             {
-                return first.id;
+                cachedDefaultSetId = first.id;
+                defaultSetIdComputed = true;
+                return cachedDefaultSetId;
             }
         }
 
         BlockSetConfig fallback = loadDefaultFromResources();
         if (fallback != null && fallback.getSets() != null && !fallback.getSets().isEmpty())
         {
-            return fallback.getDefaultSetId();
+            cachedDefaultSetId = fallback.getDefaultSetId();
+            defaultSetIdComputed = true;
+            return cachedDefaultSetId;
         }
 
-        return "";
+        cachedDefaultSetId = "";
+        defaultSetIdComputed = true;
+        return cachedDefaultSetId;
     }
 
     public static boolean isRegistryModUnloaded(String registry)
@@ -1117,6 +1134,9 @@ public final class BlockSetConfig
         public List<BlockEntryDefinition> blocks = new ArrayList<>();
         public List<MobEntryDefinition> mobs = new ArrayList<>();
 
+        private transient MobEntryDefinition[] weightedMobs;
+        private transient int totalMobChance = -1;
+
         public MobEntryDefinition pickMob(Random random)
         {
             if (mobs == null || mobs.isEmpty())
@@ -1124,31 +1144,35 @@ public final class BlockSetConfig
                 return null;
             }
 
-            int totalChance = 0;
-            for (MobEntryDefinition entry : mobs)
+            if (weightedMobs == null)
             {
-                if (entry != null && entry.getChance() > 0 && isMobAvailable(entry.registry))
+                List<MobEntryDefinition> filtered = new ArrayList<>();
+                int total = 0;
+                for (MobEntryDefinition entry : mobs)
                 {
-                    totalChance += entry.getChance();
+                    if (entry != null && entry.getChance() > 0 && isMobAvailable(entry.registry))
+                    {
+                        filtered.add(entry);
+                        total += entry.getChance();
+                    }
                 }
+                weightedMobs = filtered.toArray(new MobEntryDefinition[0]);
+                totalMobChance = total;
             }
 
-            if (totalChance <= 0)
+            if (weightedMobs.length == 0 || totalMobChance <= 0)
             {
                 return null;
             }
 
-            int roll = random.nextInt(Math.max(100, totalChance));
+            int roll = random.nextInt(Math.max(100, totalMobChance));
             int current = 0;
-            for (MobEntryDefinition entry : mobs)
+            for (MobEntryDefinition entry : weightedMobs)
             {
-                if (entry != null && entry.getChance() > 0 && isMobAvailable(entry.registry))
+                current += entry.getChance();
+                if (roll < current)
                 {
-                    current += entry.getChance();
-                    if (roll < current)
-                    {
-                        return entry;
-                    }
+                    return entry;
                 }
             }
 
@@ -1167,6 +1191,13 @@ public final class BlockSetConfig
 
         private transient Block resolvedBlockCache;
         private transient boolean resolvedBlockCacheSet;
+        private transient ItemStack cachedPickStack;
+        private transient boolean pickStackCached;
+        private transient int classification = -1;
+
+        private static final int CLASS_FLUID = 1;
+        private static final int CLASS_CHEST = 2;
+        private static final int CLASS_SAPLING = 4;
 
         public int getChance()
         {
@@ -1190,13 +1221,58 @@ public final class BlockSetConfig
             return resolvedBlockCache;
         }
 
+        private void ensureClassification()
+        {
+            if (classification != -1)
+            {
+                return;
+            }
+            classification = 0;
+            if (registry != null && !registry.isEmpty())
+            {
+                String lowered = registry.toLowerCase(Locale.ROOT);
+                if (lowered.contains("chest") || lowered.contains("barrel"))
+                {
+                    classification |= CLASS_CHEST;
+                }
+                if (lowered.contains("sapling"))
+                {
+                    classification |= CLASS_SAPLING;
+                }
+            }
+            Block block = resolveBlock();
+            if (block instanceof IFluidBlock || (block != null && FluidRegistry.lookupFluidForBlock(block) != null))
+            {
+                classification |= CLASS_FLUID;
+            }
+        }
+
         public boolean isFluid() {
-            net.minecraft.block.Block block = this.resolveBlock();
-            if (block == null) return false;
-            return block instanceof IFluidBlock || FluidRegistry.lookupFluidForBlock(block) != null;
+            ensureClassification();
+            return (classification & CLASS_FLUID) != 0;
+        }
+
+        public boolean isChestEntry() {
+            ensureClassification();
+            return (classification & CLASS_CHEST) != 0;
+        }
+
+        public boolean isSaplingEntry() {
+            ensureClassification();
+            return (classification & CLASS_SAPLING) != 0;
         }
 
         public net.minecraft.item.ItemStack getPickBlock()
+        {
+            if (!pickStackCached)
+            {
+                pickStackCached = true;
+                cachedPickStack = computePickBlock();
+            }
+            return cachedPickStack;
+        }
+
+        private net.minecraft.item.ItemStack computePickBlock()
         {
             // If dropItem is specified, use it
             if (dropItem != null && !dropItem.isEmpty())
@@ -1237,6 +1313,25 @@ public final class BlockSetConfig
                     }
                     catch (Exception ignored) {}
                 }
+            }
+
+            // GUI fallback: try the registry as a placeable item (wheat, carrots, reeds, etc.)
+            if (registry != null && !registry.isEmpty())
+            {
+                try
+                {
+                    net.minecraft.item.Item registryItem = ForgeRegistries.ITEMS.getValue(new ResourceLocation(registry));
+                    if (registryItem != null && registryItem != net.minecraft.init.Items.AIR)
+                    {
+                        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(registryItem, 1, meta);
+                        if (nbtTags != null && !nbtTags.hasNoTags())
+                        {
+                            stack.setTagCompound(nbtTags.copy());
+                        }
+                        return stack;
+                    }
+                }
+                catch (Exception ignored) {}
             }
 
             return net.minecraft.item.ItemStack.EMPTY;
