@@ -30,6 +30,7 @@
     <li><a href="https://www.curseforge.com/minecraft/mc-mods/oneblockultima">Curse Forge</a>
     <li><a href="https://tlmods.org/ru/mods/oneblockultima/">TLauncher</a>
     <li><a href="https://minecraft-inside.ru/194280/">Minecraft Inside</a>
+    <li><a href="https://obmodin.com/curseforge/1614865/oneblockultima">Obmodin</a>
 </li>
 </ul>
 
