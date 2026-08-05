@@ -6,7 +6,7 @@
     "RRR"
   ],
   "key": {
-    "R": { "item": "oneblockultima:compressed_redstone_block_6x" },
+    "R": { "item": "oneblockultima:compressed_redstone_block", "data": 5 },
     "T": { "item": "minecraft:tnt" }
   },
   "result": {

@@ -33,7 +33,18 @@ public final class ModModels
     {
         for (ModBlocks.RegisterBlock modBlock : ModBlocks.modBlocks)
         {
-            registerBlockModel(modBlock.getBlock(), modBlock.getVariantIn(), modBlock.getMeta());
+            if (modBlock.getSubBlockCount() > 1)
+            {
+                Item item = Item.getItemFromBlock(modBlock.getBlock());
+                for (int m = 0; m < modBlock.getSubBlockCount(); m++)
+                {
+                    registerItemModel(item, String.valueOf(m), m);
+                }
+            }
+            else
+            {
+                registerBlockModel(modBlock.getBlock(), modBlock.getVariantIn(), modBlock.getMeta());
+            }
         }
         for (ModItems.RegisterItem modItems : ModItems.modItems)
         {

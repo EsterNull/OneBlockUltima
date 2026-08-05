@@ -2,34 +2,44 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_5x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 4
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_lapis_block_6x"
+    "item": "oneblockultima:compressed_lapis_block",
+    "data": 5
   }
 }

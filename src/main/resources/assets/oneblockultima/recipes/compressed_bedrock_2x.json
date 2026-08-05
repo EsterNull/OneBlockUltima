@@ -2,34 +2,44 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     },
     {
-      "item": "oneblockultima:compressed_bedrock_1x"
+      "item": "oneblockultima:compressed_bedrock",
+      "data": 0
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_bedrock_2x"
+    "item": "oneblockultima:compressed_bedrock",
+    "data": 1
   }
 }

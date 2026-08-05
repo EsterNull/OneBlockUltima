@@ -227,66 +227,66 @@ item.natural_poison.name=Природный яд
 item.super_poison.name=Супер яд
 item.liquid_death.name=Жидкая смерть
 
-tile.compressed_bedrock_1x.name=Сжатый бедрок
-tile.compressed_bedrock_2x.name=Двукратно сжатый бедрок
-tile.compressed_bedrock_3x.name=Трекратно сжатый бедрок
-tile.compressed_bedrock_4x.name=Четырекратно сжатый бедрок
+tile.compressed_bedrock.0.name=Сжатый бедрок
+tile.compressed_bedrock.1.name=Двукратно сжатый бедрок
+tile.compressed_bedrock.2.name=Трекратно сжатый бедрок
+tile.compressed_bedrock.3.name=Четырекратно сжатый бедрок
 
-tile.compressed_redstone_block_1x.name=Сжатый редстоуновый блок
-tile.compressed_redstone_block_2x.name=Двукратно сжатый редстоуновый блок
-tile.compressed_redstone_block_3x.name=Трекратно сжатый редстоуновый блок
-tile.compressed_redstone_block_4x.name=Четырекратно сжатый редстоуновый блок
-tile.compressed_redstone_block_5x.name=Пятикратно сжатый редстоуновый блок
-tile.compressed_redstone_block_6x.name=Шестикратно сжатый редстоуновый блок
+tile.compressed_redstone_block.0.name=Сжатый редстоуновый блок
+tile.compressed_redstone_block.1.name=Двукратно сжатый редстоуновый блок
+tile.compressed_redstone_block.2.name=Трекратно сжатый редстоуновый блок
+tile.compressed_redstone_block.3.name=Четырекратно сжатый редстоуновый блок
+tile.compressed_redstone_block.4.name=Пятикратно сжатый редстоуновый блок
+tile.compressed_redstone_block.5.name=Шестикратно сжатый редстоуновый блок
 
-tile.compressed_lapis_block_1x.name=Сжатый лазуритовый блок
-tile.compressed_lapis_block_2x.name=Двукратно сжатый лазуритовый блок
-tile.compressed_lapis_block_3x.name=Трекратно сжатый лазуритовый блок
-tile.compressed_lapis_block_4x.name=Четырекратно сжатый лазуритовый блок
-tile.compressed_lapis_block_5x.name=Пятикратно сжатый лазуритовый блок
-tile.compressed_lapis_block_6x.name=Шестикратно сжатый лазуритовый блок
+tile.compressed_lapis_block.0.name=Сжатый лазуритовый блок
+tile.compressed_lapis_block.1.name=Двукратно сжатый лазуритовый блок
+tile.compressed_lapis_block.2.name=Трекратно сжатый лазуритовый блок
+tile.compressed_lapis_block.3.name=Четырекратно сжатый лазуритовый блок
+tile.compressed_lapis_block.4.name=Пятикратно сжатый лазуритовый блок
+tile.compressed_lapis_block.5.name=Шестикратно сжатый лазуритовый блок
 
-tile.compressed_diamond_block_1x.name=Сжатый алмазный блок
-tile.compressed_diamond_block_2x.name=Двукратно сжатый алмазный блок
-tile.compressed_diamond_block_3x.name=Трекратно сжатый алмазный блок
-tile.compressed_diamond_block_4x.name=Четырекратно сжатый алмазный блок
-tile.compressed_diamond_block_5x.name=Пятикратно сжатый алмазный блок
+tile.compressed_diamond_block.0.name=Сжатый алмазный блок
+tile.compressed_diamond_block.1.name=Двукратно сжатый алмазный блок
+tile.compressed_diamond_block.2.name=Трекратно сжатый алмазный блок
+tile.compressed_diamond_block.3.name=Четырекратно сжатый алмазный блок
+tile.compressed_diamond_block.4.name=Пятикратно сжатый алмазный блок
 
-tile.compressed_coal_block_1x.name=Сжатый угольный блок
-tile.compressed_coal_block_2x.name=Двукратно сжатый угольный блок
-tile.compressed_coal_block_3x.name=Трекратно сжатый угольный блок
-tile.compressed_coal_block_4x.name=Четырекратно сжатый угольный блок
-tile.compressed_coal_block_5x.name=Пятикратно сжатый угольный блок
+tile.compressed_coal_block.0.name=Сжатый угольный блок
+tile.compressed_coal_block.1.name=Двукратно сжатый угольный блок
+tile.compressed_coal_block.2.name=Трекратно сжатый угольный блок
+tile.compressed_coal_block.3.name=Четырекратно сжатый угольный блок
+tile.compressed_coal_block.4.name=Пятикратно сжатый угольный блок
 
-tile.compressed_emerald_block_1x.name=Сжатый изумрудный блок
-tile.compressed_emerald_block_2x.name=Двукратно сжатый изумрудный блок
-tile.compressed_emerald_block_3x.name=Трекратно сжатый изумрудный блок
-tile.compressed_emerald_block_4x.name=Четырекратно сжатый изумрудный блок
-tile.compressed_emerald_block_5x.name=Пятикратно сжатый изумрудный блок
+tile.compressed_emerald_block.0.name=Сжатый изумрудный блок
+tile.compressed_emerald_block.1.name=Двукратно сжатый изумрудный блок
+tile.compressed_emerald_block.2.name=Трекратно сжатый изумрудный блок
+tile.compressed_emerald_block.3.name=Четырекратно сжатый изумрудный блок
+tile.compressed_emerald_block.4.name=Пятикратно сжатый изумрудный блок
 
-tile.compressed_end_stone_1x.name=Сжатый эндерняк
-tile.compressed_end_stone_2x.name=Двукратно сжатый эндерняк
-tile.compressed_end_stone_3x.name=Трекратно сжатый эндерняк
-tile.compressed_end_stone_4x.name=Четырекратно сжатый эндерняк
-tile.compressed_end_stone_5x.name=Пятикратно сжатый эндерняк
+tile.compressed_end_stone.0.name=Сжатый эндерняк
+tile.compressed_end_stone.1.name=Двукратно сжатый эндерняк
+tile.compressed_end_stone.2.name=Трекратно сжатый эндерняк
+tile.compressed_end_stone.3.name=Четырекратно сжатый эндерняк
+tile.compressed_end_stone.4.name=Пятикратно сжатый эндерняк
 
-tile.compressed_netherrack_1x.name=Сжатый незерит
-tile.compressed_netherrack_2x.name=Двукратно сжатый незерит
-tile.compressed_netherrack_3x.name=Трекратно сжатый незерит
-tile.compressed_netherrack_4x.name=Четырекратно сжатый незерит
-tile.compressed_netherrack_5x.name=Пятикратно сжатый незерит
+tile.compressed_netherrack.0.name=Сжатый незерит
+tile.compressed_netherrack.1.name=Двукратно сжатый незерит
+tile.compressed_netherrack.2.name=Трекратно сжатый незерит
+tile.compressed_netherrack.3.name=Четырекратно сжатый незерит
+tile.compressed_netherrack.4.name=Пятикратно сжатый незерит
 
-tile.compressed_gold_block_1x.name=Сжатый золотой блок
-tile.compressed_gold_block_2x.name=Двукратно сжатый золотой блок
-tile.compressed_gold_block_3x.name=Трекратно сжатый золотой блок
-tile.compressed_gold_block_4x.name=Четырекратно сжатый золотой блок
-tile.compressed_gold_block_5x.name=Пятикратно сжатый золотой блок
+tile.compressed_gold_block.0.name=Сжатый золотой блок
+tile.compressed_gold_block.1.name=Двукратно сжатый золотой блок
+tile.compressed_gold_block.2.name=Трекратно сжатый золотой блок
+tile.compressed_gold_block.3.name=Четырекратно сжатый золотой блок
+tile.compressed_gold_block.4.name=Пятикратно сжатый золотой блок
 
-tile.compressed_iron_block_1x.name=Сжатый железный блок
-tile.compressed_iron_block_2x.name=Двукратно сжатый железный блок
-tile.compressed_iron_block_3x.name=Трекратно сжатый железный блок
-tile.compressed_iron_block_4x.name=Четырекратно сжатый железный блок
-tile.compressed_iron_block_5x.name=Пятикратно сжатый железный блок
+tile.compressed_iron_block.0.name=Сжатый железный блок
+tile.compressed_iron_block.1.name=Двукратно сжатый железный блок
+tile.compressed_iron_block.2.name=Трекратно сжатый железный блок
+tile.compressed_iron_block.3.name=Четырекратно сжатый железный блок
+tile.compressed_iron_block.4.name=Пятикратно сжатый железный блок
 
 tile.compressed_mineral_block.name=Сжатый минеральный блок
 

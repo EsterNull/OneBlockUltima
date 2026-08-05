@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "oneblockultima:blocks/compressed_iron_block_3x"
+  }
+}

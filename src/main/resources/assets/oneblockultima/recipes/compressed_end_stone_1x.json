@@ -39,6 +39,7 @@
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_end_stone_1x"
+    "item": "oneblockultima:compressed_end_stone",
+    "data": 0
   }
 }

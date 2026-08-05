@@ -1,36 +1,34 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.properties.PropertyInteger;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
-import ru.defea.oneblockultima.OneBlockUltima;
 
-public class BlockCompressedLapisBlock extends Block {
-    public BlockCompressedLapisBlock() {
-        super(Material.IRON, MapColor.LAPIS);
-        init("compressed_lapis_block_1x");
-    }
+import javax.annotation.Nonnull;
 
-    protected BlockCompressedLapisBlock(String name) {
-        super(Material.IRON, MapColor.LAPIS);
-        init(name);
-    }
+public class BlockCompressedLapisBlock extends BlockCompressedBase {
+    public static final int MAX_LEVEL = 6;
+    private static final PropertyInteger LEVEL = PropertyInteger.create("level", 0, MAX_LEVEL - 1);
 
-    @Override
-    public float getExplosionResistance(Entity exploder) {
-        return Blocks.LAPIS_BLOCK.getExplosionResistance(exploder) * 9.0F;
-    }
-
-    private void init(String name)
+    public BlockCompressedLapisBlock()
     {
+        super(Material.IRON, MapColor.LAPIS, "compressed_lapis_block");
         this.setSoundType(SoundType.STONE);
         this.setHardness(3.0F * 9.0F);
         this.setResistance(5.0F * 9.0F);
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setUnlocalizedName(name);
-        this.setRegistryName(OneBlockUltima.MODID, name);
+    }
+
+    @Override
+    protected PropertyInteger getLevelProperty()
+    {
+        return LEVEL;
+    }
+
+    @Override
+    public float getExplosionResistance(@Nonnull Entity exploder) {
+        return Blocks.LAPIS_BLOCK.getExplosionResistance(exploder) * 9.0F;
     }
 }

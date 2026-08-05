@@ -2,31 +2,40 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_redstone_block_6x"
+      "item": "oneblockultima:compressed_redstone_block",
+      "data": 5
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_6x"
+      "item": "oneblockultima:compressed_lapis_block",
+      "data": 5
     },
     {
-      "item": "oneblockultima:compressed_diamond_block_5x"
+      "item": "oneblockultima:compressed_diamond_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_gold_block_5x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_iron_block_5x"
+      "item": "oneblockultima:compressed_iron_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_end_stone_5x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_emerald_block_5x"
+      "item": "oneblockultima:compressed_emerald_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_coal_block_5x"
+      "item": "oneblockultima:compressed_coal_block",
+      "data": 4
     },
     {
-      "item": "oneblockultima:compressed_netherrack_5x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 4
     }
   ],
   "result": {

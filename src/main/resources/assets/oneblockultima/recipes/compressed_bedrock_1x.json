@@ -30,6 +30,7 @@
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_bedrock_1x"
+    "item": "oneblockultima:compressed_bedrock",
+    "data": 0
   }
 }

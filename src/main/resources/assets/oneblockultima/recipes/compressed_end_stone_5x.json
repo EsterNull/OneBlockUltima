@@ -2,34 +2,44 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_end_stone_4x"
+      "item": "oneblockultima:compressed_end_stone",
+      "data": 3
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_end_stone_5x"
+    "item": "oneblockultima:compressed_end_stone",
+    "data": 4
   }
 }

@@ -227,66 +227,66 @@ item.natural_poison.name=Natural poison
 item.super_poison.name=Super poison
 item.liquid_death.name=Liquid death
 
-tile.compressed_bedrock_1x.name=Compressed bedrock
-tile.compressed_bedrock_2x.name=Double compressed bedrock
-tile.compressed_bedrock_3x.name=Triple compressed bedrock
-tile.compressed_bedrock_4x.name=Quadruple compressed bedrock
+tile.compressed_bedrock.0.name=Compressed bedrock
+tile.compressed_bedrock.1.name=Double compressed bedrock
+tile.compressed_bedrock.2.name=Triple compressed bedrock
+tile.compressed_bedrock.3.name=Quadruple compressed bedrock
 
-tile.compressed_redstone_block_1x.name=Compressed redstone block
-tile.compressed_redstone_block_2x.name=Double compressed redstone block
-tile.compressed_redstone_block_3x.name=Triple compressed redstone block
-tile.compressed_redstone_block_4x.name=Quadruple compressed redstone block
-tile.compressed_redstone_block_5x.name=Quintuple compressed redstone block
-tile.compressed_redstone_block_6x.name=Sextuple compressed redstone block
+tile.compressed_redstone_block.0.name=Compressed redstone block
+tile.compressed_redstone_block.1.name=Double compressed redstone block
+tile.compressed_redstone_block.2.name=Triple compressed redstone block
+tile.compressed_redstone_block.3.name=Quadruple compressed redstone block
+tile.compressed_redstone_block.4.name=Quintuple compressed redstone block
+tile.compressed_redstone_block.5.name=Sextuple compressed redstone block
 
-tile.compressed_lapis_block_1x.name=Compressed lapis block
-tile.compressed_lapis_block_2x.name=Double compressed lapis block
-tile.compressed_lapis_block_3x.name=Triple compressed lapis block
-tile.compressed_lapis_block_4x.name=Quadruple compressed lapis block
-tile.compressed_lapis_block_5x.name=Quintuple compressed lapis block
-tile.compressed_lapis_block_6x.name=Sextuple compressed lapis block
+tile.compressed_lapis_block.0.name=Compressed lapis block
+tile.compressed_lapis_block.1.name=Double compressed lapis block
+tile.compressed_lapis_block.2.name=Triple compressed lapis block
+tile.compressed_lapis_block.3.name=Quadruple compressed lapis block
+tile.compressed_lapis_block.4.name=Quintuple compressed lapis block
+tile.compressed_lapis_block.5.name=Sextuple compressed lapis block
 
-tile.compressed_diamond_block_1x.name=Compressed diamond block
-tile.compressed_diamond_block_2x.name=Double compressed diamond block
-tile.compressed_diamond_block_3x.name=Triple compressed diamond block
-tile.compressed_diamond_block_4x.name=Quadruple compressed diamond block
-tile.compressed_diamond_block_5x.name=Quintuple compressed diamond block
+tile.compressed_diamond_block.0.name=Compressed diamond block
+tile.compressed_diamond_block.1.name=Double compressed diamond block
+tile.compressed_diamond_block.2.name=Triple compressed diamond block
+tile.compressed_diamond_block.3.name=Quadruple compressed diamond block
+tile.compressed_diamond_block.4.name=Quintuple compressed diamond block
 
-tile.compressed_coal_block_1x.name=Compressed coal block
-tile.compressed_coal_block_2x.name=Double compressed coal block
-tile.compressed_coal_block_3x.name=Triple compressed coal block
-tile.compressed_coal_block_4x.name=Quadruple compressed coal block
-tile.compressed_coal_block_5x.name=Quintuple compressed coal block
+tile.compressed_coal_block.0.name=Compressed coal block
+tile.compressed_coal_block.1.name=Double compressed coal block
+tile.compressed_coal_block.2.name=Triple compressed coal block
+tile.compressed_coal_block.3.name=Quadruple compressed coal block
+tile.compressed_coal_block.4.name=Quintuple compressed coal block
 
-tile.compressed_emerald_block_1x.name=Compressed emerald block
-tile.compressed_emerald_block_2x.name=Double compressed emerald block
-tile.compressed_emerald_block_3x.name=Triple compressed emerald block
-tile.compressed_emerald_block_4x.name=Quadruple compressed emerald block
-tile.compressed_emerald_block_5x.name=Quintuple compressed emerald block
+tile.compressed_emerald_block.0.name=Compressed emerald block
+tile.compressed_emerald_block.1.name=Double compressed emerald block
+tile.compressed_emerald_block.2.name=Triple compressed emerald block
+tile.compressed_emerald_block.3.name=Quadruple compressed emerald block
+tile.compressed_emerald_block.4.name=Quintuple compressed emerald block
 
-tile.compressed_end_stone_1x.name=Compressed end stone
-tile.compressed_end_stone_2x.name=Double compressed end stone
-tile.compressed_end_stone_3x.name=Triple compressed end stone
-tile.compressed_end_stone_4x.name=Quadruple compressed end stone
-tile.compressed_end_stone_5x.name=Quintuple compressed end stone
+tile.compressed_end_stone.0.name=Compressed end stone
+tile.compressed_end_stone.1.name=Double compressed end stone
+tile.compressed_end_stone.2.name=Triple compressed end stone
+tile.compressed_end_stone.3.name=Quadruple compressed end stone
+tile.compressed_end_stone.4.name=Quintuple compressed end stone
 
-tile.compressed_netherrack_1x.name=Compressed netherrack
-tile.compressed_netherrack_2x.name=Double compressed netherrack
-tile.compressed_netherrack_3x.name=Triple compressed netherrack
-tile.compressed_netherrack_4x.name=Quadruple compressed netherrack
-tile.compressed_netherrack_5x.name=Quintuple compressed netherrack
+tile.compressed_netherrack.0.name=Compressed netherrack
+tile.compressed_netherrack.1.name=Double compressed netherrack
+tile.compressed_netherrack.2.name=Triple compressed netherrack
+tile.compressed_netherrack.3.name=Quadruple compressed netherrack
+tile.compressed_netherrack.4.name=Quintuple compressed netherrack
 
-tile.compressed_gold_block_1x.name=Compressed gold block
-tile.compressed_gold_block_2x.name=Double compressed gold block
-tile.compressed_gold_block_3x.name=Triple compressed gold block
-tile.compressed_gold_block_4x.name=Quadruple compressed gold block
-tile.compressed_gold_block_5x.name=Quintuple compressed gold block
+tile.compressed_gold_block.0.name=Compressed gold block
+tile.compressed_gold_block.1.name=Double compressed gold block
+tile.compressed_gold_block.2.name=Triple compressed gold block
+tile.compressed_gold_block.3.name=Quadruple compressed gold block
+tile.compressed_gold_block.4.name=Quintuple compressed gold block
 
-tile.compressed_iron_block_1x.name=Compressed iron block
-tile.compressed_iron_block_2x.name=Double compressed iron block
-tile.compressed_iron_block_3x.name=Triple compressed iron block
-tile.compressed_iron_block_4x.name=Quadruple compressed iron block
-tile.compressed_iron_block_5x.name=Quintuple compressed iron block
+tile.compressed_iron_block.0.name=Compressed iron block
+tile.compressed_iron_block.1.name=Double compressed iron block
+tile.compressed_iron_block.2.name=Triple compressed iron block
+tile.compressed_iron_block.3.name=Quadruple compressed iron block
+tile.compressed_iron_block.4.name=Quintuple compressed iron block
 
 tile.compressed_mineral_block.name=Compressed mineral block
 

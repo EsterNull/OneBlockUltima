@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "oneblockultima:blocks/compressed_lapis_block_5x"
+  }
+}

@@ -2,34 +2,44 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_netherrack_4x"
+      "item": "oneblockultima:compressed_netherrack",
+      "data": 3
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_netherrack_5x"
+    "item": "oneblockultima:compressed_netherrack",
+    "data": 4
   }
 }

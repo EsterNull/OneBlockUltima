@@ -2,34 +2,44 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     },
     {
-      "item": "oneblockultima:compressed_gold_block_4x"
+      "item": "oneblockultima:compressed_gold_block",
+      "data": 3
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_gold_block_5x"
+    "item": "oneblockultima:compressed_gold_block",
+    "data": 4
   }
 }

@@ -6,7 +6,7 @@
     "BBB"
   ],
   "key": {
-    "B": { "item": "oneblockultima:compressed_bedrock_4x" },
+    "B": { "item": "oneblockultima:compressed_bedrock", "data": 3 },
     "M": { "item": "oneblockultima:compressed_mineral_block" }
   },
   "result": {

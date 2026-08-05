@@ -39,6 +39,7 @@
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_lapis_block_1x"
+    "item": "oneblockultima:compressed_lapis_block",
+    "data": 0
   }
 }
