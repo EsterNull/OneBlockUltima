@@ -325,3 +325,39 @@ gui.oneblockultima.misc.non_player_break_cooldown=Generation delay for non-playe
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator
+
+# Guide book
+item.guide_book.name=OneBlock Guidebook
+book.oneblockultima.title=OneBlock Guidebook
+book.oneblockultima.close=Close
+book.oneblockultima.toc.title=Contents
+book.oneblockultima.tab.overview=Overview
+book.oneblockultima.tab.commands=Commands
+book.oneblockultima.tab.recipes=Recipes
+book.oneblockultima.tab.mechanics=Mechanics
+book.oneblockultima.overview.title=Overview
+book.oneblockultima.overview.line1=OneBlockUltima is a one-block survival mod. Break blocks, earn coins and upgrade your generator.
+book.oneblockultima.overview.line2=Block sets change as you progress. Unlock and upgrade them to gather more valuable resources.
+book.oneblockultima.overview.line3=Sell mined blocks or save coins to buy and upgrade sets.
+book.oneblockultima.overview.currency=Coins (OBU) are the main currency of the mod.
+book.oneblockultima.overview.sets=Each set has levels: higher level means better chances and variety.
+book.oneblockultima.overview.tip=Right-click the generator to open its settings.
+book.oneblockultima.command.obuSell.desc=Sell the generator-made item in your hand.
+book.oneblockultima.command.obuSellAll.desc=Sell all generator-made items of the same type as the item in your hand.
+book.oneblockultima.command.inviteGeneratorMember.desc=Invite a player to join your generator.
+book.oneblockultima.command.acceptGeneratorInvite.desc=Accept a generator invite.
+book.oneblockultima.command.declineGeneratorInvite.desc=Decline a generator invite.
+book.oneblockultima.command.cheat=cheat
+book.oneblockultima.command.addUltimaBalance.desc=Give yourself the specified amount of coins.
+book.oneblockultima.command.setOwner.desc=Set the generator owner by coordinates.
+book.oneblockultima.recipes_count=Total recipes: %s
+book.oneblockultima.recipes.empty=No recipes found.
+book.oneblockultima.mechanics.intro=The generator creates a block above itself from the active set. Every broken block is replaced by a new one.
+book.oneblockultima.mechanics.break=Drops work like in vanilla: tools and enchantments apply.
+book.oneblockultima.mechanics.mobs=Some set blocks can spawn mobs when broken. In the Overworld natural mob spawning is disabled by default, so mobs only appear from the generator. You can enable mob spawning in the mod settings.
+book.oneblockultima.mechanics.currency=Coins (OBU) are the mod's currency. Earn them by mining generator blocks or by selling the mined items.
+book.oneblockultima.mechanics.mode=The income mode (mining or selling) is configured in the mod settings.
+book.oneblockultima.mechanics.sets=Block sets determine which blocks and mobs the generator produces. Unlock sets and raise their level for coins.
+book.oneblockultima.mechanics.conditions=Unlocking sets may require conditions: an active set level or a number of broken blocks.
+book.oneblockultima.mechanics.invites=The owner can invite friends, who become generator members and can use it.
+book.oneblockultima.mechanics.tip=Right-click the generator to open its settings.

@@ -9,6 +9,7 @@ import ru.defea.oneblockultima.OneBlockUltima;
 @Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
 public final class ModItems
 {
+    @SuppressWarnings("unused")
     public static final class RegisterItem
     {
         private final Item item;
@@ -71,6 +72,7 @@ public final class ModItems
     public static final ItemSpaceSoup SPACE_SOUP = new ItemSpaceSoup();
     public static final ItemCompressedMineral COMPRESSED_MINERAL = new ItemCompressedMineral();
     public static final ItemFarStar FAR_STAR = new ItemFarStar();
+    public static final ItemGuideBook GUIDE_BOOK = new ItemGuideBook();
 
     public static final RegisterItem[] modItems = {
             new RegisterItem(GRAVITON),
@@ -88,7 +90,8 @@ public final class ModItems
             new RegisterItem(LIQUID_DEATH),
             new RegisterItem(SPACE_SOUP),
             new RegisterItem(COMPRESSED_MINERAL),
-            new RegisterItem(FAR_STAR)
+            new RegisterItem(FAR_STAR),
+            new RegisterItem(GUIDE_BOOK)
     };
 
     private ModItems()

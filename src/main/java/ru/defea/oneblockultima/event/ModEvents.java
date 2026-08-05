@@ -4,6 +4,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -34,6 +35,7 @@ import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.GuiHandler;
+import ru.defea.oneblockultima.item.ModItems;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketSyncBlockSetConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
@@ -346,6 +348,8 @@ public final class ModEvents
             OneBlockUltima.getLogger().error("[Sync] Failed to send BlockSetConfig", e);
         }
 
+        giveGuideBookOnFirstJoin((EntityPlayerMP) event.player);
+
         World world = event.player.world;
         if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
         {
@@ -401,6 +405,24 @@ public final class ModEvents
         }
 
         PacketSyncPlayerData.sendToPlayer(player);
+    }
+
+    private static void giveGuideBookOnFirstJoin(EntityPlayerMP player)
+    {
+        NBTTagCompound playerData = player.getEntityData();
+        if (playerData.getBoolean(NBT_GUIDE_BOOK_GIVEN))
+        {
+            return;
+        }
+
+        playerData.setBoolean(NBT_GUIDE_BOOK_GIVEN, true);
+        ItemStack guideBook = new ItemStack(ModItems.GUIDE_BOOK);
+        if (!player.inventory.addItemStackToInventory(guideBook))
+        {
+            EntityItem entityItem = new EntityItem(player.world, player.posX, player.posY + 0.5D, player.posZ, guideBook);
+            player.world.spawnEntity(entityItem);
+        }
+        OneBlockUltima.getLogger().info("[GuideBook] Given guide book to {}", player.getName());
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)

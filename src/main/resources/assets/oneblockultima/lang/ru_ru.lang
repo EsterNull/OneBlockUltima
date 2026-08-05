@@ -325,3 +325,39 @@ gui.oneblockultima.misc.non_player_break_cooldown=Задержка генера�
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Блок добыт из генератора
+
+# Guide book
+item.guide_book.name=Руководство OneBlock
+book.oneblockultima.title=Гайдбук OneBlock
+book.oneblockultima.close=Закрыть
+book.oneblockultima.toc.title=Оглавление
+book.oneblockultima.tab.overview=Обзор
+book.oneblockultima.tab.commands=Команды
+book.oneblockultima.tab.recipes=Рецепты
+book.oneblockultima.tab.mechanics=Механики
+book.oneblockultima.overview.title=Обзор
+book.oneblockultima.overview.line1=OneBlockUltima — это мод на выживание с одним блоком. Разбивайте блоки, зарабатывайте монеты и развивайте генератор.
+book.oneblockultima.overview.line2=Наборы блоков меняются по мере развития. Разблокируйте и улучшайте их, чтобы добывать более ценные ресурсы.
+book.oneblockultima.overview.line3=Продавайте добытые блоки или накапливайте монеты для покупки и улучшения наборов.
+book.oneblockultima.overview.currency=Монеты (OBU) — основная валюта мода.
+book.oneblockultima.overview.sets=Каждый набор имеет уровни: с ростом уровня растут шансы и разнообразие блоков.
+book.oneblockultima.overview.tip=Правый клик по генератору открывает его настройки.
+book.oneblockultima.command.obuSell.desc=Продать предмет из руки, полученный из генератора.
+book.oneblockultima.command.obuSellAll.desc=Продать все предметы из генератора того же типа, что и предмет в руке.
+book.oneblockultima.command.inviteGeneratorMember.desc=Пригласить игрока стать участником генератора.
+book.oneblockultima.command.acceptGeneratorInvite.desc=Принять приглашение в генератор.
+book.oneblockultima.command.declineGeneratorInvite.desc=Отклонить приглашение в генератор.
+book.oneblockultima.command.cheat=чит
+book.oneblockultima.command.addUltimaBalance.desc=Выдать себе указанное количество монет.
+book.oneblockultima.command.setOwner.desc=Назначить владельца генератора по координатам.
+book.oneblockultima.recipes_count=Всего рецептов: %s
+book.oneblockultima.recipes.empty=Рецепты не найдены.
+book.oneblockultima.mechanics.intro=Генератор создаёт над собой блок из активного набора. Каждый сломанный блок сменяется новым.
+book.oneblockultima.mechanics.break=Дроп сломанных блоков работает как в ванилле: действуют инструменты и зачарования.
+book.oneblockultima.mechanics.mobs=Часть блоков набора при ломании может призывать мобов. В Верхнем мире обычный спавн мобов отключён по умолчанию, поэтому мобы появляются только из генератора. Включить обычный спавн мобов можно в настройках мода.
+book.oneblockultima.mechanics.currency=Монеты (OBU) — валюта мода. Их можно получать за добычу блоков из генератора или за продажу добытых предметов.
+book.oneblockultima.mechanics.mode=Способ начисления монет (добыча или продажа) выбирается в настройках мода.
+book.oneblockultima.mechanics.sets=Наборы определяют, какие блоки и мобы появляются на генераторе. Разблокируйте их и повышайте уровень за монеты.
+book.oneblockultima.mechanics.conditions=Для разблокировки наборов могут требоваться условия: уровень активного набора или количество сломанных блоков.
+book.oneblockultima.mechanics.invites=Владелец может приглашать друзей — они станут участниками генератора и смогут им пользоваться.
+book.oneblockultima.mechanics.tip=Правый клик по генератору открывает его настройки.

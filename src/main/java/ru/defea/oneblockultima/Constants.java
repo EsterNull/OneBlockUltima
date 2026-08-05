@@ -5,8 +5,10 @@ import net.minecraft.util.ResourceLocation;
 public final class Constants {
     public static final ResourceLocation COIN_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png");
     public static final ResourceLocation SBP_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/sbp.png");
+    public static final ResourceLocation GUIDE_BOOK_BG_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/guide_book_bg.png");
 
     public static final String NBT_OBU_GENERATED = "obuGenerated";
+    public static final String NBT_GUIDE_BOOK_GIVEN = "obuGuideBookGiven";
     public static final String MINECRAFT_DOMAIN = "minecraft";
 
     public static final int OVERWORLD_DIMENSION_ID = 0;
