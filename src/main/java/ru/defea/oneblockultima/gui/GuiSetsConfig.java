@@ -638,10 +638,9 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(setsList);
 
         RowElement topRow = new RowElement(Alignment.CENTER).gap(4).widthPercent(100);
-        topRow.button(BUTTON_ADD_SET, I18n.format("gui.oneblockultima.config.add_set"));
-        topRow.spacer(1);
-        topRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
         topRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        topRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
+        topRow.button(BUTTON_ADD_SET, I18n.format("gui.oneblockultima.config.add_set"));
         factory.add(topRow);
     }
 
@@ -892,10 +891,10 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
-        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
+        btnRow.button(BUTTON_REMOVE_ENTRY, I18n.format("gui.oneblockultima.config.remove"));
         btnRow.button(BUTTON_ADD_BLOCK, I18n.format("gui.oneblockultima.config.add_block"));
         btnRow.button(BUTTON_ADD_MOB, I18n.format("gui.oneblockultima.config.add_mob"));
-        btnRow.button(BUTTON_REMOVE_ENTRY, I18n.format("gui.oneblockultima.config.remove"));
+        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
         factory.add(btnRow);
     }
 
@@ -1014,8 +1013,8 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName)).centered());
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
-        btnRow.button(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done"));
         btnRow.button(BUTTON_CANCEL, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.button(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done"));
     }
 
     private void buildEditView()
@@ -1067,9 +1066,9 @@ public class GuiSetsConfig extends GuiScreen
         formRow.add(fieldCol);
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_EDIT_NBT, I18n.format("gui.oneblockultima.config.nbt_edit"));
         btnRow.button(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done"));
-        btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
     }
 
     private void buildEditNbtView()
@@ -1179,10 +1178,10 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(nbtList);
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.settings.back"));
         btnRow.button(BUTTON_NBT_ADD, I18n.format(atContainer
                 ? "gui.oneblockultima.config.nbt_add_element"
                 : "gui.oneblockultima.config.nbt_add_tag"));
-        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.settings.back"));
     }
 
     private void buildNbtAddView()
@@ -1290,8 +1289,8 @@ public class GuiSetsConfig extends GuiScreen
         }
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
-        btnRow.button(BUTTON_NBT_DONE, I18n.format("gui.oneblockultima.done"));
         btnRow.button(BUTTON_NBT_CANCEL, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.button(BUTTON_NBT_DONE, I18n.format("gui.oneblockultima.done"));
     }
 
     private static boolean isScalarNbtType(int typeId)
@@ -1338,8 +1337,8 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.settings.back"));
-        btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.button(BUTTON_REQUIRED_MODS_DELETE, I18n.format("gui.oneblockultima.config.remove"));
+        btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.button(BUTTON_REQUIRED_MODS_SAVE, I18n.format("gui.oneblockultima.done"));
         factory.add(btnRow);
     }
@@ -1453,9 +1452,9 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_UNLOCK_CONDITIONS_BACK, I18n.format("gui.oneblockultima.settings.back"));
-        btnRow.button(BUTTON_UNLOCK_CONDITIONS_SAVE, I18n.format("gui.oneblockultima.done"));
-        btnRow.button(BUTTON_UNLOCK_CONDITIONS_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.button(BUTTON_UNLOCK_CONDITIONS_DELETE, I18n.format("gui.oneblockultima.config.remove"));
+        btnRow.button(BUTTON_UNLOCK_CONDITIONS_ADD, I18n.format("gui.oneblockultima.config.add"));
+        btnRow.button(BUTTON_UNLOCK_CONDITIONS_SAVE, I18n.format("gui.oneblockultima.done"));
         factory.add(btnRow);
     }
 

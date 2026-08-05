@@ -239,9 +239,9 @@ public class GuiBlockPrices extends GuiScreen
         setCostRow.add(setCostStepper);
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(4);
+        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
-        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
     }
 
     private void buildAddBlockView(ColumnElement view)
@@ -343,8 +343,8 @@ public class GuiBlockPrices extends GuiScreen
         priceRow.add(priceStepper);
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(8);
-        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.done"));
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.done"));
     }
 
     @Override
