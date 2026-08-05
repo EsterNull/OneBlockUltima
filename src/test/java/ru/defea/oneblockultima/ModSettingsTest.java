@@ -158,4 +158,34 @@ public class ModSettingsTest {
         settings.setNonPlayerBreakCooldownTicks(40);
         assertEquals(40, settings.getNonPlayerBreakCooldownTicks());
     }
+
+    // --- maxMobSpawnPercent ---
+
+    @Test
+    public void defaultMaxMobSpawnPercentIsTen() throws Exception {
+        ModSettings settings = newInstance();
+        assertEquals(10, settings.getMaxMobSpawnPercent());
+    }
+
+    @Test
+    public void setMaxMobSpawnPercentStoresValue() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setMaxMobSpawnPercent(25);
+        assertEquals(25, settings.getMaxMobSpawnPercent());
+    }
+
+    // --- maxGeneratorMembers ---
+
+    @Test
+    public void defaultMaxGeneratorMembersIsZero() throws Exception {
+        ModSettings settings = newInstance();
+        assertEquals(0, settings.getMaxGeneratorMembers());
+    }
+
+    @Test
+    public void setMaxGeneratorMembersStoresValue() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setMaxGeneratorMembers(5);
+        assertEquals(5, settings.getMaxGeneratorMembers());
+    }
 }

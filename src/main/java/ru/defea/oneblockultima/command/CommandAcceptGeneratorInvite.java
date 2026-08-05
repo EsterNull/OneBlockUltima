@@ -61,6 +61,12 @@ public class CommandAcceptGeneratorInvite extends CommandBase
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
+        if (generator.isMemberLimitReached() && !generator.hasAccess(player.getUniqueID()))
+        {
+            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.member_limit")).setStyle(new Style().setColor(TextFormatting.RED)));
+            return;
+        }
+
         if (!generator.acceptInvite(player.getUniqueID()))
         {
             sender.sendMessage(new TextComponentString(I18n.format("command.no_invite")).setStyle(new Style().setColor(TextFormatting.RED)));

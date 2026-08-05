@@ -24,6 +24,9 @@ public class GuiMiscSettings extends GuiScreen {
     private static final int MIN_MOB_SPAWN_PERCENT = 0;
     private static final int MAX_MOB_SPAWN_PERCENT = 100;
     private static final int MOB_SPAWN_STEP_PERCENT = 1;
+    private static final int MIN_GENERATOR_MEMBERS = 0;
+    private static final int MAX_GENERATOR_MEMBERS = 100;
+    private static final int GENERATOR_MEMBERS_STEP = 1;
 
     private final GuiScreen parent;
     private ViewFactory factory;
@@ -33,11 +36,13 @@ public class GuiMiscSettings extends GuiScreen {
     private int inviteDurationTicks;
     private int breakCooldownTicks;
     private int mobSpawnPercent;
+    private int generatorMembers;
 
     private ButtonToggleElement mobWorldGenerationToggle;
     private StepperElement inviteDurationStepper;
     private StepperElement breakCooldownStepper;
     private StepperElement mobSpawnPercentStepper;
+    private StepperElement generatorMembersStepper;
 
     public GuiMiscSettings(GuiScreen parent)
     {
@@ -55,6 +60,7 @@ public class GuiMiscSettings extends GuiScreen {
         inviteDurationTicks = settings.getInviteDurationTicks();
         breakCooldownTicks = settings.getNonPlayerBreakCooldownTicks();
         mobSpawnPercent = settings.getMaxMobSpawnPercent();
+        generatorMembers = settings.getMaxGeneratorMembers();
 
         buildView();
     }
@@ -108,6 +114,17 @@ public class GuiMiscSettings extends GuiScreen {
                 .gap(4);
         mobSpawnPercentControls.add(mobSpawnPercentStepper);
 
+        RowElement generatorMembersControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
+        generatorMembersControls.label(I18n.format("gui.oneblockultima.misc.max_generator_members"));
+        generatorMembersStepper = new StepperElement()
+                .value(generatorMembers)
+                .min(MIN_GENERATOR_MEMBERS)
+                .max(MAX_GENERATOR_MEMBERS)
+                .step(GENERATOR_MEMBERS_STEP)
+                .fieldWidth(50)
+                .gap(4);
+        generatorMembersControls.add(generatorMembersStepper);
+
         RowElement btnRow = factory.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
@@ -128,6 +145,7 @@ public class GuiMiscSettings extends GuiScreen {
             settings.setInviteDurationTicks(inviteDurationStepper.getValue());
             settings.setNonPlayerBreakCooldownTicks(breakCooldownStepper.getValue());
             settings.setMaxMobSpawnPercent(mobSpawnPercentStepper.getValue());
+            settings.setMaxGeneratorMembers(generatorMembersStepper.getValue());
             BlockSetConfig.invalidateComputedLevels();
             mc.displayGuiScreen(parent);
             return;

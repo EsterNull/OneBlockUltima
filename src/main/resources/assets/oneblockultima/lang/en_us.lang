@@ -199,6 +199,7 @@ command.inviteGeneratorMember.owner_only=Only the owner can invite members to th
 command.inviteGeneratorMember.self_invite=You cannot invite yourself.
 command.inviteGeneratorMember.invitation_received=You were invited to join generator ownership. Type /acceptGeneratorInvite to accept or /declineGeneratorInvite to decline.
 command.inviteGeneratorMember.invitation_sent=Invitation sent to %s.
+command.inviteGeneratorMember.member_limit=The generator has reached its member limit.
 command.acceptGeneratorInvite.accepted=You accepted the invitation.
 command.declineGeneratorInvite.declined=You declined the invitation.
 command.setOwner.success=Generator owner changed
@@ -322,6 +323,7 @@ gui.oneblockultima.misc.mob_world_generation=Mob generation in Overworld
 gui.oneblockultima.misc.invite_duration=Invitation duration (ticks):
 gui.oneblockultima.misc.non_player_break_cooldown=Generation delay for non-player (ticks):
 gui.oneblockultima.misc.max_mob_spawn_percent=Max mob spawn percent:
+gui.oneblockultima.misc.max_generator_members=Max generator members (0 - no limit):
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator

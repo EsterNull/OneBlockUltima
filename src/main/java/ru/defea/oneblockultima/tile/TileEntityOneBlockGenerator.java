@@ -543,6 +543,17 @@ public class TileEntityOneBlockGenerator extends TileEntity
         return player != null && ownerId != null && ownerId.equals(player.getUniqueID());
     }
 
+    public int getMemberCount()
+    {
+        return (ownerId != null ? 1 : 0) + memberIds.size();
+    }
+
+    public boolean isMemberLimitReached()
+    {
+        int limit = ModSettings.get().getMaxGeneratorMembers();
+        return limit > 0 && getMemberCount() >= limit;
+    }
+
     public boolean isFree()
     {
         return ownerId == null && memberIds.isEmpty();
@@ -668,6 +679,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
             if (invite.targetPlayerId.equals(targetPlayerId))
             {
                 iterator.remove();
+
+                if (!hasAccess(targetPlayerId) && isMemberLimitReached())
+                {
+                    return false;
+                }
 
                 if (world != null && !world.isRemote)
                 {

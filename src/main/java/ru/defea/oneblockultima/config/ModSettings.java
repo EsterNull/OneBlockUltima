@@ -35,6 +35,7 @@ public final class ModSettings
     private int inviteDurationTicks = 1200;
     private int nonPlayerBreakCooldownTicks = 20;
     private int maxMobSpawnPercent = 10;
+    private int maxGeneratorMembers = 0;
 
     public static ModSettings get()
     {
@@ -53,6 +54,7 @@ public final class ModSettings
     public int getInviteDurationTicks() { return inviteDurationTicks; }
     public int getNonPlayerBreakCooldownTicks() { return nonPlayerBreakCooldownTicks; }
     public int getMaxMobSpawnPercent() { return maxMobSpawnPercent; }
+    public int getMaxGeneratorMembers() { return maxGeneratorMembers; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { this.hOffset = offset; save(); }
@@ -62,6 +64,7 @@ public final class ModSettings
     public void setInviteDurationTicks(int inviteDurationTicks) { this.inviteDurationTicks = inviteDurationTicks; save(); }
     public void setNonPlayerBreakCooldownTicks(int nonPlayerBreakCooldownTicks) { this.nonPlayerBreakCooldownTicks = nonPlayerBreakCooldownTicks; save(); }
     public void setMaxMobSpawnPercent(int maxMobSpawnPercent) { this.maxMobSpawnPercent = maxMobSpawnPercent; save(); }
+    public void setMaxGeneratorMembers(int maxGeneratorMembers) { this.maxGeneratorMembers = maxGeneratorMembers; save(); }
 
     private static File getFile()
     {

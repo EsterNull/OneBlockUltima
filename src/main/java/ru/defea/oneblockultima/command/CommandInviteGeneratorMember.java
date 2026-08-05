@@ -87,6 +87,12 @@ public class CommandInviteGeneratorMember extends CommandBase
             return;
         }
 
+        if (generator.isMemberLimitReached())
+        {
+            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.member_limit")).setStyle(new Style().setColor(TextFormatting.RED)));
+            return;
+        }
+
         generator.addPendingInvite(target.getUniqueID(), owner.getUniqueID(), Math.max(1, ModSettings.get().getInviteDurationTicks()));
         target.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.invitation_received")).setStyle(new Style().setColor(TextFormatting.GREEN)));
         owner.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.invitation_sent", target.getName())).setStyle(new Style().setColor(TextFormatting.GREEN)));

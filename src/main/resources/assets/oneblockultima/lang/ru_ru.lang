@@ -199,6 +199,7 @@ command.inviteGeneratorMember.owner_only=Только владелец може�
 command.inviteGeneratorMember.self_invite=Вы не можете пригласить сами себя.
 command.inviteGeneratorMember.invitation_received=Вас пригласили стать участником генератора. Введите /acceptGeneratorInvite, чтобы принять, или /declineGeneratorInvite, чтобы отклонить.
 command.inviteGeneratorMember.invitation_sent=Приглашение отправлено игроку %s.
+command.inviteGeneratorMember.member_limit=Генератор достиг лимита участников.
 command.acceptGeneratorInvite.accepted=Вы приняли приглашение.
 command.declineGeneratorInvite.declined=Вы отклонили приглашение.
 command.setOwner.success=Владелец генератора изменен
@@ -322,6 +323,7 @@ gui.oneblockultima.misc.mob_world_generation=Генерация мобов в В
 gui.oneblockultima.misc.invite_duration=Длительность приглашения (тики):
 gui.oneblockultima.misc.non_player_break_cooldown=Задержка генерации для не игрока (тики):
 gui.oneblockultima.misc.max_mob_spawn_percent=Максимальный процент спавна мобов:
+gui.oneblockultima.misc.max_generator_members=Максимум участников генератора (0 - без лимита):
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Блок добыт из генератора
