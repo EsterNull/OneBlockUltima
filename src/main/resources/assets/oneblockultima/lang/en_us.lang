@@ -304,6 +304,13 @@ gui.oneblockultima.mod_settings.balance_mode=Income Mode
 gui.oneblockultima.mod_settings.balance_mode.break_block=By Breaking Blocks
 gui.oneblockultima.mod_settings.balance_mode.sell_block=By Selling Blocks
 
+# Mod settings - set cost increase
+gui.oneblockultima.mod_settings.set_cost_increase=Set Cost Increase
+gui.oneblockultima.mod_settings.set_cost_increase.fixed=Fixed
+gui.oneblockultima.mod_settings.set_cost_increase.multiplier=Multiplier
+gui.oneblockultima.mod_settings.set_cost_increase.value.fixed=By how much
+gui.oneblockultima.mod_settings.set_cost_increase.value.multiplier=By what factor
+
 # Block prices GUI
 gui.oneblockultima.prices.title=Block Price Table
 gui.oneblockultima.prices.add=Add

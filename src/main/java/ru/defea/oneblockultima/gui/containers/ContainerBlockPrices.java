@@ -9,6 +9,7 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
+import ru.defea.oneblockultima.config.BlockSetConfig;
 
 import java.util.*;
 
@@ -19,6 +20,9 @@ public class ContainerBlockPrices
     private final List<SearchResult> searchResults = new ArrayList<>();
     private String searchQuery = "";
     private BlockPriceConfig.BalanceMode currentBalanceMode;
+
+    private boolean setCostMultiplierMode;
+    private double setCostIncreaseValue;
 
     private String editingRegistry = "";
     private String editingName = "";
@@ -44,6 +48,9 @@ public class ContainerBlockPrices
     public ContainerBlockPrices()
     {
         this.currentBalanceMode = BlockPriceConfig.get().getBalanceMode();
+        BlockSetConfig.SettingsDefinition settings = BlockSetConfig.get().getSettings();
+        this.setCostMultiplierMode = "multiplier".equalsIgnoreCase(settings.setCostIncreaseMode);
+        this.setCostIncreaseValue = settings.setCostIncreaseValue;
         stagedPrices.clear();
         stagedPrices.putAll(BlockPriceConfig.get().getPrices());
         reloadPriceEntries();
@@ -53,10 +60,22 @@ public class ContainerBlockPrices
     public List<SearchResult> getSearchResults() { return searchResults; }
     public String getSearchQuery() { return searchQuery; }
     public BlockPriceConfig.BalanceMode getCurrentBalanceMode() { return currentBalanceMode; }
+    public boolean isSetCostMultiplierMode() { return setCostMultiplierMode; }
+    public double getSetCostIncreaseValue() { return setCostIncreaseValue; }
     public String getEditingRegistry() { return editingRegistry; }
     public String getEditingName() { return editingName; }
     public int getEditingMeta() { return editingMeta; }
     public double getEditingPrice() { return editingPrice; }
+
+    public void toggleSetCostMode()
+    {
+        setCostMultiplierMode = !setCostMultiplierMode;
+    }
+
+    public void setSetCostIncreaseValue(double value)
+    {
+        this.setCostIncreaseValue = Math.max(0, value);
+    }
 
     public void reloadPriceEntries()
     {
@@ -128,6 +147,12 @@ public class ContainerBlockPrices
     {
         BlockPriceConfig.get().replaceAll(stagedPrices);
         BlockPriceConfig.get().setBalanceMode(currentBalanceMode);
+
+        BlockSetConfig.SettingsDefinition settings = BlockSetConfig.get().getSettings();
+        settings.setCostIncreaseMode = setCostMultiplierMode ? "multiplier" : "fixed";
+        settings.setCostIncreaseValue = setCostIncreaseValue;
+        BlockSetConfig.invalidateComputedLevels();
+        BlockSetConfig.saveCurrentConfig();
     }
 
     public void performSearch()

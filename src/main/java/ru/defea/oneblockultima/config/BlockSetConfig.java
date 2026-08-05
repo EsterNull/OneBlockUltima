@@ -92,6 +92,22 @@ public final class BlockSetConfig
         saveToFile(configFile, instance);
     }
 
+    public static void invalidateComputedLevels()
+    {
+        if (instance == null)
+        {
+            return;
+        }
+
+        for (BlockSetDefinition set : instance.sets)
+        {
+            if (set != null)
+            {
+                set.computedLevels = null;
+            }
+        }
+    }
+
     public static void applySets(List<BlockSetDefinition> newSets)
     {
         if (instance == null)
@@ -477,6 +493,9 @@ public final class BlockSetConfig
         public boolean disableMobGeneration = false;
         public boolean disableChestGeneration = false;
         public boolean disableSaplingGeneration = false;
+
+        public String setCostIncreaseMode = "fixed";
+        public double setCostIncreaseValue = 50.0;
     }
 
     public static class UnlockConditionGroup
@@ -881,7 +900,7 @@ public final class BlockSetConfig
                 SetLevelDefinition lvlDef = new SetLevelDefinition();
                 lvlDef.level = level;
                 int baseOpenLevel = minLevel <= 0 ? 1 : minLevel;
-                lvlDef.upgradeCost = Math.max(0, unlockCost + 50 * (level - baseOpenLevel));
+                lvlDef.upgradeCost = computeUpgradeCost(unlockCost, level, baseOpenLevel);
                 lvlDef.blocks = new java.util.ArrayList<>();
                 lvlDef.mobs = new java.util.ArrayList<>();
 
@@ -934,6 +953,35 @@ public final class BlockSetConfig
                 if (level > 200) break;
             }
         }
+    }
+
+    private static int computeUpgradeCost(int unlockCost, int level, int baseOpenLevel)
+    {
+        SettingsDefinition settings = get().getSettings();
+        if (settings == null)
+        {
+            return Math.max(0, unlockCost + 50 * (level - baseOpenLevel));
+        }
+
+        int steps = Math.max(0, level - baseOpenLevel);
+        String mode = settings.setCostIncreaseMode == null ? "fixed" : settings.setCostIncreaseMode;
+        double value = settings.setCostIncreaseValue;
+
+        if ("multiplier".equalsIgnoreCase(mode))
+        {
+            if (value <= 0)
+            {
+                return Math.max(0, unlockCost);
+            }
+            double cost = unlockCost * Math.pow(value, steps);
+            return Math.max(0, (int) Math.round(cost));
+        }
+
+        if (value <= 0)
+        {
+            return Math.max(0, unlockCost);
+        }
+        return Math.max(0, unlockCost + (int) Math.round(value * steps));
     }
 
     private static java.util.Map<String, Integer> computeLevelPercentages(java.util.List<InternalElement> avail, java.util.Map<String, Double> prevPerc, int maximumTotal)

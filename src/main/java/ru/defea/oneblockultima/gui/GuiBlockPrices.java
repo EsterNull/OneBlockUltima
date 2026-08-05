@@ -29,6 +29,7 @@ public class GuiBlockPrices extends GuiScreen
     private static final int BUTTON_SAVE = 1;
     private static final int BUTTON_BACK = 2;
     private static final int BUTTON_BALANCE_MODE = 3;
+    private static final int BUTTON_SET_COST_MODE = 4;
 
     private static final int ENTRY_HEIGHT = 24;
 
@@ -44,6 +45,7 @@ public class GuiBlockPrices extends GuiScreen
     private ScrollableListElement searchList;
     private TextFieldElement searchFieldElement;
     private DoubleStepperElement priceStepper;
+    private DoubleStepperElement setCostStepper;
     private StatusBarElement statusBar;
 
     public GuiBlockPrices(GuiScreen parent)
@@ -77,7 +79,7 @@ public class GuiBlockPrices extends GuiScreen
         if (factory == null || factory.getScreenWidth() != width || factory.getScreenHeight() != height)
         {
             factory = new ViewFactory(width, height)
-                .margin(8).padding(2)
+                .margin(8).padding(6)
                 .gap(6)
                 .align(Alignment.CENTER);
             switcher = new ViewSwitcherElement().widthPercent(100).flexible(true);
@@ -113,6 +115,13 @@ public class GuiBlockPrices extends GuiScreen
     private void buildPricesView(ColumnElement view)
     {
         view.title("gui.oneblockultima.prices.title");
+
+        String balanceModeLabel = container.getCurrentBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK
+                ? I18n.format("gui.oneblockultima.mod_settings.balance_mode.break_block")
+                : I18n.format("gui.oneblockultima.mod_settings.balance_mode.sell_block");
+        String balanceToggleText = I18n.format("gui.oneblockultima.mod_settings.balance_mode") + ": " + balanceModeLabel;
+        RowElement balanceRow = view.row(Alignment.LEFT).gap(4).widthPercent(100);
+        balanceRow.button(BUTTON_BALANCE_MODE, balanceToggleText);
 
         List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
         for (int i = 0; i < container.getFilteredEntries().size(); i++)
@@ -192,8 +201,8 @@ public class GuiBlockPrices extends GuiScreen
 
                     if (localX >= delBtnX && localX <= delBtnX + delW && localY >= btnY && localY <= btnY + btnH) {
                         container.deletePriceEntry(idx);
-                        buildView();
                         if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.price_removed"), 60);
+                        buildView();
                         return true;
                     }
                     return false;
@@ -209,12 +218,25 @@ public class GuiBlockPrices extends GuiScreen
         view.add(priceList);
 
         if (statusBar == null) statusBar = new StatusBarElement();
+        statusBar.visible(statusBar.isActive());
         view.add(statusBar);
-        String balanceModeLabel = container.getCurrentBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK
-                ? I18n.format("gui.oneblockultima.mod_settings.balance_mode.break_block")
-                : I18n.format("gui.oneblockultima.mod_settings.balance_mode.sell_block");
-        String balanceToggleText = I18n.format("gui.oneblockultima.mod_settings.balance_mode") + ": " + balanceModeLabel;
-        view.button(BUTTON_BALANCE_MODE, balanceToggleText);
+        String setCostModeLabel = container.isSetCostMultiplierMode()
+                ? I18n.format("gui.oneblockultima.mod_settings.set_cost_increase.multiplier")
+                : I18n.format("gui.oneblockultima.mod_settings.set_cost_increase.fixed");
+        String setCostToggleText = I18n.format("gui.oneblockultima.mod_settings.set_cost_increase") + ": " + setCostModeLabel;
+        view.button(BUTTON_SET_COST_MODE, setCostToggleText);
+
+        String valueLabelKey = container.isSetCostMultiplierMode()
+                ? "gui.oneblockultima.mod_settings.set_cost_increase.value.multiplier"
+                : "gui.oneblockultima.mod_settings.set_cost_increase.value.fixed";
+        RowElement setCostRow = view.row(Alignment.CENTER).gap(6);
+        setCostRow.add(new LabelElement(I18n.format(valueLabelKey)).color(GRAY_COLOR_1));
+        setCostStepper = new DoubleStepperElement()
+            .value(container.getSetCostIncreaseValue())
+            .min(container.isSetCostMultiplierMode() ? 1.0 : 0)
+            .step(1)
+            .fieldWidth(70);
+        setCostRow.add(setCostStepper);
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.prices.add"));
@@ -359,6 +381,18 @@ public class GuiBlockPrices extends GuiScreen
             return;
         }
 
+        if (button.id == BUTTON_SET_COST_MODE && currentView == VIEW_PRICES)
+        {
+            if (setCostStepper != null)
+            {
+                setCostStepper.commit();
+                container.setSetCostIncreaseValue(setCostStepper.getValue());
+            }
+            container.toggleSetCostMode();
+            initGui();
+            return;
+        }
+
         if (button.id == BUTTON_SAVE && currentView == VIEW_EDIT_PRICE)
         {
             if (priceStepper != null)
@@ -366,15 +400,21 @@ public class GuiBlockPrices extends GuiScreen
                 priceStepper.commit();
                 container.savePrice(priceStepper.getValue());
             }
-            changeView(VIEW_PRICES);
             if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.price_saved"), 60);
+            changeView(VIEW_PRICES);
             return;
         }
 
         if (button.id == BUTTON_SAVE && currentView == VIEW_PRICES)
         {
+            if (setCostStepper != null)
+            {
+                setCostStepper.commit();
+                container.setSetCostIncreaseValue(setCostStepper.getValue());
+            }
             container.flushToConfig();
             if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.table_saved"), 60);
+            buildView();
         }
     }
 

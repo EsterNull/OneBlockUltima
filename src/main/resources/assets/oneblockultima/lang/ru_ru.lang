@@ -304,6 +304,13 @@ gui.oneblockultima.mod_settings.balance_mode=Режим начисления
 gui.oneblockultima.mod_settings.balance_mode.break_block=За разрушение блоков
 gui.oneblockultima.mod_settings.balance_mode.sell_block=За продажу блоков
 
+# Mod settings - set cost increase
+gui.oneblockultima.mod_settings.set_cost_increase=Рост стоимости набора
+gui.oneblockultima.mod_settings.set_cost_increase.fixed=Фиксированный
+gui.oneblockultima.mod_settings.set_cost_increase.multiplier=Множитель
+gui.oneblockultima.mod_settings.set_cost_increase.value.fixed=На сколько
+gui.oneblockultima.mod_settings.set_cost_increase.value.multiplier=Во сколько
+
 # Block prices GUI
 gui.oneblockultima.prices.title=Таблица цен блоков
 gui.oneblockultima.prices.add=Добавить

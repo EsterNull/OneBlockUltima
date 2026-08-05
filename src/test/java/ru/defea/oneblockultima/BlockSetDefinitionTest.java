@@ -870,6 +870,41 @@ public class BlockSetDefinitionTest {
     }
 
     @Test
+    public void ensureComputedLevelsMultiplierCost() {
+        BlockSetConfig.SettingsDefinition settings = BlockSetConfig.get().getSettings();
+        String oldMode = settings.setCostIncreaseMode;
+        double oldValue = settings.setCostIncreaseValue;
+        try {
+            settings.setCostIncreaseMode = "multiplier";
+            settings.setCostIncreaseValue = 2.0;
+
+            BlockSetDefinition set = new BlockSetDefinition();
+            set.id = "mult_cost";
+            set.unlockCost = 100;
+
+            BlockElementDefinition block = new BlockElementDefinition();
+            block.registry = "minecraft:stone";
+            block.baseLevel = 1;
+            block.baseChance = 100;
+            set.blocks.add(block);
+
+            set.ensureComputedLevels();
+
+            SetLevelDefinition lvl1 = set.getLevel(1);
+            assertNotNull(lvl1);
+            assertEquals(100, lvl1.upgradeCost);
+
+            SetLevelDefinition lvl2 = set.getLevel(2);
+            assertNotNull(lvl2);
+            assertEquals(200, lvl2.upgradeCost);
+        } finally {
+            settings.setCostIncreaseMode = oldMode;
+            settings.setCostIncreaseValue = oldValue;
+            BlockSetConfig.invalidateComputedLevels();
+        }
+    }
+
+    @Test
     public void ensureComputedLevelsWithMultipleBlocksDistributesChance() {
         BlockSetDefinition set = new BlockSetDefinition();
         set.id = "dist_test";
