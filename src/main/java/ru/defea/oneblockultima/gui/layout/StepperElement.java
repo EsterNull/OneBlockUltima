@@ -101,6 +101,15 @@ public class StepperElement extends ViewElement<StepperElement> {
         value(value);
     }
 
+    public StepperElement setMin(int min) {
+        this.min = min;
+        if (value < min) {
+            value = min;
+            field.setText(String.valueOf(value));
+        }
+        return this;
+    }
+
     private int clamp(int v) {
         return Math.max(min, Math.min(max, v));
     }

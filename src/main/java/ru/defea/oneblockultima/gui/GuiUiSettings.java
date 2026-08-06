@@ -3,8 +3,10 @@ package ru.defea.oneblockultima.gui;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
+import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
 
@@ -28,6 +30,10 @@ public class GuiUiSettings extends GuiScreen
     private ButtonToggleElement showBalanceToggle;
 
     private LabelElement positionLabel;
+    private StepperElement hStepper;
+    private StepperElement vStepper;
+    private int[] sessionHOffset;
+    private int[] sessionVOffset;
 
     public GuiUiSettings(GuiScreen parent)
     {
@@ -40,8 +46,16 @@ public class GuiUiSettings extends GuiScreen
         buttonList.clear();
         settings = ModSettings.get();
         currentPos = settings.getBalancePosition();
-        hOffset = settings.getHOffset();
-        vOffset = settings.getVOffset();
+        ModSettings.BalancePosition[] positions = ModSettings.BalancePosition.values();
+        sessionHOffset = new int[positions.length];
+        sessionVOffset = new int[positions.length];
+        for (int i = 0; i < positions.length; i++)
+        {
+            sessionHOffset[i] = settings.getHOffset(positions[i]);
+            sessionVOffset[i] = settings.getVOffset(positions[i]);
+        }
+        hOffset = sessionHOffset[currentPos.ordinal()];
+        vOffset = sessionVOffset[currentPos.ordinal()];
         isShowBalance = settings.isShowBalance();
 
         buildView();
@@ -101,8 +115,18 @@ public class GuiUiSettings extends GuiScreen
                             {ModSettings.BalancePosition.BOTTOM_LEFT, ModSettings.BalancePosition.BOTTOM, ModSettings.BalancePosition.BOTTOM_RIGHT}
                     };
                     if (row >= 0 && row < 3 && col >= 0 && col < 3 && g[row][col] != null) {
+                        sessionHOffset[currentPos.ordinal()] = hOffset;
+                        sessionVOffset[currentPos.ordinal()] = vOffset;
                         currentPos = g[row][col];
                         positionLabel.text(I18n.format("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase()));
+                        hStepper.setMin(hOffsetMin());
+                        vStepper.setMin(vOffsetMin());
+                        hOffset = sessionHOffset[currentPos.ordinal()];
+                        vOffset = sessionVOffset[currentPos.ordinal()];
+                        hStepper.setValue(hOffset);
+                        vStepper.setValue(vOffset);
+                        hOffset = hStepper.getValue();
+                        vOffset = vStepper.getValue();
                         return true;
                     }
                     return false;
@@ -124,7 +148,7 @@ public class GuiUiSettings extends GuiScreen
 
         StepperElement hStepper = new StepperElement()
                 .value(hOffset)
-                .min(0)
+                .min(hOffsetMin())
                 .max(50)
                 .step(1)
                 .fieldWidth(fieldWidth)
@@ -132,11 +156,17 @@ public class GuiUiSettings extends GuiScreen
 
         StepperElement vStepper = new StepperElement()
                 .value(vOffset)
-                .min(0)
+                .min(vOffsetMin())
                 .max(50)
                 .step(1)
                 .fieldWidth(fieldWidth)
                 .onChange(v -> vOffset = v);
+
+        this.hStepper = hStepper;
+        this.vStepper = vStepper;
+
+        hOffset = hStepper.getValue();
+        vOffset = vStepper.getValue();
 
         int hLabelW = fontRenderer.getStringWidth(hLabel);
         int vLabelW = fontRenderer.getStringWidth(vLabel);
@@ -178,9 +208,10 @@ public class GuiUiSettings extends GuiScreen
     {
         if (button.id == BUTTON_SAVE)
         {
+            sessionHOffset[currentPos.ordinal()] = hOffset;
+            sessionVOffset[currentPos.ordinal()] = vOffset;
             settings.setBalancePosition(currentPos);
-            settings.setHOffset(hOffset);
-            settings.setVOffset(vOffset);
+            settings.setAllPositionOffsets(sessionHOffset, sessionVOffset);
             settings.setShowBalance(isShowBalance);
             mc.displayGuiScreen(parent);
             return;
@@ -209,6 +240,13 @@ public class GuiUiSettings extends GuiScreen
         drawDefaultBackground();
         if (factory != null) factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
         super.drawScreen(mouseX, mouseY, partialTicks);
+    }
+
+    @Override
+    public void updateScreen()
+    {
+        super.updateScreen();
+        if (factory != null) factory.updateScreen();
     }
 
     private void drawPreviewAt(int previewX, int previewY, int previewWidth, int previewHeight, net.minecraft.client.gui.FontRenderer fr)
@@ -240,6 +278,11 @@ public class GuiUiSettings extends GuiScreen
         int innerY = previewY + 1;
         int innerW = previewWidth - 2;
         int innerH = previewHeight - 2;
+
+        ScaledResolution sr = new ScaledResolution(mc);
+        int scale = sr.getScaleFactor();
+        GL11.glScissor(innerX * scale, mc.displayHeight - (innerY + innerH) * scale, innerW * scale, innerH * scale);
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
 
         int boxX;
         int boxY;
@@ -280,12 +323,8 @@ public class GuiUiSettings extends GuiScreen
                 break;
         }
 
-        boxX = Math.max(innerX, Math.min(boxX, innerX + innerW - boxW));
-        boxY = Math.max(innerY, Math.min(boxY, innerY + innerH - boxH));
-
-        Gui.drawRect(boxX, boxY, boxX + boxW, boxY + boxH, TRANSPARENT_DARK_GRAY_COLOR_2);
-
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        Gui.drawRect(boxX, boxY, boxX + boxW, boxY + boxH, TRANSPARENT_DARK_GRAY_COLOR_2);
         GlStateManager.enableBlend();
         TextureElement coinIcon = new TextureElement(COIN_TEXTURE, coinSize, coinSize);
         coinIcon.setComputedPosition(boxX + hMargin, boxY + vMargin);
@@ -293,6 +332,8 @@ public class GuiUiSettings extends GuiScreen
         coinIcon.draw(fr, 0, 0, 0);
         GlStateManager.disableBlend();
         fr.drawString(sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin - fr.FONT_HEIGHT / 4, GOLD_COLOR);
+
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 
     private String getPositionLabel(ModSettings.BalancePosition pos)
@@ -309,5 +350,25 @@ public class GuiUiSettings extends GuiScreen
             case BOTTOM_RIGHT: return "\u2198";
             default: return "?";
         }
+    }
+
+    private boolean isVerticalCentered(ModSettings.BalancePosition pos)
+    {
+        return pos == ModSettings.BalancePosition.LEFT || pos == ModSettings.BalancePosition.RIGHT;
+    }
+
+    private boolean isHorizontalCentered(ModSettings.BalancePosition pos)
+    {
+        return pos == ModSettings.BalancePosition.TOP || pos == ModSettings.BalancePosition.BOTTOM;
+    }
+
+    private int hOffsetMin()
+    {
+        return isHorizontalCentered(currentPos) ? -50 : 0;
+    }
+
+    private int vOffsetMin()
+    {
+        return isVerticalCentered(currentPos) ? -50 : 0;
     }
 }

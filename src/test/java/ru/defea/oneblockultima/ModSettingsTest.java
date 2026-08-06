@@ -106,6 +106,49 @@ public class ModSettingsTest {
         assertEquals(0, settings.getVOffset());
     }
 
+    // --- Per-position offsets ---
+
+    @Test
+    public void offsetsAreStoredPerPositionIndependently() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setHOffset(ModSettings.BalancePosition.TOP_LEFT, 7);
+        settings.setVOffset(ModSettings.BalancePosition.TOP_LEFT, 4);
+        settings.setHOffset(ModSettings.BalancePosition.BOTTOM_RIGHT, 30);
+        settings.setVOffset(ModSettings.BalancePosition.BOTTOM_RIGHT, -15);
+
+        assertEquals(7, settings.getHOffset(ModSettings.BalancePosition.TOP_LEFT));
+        assertEquals(4, settings.getVOffset(ModSettings.BalancePosition.TOP_LEFT));
+        assertEquals(30, settings.getHOffset(ModSettings.BalancePosition.BOTTOM_RIGHT));
+        assertEquals(-15, settings.getVOffset(ModSettings.BalancePosition.BOTTOM_RIGHT));
+    }
+
+    @Test
+    public void unsetPositionReturnsDefaultOffsets() throws Exception {
+        ModSettings settings = newInstance();
+        assertEquals(5, settings.getHOffset(ModSettings.BalancePosition.BOTTOM));
+        assertEquals(3, settings.getVOffset(ModSettings.BalancePosition.BOTTOM));
+    }
+
+    @Test
+    public void currentPositionOffsetsArePreservedWhenSwitchingPositions() throws Exception {
+        ModSettings settings = newInstance();
+        settings.setBalancePosition(ModSettings.BalancePosition.TOP);
+        settings.setHOffset(10);
+        settings.setVOffset(6);
+
+        settings.setBalancePosition(ModSettings.BalancePosition.BOTTOM);
+        settings.setHOffset(40);
+        settings.setVOffset(20);
+
+        settings.setBalancePosition(ModSettings.BalancePosition.TOP);
+        assertEquals(10, settings.getHOffset());
+        assertEquals(6, settings.getVOffset());
+
+        settings.setBalancePosition(ModSettings.BalancePosition.BOTTOM);
+        assertEquals(40, settings.getHOffset());
+        assertEquals(20, settings.getVOffset());
+    }
+
     // --- mobWorldGeneration ---
 
     @Test
