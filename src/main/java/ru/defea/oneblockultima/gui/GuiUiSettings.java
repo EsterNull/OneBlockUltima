@@ -198,7 +198,7 @@ public class GuiUiSettings extends GuiScreen
         RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
         btnRow.widthPercent(60);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
 
         factory.build(buttonList, fontRenderer);
     }

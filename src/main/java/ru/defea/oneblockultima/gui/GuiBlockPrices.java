@@ -30,6 +30,7 @@ public class GuiBlockPrices extends GuiScreen
     private static final int BUTTON_BACK = 2;
     private static final int BUTTON_BALANCE_MODE = 3;
     private static final int BUTTON_SET_COST_MODE = 4;
+    private static final int BUTTON_DELETE = 5;
 
     private static final int ENTRY_HEIGHT = 24;
 
@@ -244,7 +245,7 @@ public class GuiBlockPrices extends GuiScreen
         RowElement btnRow = view.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.config.add"));
-        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
     }
 
     private void buildAddBlockView(ColumnElement view)
@@ -347,7 +348,8 @@ public class GuiBlockPrices extends GuiScreen
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(8);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.done"));
+        btnRow.add(new DangerButtonElement(BUTTON_DELETE, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.done")));
     }
 
     @Override
@@ -404,6 +406,14 @@ public class GuiBlockPrices extends GuiScreen
                 container.savePrice(priceStepper.getValue());
             }
             if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.price_saved"), 60);
+            changeView(VIEW_PRICES);
+            return;
+        }
+
+        if (button.id == BUTTON_DELETE && currentView == VIEW_EDIT_PRICE)
+        {
+            container.deleteEditingPrice();
+            if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.prices.price_removed"), 60);
             changeView(VIEW_PRICES);
             return;
         }

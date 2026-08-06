@@ -133,6 +133,14 @@ public class ContainerBlockPrices
         reloadPriceEntries();
     }
 
+    public void deleteEditingPrice()
+    {
+        if (editingRegistry.isEmpty()) return;
+        String priceKey = editingMeta > 0 ? editingRegistry + ":" + editingMeta : editingRegistry;
+        stagedPrices.remove(priceKey);
+        reloadPriceEntries();
+    }
+
     public void savePrice(double price)
     {
         price = Math.max(0, price);

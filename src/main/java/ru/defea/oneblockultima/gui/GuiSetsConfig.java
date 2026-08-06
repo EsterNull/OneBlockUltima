@@ -63,6 +63,7 @@ public class GuiSetsConfig extends GuiScreen
     private static final int BUTTON_NBT_CANCEL = 30;
     private static final int BUTTON_NBT_CYCLE_TYPE = 31;
     private static final int BUTTON_NBT_CYCLE_ELEM_TYPE = 32;
+    private static final int BUTTON_DELETE_ENTRY = 33;
     private static final int ENTRY_HEIGHT = 22;
     private static final int NBT_ROW_PADDING = 4;
     private static final int NBT_ROW_BUTTON_HEIGHT = 14;
@@ -410,6 +411,7 @@ public class GuiSetsConfig extends GuiScreen
         if (button.id == BUTTON_CANCEL) { changeView(container.getCurrentView() == VIEW_CONFIRM_DELETE ? VIEW_SETS : VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_SAVE_CURRENCY) { handleSaveCurrency(); return; }
         if (button.id == BUTTON_CANCEL_CURRENCY) { changeView(VIEW_SET_DETAILS); return; }
+        if (button.id == BUTTON_DELETE_ENTRY) { container.removeSelectedEntry(); changeView(VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_EDIT_REQUIRED_MODS) { saveCurrentFormState(); container.initRequiredModsEditor(); changeView(VIEW_REQUIRED_MODS_EDITOR); return; }
         if (button.id == BUTTON_REQUIRED_MODS_TOGGLE) { toggleRequiredModsType(); return; }
         if (button.id == BUTTON_REQUIRED_MODS_BACK) { handleRequiredModsBack(); return; }
@@ -922,10 +924,10 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
-        btnRow.button(BUTTON_REMOVE_ENTRY, I18n.format("gui.oneblockultima.config.remove"));
+        btnRow.add(new DangerButtonElement(BUTTON_REMOVE_ENTRY, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_ADD_BLOCK, I18n.format("gui.oneblockultima.config.add_block"));
         btnRow.button(BUTTON_ADD_MOB, I18n.format("gui.oneblockultima.config.add_mob"));
-        btnRow.button(BUTTON_SAVE, I18n.format("gui.oneblockultima.save"));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
         factory.add(btnRow);
     }
 
@@ -1039,7 +1041,7 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
         btnRow.button(BUTTON_CANCEL, I18n.format("gui.oneblockultima.cancel"));
-        btnRow.button(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done"));
+        btnRow.add(new DangerButtonElement(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done")));
     }
 
     private void buildEditView()
@@ -1099,8 +1101,9 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
         btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.add(new DangerButtonElement(BUTTON_DELETE_ENTRY, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_EDIT_NBT, I18n.format("gui.oneblockultima.config.nbt_edit"));
-        btnRow.button(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done"));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done")));
     }
 
     private ViewElement<?> buildEditPreview(BlockSetConfig.BlockSetDefinition editingSet, int editingCurrencyIndex, EntryType editingEntryType)
@@ -1385,7 +1388,7 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
         btnRow.button(BUTTON_NBT_CANCEL, I18n.format("gui.oneblockultima.cancel"));
-        btnRow.button(BUTTON_NBT_DONE, I18n.format("gui.oneblockultima.done"));
+        btnRow.add(new SuccessButtonElement(BUTTON_NBT_DONE, I18n.format("gui.oneblockultima.done")));
     }
 
     private static boolean isScalarNbtType(int typeId)
@@ -1432,9 +1435,9 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.settings.back"));
-        btnRow.button(BUTTON_REQUIRED_MODS_DELETE, I18n.format("gui.oneblockultima.config.remove"));
+        btnRow.add(new DangerButtonElement(BUTTON_REQUIRED_MODS_DELETE, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
-        btnRow.button(BUTTON_REQUIRED_MODS_SAVE, I18n.format("gui.oneblockultima.done"));
+        btnRow.add(new SuccessButtonElement(BUTTON_REQUIRED_MODS_SAVE, I18n.format("gui.oneblockultima.done")));
         factory.add(btnRow);
     }
 
@@ -1547,9 +1550,9 @@ public class GuiSetsConfig extends GuiScreen
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_UNLOCK_CONDITIONS_BACK, I18n.format("gui.oneblockultima.settings.back"));
-        btnRow.button(BUTTON_UNLOCK_CONDITIONS_DELETE, I18n.format("gui.oneblockultima.config.remove"));
+        btnRow.add(new DangerButtonElement(BUTTON_UNLOCK_CONDITIONS_DELETE, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_UNLOCK_CONDITIONS_ADD, I18n.format("gui.oneblockultima.config.add"));
-        btnRow.button(BUTTON_UNLOCK_CONDITIONS_SAVE, I18n.format("gui.oneblockultima.done"));
+        btnRow.add(new SuccessButtonElement(BUTTON_UNLOCK_CONDITIONS_SAVE, I18n.format("gui.oneblockultima.done")));
         factory.add(btnRow);
     }
 
