@@ -1221,7 +1221,10 @@ public class GuiOneBlock extends GuiContainer
     {
         if (tabs != null)
         {
-            tabs.activeTab(activeView == VIEW_SETS ? BUTTON_TAB_SETS : BUTTON_TAB_DONATE);
+            int activeTabId = activeView == VIEW_SETS ? BUTTON_TAB_SETS
+                    : activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS
+                    : BUTTON_TAB_DONATE;
+            tabs.activeTab(activeTabId);
         }
 
         TileEntityOneBlockGenerator generator = container.getGenerator();
@@ -1845,18 +1848,25 @@ public class GuiOneBlock extends GuiContainer
         }
         if (tabs != null)
         {
-            int clickedId = tabs.getActiveTabId();
-            if (clickedId == BUTTON_TAB_SETS && activeView != VIEW_SETS)
+            int tabX = tabs.getComputedX();
+            int tabY = tabs.getComputedY();
+            int tabW = tabs.getComputedWidth();
+            int tabH = tabs.getComputedHeight();
+            if (mouseX >= tabX && mouseX < tabX + tabW && mouseY >= tabY && mouseY < tabY + tabH)
             {
-                changeView(VIEW_SETS);
-            }
-            else if (clickedId == BUTTON_TAB_SETTINGS && activeView != VIEW_SETTINGS)
-            {
-                changeView(VIEW_SETTINGS);
-            }
-            else if (clickedId == BUTTON_TAB_DONATE && activeView != VIEW_DONATE)
-            {
-                changeView(VIEW_DONATE);
+                int clickedId = tabs.getActiveTabId();
+                if (clickedId == BUTTON_TAB_SETS && activeView != VIEW_SETS)
+                {
+                    changeView(VIEW_SETS);
+                }
+                else if (clickedId == BUTTON_TAB_SETTINGS && activeView != VIEW_SETTINGS)
+                {
+                    changeView(VIEW_SETTINGS);
+                }
+                else if (clickedId == BUTTON_TAB_DONATE && activeView != VIEW_DONATE)
+                {
+                    changeView(VIEW_DONATE);
+                }
             }
         }
     }
