@@ -123,17 +123,17 @@ public final class ModModels
         Boolean cached = BLOCKSTATE_EXISTS_CACHE.get(registryName);
         if (cached != null)
         {
-            return cached;
+            return !cached;
         }
         boolean exists = false;
         try
         {
-            exists = !Minecraft.getMinecraft().getResourceManager().getAllResources(
-                    new ResourceLocation(
+            exists = !Minecraft.getMinecraft().getResourceManager()
+                    .getAllResources(new ResourceLocation(
                             registryName.getResourceDomain(),
                             "blockstates/" + registryName.getResourcePath() + ".json"
-                    )
-            ).isEmpty();
+                    ))
+                    .isEmpty();
         }
         catch (Exception ignored)
         {

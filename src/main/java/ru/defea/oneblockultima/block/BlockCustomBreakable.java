@@ -27,11 +27,6 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Ломаемая замена любого неразрушаемого блока (hardness &lt; 0).
- * Каждый зарегистрированный экземпляр "привязан" к одному оригинальному блоку ({@link #setEmulated(Block)});
- * meta оригинального блока хранится в свойстве {@link #ORIGINAL_META}.
- */
 public class BlockCustomBreakable extends Block
 {
     public static final PropertyInteger ORIGINAL_META = PropertyInteger.create("original_meta", 0, 15);
@@ -109,12 +104,6 @@ public class BlockCustomBreakable extends Block
         }
         IBlockState emuState = this.getEmulatedState(state);
         return this.emulated.getPickBlock(emuState == null ? this.emulated.getDefaultState() : emuState, target, world, pos, player);
-    }
-
-    @Override
-    public boolean canHarvestBlock(@Nonnull IBlockAccess world, @Nonnull BlockPos pos, @Nonnull EntityPlayer player)
-    {
-        return true;
     }
 
     @Override

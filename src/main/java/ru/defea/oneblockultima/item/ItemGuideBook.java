@@ -18,6 +18,7 @@ public class ItemGuideBook extends Item
         setCreativeTab(OneBlockUltima.modTab);
         this.setRegistryName("guide_book");
         this.setUnlocalizedName("guide_book");
+        this.setMaxStackSize(1);
     }
 
     @Override
