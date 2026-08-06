@@ -116,7 +116,7 @@ public class GuiOneBlock extends GuiContainer
     private Boolean pendingDisableChest = null;
     private Boolean pendingDisableSapling = null;
     private int activeView = VIEW_SETS;
-    private boolean settingsTabVisible = true;
+    private boolean showModSettingsButtons = true;
     private int blockScroll = 0;
     private int mobScroll = 0;
     private int blockScrollNext = 0;
@@ -178,9 +178,7 @@ public class GuiOneBlock extends GuiContainer
 
     private int computeTabBarWidth()
     {
-        int visibleTabs = settingsTabVisible ? 3 : 2;
-        int tabWidth = xSize / visibleTabs;
-        return tabWidth * visibleTabs;
+        return xSize;
     }
 
     private int computeInfoHeight()
@@ -280,7 +278,7 @@ public class GuiOneBlock extends GuiContainer
             }
         }
 
-        settingsTabVisible = mc.isIntegratedServerRunning();
+        showModSettingsButtons = mc.isIntegratedServerRunning();
 
         buildView();
         initBackgroundBlocks();
@@ -316,10 +314,7 @@ public class GuiOneBlock extends GuiContainer
         }
 
         tabs.tab(BUTTON_TAB_SETS, I18n.format("gui.oneblockultima.tabs.sets"));
-        if (settingsTabVisible)
-        {
-            tabs.tab(BUTTON_TAB_SETTINGS, I18n.format("gui.oneblockultima.tabs.settings"));
-        }
+        tabs.tab(BUTTON_TAB_SETTINGS, I18n.format("gui.oneblockultima.tabs.settings"));
         tabs.tab(BUTTON_TAB_DONATE, I18n.format("gui.oneblockultima.tabs.donate"));
 
         ColumnElement view = new ColumnElement().gap(FACTORY_GAP);
@@ -378,13 +373,16 @@ public class GuiOneBlock extends GuiContainer
         toggleChestsButton = row2.button(BUTTON_TOGGLE_CHESTS, "").width(buttonWidth).height(BUTTON_HEIGHT);
         toggleSaplingsButton = row2.button(BUTTON_TOGGLE_SAPLINGS, "").width(buttonWidth).height(BUTTON_HEIGHT);
 
-        RowElement row3 = view.row(Alignment.SPACE_BETWEEN).stretchToContent();
-        row3.button(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices")).width(buttonWidth).height(BUTTON_HEIGHT);
-        row3.button(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title")).width(buttonWidth).height(BUTTON_HEIGHT);
+        if (showModSettingsButtons)
+        {
+            RowElement row3 = view.row(Alignment.SPACE_BETWEEN).stretchToContent();
+            row3.button(BUTTON_OPEN_PRICES, I18n.format("gui.oneblockultima.settings.open_prices")).width(buttonWidth).height(BUTTON_HEIGHT);
+            row3.button(BUTTON_OPEN_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title")).width(buttonWidth).height(BUTTON_HEIGHT);
 
-        RowElement row4 = view.row(Alignment.SPACE_BETWEEN).stretchToContent();
-        row4.button(BUTTON_OPEN_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title")).width(buttonWidth).height(BUTTON_HEIGHT);
-        row4.button(BUTTON_OPEN_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title")).width(buttonWidth).height(BUTTON_HEIGHT);
+            RowElement row4 = view.row(Alignment.SPACE_BETWEEN).stretchToContent();
+            row4.button(BUTTON_OPEN_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title")).width(buttonWidth).height(BUTTON_HEIGHT);
+            row4.button(BUTTON_OPEN_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title")).width(buttonWidth).height(BUTTON_HEIGHT);
+        }
     }
 
     private void buildDonateView(ColumnElement view)
@@ -1221,14 +1219,9 @@ public class GuiOneBlock extends GuiContainer
 
     private void updateViewButtons()
     {
-        if (!settingsTabVisible && activeView == VIEW_SETTINGS)
-        {
-            activeView = VIEW_SETS;
-        }
         if (tabs != null)
         {
-            tabs.activeTab(activeView == VIEW_SETS ? BUTTON_TAB_SETS :
-                    activeView == VIEW_SETTINGS ? BUTTON_TAB_SETTINGS : BUTTON_TAB_DONATE);
+            tabs.activeTab(activeView == VIEW_SETS ? BUTTON_TAB_SETS : BUTTON_TAB_DONATE);
         }
 
         TileEntityOneBlockGenerator generator = container.getGenerator();
