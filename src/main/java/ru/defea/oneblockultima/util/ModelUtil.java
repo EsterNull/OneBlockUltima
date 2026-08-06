@@ -17,6 +17,7 @@ import net.minecraft.profiler.Profiler;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.*;
 import org.lwjgl.opengl.GL11;
+import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.util.UUID;
 
@@ -39,7 +40,7 @@ public final class ModelUtil {
                     new WorldSettings(0L, GameType.CREATIVE, false, false, WorldType.DEFAULT),
                     0, EnumDifficulty.PEACEFUL, new Profiler());
             } catch (Exception e) {
-                System.err.println("[ModelUtil] Failed to create dummy world: " + e);
+                OneBlockUltima.getLogger().error("[ModelUtil] Failed to create dummy world: {}", e.toString());
             }
         }
         return dummyWorld;

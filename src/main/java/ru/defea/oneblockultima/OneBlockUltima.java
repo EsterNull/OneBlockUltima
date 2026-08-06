@@ -11,6 +11,7 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.command.*;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
@@ -39,21 +40,45 @@ public class OneBlockUltima
     @SidedProxy(clientSide = "ru.defea.oneblockultima.ClientProxy", serverSide = "ru.defea.oneblockultima.CommonProxy")
     public static CommonProxy proxy;
 
-    private static Logger logger;
+    private static Logger proxiedLogger;
 
     public static Logger getLogger()
     {
-        if (logger == null)
+        if (proxiedLogger == null)
         {
-            logger = LogManager.getLogger(MODID);
+            final Logger real = LogManager.getLogger(MODID);
+            proxiedLogger = (Logger) java.lang.reflect.Proxy.newProxyInstance(
+                    Logger.class.getClassLoader(),
+                    new Class<?>[]{Logger.class},
+                    (proxy, method, args) ->
+                    {
+                        if (ModSettings.isDebugEnabled())
+                        {
+                            try
+                            {
+                                return method.invoke(real, args);
+                            }
+                            catch (java.lang.reflect.InvocationTargetException e)
+                            {
+                                throw e.getCause();
+                            }
+                        }
+                        Class<?> returnType = method.getReturnType();
+                        if (returnType == boolean.class) return Boolean.FALSE;
+                        if (returnType == int.class) return 0;
+                        if (returnType == long.class) return 0L;
+                        if (returnType == float.class) return 0.0F;
+                        if (returnType == double.class) return 0.0D;
+                        return null;
+                    });
         }
-        return logger;
+        return proxiedLogger;
     }
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {
-        logger = event.getModLog();
+        proxiedLogger = null;
         BlockSetConfig.load(event.getModConfigurationDirectory());
         BlockPriceConfig.load(event.getModConfigurationDirectory());
         OneBlockPlayerDataProvider.register();
@@ -67,7 +92,7 @@ public class OneBlockUltima
         {
             ContainerSetsConfig.loadStaticCustomNames();
         }
-        logger.info("{} загружается...", NAME);
+        event.getModLog().info("{} loading...", NAME);
     }
 
     @Mod.EventHandler

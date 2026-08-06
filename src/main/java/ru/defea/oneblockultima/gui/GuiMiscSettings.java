@@ -14,6 +14,7 @@ public class GuiMiscSettings extends GuiScreen {
     private static final int BUTTON_BACK = 0;
     private static final int BUTTON_SAVE = 1;
     private static final int BUTTON_MOB_WORLD_GENERATION = 2;
+    private static final int BUTTON_DEBUG_MODE = 3;
 
     private static final int MIN_INVITE_TICKS = 20;
     private static final int MAX_INVITE_TICKS = 72000;
@@ -33,12 +34,14 @@ public class GuiMiscSettings extends GuiScreen {
     private ModSettings settings;
 
     private boolean mobWorldGeneration;
+    private boolean debugMode;
     private int inviteDurationTicks;
     private int breakCooldownTicks;
     private int mobSpawnPercent;
     private int generatorMembers;
 
     private ButtonToggleElement mobWorldGenerationToggle;
+    private ButtonToggleElement debugModeToggle;
     private StepperElement inviteDurationStepper;
     private StepperElement breakCooldownStepper;
     private StepperElement mobSpawnPercentStepper;
@@ -57,6 +60,7 @@ public class GuiMiscSettings extends GuiScreen {
 
         settings = ModSettings.get();
         mobWorldGeneration = settings.getMobWorldGeneration();
+        debugMode = settings.isDebugMode();
         inviteDurationTicks = settings.getInviteDurationTicks();
         breakCooldownTicks = settings.getNonPlayerBreakCooldownTicks();
         mobSpawnPercent = settings.getMaxMobSpawnPercent();
@@ -79,6 +83,10 @@ public class GuiMiscSettings extends GuiScreen {
         RowElement firstLineControls = factory.row(Alignment.LEFT).gap(8).align(Alignment.LEFT);
         mobWorldGenerationToggle = firstLineControls.buttonToggle(BUTTON_MOB_WORLD_GENERATION, mobWorldGeneration)
                 .label(I18n.format("gui.oneblockultima.misc.mob_world_generation"));
+
+        RowElement debugModeControls = factory.row(Alignment.LEFT).gap(8).align(Alignment.LEFT);
+        debugModeToggle = debugModeControls.buttonToggle(BUTTON_DEBUG_MODE, debugMode)
+                .label(I18n.format("gui.oneblockultima.misc.debug_mode"));
 
         String inviteControlString = I18n.format("gui.oneblockultima.misc.invite_duration");
         RowElement inviteControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
@@ -142,6 +150,7 @@ public class GuiMiscSettings extends GuiScreen {
         }
         if (button.id == BUTTON_SAVE) {
             settings.setMobWorldGeneration(mobWorldGeneration);
+            settings.setDebugMode(debugMode);
             settings.setInviteDurationTicks(inviteDurationStepper.getValue());
             settings.setNonPlayerBreakCooldownTicks(breakCooldownStepper.getValue());
             settings.setMaxMobSpawnPercent(mobSpawnPercentStepper.getValue());
@@ -153,6 +162,10 @@ public class GuiMiscSettings extends GuiScreen {
         if (button.id == BUTTON_MOB_WORLD_GENERATION) {
             mobWorldGeneration = !mobWorldGeneration;
             mobWorldGenerationToggle.toggle();
+        }
+        if (button.id == BUTTON_DEBUG_MODE) {
+            debugMode = !debugMode;
+            debugModeToggle.toggle();
         }
     }
 

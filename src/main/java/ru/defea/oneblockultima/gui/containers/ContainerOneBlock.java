@@ -9,6 +9,7 @@ import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.event.ModEvents;
@@ -164,26 +165,26 @@ public class ContainerOneBlock extends Container
 
     public void applySelectSet(String setId)
     {
-        System.out.println("[OneBlock] applySelectSet called with setId: " + setId);
+        OneBlockUltima.getLogger().info("[OneBlock] applySelectSet called with setId: " + setId);
 
         TileEntityOneBlockGenerator generator = getGenerator();
         if (generator == null)
         {
-            System.out.println("[OneBlock] Generator is NULL!");
+            OneBlockUltima.getLogger().info("[OneBlock] Generator is NULL!");
             return;
         }
 
         BlockSetConfig.BlockSetDefinition set = BlockSetConfig.get().getSet(setId);
         if (set == null)
         {
-            System.out.println("[OneBlock] Set is NULL in config!");
+            OneBlockUltima.getLogger().info("[OneBlock] Set is NULL in config!");
             return;
         }
 
         int currentLevel = generator.getSetLevel(setId);
         if (currentLevel <= 0)
         {
-            System.out.println("[OneBlock] Set not unlocked! Level: " + currentLevel);
+            OneBlockUltima.getLogger().info("[OneBlock] Set not unlocked! Level: " + currentLevel);
             return;
         }
 
@@ -191,11 +192,11 @@ public class ContainerOneBlock extends Container
         String currentSelected = generator.getSelectedSetId();
         if (setId.equals(currentSelected))
         {
-            System.out.println("[OneBlock] Set already selected: " + setId);
+            OneBlockUltima.getLogger().info("[OneBlock] Set already selected: " + setId);
             return;
         }
 
-        System.out.println("[OneBlock] Setting selectedSetId on generator...");
+        OneBlockUltima.getLogger().info("[OneBlock] Setting selectedSetId on generator...");
         generator.setSelectedSetId(setId);
         if (!generator.ensureOwnership(player.getUniqueID()))
         {
@@ -203,7 +204,7 @@ public class ContainerOneBlock extends Container
             return;
         }
 
-        System.out.println("[OneBlock] Generator selectedSetId is now: " + generator.getSelectedSetId());
+        OneBlockUltima.getLogger().info("[OneBlock] Generator selectedSetId is now: " + generator.getSelectedSetId());
 
         if (world.isAirBlock(generator.getPos().up()))
         {
@@ -229,19 +230,19 @@ public class ContainerOneBlock extends Container
 
     public boolean applyUpgradeSet(String setId)
     {
-        System.out.println("[OneBlock] applyUpgradeSet called with setId: " + setId);
+        OneBlockUltima.getLogger().info("[OneBlock] applyUpgradeSet called with setId: " + setId);
 
         TileEntityOneBlockGenerator generator = getGenerator();
         if (generator == null)
         {
-            System.out.println("[OneBlock] Generator is NULL!");
+            OneBlockUltima.getLogger().info("[OneBlock] Generator is NULL!");
             return false;
         }
 
         BlockSetConfig.BlockSetDefinition set = BlockSetConfig.get().getSet(setId);
         if (set == null)
         {
-            System.out.println("[OneBlock] Set is NULL in config!");
+            OneBlockUltima.getLogger().info("[OneBlock] Set is NULL in config!");
             return false;
         }
 
@@ -251,13 +252,13 @@ public class ContainerOneBlock extends Container
                 ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
-            System.out.println("[OneBlock] Player data is NULL!");
+            OneBlockUltima.getLogger().info("[OneBlock] Player data is NULL!");
             if (player instanceof EntityPlayerMP)
                 return false;
         }
 
         int currentLevel = generator.getSetLevel(setId);
-        System.out.println("[OneBlock] Current level: " + currentLevel);
+        OneBlockUltima.getLogger().info("[OneBlock] Current level: " + currentLevel);
 
         // Проверяем, разблокирован ли набор
         if (currentLevel <= 0)
@@ -276,7 +277,7 @@ public class ContainerOneBlock extends Container
             assert data != null;
             double currency = data.getCurrency();
 
-            System.out.println("[OneBlock] Unlock attempt - Have: " + currency + ", Need: " + cost);
+            OneBlockUltima.getLogger().info("[OneBlock] Unlock attempt - Have: " + currency + ", Need: " + cost);
 
             if (currency < cost)
             {
@@ -318,7 +319,7 @@ public class ContainerOneBlock extends Container
                 return false;
             }
 
-            System.out.println("[OneBlock] Set unlocked and selected: " + setId);
+            OneBlockUltima.getLogger().info("[OneBlock] Set unlocked and selected: " + setId);
             if (player instanceof EntityPlayerMP)
             {
                 player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlocked")).setStyle(new Style().setColor(TextFormatting.GREEN)));
@@ -330,7 +331,7 @@ public class ContainerOneBlock extends Container
             BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
             if (nextLevel == null)
             {
-                System.out.println("[OneBlock] Max level reached!");
+                OneBlockUltima.getLogger().info("[OneBlock] Max level reached!");
                 return false;
             }
 
@@ -338,7 +339,7 @@ public class ContainerOneBlock extends Container
             assert data != null;
             double currency = data.getCurrency();
 
-            System.out.println("[OneBlock] Upgrade attempt - Have: " + currency + ", Need: " + cost);
+            OneBlockUltima.getLogger().info("[OneBlock] Upgrade attempt - Have: " + currency + ", Need: " + cost);
 
             if (currency < cost)
             {
@@ -380,7 +381,7 @@ public class ContainerOneBlock extends Container
                 return false;
             }
 
-            System.out.println("[OneBlock] Set upgraded to level " + (currentLevel + 1) + " and selected: " + setId);
+            OneBlockUltima.getLogger().info("[OneBlock] Set upgraded to level " + (currentLevel + 1) + " and selected: " + setId);
         }
 
         detectAndSendChanges();

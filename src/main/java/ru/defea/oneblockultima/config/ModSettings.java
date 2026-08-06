@@ -26,12 +26,14 @@ public final class ModSettings
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE_NAME = "oneblockultima_mod_settings.json";
     private static ModSettings instance;
+    private static volatile boolean debugEnabled;
 
     private BalancePosition balancePosition = BalancePosition.TOP_RIGHT;
     private int hOffset = 5;
     private int vOffset = 3;
     private boolean isShowBalance = true;
     private boolean mobWorldGeneration = false;
+    private boolean debugMode = false;
     private int inviteDurationTicks = 1200;
     private int nonPlayerBreakCooldownTicks = 20;
     private int maxMobSpawnPercent = 10;
@@ -43,7 +45,13 @@ public final class ModSettings
         {
             instance = load();
         }
+        debugEnabled = instance.debugMode;
         return instance;
+    }
+
+    public static boolean isDebugEnabled()
+    {
+        return debugEnabled;
     }
 
     public BalancePosition getBalancePosition() { return balancePosition; }
@@ -51,6 +59,7 @@ public final class ModSettings
     public int getVOffset() { return vOffset; }
     public boolean isShowBalance() { return isShowBalance; }
     public boolean getMobWorldGeneration() { return mobWorldGeneration; }
+    public boolean isDebugMode() { return debugMode; }
     public int getInviteDurationTicks() { return inviteDurationTicks; }
     public int getNonPlayerBreakCooldownTicks() { return nonPlayerBreakCooldownTicks; }
     public int getMaxMobSpawnPercent() { return maxMobSpawnPercent; }
@@ -61,6 +70,7 @@ public final class ModSettings
     public void setVOffset(int offset) { this.vOffset = offset; save(); }
     public void setShowBalance(boolean isShowBalance) { this.isShowBalance = isShowBalance; save(); }
     public void setMobWorldGeneration(boolean mobWorldGeneration) { this.mobWorldGeneration = mobWorldGeneration; save(); }
+    public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; debugEnabled = debugMode; save(); }
     public void setInviteDurationTicks(int inviteDurationTicks) { this.inviteDurationTicks = inviteDurationTicks; save(); }
     public void setNonPlayerBreakCooldownTicks(int nonPlayerBreakCooldownTicks) { this.nonPlayerBreakCooldownTicks = nonPlayerBreakCooldownTicks; save(); }
     public void setMaxMobSpawnPercent(int maxMobSpawnPercent) { this.maxMobSpawnPercent = maxMobSpawnPercent; save(); }

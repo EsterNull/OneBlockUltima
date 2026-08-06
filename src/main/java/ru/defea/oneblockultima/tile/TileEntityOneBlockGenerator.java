@@ -530,7 +530,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
     public void setSelectedSetId(String selectedSetId)
     {
-        System.out.println("[DEBUG] TileEntity setSelectedSetId: " + selectedSetId + " at pos " + pos);
+        OneBlockUltima.getLogger().debug("TileEntity setSelectedSetId: {} at pos {}", selectedSetId, pos);
         this.selectedSetId = selectedSetId;
         markDirty();
 
@@ -538,7 +538,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
         {
             IBlockState state = world.getBlockState(pos);
             world.notifyBlockUpdate(pos, state, state, 3);
-            System.out.println("[DEBUG] TileEntity notifyBlockUpdate sent");
+            OneBlockUltima.getLogger().debug("TileEntity notifyBlockUpdate sent");
         }
     }
 
