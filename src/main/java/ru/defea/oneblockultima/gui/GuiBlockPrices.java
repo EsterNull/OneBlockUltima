@@ -47,6 +47,7 @@ public class GuiBlockPrices extends GuiScreen
     private DoubleStepperElement priceStepper;
     private DoubleStepperElement setCostStepper;
     private StatusBarElement statusBar;
+    private boolean statusBarActive = false;
 
     public GuiBlockPrices(GuiScreen parent)
     {
@@ -111,6 +112,7 @@ public class GuiBlockPrices extends GuiScreen
             factory.panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
         }
         factory.build(buttonList, fontRenderer);
+        statusBarActive = statusBar != null && statusBar.isActive();
     }
 
     private void buildPricesView(ColumnElement view)
@@ -485,6 +487,18 @@ public class GuiBlockPrices extends GuiScreen
     {
         super.updateScreen();
         factory.updateScreen();
+
+        boolean statusActive = statusBar != null && statusBar.isActive();
+        if (statusActive != statusBarActive)
+        {
+            buildView();
+            return;
+        }
+
+        if (factory != null && (factory.getScreenWidth() != width || factory.getScreenHeight() != height))
+        {
+            buildView();
+        }
     }
 
     @Override
