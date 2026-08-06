@@ -475,7 +475,9 @@ public class GuiGuideBook extends GuiScreen
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.mode"), GOLD_COLOR, CONTENT_W));
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.sets"), LIGHT_GRAY_COLOR_1, CONTENT_W));
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.conditions"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.claim"), LIGHT_GRAY_COLOR_1, CONTENT_W));
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.invites"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.settings"), LIGHT_GRAY_COLOR_1, CONTENT_W));
         elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.tip"), GRAY_COLOR_5, CONTENT_W));
         return paginate(elements);
     }
@@ -739,17 +741,40 @@ public class GuiGuideBook extends GuiScreen
             lines.add("");
             return lines;
         }
-        for (String line : fr.listFormattedStringToWidth(text, width))
+        String[] paragraphs = text.replace("\\n", "\n").split("\n", -1);
+        for (String paragraph : paragraphs)
         {
-            if (fr.getStringWidth(line) <= width)
+            if (paragraph.isEmpty())
             {
-                lines.add(line);
+                continue;
+            }
+            if (!lines.isEmpty())
+            {
+                lines.add("");
+            }
+            lines.addAll(wrapLine(fr, paragraph, width));
+        }
+        if (lines.isEmpty())
+        {
+            lines.add("");
+        }
+        return lines;
+    }
+
+    private static List<String> wrapLine(FontRenderer fr, String line, int width)
+    {
+        List<String> result = new ArrayList<>();
+        for (String part : fr.listFormattedStringToWidth(line, width))
+        {
+            if (fr.getStringWidth(part) <= width)
+            {
+                result.add(part);
                 continue;
             }
             StringBuilder current = new StringBuilder();
-            for (int i = 0; i < line.length(); i++)
+            for (int i = 0; i < part.length(); i++)
             {
-                current.append(line.charAt(i));
+                current.append(part.charAt(i));
                 if (fr.getStringWidth(current.toString()) <= width)
                 {
                     continue;
@@ -757,17 +782,17 @@ public class GuiGuideBook extends GuiScreen
                 current.deleteCharAt(current.length() - 1);
                 if (current.length() > 0)
                 {
-                    lines.add(current.toString());
+                    result.add(current.toString());
                 }
                 current.setLength(0);
-                current.append(line.charAt(i));
+                current.append(part.charAt(i));
             }
             if (current.length() > 0)
             {
-                lines.add(current.toString());
+                result.add(current.toString());
             }
         }
-        return lines;
+        return result;
     }
 
     private static boolean mouseIn(float mouseX, float mouseY, int x, int y, int w, int h)
