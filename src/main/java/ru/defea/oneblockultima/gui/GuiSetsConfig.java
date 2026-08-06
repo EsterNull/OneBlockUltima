@@ -1412,6 +1412,7 @@ public class GuiSetsConfig extends GuiScreen
     {
         if (container.getEditingSet() == null) { changeView(VIEW_SET_DETAILS); return; }
         if (!container.isRequiredModsEditorInitialized()) container.initRequiredModsEditor();
+        container.getSelectedRequiredModsForRemoval().clear();
 
         factory.title("gui.oneblockultima.config.required_mods");
 
@@ -1424,7 +1425,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(new SeparatorElement());
 
         List<RequiredModEntry> currentMods = container.getCurrentRequiredModEntries();
-        List<ScrollableListElement.ScrollableListEntry> entries = getListMods(currentMods);
+        List<ScrollableListElement.ScrollableListEntry> entries = getListModsForRemoval(currentMods);
 
         requiredModsList = new ScrollableListElement(ENTRY_HEIGHT)
                 .entries(entries)
@@ -1483,6 +1484,31 @@ public class GuiSetsConfig extends GuiScreen
                 @Override
                 public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
                     container.selectRequiredModToAdd(mod.modId);
+                    return true;
+                }
+            });
+        }
+        return entries;
+    }
+
+    private List<ScrollableListElement.ScrollableListEntry> getListModsForRemoval(List<RequiredModEntry> mods)
+    {
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        for (final RequiredModEntry mod : mods)
+        {
+            entries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    boolean isSel = container.getSelectedRequiredModsForRemoval().contains(mod.modId);
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    String label = mod.displayName.isEmpty() ? mod.modId : mod.displayName + " (" + mod.modId + ")";
+                    fr.drawStringWithShadow(label, x + 4, y + 4, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    container.selectRequiredModToRemove(mod.modId);
                     return true;
                 }
             });

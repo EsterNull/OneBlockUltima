@@ -1781,6 +1781,15 @@ public class ContainerSetsConfig
         selectedRequiredModsToAdd.clear();
     }
 
+    public Set<String> getSelectedRequiredModsForRemoval() { return selectedRequiredModsForRemoval; }
+
+    public void selectRequiredModToRemove(String modId)
+    {
+        if (selectedRequiredModsForRemoval.contains(modId))
+            selectedRequiredModsForRemoval.remove(modId);
+        else selectedRequiredModsForRemoval.add(modId);
+    }
+
     public void deleteSelectedRequiredMods()
     {
         requiredModsEditorMods.removeAll(selectedRequiredModsForRemoval);
