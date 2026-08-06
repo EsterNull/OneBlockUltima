@@ -68,7 +68,7 @@ public final class GuideBookContent
         commands.add(new CommandInfo("inviteGeneratorMember", "/inviteGeneratorMember <playerName>", "book.oneblockultima.command.inviteGeneratorMember.desc"));
         commands.add(new CommandInfo("acceptGeneratorInvite", "/acceptGeneratorInvite", "book.oneblockultima.command.acceptGeneratorInvite.desc"));
         commands.add(new CommandInfo("declineGeneratorInvite", "/declineGeneratorInvite", "book.oneblockultima.command.declineGeneratorInvite.desc"));
-        commands.add(new CommandInfo("addUltimaBalance", "/addUltimaBalance <amount>", "book.oneblockultima.command.addUltimaBalance.desc", true));
+        commands.add(new CommandInfo("addUltimaBalance", "/addUltimaBalance <player> <amount>", "book.oneblockultima.command.addUltimaBalance.desc", true));
         commands.add(new CommandInfo("setOwner", "/setOwner <x> <y> <z> <playerName>", "book.oneblockultima.command.setOwner.desc", true));
         return commands;
     }
