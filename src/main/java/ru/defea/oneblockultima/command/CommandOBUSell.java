@@ -83,6 +83,7 @@ public class CommandOBUSell extends CommandBase
         player.getHeldItemMainhand().shrink(count);
 
         data.addCurrency(totalValue);
+        OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
 
         sender.sendMessage(new TextComponentString(I18n.format("command.obuSell.success", count, itemName, totalValue, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));

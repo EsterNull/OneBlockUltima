@@ -65,6 +65,7 @@ public class CommandAddUltimaBalance extends CommandBase
         }
 
         data.addCurrency(amount);
+        OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
         sender.sendMessage(new TextComponentString(I18n.format("command.addUltimaBalance.success", amount, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));
     }

@@ -973,6 +973,7 @@ public final class ModEvents
                     }
                     data.addBrokenBlocks(entry.setId, 1);
                 }
+                OneBlockPlayerDataProvider.saveToEntity(player, data);
                 PacketSyncPlayerData.sendToPlayer(player);
             }
         }
