@@ -1166,7 +1166,7 @@ public class GuiOneBlock extends GuiContainer
                         {
                             int iconScale = cellSize - 2 * cellPadding;
                             EntityRendererElement mobIcon = new EntityRendererElement(entity).scale(iconScale);
-                            mobIcon.setComputedPosition(cellX + cellPadding, cellY - cellSize / 2 + 3 * cellPadding);
+                            mobIcon.setComputedPosition(cellX + cellPadding, cellY + cellPadding);
                             mobIcon.setComputedSize(iconScale, iconScale);
                             mobIcon.draw(fontRenderer, mouseX, mouseY, 0);
                         }
