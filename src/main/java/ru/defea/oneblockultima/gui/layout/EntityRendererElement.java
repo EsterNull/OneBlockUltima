@@ -46,7 +46,11 @@ public class EntityRendererElement extends ViewElement<EntityRendererElement> {
             fr.drawString("M", computedX + 2, computedY + 2, WHITE_COLOR_1);
             return;
         }
-        ModelUtil.drawEntityOnScreen(computedX + computedWidth / 2, computedY + computedHeight, entity, scale);
+        EntityLivingBase living = (EntityLivingBase) entity;
+        float halfScale = scale / 2.0F;
+        float finalScale = Math.min(halfScale / living.height, halfScale / living.width);
+        int renderedH = Math.max(1, Math.round(living.height * finalScale));
+        ModelUtil.drawEntityOnScreen(computedX + computedWidth / 2, computedY + computedHeight / 2 + renderedH / 2, entity, scale);
     }
 
     @Override

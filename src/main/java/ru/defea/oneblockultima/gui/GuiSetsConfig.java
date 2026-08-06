@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
@@ -863,9 +864,9 @@ public class GuiSetsConfig extends GuiScreen
                         boolean isSelected = container.getSelectedMobIndex() == mobIdx;
                         if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
 
-                        int iconSize = Math.min(16, height - 4);
+                        int iconSize = Math.max(4, height - 8);
                         EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(mob.registry));
-                        mobIcon.scale(iconSize);
+                        mobIcon.scale(iconSize * 2);
                         mobIcon.setComputedPosition(x + 2, y + 2);
                         mobIcon.setComputedSize(iconSize, iconSize);
                         mobIcon.draw(fr, mouseX, mouseY, 0);
@@ -979,7 +980,7 @@ public class GuiSetsConfig extends GuiScreen
                         fluidIcon.draw(fr, mouseX, mouseY, 0);
                     } else if (result.isMob && result.entityClass != null) {
                         EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(result.registry));
-                        mobIcon.scale(iconSize);
+                        mobIcon.scale(iconSize * 2);
                         mobIcon.setComputedPosition(x + 2, y + 2);
                         mobIcon.setComputedSize(iconSize, iconSize);
                         mobIcon.draw(fr, mouseX, mouseY, 0);
@@ -1073,6 +1074,13 @@ public class GuiSetsConfig extends GuiScreen
             factory.add(new LabelElement(entryName).centered());
         }
 
+        ViewElement<?> preview = buildEditPreview(editingSet, editingCurrencyIndex, editingEntryType);
+        if (preview != null)
+        {
+            RowElement previewRow = factory.row(Alignment.CENTER).gap(6);
+            previewRow.add(preview);
+        }
+
         int fieldWidth = Math.max(24, width * 2 / 100);
 
         ColumnElement labelCol = new ColumnElement().align(Alignment.RIGHT).gap(4);
@@ -1093,6 +1101,69 @@ public class GuiSetsConfig extends GuiScreen
         btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_EDIT_NBT, I18n.format("gui.oneblockultima.config.nbt_edit"));
         btnRow.button(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done"));
+    }
+
+    private ViewElement<?> buildEditPreview(BlockSetConfig.BlockSetDefinition editingSet, int editingCurrencyIndex, EntryType editingEntryType)
+    {
+        int previewSize = 24;
+        if (editingEntryType == EntryType.BLOCK && editingSet != null && editingSet.blocks != null
+                && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.blocks.size())
+        {
+            BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
+            if (entry == null || entry.registry == null || entry.registry.isEmpty())
+            {
+                return null;
+            }
+
+            int meta = container.getSelectedBlockMeta();
+            if (meta < 0)
+            {
+                meta = entry.meta;
+            }
+            ItemStack stack = container.getItemStackFromEntry(entry, meta);
+            if (!stack.isEmpty())
+            {
+                return new ItemStackElement(stack).size(previewSize);
+            }
+
+            Fluid fluid = container.getFluidForRegistry(entry.registry);
+            if (fluid != null)
+            {
+                return new FluidElement(fluid).size(24);
+            }
+            return null;
+        }
+
+        if (editingEntryType == EntryType.MOB && editingSet != null && editingSet.mobs != null
+                && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.mobs.size())
+        {
+            BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
+            if (entry == null || entry.registry == null || entry.registry.isEmpty())
+            {
+                return null;
+            }
+
+            Entity entity = resolveEntity(entry.registry);
+            if (entity != null)
+            {
+                return new CustomDrawCallbackElement((x, y, w, h, fr, mx, my, pt) ->
+                {
+                    if (!(entity instanceof EntityLivingBase))
+                    {
+                        return;
+                    }
+                    EntityLivingBase living = (EntityLivingBase) entity;
+                    float heightScale = (float) previewSize / living.height;
+                    float widthScale = (float) previewSize / living.width;
+                    float finalScale = Math.min(heightScale, widthScale);
+                    int renderedH = Math.max(1, Math.round(living.height * finalScale));
+                    ModelUtil.drawEntityOnScreen(x + w / 2, y + h / 2 + renderedH / 2, entity, previewSize * 2);
+                }, previewSize, previewSize);
+            }
+            return null;
+        }
+
+        return null;
     }
 
     private void buildEditNbtView()

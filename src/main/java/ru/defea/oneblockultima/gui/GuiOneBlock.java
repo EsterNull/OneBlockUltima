@@ -1071,7 +1071,7 @@ public class GuiOneBlock extends GuiContainer
                             else if (state != null)
                             {
                                 BlockElement blockIcon = new BlockElement(state).size(16);
-                                blockIcon.setComputedPosition(iconX + 8, iconY + 8);
+                                blockIcon.setComputedPosition(iconX, iconY);
                                 blockIcon.setComputedSize(16, 16);
                                 blockIcon.draw(fontRenderer, mouseX, mouseY, 0);
                             }

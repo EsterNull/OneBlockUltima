@@ -55,17 +55,45 @@ public final class ModelUtil {
             net.minecraft.client.renderer.block.model.IBakedModel model = blockRenderer.getModelForState(state);
             if (model == mc.getRenderItem().getItemModelMesher().getModelManager().getMissingModel())
             {
-                renderBlockTextureAsIcon(state, x, y, size);
+                renderBlockTextureAsIcon(state, x + size / 2, y + size / 2, size);
                 return;
             }
 
             GlStateManager.pushMatrix();
-            GlStateManager.translate(x, y, 100.0F);
-            GlStateManager.scale(size / 16.0F, size / 16.0F, size / 16.0F);
-            GlStateManager.rotate(180F, 1F, 0F, 0F);
-            RenderHelper.enableGUIStandardItemLighting();
-            blockRenderer.renderBlockBrightness(state, 1.0F);
-            RenderHelper.disableStandardItemLighting();
+            try
+            {
+                GlStateManager.enableDepth();
+                GlStateManager.enableAlpha();
+                GlStateManager.alphaFunc(516, 0.1F);
+                GlStateManager.enableBlend();
+                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                GlStateManager.disableCull();
+                GlStateManager.translate(x + size / 2.0F, y + size / 2.0F, 100.0F);
+                GlStateManager.scale(size, size, size);
+                GlStateManager.rotate(180.0F, 1.0F, 0.0F, 0.0F);
+                GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.rotate(45.0F, 0.0F, 1.0F, 0.0F);
+                GlStateManager.translate(-0.5F, -0.5F, -0.5F);
+                mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+                RenderHelper.enableGUIStandardItemLighting();
+                GlStateManager.enableRescaleNormal();
+                blockRenderer.renderBlockBrightness(state, 1.0F);
+                GlStateManager.disableRescaleNormal();
+                RenderHelper.disableStandardItemLighting();
+                GlStateManager.enableCull();
+                GlStateManager.disableBlend();
+                GlStateManager.disableAlpha();
+                GlStateManager.disableDepth();
+            }
+            catch (Exception ignored)
+            {
+                RenderHelper.disableStandardItemLighting();
+                GlStateManager.enableCull();
+                GlStateManager.disableBlend();
+                GlStateManager.disableAlpha();
+                GlStateManager.disableDepth();
+            }
             GlStateManager.popMatrix();
         }
         catch (Exception ignored) { }
@@ -74,13 +102,15 @@ public final class ModelUtil {
     private static void renderBlockTextureAsIcon(net.minecraft.block.state.IBlockState state, int x, int y, int size)
     {
         Minecraft mc = Minecraft.getMinecraft();
-        net.minecraft.block.Block block = state.getBlock();
-        if (block.getRegistryName() == null)
+        TextureAtlasSprite sprite;
+        try
+        {
+            sprite = mc.getBlockRendererDispatcher().getBlockModelShapes().getTexture(state);
+        }
+        catch (Exception ignored)
         {
             return;
         }
-        String registryPath = block.getRegistryName().getResourcePath();
-        TextureAtlasSprite sprite = mc.getTextureMapBlocks().getAtlasSprite("minecraft:items/" + registryPath);
         if ("missingno".equals(sprite.getIconName()))
         {
             return;
