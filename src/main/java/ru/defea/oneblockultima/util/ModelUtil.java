@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.network.EnumPacketDirection;
@@ -16,9 +17,13 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.profiler.Profiler;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.*;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.OneBlockUltima;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public final class ModelUtil {
@@ -205,7 +210,12 @@ public final class ModelUtil {
         catch (Exception ignored) { }
     }
 
-    public static void drawEntityOnScreen(int posX, int posY, Entity entity, int baseScale)
+    public static void drawEntityOnScreenScaled(int posX, int posY, Entity entity, float finalScale)
+    {
+        renderEntityOnScreen(posX, posY, entity, finalScale);
+    }
+
+    private static void renderEntityOnScreen(int posX, int posY, Entity entity, float finalScale)
     {
         if (!(entity instanceof EntityLivingBase)) return;
         EntityLivingBase ent = (EntityLivingBase) entity;
@@ -229,8 +239,6 @@ public final class ModelUtil {
         try
         {
             GlStateManager.translate(posX, posY, 50.0F);
-
-            float finalScale = getScale(baseScale / 2, ent);
 
             GlStateManager.scale(-finalScale, finalScale, finalScale);
             GlStateManager.rotate(170.0F, 0.3F, 0.0F, 1.0F);
@@ -289,9 +297,136 @@ public final class ModelUtil {
         }
     }
 
-    private static float getScale(int scale, EntityLivingBase ent) {
-        float heightScale = scale / ent.height;
-        float widthScale = scale / ent.width;
-        return Math.min(heightScale, widthScale);
+    private static final int MEASURE_SIZE = 256;
+    private static final float[] MEASURE_SCALES = { 10.0F, 5.0F, 2.5F, 1.25F };
+    private static final Map<Class<? extends Entity>, float[]> measuredModelCache = new HashMap<>();
+
+    public static float[] getModelUnits(Entity entity)
+    {
+        if (!(entity instanceof EntityLivingBase))
+        {
+            return new float[] { 0.0F, 0.0F, 0.0F, 0.0F };
+        }
+        EntityLivingBase living = (EntityLivingBase) entity;
+        float[] units = measureModelUnits(living);
+        if (units[0] <= 0.0F || units[1] <= 0.0F)
+        {
+            return new float[] { living.width, living.height, 0.0F, 0.0F };
+        }
+        return units;
+    }
+
+    private static float[] measureModelUnits(EntityLivingBase entity)
+    {
+        float[] cached = measuredModelCache.get(entity.getClass());
+        if (cached != null)
+        {
+            return cached;
+        }
+        float[] result = measureModelUnitsNow(entity);
+        measuredModelCache.put(entity.getClass(), result);
+        OneBlockUltima.getLogger().info("[ModelUtil] Measured units for {}: {}x{} (hitbox {}x{})",
+            entity.getClass().getSimpleName(), result[0], result[1],
+            entity.width, entity.height);
+        return result;
+    }
+
+    private static float[] measureModelUnitsNow(EntityLivingBase entity)
+    {
+        int[] bounds = null;
+        float usedScale = MEASURE_SCALES[0];
+        for (float scale : MEASURE_SCALES)
+        {
+            usedScale = scale;
+            bounds = measurePixels(entity, scale);
+            if (bounds != null && !touchesEdge(bounds))
+            {
+                break;
+            }
+        }
+        if (bounds == null)
+        {
+            return new float[] { 0.0F, 0.0F, 0.0F, 0.0F };
+        }
+        float width = (bounds[2] - bounds[0] + 1) / usedScale;
+        float height = (bounds[3] - bounds[1] + 1) / usedScale;
+        float centerX = (bounds[0] + bounds[2]) / 2.0F;
+        float centerY = (bounds[1] + bounds[3]) / 2.0F;
+        float offsetX = (centerX - MEASURE_SIZE / 2.0F) / usedScale;
+        float offsetY = (centerY - MEASURE_SIZE / 2.0F) / usedScale;
+        return new float[] { width, height, offsetX, offsetY };
+    }
+
+    private static boolean touchesEdge(int[] bounds)
+    {
+        return bounds[0] <= 1 || bounds[1] <= 1
+            || bounds[2] >= MEASURE_SIZE - 2 || bounds[3] >= MEASURE_SIZE - 2;
+    }
+
+    private static int[] measurePixels(EntityLivingBase entity, float scale)
+    {
+        Framebuffer fb = new Framebuffer(MEASURE_SIZE, MEASURE_SIZE, true);
+        try
+        {
+            fb.setFramebufferColor(0.0F, 0.0F, 0.0F, 0.0F);
+            fb.bindFramebuffer(true);
+            GlStateManager.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
+            GlStateManager.clearDepth(1.0D);
+            GlStateManager.clear(16384 | 256);
+
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.pushMatrix();
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.pushMatrix();
+            GlStateManager.loadIdentity();
+            GlStateManager.ortho(0.0D, MEASURE_SIZE, MEASURE_SIZE, 0.0D, 1000.0D, 3000.0D);
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.loadIdentity();
+            GlStateManager.translate(0.0F, 0.0F, -2000.0F);
+
+            renderEntityOnScreen(MEASURE_SIZE / 2, MEASURE_SIZE / 2, entity, scale);
+
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.popMatrix();
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.popMatrix();
+
+            ByteBuffer pixels = BufferUtils.createByteBuffer(MEASURE_SIZE * MEASURE_SIZE * 4);
+            GL11.glReadPixels(0, 0, MEASURE_SIZE, MEASURE_SIZE, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
+
+            byte[] arr = new byte[MEASURE_SIZE * MEASURE_SIZE * 4];
+            pixels.get(arr);
+            int minX = MEASURE_SIZE, minY = MEASURE_SIZE, maxX = -1, maxY = -1;
+            for (int i = 0; i < MEASURE_SIZE * MEASURE_SIZE; i++)
+            {
+                int alpha = arr[i * 4 + 3] & 0xFF;
+                if (alpha > 16)
+                {
+                    int px = i % MEASURE_SIZE;
+                    int py = i / MEASURE_SIZE;
+                    if (px < minX) minX = px;
+                    if (px > maxX) maxX = px;
+                    if (py < minY) minY = py;
+                    if (py > maxY) maxY = py;
+                }
+            }
+            if (maxX < 0)
+            {
+                return null;
+            }
+            return new int[] { minX, minY, maxX, maxY };
+        }
+        catch (Exception e)
+        {
+            OneBlockUltima.getLogger().error("[ModelUtil] measurePixels failed for {}: {}",
+                entity.getClass().getSimpleName(), e.toString());
+            return null;
+        }
+        finally
+        {
+            Minecraft.getMinecraft().getFramebuffer().bindFramebuffer(false);
+            fb.deleteFramebuffer();
+            GlStateManager.viewport(0, 0, Minecraft.getMinecraft().displayWidth, Minecraft.getMinecraft().displayHeight);
+        }
     }
 }

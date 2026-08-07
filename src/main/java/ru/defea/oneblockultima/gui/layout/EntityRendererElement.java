@@ -14,6 +14,8 @@ import static ru.defea.oneblockultima.Constants.WHITE_COLOR_1;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class EntityRendererElement extends ViewElement<EntityRendererElement> {
+    private static final int FIT_MARGIN = 1;
+
     private Entity entity;
     private int scale = 16;
 
@@ -46,11 +48,13 @@ public class EntityRendererElement extends ViewElement<EntityRendererElement> {
             fr.drawString("M", computedX + 2, computedY + 2, WHITE_COLOR_1);
             return;
         }
-        EntityLivingBase living = (EntityLivingBase) entity;
-        float halfScale = scale / 2.0F;
-        float finalScale = Math.min(halfScale / living.height, halfScale / living.width);
-        int renderedH = Math.max(1, Math.round(living.height * finalScale));
-        ModelUtil.drawEntityOnScreen(computedX + computedWidth / 2, computedY + computedHeight / 2 + renderedH / 2, entity, scale);
+        float[] units = ModelUtil.getModelUnits(entity);
+        int fitW = Math.max(4, computedWidth - 2 * FIT_MARGIN);
+        int fitH = Math.max(4, computedHeight - 2 * FIT_MARGIN);
+        float finalScale = Math.min(fitW / units[0], fitH / units[1]);
+        int ox = computedX + computedWidth / 2 - Math.round(units[2] * finalScale);
+        int oy = computedY + computedHeight / 2 + Math.round(units[3] * finalScale);
+        ModelUtil.drawEntityOnScreenScaled(ox, oy, entity, finalScale);
     }
 
     @Override

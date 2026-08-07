@@ -99,7 +99,7 @@ public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
 
     @Override
     public int getPreferredWidth() {
-        int boxW = Math.max(width, 0);
+        int boxW = width > 0 ? width : BUTTON_PADDING;
         if (label != null && !label.isEmpty()) {
             return boxW + labelGap + label.length() * 6;
         }
@@ -111,14 +111,14 @@ public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
         if (label == null || label.isEmpty()) {
             return super.getPreferredWidth(fr);
         }
-        int boxW = width > 0 ? width : (fr.getStringWidth(text != null ? text : "") + BUTTON_PADDING);
+        int boxW = width > 0 ? width : BUTTON_PADDING;
         return boxW + labelGap + fr.getStringWidth(label);
     }
 
     private int getBoxWidth(FontRenderer fr) {
         if (width > 0) return width;
         if (label == null || label.isEmpty()) return computedWidth;
-        return fr.getStringWidth(text != null ? text : "") + BUTTON_PADDING;
+        return BUTTON_PADDING;
     }
 
     @Override

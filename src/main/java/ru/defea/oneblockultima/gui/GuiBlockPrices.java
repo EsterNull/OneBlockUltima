@@ -49,6 +49,8 @@ public class GuiBlockPrices extends GuiScreen
     private DoubleStepperElement setCostStepper;
     private StatusBarElement statusBar;
     private boolean statusBarActive = false;
+    private boolean inClickDispatch = false;
+    private boolean pendingReinit = false;
 
     public GuiBlockPrices(GuiScreen parent)
     {
@@ -59,6 +61,11 @@ public class GuiBlockPrices extends GuiScreen
     @Override
     public void initGui()
     {
+        if (inClickDispatch)
+        {
+            pendingReinit = true;
+            return;
+        }
         Keyboard.enableRepeatEvents(true);
         buttonList.clear();
         buildView();
@@ -243,7 +250,7 @@ public class GuiBlockPrices extends GuiScreen
         setCostRow.add(setCostStepper);
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
         btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
     }
@@ -306,7 +313,7 @@ public class GuiBlockPrices extends GuiScreen
             view.add(new LabelElement(I18n.format("gui.oneblockultima.prices.search.no_results")).color(GRAY_COLOR_1).centered());
         }
 
-        view.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
+        view.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
     }
 
     private void buildEditPriceView(ColumnElement view)
@@ -434,7 +441,20 @@ public class GuiBlockPrices extends GuiScreen
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
+        inClickDispatch = true;
+        try
+        {
+            super.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+        finally
+        {
+            inClickDispatch = false;
+        }
+        if (pendingReinit)
+        {
+            pendingReinit = false;
+            initGui();
+        }
         factory.mouseClicked(mouseX, mouseY, mouseButton);
 
         if (currentView == VIEW_ADD_BLOCK && searchFieldElement != null)

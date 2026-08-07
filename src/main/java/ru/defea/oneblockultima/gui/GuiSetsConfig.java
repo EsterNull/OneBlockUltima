@@ -72,6 +72,8 @@ public class GuiSetsConfig extends GuiScreen
     private static final int NBT_ROW_TEXT_TOP = 2;
     private static final int NBT_ROW_TEXT_LINE_GAP = 1;
     private static final int NBT_ROW_TRUNCATION_SLACK = 30;
+    private static final int ROW_HEIGHT = 20;
+    private static final int PREVIEW_PADDING = 2;
 
     private final GuiScreen parent;
     private final ContainerSetsConfig container;
@@ -84,8 +86,6 @@ public class GuiSetsConfig extends GuiScreen
     private TextFieldElement setIdElement;
     private TextFieldElement unlockCostElement;
     private TextFieldElement entrySearchElement;
-    private TextFieldElement addLevelElement;
-    private TextFieldElement addChanceElement;
     private TextFieldElement editLevelElement;
     private TextFieldElement editChanceElement;
     private TextFieldElement unlockLevelElement;
@@ -380,8 +380,6 @@ public class GuiSetsConfig extends GuiScreen
         if (setIdElement != null) setIdElement.focused(false);
         if (unlockCostElement != null) unlockCostElement.focused(false);
         if (entrySearchElement != null) entrySearchElement.focused(false);
-        if (addLevelElement != null) addLevelElement.focused(false);
-        if (addChanceElement != null) addChanceElement.focused(false);
         if (editLevelElement != null) editLevelElement.focused(false);
         if (editChanceElement != null) editChanceElement.focused(false);
         if (unlockLevelElement != null) unlockLevelElement.focused(false);
@@ -410,7 +408,7 @@ public class GuiSetsConfig extends GuiScreen
         if (button.id == BUTTON_CONFIRM_DELETE) { container.executeDeleteSet(); changeView(VIEW_SETS); return; }
         if (button.id == BUTTON_CANCEL) { changeView(container.getCurrentView() == VIEW_CONFIRM_DELETE ? VIEW_SETS : VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_SAVE_CURRENCY) { handleSaveCurrency(); return; }
-        if (button.id == BUTTON_CANCEL_CURRENCY) { changeView(VIEW_SET_DETAILS); return; }
+        if (button.id == BUTTON_CANCEL_CURRENCY) { container.cancelPendingAdd(); changeView(VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_DELETE_ENTRY) { container.removeSelectedEntry(); changeView(VIEW_SET_DETAILS); return; }
         if (button.id == BUTTON_EDIT_REQUIRED_MODS) { saveCurrentFormState(); container.initRequiredModsEditor(); changeView(VIEW_REQUIRED_MODS_EDITOR); return; }
         if (button.id == BUTTON_REQUIRED_MODS_TOGGLE) { toggleRequiredModsType(); return; }
@@ -445,6 +443,7 @@ public class GuiSetsConfig extends GuiScreen
             changeView(VIEW_SETS);
         }
         else if (v == VIEW_ADD_ENTRY) changeView(VIEW_SET_DETAILS);
+        else if (v == VIEW_EDIT) { container.cancelPendingAdd(); changeView(VIEW_SET_DETAILS); }
         else if (v == VIEW_REQUIRED_MODS_ADD) changeView(VIEW_REQUIRED_MODS_EDITOR);
         else if (v == VIEW_EDIT_NBT) handleNbtBack();
         else if (v == VIEW_NBT_ADD) changeView(VIEW_EDIT_NBT);
@@ -487,7 +486,11 @@ public class GuiSetsConfig extends GuiScreen
         {
             int level = Integer.parseInt(editLevelElement.getText().trim());
             int chance = Math.min(100, Math.max(1, Integer.parseInt(editChanceElement.getText().trim())));
-            if (container.saveCurrency(level, chance)) changeView(VIEW_SET_DETAILS);
+            if (container.saveCurrency(level, chance))
+            {
+                container.clearPendingAdd();
+                changeView(VIEW_SET_DETAILS);
+            }
             else initGui();
         } catch (NumberFormatException e) { initGui(); }
     }
@@ -677,7 +680,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(setsList);
 
         RowElement topRow = new RowElement(Alignment.CENTER).gap(4).widthPercent(100);
-        topRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        topRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
         topRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
         topRow.button(BUTTON_ADD_SET, I18n.format("gui.oneblockultima.config.add_set"));
         factory.add(topRow);
@@ -923,7 +926,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(entriesList);
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
         btnRow.add(new DangerButtonElement(BUTTON_REMOVE_ENTRY, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_ADD_BLOCK, I18n.format("gui.oneblockultima.config.add_block"));
         btnRow.button(BUTTON_ADD_MOB, I18n.format("gui.oneblockultima.config.add_mob"));
@@ -947,16 +950,6 @@ public class GuiSetsConfig extends GuiScreen
 
         String helpText = I18n.format("gui.oneblockultima.config.search.help");
         factory.add(new LabelElement(helpText).color(GRAY_COLOR_1));
-
-        int fieldWidth = Math.max(30, width * 3 / 100);
-        RowElement fieldsRow = new RowElement(Alignment.CENTER).gap(4);
-        fieldsRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ": "));
-        addLevelElement = new TextFieldElement(fieldWidth).text("1");
-        fieldsRow.add(addLevelElement);
-        fieldsRow.add(new LabelElement(I18n.format("gui.oneblockultima.chance") + ": "));
-        addChanceElement = new TextFieldElement(fieldWidth).text("1");
-        fieldsRow.add(addChanceElement);
-        factory.add(fieldsRow);
 
         List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
         List<SearchResult> results = container.getSearchResults();
@@ -996,18 +989,9 @@ public class GuiSetsConfig extends GuiScreen
 
                 @Override
                 public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
-                    int level = 1;
-                    int chance = 1;
-                    try {
-                        level = Integer.parseInt(addLevelElement.getText().trim());
-                    } catch (NumberFormatException ignored) {
-                    }
-                    try {
-                        chance = Math.min(100, Math.max(1, Integer.parseInt(addChanceElement.getText().trim())));
-                    } catch (NumberFormatException ignored) {
-                    }
-                    container.addEntryToCurrentSet(container.getCurrentEntryType(), result, level, chance);
-                    initGui();
+                    pendingAddEntrySearchText = entrySearchElement != null ? entrySearchElement.getText() : "";
+                    container.stagePendingAdd(container.getCurrentEntryType(), result);
+                    changeView(VIEW_EDIT);
                     return true;
                 }
             });
@@ -1025,7 +1009,7 @@ public class GuiSetsConfig extends GuiScreen
             factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered());
         }
 
-        factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
     }
 
     private void buildConfirmDeleteView()
@@ -1076,10 +1060,11 @@ public class GuiSetsConfig extends GuiScreen
             factory.add(new LabelElement(entryName).centered());
         }
 
-        ViewElement<?> preview = buildEditPreview(editingSet, editingCurrencyIndex, editingEntryType);
+        ViewElement<?> preview = buildEditPreview(editingSet, editingCurrencyIndex, editingEntryType,
+                ROW_HEIGHT - 2 * PREVIEW_PADDING);
         if (preview != null)
         {
-            RowElement previewRow = factory.row(Alignment.CENTER).gap(6);
+            RowElement previewRow = factory.row(Alignment.CENTER).gap(6).height(ROW_HEIGHT);
             previewRow.add(preview);
         }
 
@@ -1095,20 +1080,19 @@ public class GuiSetsConfig extends GuiScreen
         editChanceElement = new TextFieldElement(fieldWidth).text(String.valueOf(currentChance));
         fieldCol.add(editChanceElement);
 
-        RowElement formRow = factory.row(Alignment.CENTER).gap(10);
+        RowElement formRow = factory.row(Alignment.CENTER).gap(10).height(ROW_HEIGHT);
         formRow.add(labelCol);
         formRow.add(fieldCol);
 
-        RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6).height(ROW_HEIGHT);
         btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
         btnRow.add(new DangerButtonElement(BUTTON_DELETE_ENTRY, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_EDIT_NBT, I18n.format("gui.oneblockultima.config.nbt_edit"));
         btnRow.add(new SuccessButtonElement(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done")));
     }
 
-    private ViewElement<?> buildEditPreview(BlockSetConfig.BlockSetDefinition editingSet, int editingCurrencyIndex, EntryType editingEntryType)
+    private ViewElement<?> buildEditPreview(BlockSetConfig.BlockSetDefinition editingSet, int editingCurrencyIndex, EntryType editingEntryType, @SuppressWarnings("SameParameterValue") int previewSize)
     {
-        int previewSize = 24;
         if (editingEntryType == EntryType.BLOCK && editingSet != null && editingSet.blocks != null
                 && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.blocks.size())
         {
@@ -1132,7 +1116,7 @@ public class GuiSetsConfig extends GuiScreen
             Fluid fluid = container.getFluidForRegistry(entry.registry);
             if (fluid != null)
             {
-                return new FluidElement(fluid).size(24);
+                return new FluidElement(fluid).size(previewSize);
             }
             return null;
         }
@@ -1155,12 +1139,11 @@ public class GuiSetsConfig extends GuiScreen
                     {
                         return;
                     }
-                    EntityLivingBase living = (EntityLivingBase) entity;
-                    float heightScale = (float) previewSize / living.height;
-                    float widthScale = (float) previewSize / living.width;
-                    float finalScale = Math.min(heightScale, widthScale);
-                    int renderedH = Math.max(1, Math.round(living.height * finalScale));
-                    ModelUtil.drawEntityOnScreen(x + w / 2, y + h / 2 + renderedH / 2, entity, previewSize * 2);
+                    float[] units = ModelUtil.getModelUnits(entity);
+                    float finalScale = Math.min(previewSize / units[0], previewSize / units[1]);
+                    int ox = x + w / 2 - Math.round(units[2] * finalScale);
+                    int oy = y + h / 2 + Math.round(units[3] * finalScale);
+                    ModelUtil.drawEntityOnScreenScaled(ox, oy, entity, finalScale);
                 }, previewSize, previewSize);
             }
             return null;
@@ -1276,7 +1259,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(nbtList);
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
-        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.back"));
         btnRow.button(BUTTON_NBT_ADD, I18n.format(atContainer
                 ? "gui.oneblockultima.config.nbt_add_element"
                 : "gui.oneblockultima.config.nbt_add_tag"));
@@ -1312,14 +1295,25 @@ public class GuiSetsConfig extends GuiScreen
 
         String keyLabel = I18n.format("gui.oneblockultima.config.nbt_key") + ":";
         String valueLabel = I18n.format("gui.oneblockultima.config.nbt_value") + ":";
-        int formLabelWidth = Math.max(fontRenderer.getStringWidth(keyLabel), fontRenderer.getStringWidth(valueLabel));
+        String typeLabel = I18n.format("gui.oneblockultima.config.nbt_type") + ":";
+        String elementTypeLabel = I18n.format("gui.oneblockultima.config.nbt_element_type") + ":";
+        String[] labels = new String[]{
+                keyLabel,
+                valueLabel,
+                typeLabel,
+                elementTypeLabel
+        };
+        int formLabelWidth = 0;
+        for (String s : labels) {
+            formLabelWidth = Math.max(formLabelWidth, fontRenderer.getStringWidth(s));
+        }
 
         if (showKeyField)
         {
             nbtKeyElement = new TextFieldElement(formWidth)
                     .text(container.nbtEditorGetKeyText())
                     .focused(focusKey);
-            RowElement keyRow = factory.row(Alignment.CENTER).gap(6);
+            RowElement keyRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
             keyRow.add(new LabelElement(keyLabel).color(GRAY_COLOR_5).width(formLabelWidth));
             keyRow.add(nbtKeyElement);
         }
@@ -1353,20 +1347,20 @@ public class GuiSetsConfig extends GuiScreen
         }
         showValueField = isScalarNbtType(valueTypeId);
 
-        RowElement typeRow = factory.row(Alignment.CENTER).gap(6);
+        RowElement typeRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
         if (typeFixed)
         {
-            typeRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_type") + ":").color(GRAY_COLOR_5));
+            typeRow.add(new LabelElement(typeLabel).color(GRAY_COLOR_5).width(formLabelWidth));
             typeRow.add(new LabelElement(getNbtTypeLabel(valueTypeId)).color(WHITE_COLOR_1));
         }
         else if (atList)
         {
-            typeRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_element_type") + ":").color(GRAY_COLOR_5));
+            typeRow.add(new LabelElement(elementTypeLabel).color(GRAY_COLOR_5).width(formLabelWidth));
             typeRow.button(BUTTON_NBT_CYCLE_ELEM_TYPE, getNbtTypeLabel(container.getNbtEditorListElementType()));
         }
         else
         {
-            typeRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_type") + ":").color(GRAY_COLOR_5));
+            typeRow.add(new LabelElement(typeLabel).color(GRAY_COLOR_5).width(formLabelWidth));
             typeRow.button(BUTTON_NBT_CYCLE_TYPE, getNbtTypeLabel(container.getNbtEditorAddType()));
         }
 
@@ -1375,7 +1369,7 @@ public class GuiSetsConfig extends GuiScreen
             nbtValueElement = new TextFieldElement(formWidth)
                     .text(container.nbtEditorGetValueText())
                     .focused(!focusKey);
-            RowElement valueRow = factory.row(Alignment.CENTER).gap(6);
+            RowElement valueRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
             valueRow.add(new LabelElement(valueLabel).color(GRAY_COLOR_5).width(formLabelWidth));
             valueRow.add(nbtValueElement);
         }
@@ -1435,7 +1429,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(requiredModsList);
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.back"));
         btnRow.add(new DangerButtonElement(BUTTON_REQUIRED_MODS_DELETE, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.add(new SuccessButtonElement(BUTTON_REQUIRED_MODS_SAVE, I18n.format("gui.oneblockultima.done")));
@@ -1462,7 +1456,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(addModsList);
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.back"));
         btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
         factory.add(btnRow);
     }
@@ -1575,7 +1569,7 @@ public class GuiSetsConfig extends GuiScreen
         factory.add(conditionsList);
 
         RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_UNLOCK_CONDITIONS_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        btnRow.button(BUTTON_UNLOCK_CONDITIONS_BACK, I18n.format("gui.oneblockultima.back"));
         btnRow.add(new DangerButtonElement(BUTTON_UNLOCK_CONDITIONS_DELETE, I18n.format("gui.oneblockultima.config.remove")));
         btnRow.button(BUTTON_UNLOCK_CONDITIONS_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.add(new SuccessButtonElement(BUTTON_UNLOCK_CONDITIONS_SAVE, I18n.format("gui.oneblockultima.done")));

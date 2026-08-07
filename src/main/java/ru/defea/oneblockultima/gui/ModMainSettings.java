@@ -39,7 +39,7 @@ public class ModMainSettings extends GuiScreen
         labels.put(BUTTON_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title"));
         labels.put(BUTTON_BLOCK_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
         labels.put(BUTTON_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title"));
-        labels.put(BUTTON_BACK, I18n.format("gui.oneblockultima.settings.back"));
+        labels.put(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
 
         int maxWidth = 0;
         for (String s : labels.values()) {

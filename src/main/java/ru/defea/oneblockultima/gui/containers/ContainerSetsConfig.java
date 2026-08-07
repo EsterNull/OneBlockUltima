@@ -107,7 +107,7 @@ public class ContainerSetsConfig
     private BlockSetConfig config;
     private final List<BlockSetConfig.BlockSetDefinition> sets = new ArrayList<>();
     private List<BlockSetConfig.BlockSetDefinition> filteredSets = new ArrayList<>();
-    private List<SearchResult> searchResults = new ArrayList<>();
+    private final List<SearchResult> searchResults = new ArrayList<>();
 
     private int selectedSetIndex = -1;
     private int selectedBlockIndex = -1;
@@ -119,6 +119,10 @@ public class ContainerSetsConfig
     private EntryType editingEntryType = EntryType.BLOCK;
 
     private BlockSetConfig.BlockSetDefinition editingSet = null;
+    private boolean pendingAddActive = false;
+    private int pendingAddIndex = -1;
+    private EntryType pendingAddType = EntryType.BLOCK;
+    private String pendingAddRegistry = null;
     private boolean isNewSet = false;
     private String statusMessage = "";
     private int statusTimer = 0;
@@ -262,6 +266,7 @@ public class ContainerSetsConfig
     public void discardEditingSetChanges()
     {
         editingSet = null;
+        clearPendingAdd();
         isNewSet = false;
         editingSetSourceIndex = -1;
         selectedBlockIndex = -1;
@@ -492,9 +497,92 @@ public class ContainerSetsConfig
         editingSet.computedLevels = null;
     }
 
+    public void stagePendingAdd(EntryType type, SearchResult result)
+    {
+        if (editingSet == null) return;
+        pendingAddActive = true;
+        pendingAddType = type;
+        pendingAddRegistry = result.registry;
+        pendingAddIndex = -1;
+        if (type == EntryType.BLOCK)
+        {
+            BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
+            entry.registry = result.registry;
+            entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+            entry.baseLevel = 1;
+            entry.baseChance = 1;
+            entry.nbtTags = result.stack != null && result.stack.getTagCompound() != null
+                    ? result.stack.getTagCompound().copy()
+                    : new NBTTagCompound();
+            if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
+            editingSet.blocks.add(entry);
+            pendingAddIndex = editingSet.blocks.size() - 1;
+            selectedBlockIndex = pendingAddIndex;
+            selectedBlockMeta = -1;
+            selectedMobIndex = -1;
+        }
+        else
+        {
+            BlockSetConfig.MobElementDefinition entry = new BlockSetConfig.MobElementDefinition();
+            entry.registry = result.registry;
+            entry.baseLevel = 1;
+            entry.baseChance = 1;
+            entry.count = 1;
+            if (editingSet.mobs == null) editingSet.mobs = new ArrayList<>();
+            editingSet.mobs.add(entry);
+            pendingAddIndex = editingSet.mobs.size() - 1;
+            selectedMobIndex = pendingAddIndex;
+            selectedBlockIndex = -1;
+            selectedBlockMeta = -1;
+        }
+        editingEntryType = type;
+        editingCurrencyIndex = pendingAddIndex;
+        editingSet.computedLevels = null;
+    }
+
+    public void clearPendingAdd()
+    {
+        pendingAddActive = false;
+        pendingAddIndex = -1;
+        pendingAddRegistry = null;
+    }
+
+    public void cancelPendingAdd()
+    {
+        if (!pendingAddActive) return;
+        int index = pendingAddIndex;
+        EntryType type = pendingAddType;
+        String registry = pendingAddRegistry;
+        clearPendingAdd();
+        editingCurrencyIndex = -1;
+        selectedBlockIndex = -1;
+        selectedBlockMeta = -1;
+        selectedMobIndex = -1;
+        if (editingSet == null || index < 0) return;
+        if (type == EntryType.BLOCK && editingSet.blocks != null && index < editingSet.blocks.size())
+        {
+            BlockSetConfig.BlockElementDefinition e = editingSet.blocks.get(index);
+            if (e != null && registry != null && registry.equals(e.registry))
+            {
+                editingSet.blocks.remove(index);
+                editingSet.computedLevels = null;
+            }
+        }
+        else if (type == EntryType.MOB && editingSet.mobs != null && index < editingSet.mobs.size())
+        {
+            BlockSetConfig.MobElementDefinition e = editingSet.mobs.get(index);
+            if (e != null && registry != null && registry.equals(e.registry))
+            {
+                editingSet.mobs.remove(index);
+                editingSet.computedLevels = null;
+            }
+        }
+    }
+
     public void removeSelectedEntry()
     {
         if (editingSet == null) return;
+        clearPendingAdd();
         if (selectedBlockIndex >= 0 && editingSet.blocks != null && selectedBlockIndex < editingSet.blocks.size())
         {
             BlockSetConfig.BlockElementDefinition block = editingSet.blocks.get(selectedBlockIndex);
@@ -1575,7 +1663,6 @@ public class ContainerSetsConfig
         }
 
         searchResults.sort((a, b) -> a.name.compareToIgnoreCase(b.name));
-        if (searchResults.size() > 200) searchResults = searchResults.subList(0, 200);
     }
 
     private boolean mismatchesSearchTerms(String name, List<String> searchTerms)

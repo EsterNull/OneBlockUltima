@@ -122,6 +122,7 @@ gui.oneblockultima.reset_default=Reset Default
 gui.oneblockultima.save=Save
 gui.oneblockultima.done=Done
 gui.oneblockultima.cancel=Cancel
+gui.oneblockultima.back=Back
 gui.oneblockultima.tabs.sets=Sets
 gui.oneblockultima.tabs.settings=Settings
 gui.oneblockultima.tabs.donate=Donate
@@ -139,7 +140,6 @@ gui.oneblockultima.settings.mobs=Mob generation
 gui.oneblockultima.settings.chests=Chest generation
 gui.oneblockultima.settings.saplings=Sapling generation
 gui.oneblockultima.settings.open_prices=Manage prices
-gui.oneblockultima.settings.back=Back
 gui.oneblockultima.settings.enabled=enabled
 gui.oneblockultima.settings.disabled=disabled
 
@@ -309,7 +309,7 @@ gui.oneblockultima.mod_settings.set_cost_increase.value.fixed=By how much
 gui.oneblockultima.mod_settings.set_cost_increase.value.multiplier=By what factor
 
 # Block prices GUI
-gui.oneblockultima.prices.title=Block Price Table
+gui.oneblockultima.prices.title=Economy
 gui.oneblockultima.prices.edit_title=Edit Price
 gui.oneblockultima.prices.price=Price
 gui.oneblockultima.prices.search.no_results=No blocks found
@@ -330,7 +330,7 @@ gui.oneblockultima.misc.max_generator_members=Max generator members (0 - no limi
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator
 
 # Guide book
-item.guide_book.name=OneBlock Guidebook
+item.obu_guide_book.name=OneBlock Guidebook
 book.oneblockultima.title=OneBlock Guidebook
 book.oneblockultima.close=Close
 book.oneblockultima.toc.title=Contents
