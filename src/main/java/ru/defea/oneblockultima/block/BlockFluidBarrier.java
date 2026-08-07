@@ -2,9 +2,11 @@ package ru.defea.oneblockultima.block;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumBlockRenderType;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
@@ -13,6 +15,7 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.OneBlockUltima;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class BlockFluidBarrier extends Block
@@ -30,67 +33,76 @@ public class BlockFluidBarrier extends Block
 
     @Nullable
     @Override
-    public RayTraceResult collisionRayTrace(IBlockState blockState, World worldIn, BlockPos pos, Vec3d start, Vec3d end)
+    public RayTraceResult collisionRayTrace(@Nonnull IBlockState blockState, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Vec3d start, @Nonnull Vec3d end)
     {
         return null;
     }
 
     @Override
-    public EnumBlockRenderType getRenderType(IBlockState state)
+    @Nonnull
+    public EnumBlockRenderType getRenderType(@Nonnull IBlockState state)
     {
         return EnumBlockRenderType.INVISIBLE;
     }
 
     @Override
-    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos)
+    @Nonnull
+    public AxisAlignedBB getBoundingBox(@Nonnull IBlockState state, @Nonnull IBlockAccess source, @Nonnull BlockPos pos)
     {
         return FULL_BLOCK_AABB;
     }
 
     @Nullable
     @Override
-    public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, IBlockAccess worldIn, BlockPos pos)
+    public AxisAlignedBB getCollisionBoundingBox(@Nonnull IBlockState blockState, @Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
     {
         return NULL_AABB;
     }
 
     @Override
-    public void addCollisionBoxToList(IBlockState state, World worldIn, BlockPos pos, AxisAlignedBB entityBox, java.util.List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean p_185477_7_)
+    public void addCollisionBoxToList(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull AxisAlignedBB entityBox, @Nonnull java.util.List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean p_185477_7_)
     {
     }
 
     @Override
-    public boolean isOpaqueCube(IBlockState state)
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(IBlockState state)
+    public boolean isOpaqueCube(@Nonnull IBlockState state)
     {
         return false;
     }
 
     @Override
-    public boolean isFullBlock(IBlockState state)
+    public boolean isFullCube(@Nonnull IBlockState state)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isFullBlock(@Nonnull IBlockState state)
     {
         return true;
     }
 
     @Override
-    public boolean isPassable(IBlockAccess worldIn, BlockPos pos)
+    public boolean isPassable(@Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
     {
         return true;
     }
 
     @Override
-    public boolean isReplaceable(IBlockAccess worldIn, BlockPos pos)
+    public boolean isReplaceable(@Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
     {
         return true;
     }
 
     @Override
-    public boolean canBeReplacedByLeaves(IBlockState state, IBlockAccess world, BlockPos pos)
+    @Nonnull
+    public BlockFaceShape getBlockFaceShape(@Nonnull IBlockAccess worldIn, @Nonnull IBlockState state, @Nonnull BlockPos pos, @Nonnull EnumFacing face)
+    {
+        return BlockFaceShape.UNDEFINED;
+    }
+
+    @Override
+    public boolean canBeReplacedByLeaves(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos)
     {
         return true;
     }

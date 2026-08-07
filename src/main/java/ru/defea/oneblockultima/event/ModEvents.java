@@ -887,9 +887,6 @@ public final class ModEvents
         GeneratedBlockRegistry.GeneratedBlockEntry entry = registry.getEntry(event.getPos());
         if (entry == null)
         {
-            // Non-generated block (e.g. placed by the player): drops should fall into the world
-            // instead of being teleported into the inventory. Remove any stale entries so
-            // onEntityJoinWorld does not intercept the drop.
             lastBreakPlayers.remove(pos);
             pendingMobSpawnEntries.remove(pos);
             OneBlockUltima.getLogger().debug("[BreakDebug] No generated entry found for broken block {}", event.getPos());
@@ -1181,23 +1178,56 @@ public final class ModEvents
                 && world.getBlockState(pos).getBlock() == Blocks.AIR)
         {
             world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
-            OneBlockUltima.getLogger().info("[Generator] BARRIER restored at " + pos + " from NeighborNotify");
+            OneBlockUltima.getLogger().info("[Generator] BARRIER restored at {} from NeighborNotify", pos);
             return;
         }
+
+        IBlockState state = world.getBlockState(pos);
 
         // Проверяем только блок над генератором
         if (world.getBlockState(event.getPos().down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
+            if (state.getBlock() == Blocks.AIR)
+            {
+                OneBlockUltima.getLogger().info("[Generator] NeighborNotify: generated slot {} became AIR", pos);
+                dropUnsupportedAttachables(world, pos);
+
+                GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
+                GeneratedBlockRegistry.GeneratedBlockEntry entry = registry.getEntry(pos);
+                if (entry != null && !pendingMobSpawnEntries.containsKey(pos))
+                {
+                    spawnMobOnBlockBreak(world, pos, entry);
+                    registry.remove(pos);
+                }
+            }
             return;
         }
 
-        // Проверяем, не AIR ли теперь блок
-        IBlockState state = world.getBlockState(pos);
         if (state.getBlock() != Blocks.AIR)
         {
             // Блок существует
             processingBlocks.put(pos, false);
         }
+    }
+
+    private static void dropUnsupportedAttachables(World world, BlockPos generatedPos)
+    {
+        BlockPos abovePos = generatedPos.up();
+        IBlockState aboveState = world.getBlockState(abovePos);
+        Block aboveBlock = aboveState.getBlock();
+        if (aboveBlock == Blocks.AIR || aboveBlock == ModBlocks.FLUID_BARRIER)
+        {
+            return;
+        }
+        if (!(aboveBlock instanceof net.minecraft.block.BlockLever)
+                && !(aboveBlock instanceof net.minecraft.block.BlockButton)
+                && !(aboveBlock instanceof net.minecraft.block.BlockTorch))
+        {
+            return;
+        }
+        aboveBlock.dropBlockAsItem(world, abovePos, aboveState, 0);
+        world.setBlockToAir(abovePos);
+        OneBlockUltima.getLogger().info("[Generator] Dropped attachable {} at {} (generated block at {} removed)", aboveBlock.getLocalizedName(), abovePos, generatedPos);
     }
 
     private static void spawnMobOnBlockBreak(World world, BlockPos pos, GeneratedBlockRegistry.GeneratedBlockEntry entry)

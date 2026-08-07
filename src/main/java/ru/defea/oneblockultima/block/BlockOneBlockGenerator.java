@@ -237,11 +237,34 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     private static void ensureFluidBarrier(World world, BlockPos generatorPos)
     {
         BlockPos barrierPos = generatorPos.up(2);
-        if (world.getBlockState(barrierPos).getBlock() == Blocks.AIR)
+        IBlockState barrierState = world.getBlockState(barrierPos);
+        Block barrierBlock = barrierState.getBlock();
+
+        if (barrierBlock == ModBlocks.FLUID_BARRIER)
         {
-            world.setBlockState(barrierPos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
-            OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {}", barrierPos);
+            return;
         }
+
+        if (barrierBlock != Blocks.AIR)
+        {
+            boolean generatedSlotEmpty = world.getBlockState(generatorPos.up()).getBlock() == Blocks.AIR;
+            if ((barrierBlock instanceof net.minecraft.block.BlockLever
+                    || barrierBlock instanceof net.minecraft.block.BlockButton
+                    || barrierBlock instanceof net.minecraft.block.BlockTorch)
+                    && (generatedSlotEmpty || !barrierBlock.canPlaceBlockAt(world, barrierPos)))
+            {
+                barrierBlock.dropBlockAsItem(world, barrierPos, barrierState, 0);
+                world.setBlockToAir(barrierPos);
+                OneBlockUltima.getLogger().info("[Generator] Dropped attachable {} at {} via ensureFluidBarrier (generatedSlotEmpty={})", barrierBlock.getLocalizedName(), barrierPos, generatedSlotEmpty);
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        world.setBlockState(barrierPos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
+        OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {}", barrierPos);
     }
 
     @Override
