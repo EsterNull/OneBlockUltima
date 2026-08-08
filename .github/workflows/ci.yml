@@ -3,9 +3,13 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    branches:
+      - 'forge_1.7.10'
+      - 'forge_1.12.x'
+      - 'feature_*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -15,31 +19,11 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Read mod version and java version
+      - name: Read java version
         id: version
         run: |
-          VERSION=$(grep "^version = " build.gradle | sed "s/version = '\(.*\)'/\1/" | tr -d ' \r\n')
           JAVA_VER=$(grep "^ci.java.version=" gradle.properties | cut -d'=' -f2 | tr -d ' \r\n')
-          echo "mod_version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "java_version=$JAVA_VER" >> "$GITHUB_OUTPUT"
-
-      - name: Check versions.json
-        id: check
-        run: |
-          VERSION="${{ steps.version.outputs.mod_version }}"
-          BASE="${{ github.base_ref }}"
-          RESPONSE=$(curl -sf "https://raw.githubusercontent.com/XZSt4nce/OneBlockUltima/main/versions.json" || echo '{}')
-
-          if [ "$BASE" = "forge_1.7.10" ]; then
-            EXISTS=$(echo "$RESPONSE" | jq --arg v "$VERSION" '.["1.7.10"] // {} | has($v)')
-          elif [ "$BASE" = "forge_1.12.x" ]; then
-            EXISTS=$(echo "$RESPONSE" | jq --arg v "$VERSION" '[.["1.12"] // {}, .["1.12.1"] // {}, .["1.12.2"] // {}] | [.[] | has($v)] | any')
-          else
-            EXISTS="false"
-          fi
-
-          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
-          echo "Version $VERSION exists in versions.json for $BASE: $EXISTS"
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -60,25 +44,3 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test
-
-      - name: Build mod
-        if: steps.check.outputs.exists == 'false'
-        run: ./gradlew build -x test -x check
-
-      - name: Find jar
-        if: steps.check.outputs.exists == 'false'
-        id: jar
-        run: |
-          JAR=$(find build/libs -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -1)
-          echo "path=$JAR" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub Release
-        if: steps.check.outputs.exists == 'false'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: forge-${{ github.base_ref }}-${{ steps.version.outputs.mod_version }}
-          name: ${{ github.event.pull_request.title }}
-          body: ${{ github.event.pull_request.body }}
-          files: ${{ steps.jar.outputs.path }}
-          draft: false
-          prerelease: false
