@@ -96,6 +96,9 @@ public class GuiOneBlock extends GuiContainer
 
     private static final int DONATE_BUTTON_GAP = 12;
 
+    private static final int CLOSE_BUTTON_SIZE = 14;
+    private static final int CLOSE_BUTTON_OFFSET = 6;
+
     private static final int SB_BLOCK_LEFT = 0;
     private static final int SB_BLOCK_RIGHT = 1;
     private static final int SB_MOB_LEFT = 2;
@@ -420,7 +423,7 @@ public class GuiOneBlock extends GuiContainer
         IOneBlockPlayerData playerData = OneBlockPlayerDataProvider.get(container.getPlayer());
         int brokenTotal = playerData == null ? 0 : playerData.getBrokenBlocksCount();
         String brokenLabel = I18n.format("gui.oneblockultima.blocks_broken_total") + ":";
-        int brokenX = x + 10;
+        int brokenX = x + CLOSE_BUTTON_OFFSET + CLOSE_BUTTON_SIZE + 6;
         int brokenY = y + fr.FONT_HEIGHT;
         fr.drawString(brokenLabel, brokenX, brokenY, LIGHT_GRAY_COLOR_2);
         fr.drawString(String.valueOf(brokenTotal), brokenX + fr.getStringWidth(brokenLabel) + 2, brokenY, WHITE_COLOR_1);
@@ -443,6 +446,19 @@ public class GuiOneBlock extends GuiContainer
         coinIcon.setComputedSize(iconSize, iconSize);
         coinIcon.draw(fr, mouseX, mouseY, partialTicks);
         fr.drawString(balanceValue, numberX, numberY, GOLD_COLOR);
+
+        int closeX = x + CLOSE_BUTTON_OFFSET;
+        int closeY = y + CLOSE_BUTTON_OFFSET;
+        boolean closeHovered = mouseX >= closeX && mouseX < closeX + CLOSE_BUTTON_SIZE &&
+                mouseY >= closeY && mouseY < closeY + CLOSE_BUTTON_SIZE;
+        int closeBg = closeHovered ? REDDISH_COLOR : DARK_GRAY_COLOR_2;
+        int closeBorder = closeHovered ? WHITE_COLOR_1 : GRAY_COLOR_7;
+        drawRect(closeX, closeY, closeX + CLOSE_BUTTON_SIZE, closeY + CLOSE_BUTTON_SIZE, closeBg);
+        drawRect(closeX, closeY, closeX + CLOSE_BUTTON_SIZE, closeY + 1, closeBorder);
+        drawRect(closeX, closeY + CLOSE_BUTTON_SIZE - 1, closeX + CLOSE_BUTTON_SIZE, closeY + CLOSE_BUTTON_SIZE, closeBorder);
+        drawRect(closeX, closeY, closeX + 1, closeY + CLOSE_BUTTON_SIZE, closeBorder);
+        drawRect(closeX + CLOSE_BUTTON_SIZE - 1, closeY, closeX + CLOSE_BUTTON_SIZE, closeY + CLOSE_BUTTON_SIZE, closeBorder);
+        drawCenteredString(fr, "\u2715", closeX + CLOSE_BUTTON_SIZE / 2, closeY + 3, WHITE_COLOR_1);
     }
 
     private void drawInfo(int x, int y, int width, int height, FontRenderer fr, int mouseX, int mouseY, float partialTicks)
@@ -1832,6 +1848,16 @@ public class GuiOneBlock extends GuiContainer
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
+        if (mouseX < guiLeft || mouseX >= guiLeft + xSize || mouseY < guiTop || mouseY >= guiTop + ySize)
+        {
+            this.mc.displayGuiScreen(null);
+            return;
+        }
+        if (isCloseButtonHovered(mouseX, mouseY))
+        {
+            this.mc.displayGuiScreen(null);
+            return;
+        }
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (factory != null)
         {
@@ -1998,6 +2024,14 @@ public class GuiOneBlock extends GuiContainer
             activeView = view;
             rebuildView();
         }
+    }
+
+    private boolean isCloseButtonHovered(int mouseX, int mouseY)
+    {
+        int closeX = guiLeft + CLOSE_BUTTON_OFFSET;
+        int closeY = guiTop + CLOSE_BUTTON_OFFSET;
+        return mouseX >= closeX && mouseX < closeX + CLOSE_BUTTON_SIZE &&
+                mouseY >= closeY && mouseY < closeY + CLOSE_BUTTON_SIZE;
     }
 
     private void clearHovered()
