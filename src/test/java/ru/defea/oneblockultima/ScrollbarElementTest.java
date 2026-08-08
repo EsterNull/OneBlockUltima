@@ -69,4 +69,15 @@ public class ScrollbarElementTest {
         assertFalse(sb.mouseClicked(103, 200, 1));
         assertEquals(25, sb.getScrollOffset());
     }
+
+    @Test
+    public void clickOnTrackStartsDragFromThatSpot() {
+        ScrollbarElement sb = bar(200, 10, 0, 100, 200);
+        assertTrue(sb.mouseClicked(103, 200, 0));
+        int mid = Math.round(0.5f * sb.getMaxScroll());
+        assertEquals(mid, sb.getScrollOffset());
+        assertTrue(sb.mouseClickMove(103, 260, 0, 0));
+        assertTrue(sb.mouseClickMove(103, 200, 0, 0));
+        assertEquals(mid, sb.getScrollOffset());
+    }
 }

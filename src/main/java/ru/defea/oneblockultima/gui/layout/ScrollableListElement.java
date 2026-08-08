@@ -3,7 +3,6 @@ package ru.defea.oneblockultima.gui.layout;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import ru.defea.oneblockultima.Constants;
 
 import java.util.List;
 
@@ -13,16 +12,12 @@ import static ru.defea.oneblockultima.Constants.*;
 public class ScrollableListElement extends ViewElement<ScrollableListElement> {
     private final int itemHeight;
     private int scrollOffset = 0;
-    private int maxScroll = 0;
     private int visibleItems = 0;
     private int trackWidth = 6;
     private int panelColor = PANEL_COLOR;
     private int hoveredRow = -1;
     private List<? extends ScrollableListEntry> entries;
-    private int thumbY;
-    private int thumbHeight;
-    private boolean dragging = false;
-    private int dragGrabOffset = 0;
+    private final ScrollbarElement scrollbar = new ScrollbarElement();
 
     public interface ScrollableListEntry {
         void draw(int x, int y, int width, int height, boolean hovered, boolean selected, FontRenderer fr, int mouseX, int mouseY);
@@ -62,6 +57,7 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
     }
 
     public void clampScroll() {
+        int maxScroll = Math.max(0, entries != null ? entries.size() - visibleItems : 0);
         if (scrollOffset < 0) scrollOffset = 0;
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
     }
@@ -80,7 +76,6 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
 
         int listWidth = computedWidth - trackWidth - 2;
         visibleItems = computedHeight / itemHeight;
-        maxScroll = Math.max(0, entries.size() - visibleItems);
         clampScroll();
 
         hoveredRow = -1;
@@ -100,50 +95,34 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
         }
 
         if (entries.size() > visibleItems) {
-            int thumbWidth = trackWidth;
-            int trackX = computedX + listWidth + 2;
-            Gui.drawRect(trackX, contentTop, trackX + thumbWidth, contentTop + computedHeight, DARK_GRAY_COLOR_2);
-
-            computeThumb();
-
-            Gui.drawRect(trackX, thumbY, trackX + thumbWidth, thumbY + thumbHeight, Constants.GRAY_COLOR_1);
+            layoutScrollbar(listWidth);
+            scrollbar.draw(fr, mouseX, mouseY, partialTicks);
+            scrollOffset = scrollbar.getScrollOffset();
         }
     }
 
-    private void computeThumb() {
-        int trackHeight = computedHeight;
-        float ratio = (float) visibleItems / entries.size();
-        thumbHeight = Math.max(10, (int) (trackHeight * ratio));
-        float thumbPos;
-        if (trackHeight <= thumbHeight) {
-            thumbPos = 0;
-        } else {
-            thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
-        }
-        thumbY = computedY + (int) (thumbPos * (trackHeight - thumbHeight));
+    private void layoutScrollbar(int listWidth) {
+        scrollbar.setComputedPosition(computedX + listWidth + 2, computedY);
+        scrollbar.setComputedSize(trackWidth, computedHeight);
+        scrollbar.trackWidth(trackWidth)
+                .totalItems(entries.size())
+                .visibleItems(visibleItems)
+                .scrollOffset(scrollOffset);
     }
 
     @Override
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
         if (entries == null || entries.isEmpty()) return false;
 
+        visibleItems = computedHeight / itemHeight;
         int listWidth = computedWidth - trackWidth - 2;
 
-        int trackX = computedX + listWidth + 2;
-        if (mouseX >= trackX && mouseX <= trackX + trackWidth &&
-            mouseY >= computedY && mouseY <= computedY + computedHeight) {
-            computeThumb();
-            if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
-                dragging = true;
-                dragGrabOffset = mouseY - thumbY;
+        if (entries.size() > visibleItems) {
+            layoutScrollbar(listWidth);
+            if (scrollbar.mouseClicked(mouseX, mouseY, mouseButton)) {
+                scrollOffset = scrollbar.getScrollOffset();
                 return true;
             }
-            int range = computedHeight - thumbHeight;
-            int clickY = mouseY - computedY - thumbHeight / 2;
-            float ratio = range > 0 ? Math.max(0, Math.min(1, (float) clickY / range)) : 0;
-            scrollOffset = Math.round(ratio * maxScroll);
-            clampScroll();
-            return true;
         }
 
         if (mouseX >= computedX && mouseX <= computedX + listWidth) {
@@ -163,28 +142,27 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
 
     @Override
     public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
-        if (!dragging || clickedMouseButton != 0) return false;
-        computeThumb();
-        int range = computedHeight - thumbHeight;
-        float ratio = range > 0 ? (float) (mouseY - dragGrabOffset - computedY) / range : 0;
-        ratio = Math.max(0, Math.min(1, ratio));
-        scrollOffset = Math.round(ratio * maxScroll);
-        clampScroll();
-        return true;
+        if (scrollbar.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick)) {
+            scrollOffset = scrollbar.getScrollOffset();
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean mouseReleased(int mouseX, int mouseY, int state) {
-        dragging = false;
+        scrollbar.mouseReleased(mouseX, mouseY, state);
         return false;
     }
 
     @Override
     public boolean handleMouseInput(int dWheel) {
-        if (entries == null || entries.size() <= visibleItems) return false;
-        scrollOffset -= dWheel > 0 ? 1 : -1;
-        clampScroll();
-        return true;
+        if (entries == null || entries.isEmpty()) return false;
+        if (entries.size() <= visibleItems) return false;
+        scrollbar.totalItems(entries.size()).visibleItems(visibleItems).scrollOffset(scrollOffset);
+        boolean scrolled = scrollbar.handleMouseInput(dWheel);
+        scrollOffset = scrollbar.getScrollOffset();
+        return scrolled;
     }
 
     @Override

@@ -119,6 +119,8 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
             float ratio = range > 0 ? (float) clickY / range : 0;
             scrollOffset = Math.round(ratio * getMaxScroll());
             clampScroll();
+            dragging = true;
+            dragGrabOffset = thumbHeight / 2;
             return true;
         }
         return false;

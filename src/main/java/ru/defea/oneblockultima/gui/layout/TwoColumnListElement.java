@@ -3,7 +3,6 @@ package ru.defea.oneblockultima.gui.layout;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import ru.defea.oneblockultima.Constants;
 
 import java.util.List;
 
@@ -13,17 +12,13 @@ import static ru.defea.oneblockultima.Constants.*;
 public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
     private final int itemHeight;
     private int scrollOffset = 0;
-    private int maxScroll = 0;
     private int visibleItems = 0;
     private final int trackWidth = 6;
     private int panelColor = PANEL_COLOR;
     private final int innerPad = 4;
     private List<? extends TwoColumnEntry> leftEntries;
     private List<? extends TwoColumnEntry> rightEntries;
-    private int thumbY;
-    private int thumbHeight;
-    private boolean dragging = false;
-    private int dragGrabOffset = 0;
+    private final ScrollbarElement scrollbar = new ScrollbarElement();
 
     public interface TwoColumnEntry {
         void drawLeft(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY);
@@ -82,8 +77,7 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
         int listWidth = computedWidth - trackWidth - 2;
         visibleItems = Math.max(1, computedHeight / itemHeight);
         int maxEntries = getMaxEntries();
-        maxScroll = Math.max(0, maxEntries - visibleItems);
-        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+        if (scrollOffset > maxEntries - visibleItems) scrollOffset = Math.max(0, maxEntries - visibleItems);
         if (scrollOffset < 0) scrollOffset = 0;
 
         Gui.drawRect(computedX, computedY, computedX + listWidth + trackWidth + 2, computedY + computedHeight, panelColor);
@@ -115,26 +109,19 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
         }
 
         if (maxEntries > visibleItems) {
-            int scrollbarX = computedX + listWidth + 2;
-            int scrollbarHeight = computedHeight;
-            Gui.drawRect(scrollbarX, contentTop, scrollbarX + trackWidth, contentTop + scrollbarHeight, DARK_GRAY_COLOR_2);
-
-            computeThumb();
-            Gui.drawRect(scrollbarX, thumbY, scrollbarX + trackWidth, thumbY + thumbHeight, Constants.GRAY_COLOR_1);
+            layoutScrollbar(listWidth);
+            scrollbar.draw(fr, mouseX, mouseY, partialTicks);
+            scrollOffset = scrollbar.getScrollOffset();
         }
     }
 
-    private void computeThumb() {
-        int trackHeight = computedHeight;
-        float ratio = (float) visibleItems / getMaxEntries();
-        thumbHeight = Math.max(10, (int) (trackHeight * ratio));
-        float thumbPos;
-        if (trackHeight <= thumbHeight) {
-            thumbPos = 0;
-        } else {
-            thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
-        }
-        thumbY = computedY + (int) (thumbPos * (trackHeight - thumbHeight));
+    private void layoutScrollbar(int listWidth) {
+        scrollbar.setComputedPosition(computedX + listWidth + 2, computedY);
+        scrollbar.setComputedSize(trackWidth, computedHeight);
+        scrollbar.trackWidth(trackWidth)
+                .totalItems(getMaxEntries())
+                .visibleItems(visibleItems)
+                .scrollOffset(scrollOffset);
     }
 
     @Override
@@ -142,25 +129,16 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
         if ((leftEntries == null || leftEntries.isEmpty()) && (rightEntries == null || rightEntries.isEmpty()))
             return false;
 
+        visibleItems = Math.max(1, computedHeight / itemHeight);
         int listWidth = computedWidth - trackWidth - 2;
         int colWidth = (listWidth - innerPad * 2) / 2;
-        int scrollbarX = computedX + listWidth + 2;
 
-        if (mouseX >= scrollbarX && mouseX <= scrollbarX + trackWidth &&
-            mouseY >= computedY && mouseY <= computedY + computedHeight) {
-            computeThumb();
-            if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
-                dragging = true;
-                dragGrabOffset = mouseY - thumbY;
+        if (getMaxEntries() > visibleItems) {
+            layoutScrollbar(listWidth);
+            if (scrollbar.mouseClicked(mouseX, mouseY, mouseButton)) {
+                scrollOffset = scrollbar.getScrollOffset();
                 return true;
             }
-            int range = computedHeight - thumbHeight;
-            int clickY = mouseY - computedY - thumbHeight / 2;
-            float ratio = range > 0 ? Math.max(0, Math.min(1, (float) clickY / range)) : 0;
-            scrollOffset = Math.round(ratio * maxScroll);
-            if (scrollOffset < 0) scrollOffset = 0;
-            if (scrollOffset > maxScroll) scrollOffset = maxScroll;
-            return true;
         }
 
         if (mouseX >= computedX && mouseX <= computedX + listWidth) {
@@ -191,28 +169,24 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
     @Override
     public boolean handleMouseInput(int dWheel) {
         if (getMaxEntries() <= visibleItems) return false;
-        scrollOffset -= dWheel > 0 ? 1 : -1;
-        if (scrollOffset < 0) scrollOffset = 0;
-        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
-        return true;
+        scrollbar.totalItems(getMaxEntries()).visibleItems(visibleItems).scrollOffset(scrollOffset);
+        boolean scrolled = scrollbar.handleMouseInput(dWheel);
+        scrollOffset = scrollbar.getScrollOffset();
+        return scrolled;
     }
 
     @Override
     public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
-        if (!dragging || clickedMouseButton != 0) return false;
-        computeThumb();
-        int range = computedHeight - thumbHeight;
-        float ratio = range > 0 ? (float) (mouseY - dragGrabOffset - computedY) / range : 0;
-        ratio = Math.max(0, Math.min(1, ratio));
-        scrollOffset = Math.round(ratio * maxScroll);
-        if (scrollOffset < 0) scrollOffset = 0;
-        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
-        return true;
+        if (scrollbar.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick)) {
+            scrollOffset = scrollbar.getScrollOffset();
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean mouseReleased(int mouseX, int mouseY, int state) {
-        dragging = false;
+        scrollbar.mouseReleased(mouseX, mouseY, state);
         return false;
     }
 
