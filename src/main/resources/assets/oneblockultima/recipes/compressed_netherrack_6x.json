@@ -2,44 +2,44 @@
     "ingredients":  [
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xNetherrack"
                         }
                     ],
     "result":  {
-                   "item":  "oneblockultima:compressed_redstone_block",
-                   "data":  3
+                   "item":  "oneblockultima:compressed_netherrack",
+                   "data":  5
                },
     "type":  "minecraft:crafting_shapeless"
 }

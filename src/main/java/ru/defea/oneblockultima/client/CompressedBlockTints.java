@@ -37,8 +37,8 @@ public final class CompressedBlockTints
         FACTORS.put(ModBlocks.COMPRESSED_STONE_BLOCK, new float[] { 0.7290F, 0.5011F, 0.3433F, 0.2347F, 0.1584F, 0.0998F });
         FACTORS.put(ModBlocks.COMPRESSED_EMERALD_BLOCK, new float[] { 0.7283F, 0.4994F, 0.3413F, 0.2325F, 0.1569F });
         FACTORS.put(ModBlocks.COMPRESSED_LAPIS_BLOCK, new float[] { 0.7237F, 0.4907F, 0.3304F, 0.2196F, 0.1420F, 0.0890F });
-        FACTORS.put(ModBlocks.COMPRESSED_END_STONE, new float[] { 0.7290F, 0.5011F, 0.3433F, 0.2347F, 0.1584F });
-        FACTORS.put(ModBlocks.COMPRESSED_NETHERRACK, new float[] { 0.7206F, 0.4862F, 0.3231F, 0.2113F, 0.1338F });
+        FACTORS.put(ModBlocks.COMPRESSED_END_STONE, new float[] { 0.7290F, 0.5011F, 0.3433F, 0.2347F, 0.1584F, 0.0998F });
+        FACTORS.put(ModBlocks.COMPRESSED_NETHERRACK, new float[] { 0.7206F, 0.4862F, 0.3231F, 0.2113F, 0.1338F, 0.0843F });
     }
 
     private CompressedBlockTints()

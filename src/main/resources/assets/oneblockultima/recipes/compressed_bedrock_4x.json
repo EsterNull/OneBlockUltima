@@ -1,45 +1,45 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_bedrock",
-      "data": 2
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_bedrock",
-    "data": 3
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xBedrock"
+                        }
+                    ],
+    "result":  {
+                   "item":  "oneblockultima:compressed_bedrock",
+                   "data":  3
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

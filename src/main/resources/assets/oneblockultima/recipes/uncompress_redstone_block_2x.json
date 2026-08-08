@@ -1,14 +1,14 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_redstone_block",
-      "data": 1
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_redstone_block",
-    "data": 0,
-    "count": 9
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed2xRedstoneBlock"
+                        }
+                    ],
+    "result":  {
+                   "data":  0,
+                   "item":  "oneblockultima:compressed_redstone_block",
+                   "count":  9
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

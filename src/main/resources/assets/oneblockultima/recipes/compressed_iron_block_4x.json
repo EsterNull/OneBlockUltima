@@ -1,45 +1,45 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_iron_block",
-      "data": 2
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_iron_block",
-    "data": 3
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xIronBlock"
+                        }
+                    ],
+    "result":  {
+                   "item":  "oneblockultima:compressed_iron_block",
+                   "data":  3
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

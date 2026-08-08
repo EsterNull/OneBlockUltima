@@ -1,45 +1,45 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    },
-    {
-      "item": "oneblockultima:compressed_end_stone",
-      "data": 2
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_end_stone",
-    "data": 3
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xEndStone"
+                        }
+                    ],
+    "result":  {
+                   "item":  "oneblockultima:compressed_end_stone",
+                   "data":  3
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

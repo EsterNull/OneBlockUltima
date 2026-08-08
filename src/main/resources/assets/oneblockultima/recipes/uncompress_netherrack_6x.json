@@ -2,12 +2,12 @@
     "ingredients":  [
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed1xEndStone"
+                            "ore":  "compressed6xNetherrack"
                         }
                     ],
     "result":  {
-                   "data":  0,
-                   "item":  "minecraft:end_stone",
+                   "data":  4,
+                   "item":  "oneblockultima:compressed_netherrack",
                    "count":  9
                },
     "type":  "minecraft:crafting_shapeless"

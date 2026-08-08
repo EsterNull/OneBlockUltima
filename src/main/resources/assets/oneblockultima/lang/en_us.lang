@@ -311,12 +311,14 @@ tile.compressed_end_stone.1.name=Double compressed end stone
 tile.compressed_end_stone.2.name=Triple compressed end stone
 tile.compressed_end_stone.3.name=Quadruple compressed end stone
 tile.compressed_end_stone.4.name=Quintuple compressed end stone
+tile.compressed_end_stone.5.name=Sextuple compressed end stone
 
 tile.compressed_netherrack.0.name=Compressed netherrack
 tile.compressed_netherrack.1.name=Double compressed netherrack
 tile.compressed_netherrack.2.name=Triple compressed netherrack
 tile.compressed_netherrack.3.name=Quadruple compressed netherrack
 tile.compressed_netherrack.4.name=Quintuple compressed netherrack
+tile.compressed_netherrack.5.name=Sextuple compressed netherrack
 
 tile.compressed_gold_block.0.name=Compressed gold block
 tile.compressed_gold_block.1.name=Double compressed gold block

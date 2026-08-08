@@ -9,6 +9,8 @@
     "level=3": { "model": "oneblockultima:compressed_end_stone" },
     "3": { "model": "oneblockultima:compressed_end_stone" },
     "level=4": { "model": "oneblockultima:compressed_end_stone" },
-    "4": { "model": "oneblockultima:compressed_end_stone" }
+    "4": { "model": "oneblockultima:compressed_end_stone" },
+    "level=5": { "model": "oneblockultima:compressed_end_stone" },
+    "5": { "model": "oneblockultima:compressed_end_stone" }
   }
 }

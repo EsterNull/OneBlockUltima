@@ -311,12 +311,14 @@ tile.compressed_end_stone.1.name=Двукратно сжатый эндерня�
 tile.compressed_end_stone.2.name=Трекратно сжатый эндерняк
 tile.compressed_end_stone.3.name=Четырекратно сжатый эндерняк
 tile.compressed_end_stone.4.name=Пятикратно сжатый эндерняк
+tile.compressed_end_stone.5.name=Шестикратно сжатый эндерняк
 
 tile.compressed_netherrack.0.name=Сжатый незерит
 tile.compressed_netherrack.1.name=Двукратно сжатый незерит
 tile.compressed_netherrack.2.name=Трекратно сжатый незерит
 tile.compressed_netherrack.3.name=Четырекратно сжатый незерит
 tile.compressed_netherrack.4.name=Пятикратно сжатый незерит
+tile.compressed_netherrack.5.name=Шестикратно сжатый незерит
 
 tile.compressed_gold_block.0.name=Сжатый золотой блок
 tile.compressed_gold_block.1.name=Двукратно сжатый золотой блок

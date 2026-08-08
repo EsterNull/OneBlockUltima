@@ -10,7 +10,7 @@ import net.minecraft.init.Blocks;
 import javax.annotation.Nonnull;
 
 public class BlockCompressedEndStone extends BlockCompressedBase {
-    public static final int MAX_LEVEL = 5;
+    public static final int MAX_LEVEL = 6;
     private static final PropertyInteger LEVEL = PropertyInteger.create("level", 0, MAX_LEVEL - 1);
 
     public BlockCompressedEndStone()

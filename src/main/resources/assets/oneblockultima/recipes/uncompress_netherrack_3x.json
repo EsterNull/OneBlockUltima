@@ -1,14 +1,14 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 2
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_netherrack",
-    "data": 1,
-    "count": 9
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xNetherrack"
+                        }
+                    ],
+    "result":  {
+                   "data":  1,
+                   "item":  "oneblockultima:compressed_netherrack",
+                   "count":  9
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

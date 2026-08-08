@@ -2,12 +2,12 @@
     "ingredients":  [
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed1xEndStone"
+                            "ore":  "compressed6xEndStone"
                         }
                     ],
     "result":  {
-                   "data":  0,
-                   "item":  "minecraft:end_stone",
+                   "data":  4,
+                   "item":  "oneblockultima:compressed_end_stone",
                    "count":  9
                },
     "type":  "minecraft:crafting_shapeless"

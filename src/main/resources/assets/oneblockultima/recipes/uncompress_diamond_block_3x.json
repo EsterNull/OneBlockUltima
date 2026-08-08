@@ -1,14 +1,14 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 2
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_diamond_block",
-    "data": 1,
-    "count": 9
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed3xDiamondBlock"
+                        }
+                    ],
+    "result":  {
+                   "data":  1,
+                   "item":  "oneblockultima:compressed_diamond_block",
+                   "count":  9
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

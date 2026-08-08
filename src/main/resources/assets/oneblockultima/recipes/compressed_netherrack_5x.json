@@ -1,45 +1,45 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_netherrack",
-      "data": 3
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_netherrack",
-    "data": 4
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xNetherrack"
+                        }
+                    ],
+    "result":  {
+                   "item":  "oneblockultima:compressed_netherrack",
+                   "data":  4
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

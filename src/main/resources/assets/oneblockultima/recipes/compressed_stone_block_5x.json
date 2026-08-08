@@ -1,45 +1,45 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    },
-    {
-      "item": "oneblockultima:compressed_stone_block",
-      "data": 4
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_stone_block",
-    "data": 5
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xStone"
+                        }
+                    ],
+    "result":  {
+                   "item":  "oneblockultima:compressed_stone_block",
+                   "data":  4
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

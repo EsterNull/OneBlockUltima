@@ -1,14 +1,14 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_gold_block",
-      "data": 0
-    }
-  ],
-  "result": {
-    "item": "minecraft:gold_block",
-    "data": 0,
-    "count": 9
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed1xGoldBlock"
+                        }
+                    ],
+    "result":  {
+                   "data":  0,
+                   "item":  "minecraft:gold_block",
+                   "count":  9
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

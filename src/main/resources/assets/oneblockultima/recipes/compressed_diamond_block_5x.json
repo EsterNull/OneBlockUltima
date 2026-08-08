@@ -1,45 +1,45 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    },
-    {
-      "item": "oneblockultima:compressed_diamond_block",
-      "data": 3
-    }
-  ],
-  "result": {
-    "item": "oneblockultima:compressed_diamond_block",
-    "data": 4
-  }
+    "ingredients":  [
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        },
+                        {
+                            "type":  "forge:ore_dict",
+                            "ore":  "compressed4xDiamondBlock"
+                        }
+                    ],
+    "result":  {
+                   "item":  "oneblockultima:compressed_diamond_block",
+                   "data":  4
+               },
+    "type":  "minecraft:crafting_shapeless"
 }

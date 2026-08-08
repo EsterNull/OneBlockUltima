@@ -2,44 +2,44 @@
     "ingredients":  [
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         },
                         {
                             "type":  "forge:ore_dict",
-                            "ore":  "compressed3xRedstoneBlock"
+                            "ore":  "compressed5xEndStone"
                         }
                     ],
     "result":  {
-                   "item":  "oneblockultima:compressed_redstone_block",
-                   "data":  3
+                   "item":  "oneblockultima:compressed_end_stone",
+                   "data":  5
                },
     "type":  "minecraft:crafting_shapeless"
 }
