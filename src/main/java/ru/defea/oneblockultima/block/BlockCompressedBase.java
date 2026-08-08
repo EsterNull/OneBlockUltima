@@ -24,6 +24,11 @@ public abstract class BlockCompressedBase extends Block {
 
     protected abstract PropertyInteger getLevelProperty();
 
+    public int getMaxLevel()
+    {
+        return this.maxLevel;
+    }
+
     public int getLevel(IBlockState state)
     {
         return state.getValue(this.getLevelProperty());

@@ -9,15 +9,15 @@ import net.minecraft.init.Blocks;
 
 import javax.annotation.Nonnull;
 
-public class BlockCompressedCoalBlock extends BlockCompressedBase {
-    public static final int MAX_LEVEL = 5;
+public class BlockCompressedStoneBlock extends BlockCompressedBase {
+    public static final int MAX_LEVEL = 6;
     private static final PropertyInteger LEVEL = PropertyInteger.create("level", 0, MAX_LEVEL - 1);
 
-    public BlockCompressedCoalBlock()
+    public BlockCompressedStoneBlock()
     {
-        super(Material.ROCK, MapColor.BLACK, "compressed_coal_block");
+        super(Material.ROCK, MapColor.STONE, "compressed_stone_block");
         this.setSoundType(SoundType.STONE);
-        this.setHardness(5F * 9F);
+        this.setHardness(1.5F * 9F);
         this.setResistance(10F * 9F);
     }
 
@@ -29,6 +29,6 @@ public class BlockCompressedCoalBlock extends BlockCompressedBase {
 
     @Override
     public float getExplosionResistance(@Nonnull Entity exploder) {
-        return Blocks.COAL_BLOCK.getExplosionResistance(exploder) * 9.0F;
+        return Blocks.STONE.getExplosionResistance(exploder) * 9.0F;
     }
 }

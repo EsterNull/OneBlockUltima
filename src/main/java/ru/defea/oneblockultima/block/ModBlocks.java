@@ -4,7 +4,9 @@ import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
@@ -130,7 +132,7 @@ public final class ModBlocks
     public static final BlockCompressedGoldBlock COMPRESSED_GOLD_BLOCK = new BlockCompressedGoldBlock();
     public static final BlockCompressedIronBlock COMPRESSED_IRON_BLOCK = new BlockCompressedIronBlock();
     public static final BlockCompressedDiamondBlock COMPRESSED_DIAMOND_BLOCK = new BlockCompressedDiamondBlock();
-    public static final BlockCompressedCoalBlock COMPRESSED_COAL_BLOCK = new BlockCompressedCoalBlock();
+    public static final BlockCompressedStoneBlock COMPRESSED_STONE_BLOCK = new BlockCompressedStoneBlock();
     public static final BlockCompressedEmeraldBlock COMPRESSED_EMERALD_BLOCK = new BlockCompressedEmeraldBlock();
     public static final BlockCompressedLapisBlock COMPRESSED_LAPIS_BLOCK = new BlockCompressedLapisBlock();
     public static final BlockCompressedEndStone COMPRESSED_END_STONE = new BlockCompressedEndStone();
@@ -146,7 +148,7 @@ public final class ModBlocks
         new RegisterBlock(COMPRESSED_GOLD_BLOCK, true, "normal", 0, "compressed_gold_block", BlockCompressedGoldBlock.MAX_LEVEL),
         new RegisterBlock(COMPRESSED_IRON_BLOCK, true, "normal", 0, "compressed_iron_block", BlockCompressedIronBlock.MAX_LEVEL),
         new RegisterBlock(COMPRESSED_DIAMOND_BLOCK, true, "normal", 0, "compressed_diamond_block", BlockCompressedDiamondBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_COAL_BLOCK, true, "normal", 0, "compressed_coal_block", BlockCompressedCoalBlock.MAX_LEVEL),
+        new RegisterBlock(COMPRESSED_STONE_BLOCK, true, "normal", 0, "compressed_stone_block", BlockCompressedStoneBlock.MAX_LEVEL),
         new RegisterBlock(COMPRESSED_EMERALD_BLOCK, true, "normal", 0, "compressed_emerald_block", BlockCompressedEmeraldBlock.MAX_LEVEL),
         new RegisterBlock(COMPRESSED_LAPIS_BLOCK, true, "normal", 0, "compressed_lapis_block", BlockCompressedLapisBlock.MAX_LEVEL),
         new RegisterBlock(COMPRESSED_END_STONE, true, "normal", 0, "compressed_end_stone", BlockCompressedEndStone.MAX_LEVEL),
@@ -229,6 +231,28 @@ public final class ModBlocks
             }
         }
         return null;
+    }
+
+    public static void registerOreDict()
+    {
+        registerCompressedOres(COMPRESSED_BEDROCK, "Bedrock");
+        registerCompressedOres(COMPRESSED_REDSTONE_BLOCK, "RedstoneBlock");
+        registerCompressedOres(COMPRESSED_GOLD_BLOCK, "GoldBlock");
+        registerCompressedOres(COMPRESSED_IRON_BLOCK, "IronBlock");
+        registerCompressedOres(COMPRESSED_DIAMOND_BLOCK, "DiamondBlock");
+        registerCompressedOres(COMPRESSED_STONE_BLOCK, "Stone");
+        registerCompressedOres(COMPRESSED_EMERALD_BLOCK, "EmeraldBlock");
+        registerCompressedOres(COMPRESSED_LAPIS_BLOCK, "LapisBlock");
+        registerCompressedOres(COMPRESSED_END_STONE, "EndStone");
+        registerCompressedOres(COMPRESSED_NETHERRACK, "Netherrack");
+    }
+
+    private static void registerCompressedOres(BlockCompressedBase block, String capName)
+    {
+        for (int level = 1; level <= block.getMaxLevel(); level++)
+        {
+            OreDictionary.registerOre("compressed" + level + "x" + capName, new ItemStack(block, 1, level - 1));
+        }
     }
 
     private ModBlocks()

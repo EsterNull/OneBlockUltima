@@ -293,11 +293,12 @@ tile.compressed_diamond_block.2.name=Triple compressed diamond block
 tile.compressed_diamond_block.3.name=Quadruple compressed diamond block
 tile.compressed_diamond_block.4.name=Quintuple compressed diamond block
 
-tile.compressed_coal_block.0.name=Compressed coal block
-tile.compressed_coal_block.1.name=Double compressed coal block
-tile.compressed_coal_block.2.name=Triple compressed coal block
-tile.compressed_coal_block.3.name=Quadruple compressed coal block
-tile.compressed_coal_block.4.name=Quintuple compressed coal block
+tile.compressed_stone_block.0.name=Compressed stone block
+tile.compressed_stone_block.1.name=Double compressed stone block
+tile.compressed_stone_block.2.name=Triple compressed stone block
+tile.compressed_stone_block.3.name=Quadruple compressed stone block
+tile.compressed_stone_block.4.name=Quintuple compressed stone block
+tile.compressed_stone_block.5.name=Sextuple compressed stone block
 
 tile.compressed_emerald_block.0.name=Compressed emerald block
 tile.compressed_emerald_block.1.name=Double compressed emerald block

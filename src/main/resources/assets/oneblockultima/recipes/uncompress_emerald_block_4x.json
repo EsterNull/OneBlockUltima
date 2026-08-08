@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_emerald_block",
+      "data": 3
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:compressed_emerald_block",
+    "data": 2,
+    "count": 9
+  }
+}

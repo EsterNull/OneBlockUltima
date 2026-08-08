@@ -3,43 +3,43 @@
   "ingredients": [
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     },
     {
       "type": "forge:ore_dict",
-      "ore": "blockCoal"
+      "ore": "stone"
     }
   ],
   "result": {
-    "item": "oneblockultima:compressed_coal_block",
+    "item": "oneblockultima:compressed_stone_block",
     "data": 0
   }
 }

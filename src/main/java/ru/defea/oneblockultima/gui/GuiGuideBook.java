@@ -809,6 +809,7 @@ public class GuiGuideBook extends GuiScreen
         Minecraft mc = Minecraft.getMinecraft();
         RenderHelper.enableGUIStandardItemLighting();
         mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
+        mc.getRenderItem().renderItemOverlayIntoGUI(mc.fontRenderer, stack, x, y, null);
         RenderHelper.disableStandardItemLighting();
     }
 

@@ -293,11 +293,12 @@ tile.compressed_diamond_block.2.name=Трекратно сжатый алмаз�
 tile.compressed_diamond_block.3.name=Четырекратно сжатый алмазный блок
 tile.compressed_diamond_block.4.name=Пятикратно сжатый алмазный блок
 
-tile.compressed_coal_block.0.name=Сжатый угольный блок
-tile.compressed_coal_block.1.name=Двукратно сжатый угольный блок
-tile.compressed_coal_block.2.name=Трекратно сжатый угольный блок
-tile.compressed_coal_block.3.name=Четырекратно сжатый угольный блок
-tile.compressed_coal_block.4.name=Пятикратно сжатый угольный блок
+tile.compressed_stone_block.0.name=Сжатый каменный блок
+tile.compressed_stone_block.1.name=Двукратно сжатый каменный блок
+tile.compressed_stone_block.2.name=Трекратно сжатый каменный блок
+tile.compressed_stone_block.3.name=Четырекратно сжатый каменный блок
+tile.compressed_stone_block.4.name=Пятикратно сжатый каменный блок
+tile.compressed_stone_block.5.name=Шестикратно сжатый каменный блок
 
 tile.compressed_emerald_block.0.name=Сжатый изумрудный блок
 tile.compressed_emerald_block.1.name=Двукратно сжатый изумрудный блок

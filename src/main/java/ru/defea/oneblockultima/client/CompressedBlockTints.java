@@ -34,7 +34,7 @@ public final class CompressedBlockTints
         FACTORS.put(ModBlocks.COMPRESSED_GOLD_BLOCK, new float[] { 0.7290F, 0.5008F, 0.3430F, 0.2340F, 0.1075F });
         FACTORS.put(ModBlocks.COMPRESSED_IRON_BLOCK, new float[] { 0.7285F, 0.5013F, 0.3441F, 0.2351F, 0.1602F });
         FACTORS.put(ModBlocks.COMPRESSED_DIAMOND_BLOCK, new float[] { 0.7290F, 0.5005F, 0.3429F, 0.2340F, 0.1589F });
-        FACTORS.put(ModBlocks.COMPRESSED_COAL_BLOCK, new float[] { 0.6852F, 0.4392F, 0.2813F, 0.1849F, 0.0965F });
+        FACTORS.put(ModBlocks.COMPRESSED_STONE_BLOCK, new float[] { 0.7290F, 0.5011F, 0.3433F, 0.2347F, 0.1584F, 0.0998F });
         FACTORS.put(ModBlocks.COMPRESSED_EMERALD_BLOCK, new float[] { 0.7283F, 0.4994F, 0.3413F, 0.2325F, 0.1569F });
         FACTORS.put(ModBlocks.COMPRESSED_LAPIS_BLOCK, new float[] { 0.7237F, 0.4907F, 0.3304F, 0.2196F, 0.1420F, 0.0890F });
         FACTORS.put(ModBlocks.COMPRESSED_END_STONE, new float[] { 0.7290F, 0.5011F, 0.3433F, 0.2347F, 0.1584F });

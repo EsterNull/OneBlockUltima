@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 2
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:compressed_stone_block",
+    "data": 1,
+    "count": 9
+  }
+}

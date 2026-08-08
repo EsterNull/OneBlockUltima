@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_redstone_block",
+      "data": 4
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:compressed_redstone_block",
+    "data": 3,
+    "count": 9
+  }
+}

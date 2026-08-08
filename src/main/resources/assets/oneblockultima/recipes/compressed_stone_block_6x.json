@@ -1,0 +1,45 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block",
+      "data": 4
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:compressed_stone_block",
+    "data": 5
+  }
+}
