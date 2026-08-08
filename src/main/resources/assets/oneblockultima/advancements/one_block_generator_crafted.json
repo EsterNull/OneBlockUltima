@@ -9,8 +9,7 @@
     "description": {
       "translate": "advancements.one_block_generator.craft.description"
     },
-    "background": "oneblockultima:textures/gui/advancements/backgrounds/void.png",
-    "frame": "task",
+    "frame": "challenge",
     "show_toast": true,
     "announce_to_chat": true
   },
@@ -25,5 +24,6 @@
         ]
       }
     }
-  }
+  },
+  "parent": "oneblockultima:far_star"
 }

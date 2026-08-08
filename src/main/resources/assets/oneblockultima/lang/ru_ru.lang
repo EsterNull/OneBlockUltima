@@ -5,6 +5,56 @@ itemGroup.OneBlockUltima=OneBlockUltima
 advancements.one_block_generator.craft.title=Всё из ничего
 advancements.one_block_generator.craft.description=Создайте генератор блоков
 
+advancements.root.title=Начало пути
+advancements.root.description=Получите руководство OneBlock
+
+advancements.protein.title=Начало жизни
+advancements.protein.description=Скрафтите протеин
+advancements.super_protein.title=Франкенштейн отдыхает
+advancements.super_protein.description=Скрафтите супер протеин
+advancements.ultimate_protein.title=Хиральная чистота
+advancements.ultimate_protein.description=Скрафтите ультимативный протеин
+
+advancements.mashed_vegetables.title=Вегетарианское пюре
+advancements.mashed_vegetables.description=Скрафтите растительное пюре
+advancements.super_mashed_vegetables.title=Более... вегетарианское пюре
+advancements.super_mashed_vegetables.description=Скрафтите супер растительное пюре
+advancements.ultimate_mashed_vegetables.title=Самое... вегетарианское пюре..?
+advancements.ultimate_mashed_vegetables.description=Скрафтите ультимативное растительное пюре
+
+advancements.natural_poison.title=Начинающий фармацевт
+advancements.natural_poison.description=Скрафтите природный яд
+advancements.brian_fry.title=Брайан Фрай
+advancements.brian_fry.description=Выпейте природный яд
+advancements.super_poison.title=Потомок Борджиа
+advancements.super_poison.description=Скрафтите супер яд
+advancements.royal_taster.title=Королевский дегустатор
+advancements.royal_taster.description=Выпейте супер яд
+advancements.liquid_death.title=Безумный учёный
+advancements.liquid_death.description=Скрафтите жидкую смерть
+advancements.taste_death.title=Попробовать смерть на вкус
+advancements.taste_death.description=Выпейте жидкую смерть
+
+advancements.compressed_mineral.title=Открытие суперсплава
+advancements.compressed_mineral.description=Скрафтите сжатый минерал
+advancements.graviton.title=Кварк подтвержден
+advancements.graviton.description=Скрафтите гравитон
+advancements.dark_matter.title=Секрет вселенной
+advancements.dark_matter.description=Скрафтите тёмную материю
+advancements.energy_orb.title=Апогей Теслы
+advancements.energy_orb.description=Скрафтите энергетический шар
+advancements.higgs_boson.title=Частица Бога
+advancements.higgs_boson.description=Скрафтите бозон Хиггса
+
+advancements.space_soup.title=Похлёбка тёщи
+advancements.space_soup.description=Скрафтите космический суп
+advancements.far_star.title=Загадать желание
+advancements.far_star.description=Скрафтите далёкую звезду
+
+item.adv_icon_brian_fry.name=Иконка достижения
+item.adv_icon_royal_taster.name=Иконка достижения
+item.adv_icon_taste_death.name=Иконка достижения
+
 gui.oneblockultima.select=Выбрать
 gui.oneblockultima.upgrade=Улучшить
 gui.oneblockultima.active_set=Активный набор

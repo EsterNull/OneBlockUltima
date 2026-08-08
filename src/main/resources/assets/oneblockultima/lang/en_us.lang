@@ -5,6 +5,56 @@ itemGroup.OneBlockUltima=OneBlockUltima
 advancements.one_block_generator.craft.title=All out of nothing
 advancements.one_block_generator.craft.description=Create block generator
 
+advancements.root.title=The Beginning of the Path
+advancements.root.description=Obtain the OneBlock guide book
+
+advancements.protein.title=The Beginning of Life
+advancements.protein.description=Craft protein
+advancements.super_protein.title=Frankenstein Rests
+advancements.super_protein.description=Craft super protein
+advancements.ultimate_protein.title=Chiral Purity
+advancements.ultimate_protein.description=Craft ultimate protein
+
+advancements.mashed_vegetables.title=Vegetarian Mash
+advancements.mashed_vegetables.description=Craft mashed vegetables
+advancements.super_mashed_vegetables.title=More... vegetarian mash
+advancements.super_mashed_vegetables.description=Craft super mashed vegetables
+advancements.ultimate_mashed_vegetables.title=The most... vegetarian mash..?
+advancements.ultimate_mashed_vegetables.description=Craft ultimate mashed vegetables
+
+advancements.natural_poison.title=Novice Pharmacist
+advancements.natural_poison.description=Craft natural poison
+advancements.brian_fry.title=Brian Fry
+advancements.brian_fry.description=Drink natural poison
+advancements.super_poison.title=Heir of the Borgias
+advancements.super_poison.description=Craft super poison
+advancements.royal_taster.title=Royal Taster
+advancements.royal_taster.description=Drink super poison
+advancements.liquid_death.title=Mad Scientist
+advancements.liquid_death.description=Craft liquid death
+advancements.taste_death.title=Taste Death
+advancements.taste_death.description=Drink liquid death
+
+advancements.compressed_mineral.title=Superalloy Discovery
+advancements.compressed_mineral.description=Craft compressed mineral
+advancements.graviton.title=Quark Confirmed
+advancements.graviton.description=Craft graviton
+advancements.dark_matter.title=Secret of the Universe
+advancements.dark_matter.description=Craft dark matter
+advancements.energy_orb.title=Tesla's Apogee
+advancements.energy_orb.description=Craft energy orb
+advancements.higgs_boson.title=God Particle
+advancements.higgs_boson.description=Craft Higgs boson
+
+advancements.space_soup.title=Mother-in-Law's Stew
+advancements.space_soup.description=Craft space soup
+advancements.far_star.title=Make a Wish
+advancements.far_star.description=Craft far star
+
+item.adv_icon_brian_fry.name=Achievement Icon
+item.adv_icon_royal_taster.name=Achievement Icon
+item.adv_icon_taste_death.name=Achievement Icon
+
 gui.oneblockultima.select=Select
 gui.oneblockultima.upgrade=Upgrade
 gui.oneblockultima.active_set=Active set

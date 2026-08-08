@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:super_protein"
+    },
+    "title": {
+      "translate": "advancements.super_protein.title"
+    },
+    "description": {
+      "translate": "advancements.super_protein.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_super_protein": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:super_protein"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:protein"
+}

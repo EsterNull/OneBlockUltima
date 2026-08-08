@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:space_soup"
+    },
+    "title": {
+      "translate": "advancements.space_soup.title"
+    },
+    "description": {
+      "translate": "advancements.space_soup.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_space_soup": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:space_soup"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:root"
+}

@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:higgs_boson"
+    },
+    "title": {
+      "translate": "advancements.higgs_boson.title"
+    },
+    "description": {
+      "translate": "advancements.higgs_boson.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_higgs_boson": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:higgs_boson"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:root"
+}

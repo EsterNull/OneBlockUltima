@@ -74,6 +74,10 @@ public final class ModItems
     public static final ItemFarStar FAR_STAR = new ItemFarStar();
     public static final ItemGuideBook GUIDE_BOOK = new ItemGuideBook();
 
+    public static final ItemAdvancementIcon ADV_ICON_BRIAN_FRY = new ItemAdvancementIcon("adv_icon_brian_fry");
+    public static final ItemAdvancementIcon ADV_ICON_ROYAL_TASTER = new ItemAdvancementIcon("adv_icon_royal_taster");
+    public static final ItemAdvancementIcon ADV_ICON_TASTE_DEATH = new ItemAdvancementIcon("adv_icon_taste_death");
+
     public static final RegisterItem[] modItems = {
             new RegisterItem(GRAVITON),
             new RegisterItem(DARK_MATTER),
@@ -91,7 +95,10 @@ public final class ModItems
             new RegisterItem(SPACE_SOUP),
             new RegisterItem(COMPRESSED_MINERAL),
             new RegisterItem(FAR_STAR),
-            new RegisterItem(GUIDE_BOOK)
+            new RegisterItem(GUIDE_BOOK),
+            new RegisterItem(ADV_ICON_BRIAN_FRY),
+            new RegisterItem(ADV_ICON_ROYAL_TASTER),
+            new RegisterItem(ADV_ICON_TASTE_DEATH)
     };
 
     private ModItems()

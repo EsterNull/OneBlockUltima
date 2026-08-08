@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:protein"
+    },
+    "title": {
+      "translate": "advancements.protein.title"
+    },
+    "description": {
+      "translate": "advancements.protein.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_protein": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:protein"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:root"
+}
