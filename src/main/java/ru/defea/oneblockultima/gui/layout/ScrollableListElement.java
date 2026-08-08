@@ -19,6 +19,10 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
     private int panelColor = PANEL_COLOR;
     private int hoveredRow = -1;
     private List<? extends ScrollableListEntry> entries;
+    private int thumbY;
+    private int thumbHeight;
+    private boolean dragging = false;
+    private int dragGrabOffset = 0;
 
     public interface ScrollableListEntry {
         void draw(int x, int y, int width, int height, boolean hovered, boolean selected, FontRenderer fr, int mouseX, int mouseY);
@@ -100,13 +104,23 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
             int trackX = computedX + listWidth + 2;
             Gui.drawRect(trackX, contentTop, trackX + thumbWidth, contentTop + computedHeight, DARK_GRAY_COLOR_2);
 
-            float ratio = (float) visibleItems / entries.size();
-            int thumbH = Math.max(10, (int) (computedHeight * ratio));
-            float thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
-            int thumbY = contentTop + (int) (thumbPos * (computedHeight - thumbH));
+            computeThumb();
 
-            Gui.drawRect(trackX, thumbY, trackX + thumbWidth, thumbY + thumbH, Constants.GRAY_COLOR_1);
+            Gui.drawRect(trackX, thumbY, trackX + thumbWidth, thumbY + thumbHeight, Constants.GRAY_COLOR_1);
         }
+    }
+
+    private void computeThumb() {
+        int trackHeight = computedHeight;
+        float ratio = (float) visibleItems / entries.size();
+        thumbHeight = Math.max(10, (int) (trackHeight * ratio));
+        float thumbPos;
+        if (trackHeight <= thumbHeight) {
+            thumbPos = 0;
+        } else {
+            thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
+        }
+        thumbY = computedY + (int) (thumbPos * (trackHeight - thumbHeight));
     }
 
     @Override
@@ -118,8 +132,15 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
         int trackX = computedX + listWidth + 2;
         if (mouseX >= trackX && mouseX <= trackX + trackWidth &&
             mouseY >= computedY && mouseY <= computedY + computedHeight) {
-            int clickY = mouseY - computedY - 5;
-            float ratio = Math.max(0, Math.min(1, (float) clickY / (computedHeight - 10)));
+            computeThumb();
+            if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
+                dragging = true;
+                dragGrabOffset = mouseY - thumbY;
+                return true;
+            }
+            int range = computedHeight - thumbHeight;
+            int clickY = mouseY - computedY - thumbHeight / 2;
+            float ratio = range > 0 ? Math.max(0, Math.min(1, (float) clickY / range)) : 0;
             scrollOffset = Math.round(ratio * maxScroll);
             clampScroll();
             return true;
@@ -137,6 +158,24 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
                 }
             }
         }
+        return false;
+    }
+
+    @Override
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        if (!dragging || clickedMouseButton != 0) return false;
+        computeThumb();
+        int range = computedHeight - thumbHeight;
+        float ratio = range > 0 ? (float) (mouseY - dragGrabOffset - computedY) / range : 0;
+        ratio = Math.max(0, Math.min(1, ratio));
+        scrollOffset = Math.round(ratio * maxScroll);
+        clampScroll();
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(int mouseX, int mouseY, int state) {
+        dragging = false;
         return false;
     }
 

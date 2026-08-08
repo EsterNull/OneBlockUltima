@@ -43,6 +43,11 @@ public class ViewFactoryElement extends ViewElement<ViewFactoryElement> {
     }
 
     @Override
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        return factory.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    @Override
     public boolean handleMouseInput(int dWheel) {
         return factory.handleMouseInput(dWheel);
     }

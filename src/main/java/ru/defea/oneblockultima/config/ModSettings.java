@@ -141,17 +141,33 @@ public final class ModSettings
         if (positionOffsets == null) positionOffsets = new HashMap<>();
         for (BalancePosition p : BalancePosition.values())
         {
-            if (!positionOffsets.containsKey(p))
+            PositionOffsets off = positionOffsets.get(p);
+            if (off == null)
             {
-                positionOffsets.put(p, new PositionOffsets(hOffset, vOffset));
+                positionOffsets.put(p, new PositionOffsets(defaultHOffsetFor(p), defaultVOffsetFor(p)));
+            }
+            else
+            {
+                if (off.hOffset == hOffset) off.hOffset = defaultHOffsetFor(p);
+                if (off.vOffset == vOffset) off.vOffset = defaultVOffsetFor(p);
             }
         }
+    }
+
+    private int defaultHOffsetFor(BalancePosition pos)
+    {
+        return (pos == BalancePosition.TOP || pos == BalancePosition.BOTTOM) ? 0 : hOffset;
+    }
+
+    private int defaultVOffsetFor(BalancePosition pos)
+    {
+        return (pos == BalancePosition.LEFT || pos == BalancePosition.RIGHT) ? 0 : vOffset;
     }
 
     private PositionOffsets getOffsets(BalancePosition pos)
     {
         if (pos == null) pos = balancePosition;
-        return positionOffsets.computeIfAbsent(pos, k -> new PositionOffsets(hOffset, vOffset));
+        return positionOffsets.computeIfAbsent(pos, k -> new PositionOffsets(defaultHOffsetFor(k), defaultVOffsetFor(k)));
     }
 
     private void save()

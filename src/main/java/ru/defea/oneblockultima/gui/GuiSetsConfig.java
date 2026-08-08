@@ -273,6 +273,13 @@ public class GuiSetsConfig extends GuiScreen
     }
 
     @Override
+    public void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        if (rootFactory != null) rootFactory.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException
     {
         if (keyCode == Keyboard.KEY_ESCAPE)

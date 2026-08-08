@@ -31,6 +31,7 @@ public class GuiBlockPrices extends GuiScreen
     private static final int BUTTON_BALANCE_MODE = 3;
     private static final int BUTTON_SET_COST_MODE = 4;
     private static final int BUTTON_DELETE = 5;
+    private static final int BUTTON_RESET = 6;
 
     private static final int ENTRY_HEIGHT = 24;
 
@@ -245,12 +246,13 @@ public class GuiBlockPrices extends GuiScreen
         setCostStepper = new DoubleStepperElement()
             .value(container.getSetCostIncreaseValue())
             .min(container.isSetCostMultiplierMode() ? 1.0 : 0)
-            .step(1)
+            .step(0.1)
             .fieldWidth(70);
         setCostRow.add(setCostStepper);
 
         RowElement btnRow = view.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
         btnRow.button(BUTTON_ADD, I18n.format("gui.oneblockultima.config.add"));
         btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
     }
@@ -348,7 +350,7 @@ public class GuiBlockPrices extends GuiScreen
         priceStepper = new DoubleStepperElement()
             .value(container.getEditingPrice())
             .min(0)
-            .step(1)
+            .step(0.1)
             .fieldWidth(70)
             .focused(true);
         priceRow.add(priceStepper);
@@ -383,6 +385,14 @@ public class GuiBlockPrices extends GuiScreen
             container.startAddBlock();
             searchScrollOffset = 0;
             changeView(VIEW_ADD_BLOCK);
+            return;
+        }
+
+        if (button.id == BUTTON_RESET && currentView == VIEW_PRICES)
+        {
+            container.resetToDefault();
+            if (statusBar != null) statusBar.text(I18n.format("gui.oneblockultima.status.reset_success"), 60);
+            buildView();
             return;
         }
 
@@ -455,15 +465,37 @@ public class GuiBlockPrices extends GuiScreen
             pendingReinit = false;
             initGui();
         }
-        factory.mouseClicked(mouseX, mouseY, mouseButton);
+        boolean layoutHandled = factory.mouseClicked(mouseX, mouseY, mouseButton);
 
-        if (currentView == VIEW_ADD_BLOCK && searchFieldElement != null)
+        if (currentView == VIEW_ADD_BLOCK && searchFieldElement != null && !layoutHandled)
         {
             container.setSearchQuery(searchFieldElement.getText());
             searchScrollOffset = 0;
             container.performSearch();
             buildView();
         }
+    }
+
+    @Override
+    protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        if (factory != null) factory.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        if (currentView == VIEW_PRICES && priceList != null)
+        {
+            scrollOffset = priceList.getScrollOffset();
+        }
+        else if (currentView == VIEW_ADD_BLOCK && searchList != null)
+        {
+            searchScrollOffset = searchList.getScrollOffset();
+        }
+    }
+
+    @Override
+    protected void mouseReleased(int mouseX, int mouseY, int state)
+    {
+        super.mouseReleased(mouseX, mouseY, state);
+        if (factory != null) factory.mouseReleased(mouseX, mouseY, state);
     }
 
     @Override

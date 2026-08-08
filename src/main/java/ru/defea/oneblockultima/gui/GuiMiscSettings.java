@@ -15,6 +15,7 @@ public class GuiMiscSettings extends GuiScreen {
     private static final int BUTTON_SAVE = 1;
     private static final int BUTTON_MOB_WORLD_GENERATION = 2;
     private static final int BUTTON_DEBUG_MODE = 3;
+    private static final int BUTTON_RESET = 4;
 
     private static final int MIN_INVITE_TICKS = 20;
     private static final int MAX_INVITE_TICKS = 72000;
@@ -135,6 +136,7 @@ public class GuiMiscSettings extends GuiScreen {
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
         btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
 
         factory.build(buttonList, fontRenderer);
@@ -166,6 +168,20 @@ public class GuiMiscSettings extends GuiScreen {
         if (button.id == BUTTON_DEBUG_MODE) {
             debugMode = !debugMode;
             debugModeToggle.toggle();
+        }
+        if (button.id == BUTTON_RESET) {
+            mobWorldGeneration = false;
+            debugMode = false;
+            inviteDurationTicks = 1200;
+            breakCooldownTicks = 20;
+            mobSpawnPercent = 10;
+            generatorMembers = 0;
+            if (mobWorldGenerationToggle != null) mobWorldGenerationToggle.stateTriggered(false);
+            if (debugModeToggle != null) debugModeToggle.stateTriggered(false);
+            if (inviteDurationStepper != null) inviteDurationStepper.setValue(inviteDurationTicks);
+            if (breakCooldownStepper != null) breakCooldownStepper.setValue(breakCooldownTicks);
+            if (mobSpawnPercentStepper != null) mobSpawnPercentStepper.setValue(mobSpawnPercent);
+            if (generatorMembersStepper != null) generatorMembersStepper.setValue(generatorMembers);
         }
     }
 

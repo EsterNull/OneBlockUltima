@@ -425,6 +425,14 @@ public class ViewFactory {
         return false;
     }
 
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        for (ViewElement<?> e : elements) {
+            if (!e.isVisible()) continue;
+            if (e.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick)) return true;
+        }
+        return false;
+    }
+
     public boolean handleMouseInput(int dWheel) {
         for (ViewElement<?> e : elements) {
             if (!e.isVisible()) continue;

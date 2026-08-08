@@ -126,6 +126,12 @@ public class ViewSwitcherElement extends ViewElement<ViewSwitcherElement> {
     }
 
     @Override
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        ViewElement<?> active = currentViewElement();
+        return active != null && active.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    @Override
     public boolean handleMouseInput(int dWheel) {
         ViewElement<?> active = currentViewElement();
         return active != null && active.handleMouseInput(dWheel);

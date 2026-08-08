@@ -20,6 +20,10 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
     private final int innerPad = 4;
     private List<? extends TwoColumnEntry> leftEntries;
     private List<? extends TwoColumnEntry> rightEntries;
+    private int thumbY;
+    private int thumbHeight;
+    private boolean dragging = false;
+    private int dragGrabOffset = 0;
 
     public interface TwoColumnEntry {
         void drawLeft(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY);
@@ -115,12 +119,22 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
             int scrollbarHeight = computedHeight;
             Gui.drawRect(scrollbarX, contentTop, scrollbarX + trackWidth, contentTop + scrollbarHeight, DARK_GRAY_COLOR_2);
 
-            float ratio = (float) visibleItems / maxEntries;
-            int thumbH = Math.max(10, (int) (scrollbarHeight * ratio));
-            float thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
-            int thumbY = contentTop + (int) (thumbPos * (scrollbarHeight - thumbH));
-            Gui.drawRect(scrollbarX, thumbY, scrollbarX + trackWidth, thumbY + thumbH, Constants.GRAY_COLOR_1);
+            computeThumb();
+            Gui.drawRect(scrollbarX, thumbY, scrollbarX + trackWidth, thumbY + thumbHeight, Constants.GRAY_COLOR_1);
         }
+    }
+
+    private void computeThumb() {
+        int trackHeight = computedHeight;
+        float ratio = (float) visibleItems / getMaxEntries();
+        thumbHeight = Math.max(10, (int) (trackHeight * ratio));
+        float thumbPos;
+        if (trackHeight <= thumbHeight) {
+            thumbPos = 0;
+        } else {
+            thumbPos = maxScroll > 0 ? (float) scrollOffset / maxScroll : 0;
+        }
+        thumbY = computedY + (int) (thumbPos * (trackHeight - thumbHeight));
     }
 
     @Override
@@ -134,8 +148,15 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
 
         if (mouseX >= scrollbarX && mouseX <= scrollbarX + trackWidth &&
             mouseY >= computedY && mouseY <= computedY + computedHeight) {
-            int clickY = mouseY - computedY - 5;
-            float ratio = Math.max(0, Math.min(1, (float) clickY / (computedHeight - 10)));
+            computeThumb();
+            if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
+                dragging = true;
+                dragGrabOffset = mouseY - thumbY;
+                return true;
+            }
+            int range = computedHeight - thumbHeight;
+            int clickY = mouseY - computedY - thumbHeight / 2;
+            float ratio = range > 0 ? Math.max(0, Math.min(1, (float) clickY / range)) : 0;
             scrollOffset = Math.round(ratio * maxScroll);
             if (scrollOffset < 0) scrollOffset = 0;
             if (scrollOffset > maxScroll) scrollOffset = maxScroll;
@@ -174,6 +195,25 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
         if (scrollOffset < 0) scrollOffset = 0;
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
         return true;
+    }
+
+    @Override
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        if (!dragging || clickedMouseButton != 0) return false;
+        computeThumb();
+        int range = computedHeight - thumbHeight;
+        float ratio = range > 0 ? (float) (mouseY - dragGrabOffset - computedY) / range : 0;
+        ratio = Math.max(0, Math.min(1, ratio));
+        scrollOffset = Math.round(ratio * maxScroll);
+        if (scrollOffset < 0) scrollOffset = 0;
+        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(int mouseX, int mouseY, int state) {
+        dragging = false;
+        return false;
     }
 
     @Override

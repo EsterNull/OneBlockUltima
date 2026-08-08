@@ -125,7 +125,7 @@ public class ModSettingsTest {
     @Test
     public void unsetPositionReturnsDefaultOffsets() throws Exception {
         ModSettings settings = newInstance();
-        assertEquals(5, settings.getHOffset(ModSettings.BalancePosition.BOTTOM));
+        assertEquals(0, settings.getHOffset(ModSettings.BalancePosition.BOTTOM));
         assertEquals(3, settings.getVOffset(ModSettings.BalancePosition.BOTTOM));
     }
 

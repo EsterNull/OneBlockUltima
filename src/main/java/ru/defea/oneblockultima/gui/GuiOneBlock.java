@@ -1106,7 +1106,7 @@ public class GuiOneBlock extends GuiContainer
             if (maxScrollBlocks > 0)
             {
                 int blockScrollbarX = panelX + INNER_PADDING + blocksAreaWidth + 2;
-                scrollbars[blockScrollbarSlot] = createScrollBar(blockScrollbarX, gridStartY, areaHeight, localBlockScroll, maxScrollBlocks);
+                scrollbars[blockScrollbarSlot] = getOrCreateScrollbar(scrollbars[blockScrollbarSlot], blockScrollbarX, gridStartY, areaHeight, visibleRows, localBlockScroll, maxScrollBlocks + visibleRows);
                 scrollbarActive[blockScrollbarSlot] = true;
             }
             else
@@ -1206,7 +1206,7 @@ public class GuiOneBlock extends GuiContainer
                 if (mobMaxScroll > 0)
                 {
                     int mobScrollbarX = mobsStartX + mobsAreaWidth + 2;
-                    scrollbars[mobScrollbarSlot] = createScrollBar(mobScrollbarX, gridStartY, areaHeight, localMobScroll, mobMaxScroll);
+                    scrollbars[mobScrollbarSlot] = getOrCreateScrollbar(scrollbars[mobScrollbarSlot], mobScrollbarX, gridStartY, areaHeight, mobVisibleRows, localMobScroll, mobMaxScroll + mobVisibleRows);
                     scrollbarActive[mobScrollbarSlot] = true;
                 }
                 else
@@ -1582,15 +1582,11 @@ public class GuiOneBlock extends GuiContainer
 
         if (conditions.size() > visibleRows)
         {
-            ScrollbarElement sb = new ScrollbarElement()
-                    .totalItems(conditions.size())
-                    .visibleItems(visibleRows)
-                    .scrollOffset(conditionsScroll)
-                    .trackWidth(SCROLLBAR_WIDTH);
-            sb.setComputedPosition(startX + columnWidth, areaTop);
-            sb.setComputedSize(SCROLLBAR_WIDTH, areaHeight);
-            sb.draw(fontRenderer, 0, 0, 0);
-            conditionsScrollbar = sb;
+            conditionsScrollbar = getOrCreateScrollbar(conditionsScrollbar, startX + columnWidth, areaTop, areaHeight, visibleRows, conditionsScroll, conditions.size());
+        }
+        else
+        {
+            conditionsScrollbar = null;
         }
     }
 
@@ -1871,6 +1867,35 @@ public class GuiOneBlock extends GuiContainer
         }
     }
 
+    @Override
+    protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        if (factory != null)
+        {
+            factory.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        }
+        if (activeView == VIEW_SETS)
+        {
+            handleScrollbarDrag(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+            handleConditionsScrollbarDrag(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        }
+    }
+
+    @Override
+    protected void mouseReleased(int mouseX, int mouseY, int state)
+    {
+        super.mouseReleased(mouseX, mouseY, state);
+        if (factory != null)
+        {
+            factory.mouseReleased(mouseX, mouseY, state);
+        }
+        for (ScrollbarElement scrollbar : scrollbars) {
+            if (scrollbar != null) scrollbar.mouseReleased(mouseX, mouseY, state);
+        }
+        if (conditionsScrollbar != null) conditionsScrollbar.mouseReleased(mouseX, mouseY, state);
+    }
+
     private void handleScrollbarClick(int mouseX, int mouseY, int mouseButton)
     {
         if (mouseButton != 0)
@@ -1921,6 +1946,51 @@ public class GuiOneBlock extends GuiContainer
         }
     }
 
+    private void handleScrollbarDrag(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        if (clickedMouseButton != 0)
+        {
+            return;
+        }
+        for (int slot = 0; slot < scrollbars.length; slot++)
+        {
+            if (!scrollbarActive[slot] || scrollbars[slot] == null)
+            {
+                continue;
+            }
+            ScrollbarElement sb = scrollbars[slot];
+            if (sb.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick))
+            {
+                int target = sb.getScrollOffset();
+                switch (slot)
+                {
+                    case SB_BLOCK_LEFT:
+                        blockScroll = target;
+                        break;
+                    case SB_BLOCK_RIGHT:
+                        blockScrollNext = target;
+                        break;
+                    case SB_MOB_LEFT:
+                        mobScroll = target;
+                        break;
+                    case SB_MOB_RIGHT:
+                        mobScrollNext = target;
+                        break;
+                }
+            }
+            return;
+        }
+    }
+
+    private void handleConditionsScrollbarDrag(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        if (clickedMouseButton != 0 || conditionsScrollbar == null) return;
+        if (conditionsScrollbar.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick))
+        {
+            conditionsScroll = conditionsScrollbar.getScrollOffset();
+        }
+    }
+
     private void changeView(int view)
     {
         if (activeView != view)
@@ -1942,18 +2012,18 @@ public class GuiOneBlock extends GuiContainer
         hoveredMobNameRight = null;
     }
 
-    private ScrollbarElement createScrollBar(int scrollX, int scrollY, int scrollHeight, int currentScroll, int maxScroll)
+    private ScrollbarElement getOrCreateScrollbar(ScrollbarElement existing, int scrollX, int scrollY, int scrollHeight, int visible, int currentScroll, int totalItems)
     {
-        if (maxScroll <= 0 || scrollHeight <= 0) return null;
+        if (totalItems <= 0 || scrollHeight <= 0) return null;
 
-        int visible = Math.max(1, scrollHeight / (cellSize + cellPadding));
-        ScrollbarElement sb = new ScrollbarElement()
-                .totalItems(maxScroll + visible)
-                .visibleItems(visible)
-                .scrollOffset(currentScroll)
-                .trackWidth(SCROLLBAR_WIDTH);
-        sb.setComputedPosition(scrollX, scrollY);
-        sb.setComputedSize(SCROLLBAR_WIDTH, scrollHeight);
+        ScrollbarElement sb = existing;
+        if (sb == null || sb.getComputedX() != scrollX || sb.getComputedY() != scrollY || sb.getComputedHeight() != scrollHeight)
+        {
+            sb = new ScrollbarElement().trackWidth(SCROLLBAR_WIDTH);
+            sb.setComputedPosition(scrollX, scrollY);
+            sb.setComputedSize(SCROLLBAR_WIDTH, scrollHeight);
+        }
+        sb.totalItems(totalItems).visibleItems(visible).scrollOffset(currentScroll);
         sb.draw(fontRenderer, 0, 0, 0);
         return sb;
     }

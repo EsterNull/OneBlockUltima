@@ -8,6 +8,7 @@ import ru.defea.oneblockultima.gui.layout.ButtonToggleElement.LabelPosition;
 
 import static org.junit.Assert.*;
 import static ru.defea.oneblockultima.Constants.*;
+import static ru.defea.oneblockultima.gui.layout.ButtonElement.BUTTON_PADDING;
 
 public class ButtonToggleElementTest {
 
@@ -89,14 +90,27 @@ public class ButtonToggleElementTest {
     }
 
     @Test
-    public void preferredWidthWithoutLabelIsZero() {
-        assertEquals(0, new ButtonToggleElement(false).getPreferredWidth());
+    public void preferredWidthWithoutLabelIsButtonPadding() {
+        assertEquals(BUTTON_PADDING, new ButtonToggleElement(false).getPreferredWidth());
     }
 
     @Test
     public void preferredWidthIncludesLabelEstimate() {
         @SuppressWarnings("SpellCheckingInspection") ButtonToggleElement t = new ButtonToggleElement(false).label("abcd");
-        assertEquals(6 + 4 * 6, t.getPreferredWidth());
+        assertEquals(BUTTON_PADDING + 6 + 4 * 6, t.getPreferredWidth());
+    }
+
+    @Test
+    public void explicitWidthOverridesDefaultPreferredWidth() {
+        ButtonToggleElement t = new ButtonToggleElement(false).width(24);
+        assertEquals(24, t.getPreferredWidth());
+        t.label("abcd");
+        assertEquals(24 + 6 + 4 * 6, t.getPreferredWidth());
+    }
+
+    @Test
+    public void buttonPaddingConstantIsSixteen() {
+        assertEquals(16, BUTTON_PADDING);
     }
 
     @Test

@@ -28,7 +28,7 @@ public final class BlockPriceConfig
         SELL_BLOCK
     }
 
-    private Map<String, Double> prices = new LinkedHashMap<>();
+    private final Map<String, Double> prices = new LinkedHashMap<>();
     private String balanceMode = "BREAK_BLOCK";
 
     public static void load(File configDir)
@@ -61,10 +61,6 @@ public final class BlockPriceConfig
             else
             {
                 instance = loadDefaultFromResources();
-                if (instance == null)
-                {
-                    instance = new BlockPriceConfig();
-                }
             }
         }
         return instance;
@@ -93,7 +89,7 @@ public final class BlockPriceConfig
     {
         if (stack.isEmpty()) return 0;
         Item item = stack.getItem();
-        net.minecraft.util.ResourceLocation reg = null;
+        net.minecraft.util.ResourceLocation reg;
         if (item instanceof net.minecraft.item.ItemBlock)
         {
             Block block = ((net.minecraft.item.ItemBlock) item).getBlock();
@@ -106,7 +102,7 @@ public final class BlockPriceConfig
         if (reg != null)
         {
             int meta = stack.getMetadata();
-            String metaKey = reg.toString() + ":" + meta;
+            String metaKey = reg + ":" + meta;
             Double metaPrice = prices.get(metaKey);
             if (metaPrice != null) return metaPrice;
             return getPrice(reg.toString());
@@ -169,23 +165,6 @@ public final class BlockPriceConfig
         save();
     }
 
-    public boolean isBlockPlaceable(String registry)
-    {
-        if (registry == null) return false;
-        try
-        {
-            net.minecraft.util.ResourceLocation rl = new net.minecraft.util.ResourceLocation(registry);
-            Block block = ForgeRegistries.BLOCKS.getValue(rl);
-            if (block == null) return false;
-            Item item = Item.getItemFromBlock(block);
-            return item != null && item != Item.getItemFromBlock(net.minecraft.init.Blocks.AIR);
-        }
-        catch (Exception e)
-        {
-            return false;
-        }
-    }
-
     public static ItemStack createItemStack(String registry)
     {
         return createItemStack(registry, 0);
@@ -202,7 +181,7 @@ public final class BlockPriceConfig
             if (block != null)
             {
                 Item item = Item.getItemFromBlock(block);
-                if (item != null && item != Item.getItemFromBlock(net.minecraft.init.Blocks.AIR))
+                if (item != Item.getItemFromBlock(net.minecraft.init.Blocks.AIR))
                 {
                     return new ItemStack(item, 1, meta);
                 }
@@ -237,7 +216,7 @@ public final class BlockPriceConfig
             loaded = loadFromFile(file);
         }
 
-        if (loaded == null || loaded.prices == null || loaded.prices.isEmpty())
+        if (loaded == null || loaded.prices.isEmpty())
         {
             copyDefaultToConfigFile(file);
             if (file != null && file.exists())
@@ -246,14 +225,9 @@ public final class BlockPriceConfig
             }
         }
 
-        if (loaded == null || loaded.prices == null || loaded.prices.isEmpty())
+        if (loaded == null || loaded.prices.isEmpty())
         {
             loaded = loadDefaultFromResources();
-        }
-
-        if (loaded == null)
-        {
-            loaded = new BlockPriceConfig();
         }
 
         instance = loaded;
@@ -269,7 +243,7 @@ public final class BlockPriceConfig
         try (Reader reader = new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))
         {
             BlockPriceConfig loaded = GSON.fromJson(reader, BlockPriceConfig.class);
-            if (loaded != null && loaded.prices != null)
+            if (loaded != null)
             {
                 return loaded;
             }
@@ -318,7 +292,7 @@ public final class BlockPriceConfig
         }
     }
 
-    private static BlockPriceConfig loadDefaultFromResources()
+    public static BlockPriceConfig loadDefaultFromResources()
     {
         try (InputStream input = BlockPriceConfig.class.getResourceAsStream("/assets/oneblockultima/block_prices.json"))
         {

@@ -199,6 +199,14 @@ public class ColumnElement extends ViewElement<ColumnElement> {
     }
 
     @Override
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        for (ViewElement<?> child : children) {
+            if (child.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean handleMouseInput(int dWheel) {
         for (ViewElement<?> child : children) {
             if (child.handleMouseInput(dWheel)) return true;

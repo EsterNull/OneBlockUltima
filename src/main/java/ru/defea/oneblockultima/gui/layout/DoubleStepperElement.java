@@ -4,7 +4,11 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import org.lwjgl.input.Mouse;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.DoubleConsumer;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
@@ -17,10 +21,11 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
     private final ButtonElement<?> incButton = new ButtonElement<>(INC_BUTTON_ID, "+");
     private final TextFieldElement field = new TextFieldElement(60);
 
-    private double value;
-    private double min = 0;
-    private double max = Double.MAX_VALUE;
-    private double step = 1.0;
+    private int decimals = 2;
+    private long value;
+    private long min = 0;
+    private long max = Long.MAX_VALUE;
+    private long step = 1;
     private int repeatDelay = 20;
     private int repeatInterval = 5;
     private int doubleEvery = 60;
@@ -36,24 +41,40 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
         row.add(incButton);
     }
 
+    public DoubleStepperElement decimals(int decimals) {
+        if (decimals < 0) decimals = 0;
+        if (decimals == this.decimals) return this;
+        long oldFactor = pow10(this.decimals);
+        long newFactor = pow10(decimals);
+        value = value * newFactor / oldFactor;
+        min = min * newFactor / oldFactor;
+        max = max * newFactor / oldFactor;
+        step = step * newFactor / oldFactor;
+        this.decimals = decimals;
+        field.setText(format(value));
+        return this;
+    }
+
     public DoubleStepperElement value(double value) {
-        this.value = clamp(value);
+        this.value = clamp(scale(value));
         field.setText(format(this.value));
         return this;
     }
 
     public DoubleStepperElement min(double min) {
-        this.min = min;
+        this.min = scale(min);
         return this;
     }
 
     public DoubleStepperElement max(double max) {
-        this.max = max;
+        this.max = scale(max);
         return this;
     }
 
     public DoubleStepperElement step(double step) {
-        this.step = step;
+        int stepDecimals = countDecimals(step);
+        if (stepDecimals > decimals) decimals(stepDecimals);
+        this.step = scale(step);
         return this;
     }
 
@@ -98,7 +119,7 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
     }
 
     public double getValue() {
-        return value;
+        return unscale(value);
     }
 
     public void setValue(double value) {
@@ -111,32 +132,58 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
         try {
             parsed = Double.parseDouble(text.trim().replace(',', '.'));
         } catch (NumberFormatException e) {
-            parsed = value;
+            parsed = unscale(value);
         }
-        parsed = clamp(parsed);
-        if (parsed != value) {
-            value = parsed;
-            if (onChange != null) onChange.accept(value);
+        long scaled = clamp(scale(parsed));
+        if (scaled != value) {
+            value = scaled;
+            if (onChange != null) onChange.accept(unscale(value));
         }
         field.setText(format(value));
     }
 
-    private double clamp(double v) {
+    private long scale(double v) {
+        return Math.round(v * (double) pow10(decimals));
+    }
+
+    private double unscale(long v) {
+        return v / (double) pow10(decimals);
+    }
+
+    private long clamp(long v) {
         return Math.max(min, Math.min(max, v));
     }
 
-    private static String format(double v) {
-        if (v == (long) v) return String.valueOf((long) v);
-        return String.valueOf(v);
+    private static long pow10(int n) {
+        long r = 1;
+        for (int i = 0; i < n; i++) r *= 10;
+        return r;
+    }
+
+    private static int countDecimals(double s) {
+        if (s == Math.rint(s)) return 0;
+        for (int d = 1; d <= 12; d++) {
+            double p = Math.pow(10, d);
+            if (Math.abs(s * p - Math.rint(s * p)) < 1e-8) return d;
+        }
+        return 12;
+    }
+
+    private String format(long v) {
+        DecimalFormat df = new DecimalFormat("0", DecimalFormatSymbols.getInstance(Locale.ROOT));
+        df.setRoundingMode(RoundingMode.HALF_UP);
+        df.setMinimumFractionDigits(0);
+        df.setMaximumFractionDigits(decimals);
+        return df.format(unscale(v));
     }
 
     private void applyStep(int dir, int multiplier) {
         commit();
-        double newValue = clamp(value + (double) dir * step * multiplier);
+        long newValue = clamp(value + (long) dir * step * multiplier);
         if (newValue != value) {
             value = newValue;
             field.setText(format(value));
-            if (onChange != null) onChange.accept(value);
+            if (onChange != null) onChange.accept(unscale(value));
         }
     }
 

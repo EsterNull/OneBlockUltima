@@ -20,6 +20,8 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
     private int thumbHeight;
     private int trackX;
     private int trackWidth = 6;
+    private boolean dragging = false;
+    private int dragGrabOffset = 0;
 
     public ScrollbarElement totalItems(int total) {
         this.totalItems = total;
@@ -79,14 +81,24 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
 
         Gui.drawRect(trackX, trackY, trackX + trackWidth, trackY + trackHeight, trackColor);
 
-        float ratio = (float) visibleItems / totalItems;
-        thumbHeight = Math.max(10, (int) (trackHeight * ratio));
-        int maxOffset = getMaxScroll();
-        float thumbPos = maxOffset > 0 ? (float) scrollOffset / maxOffset : 0;
-        thumbY = trackY + (int) (thumbPos * (trackHeight - thumbHeight));
+        computeThumb();
 
         int color = thumbHovered ? GRAY_COLOR_5 : thumbColor;
         Gui.drawRect(trackX, thumbY, trackX + trackWidth, thumbY + thumbHeight, color);
+    }
+
+    private void computeThumb() {
+        int trackHeight = computedHeight;
+        float ratio = (float) visibleItems / totalItems;
+        thumbHeight = Math.max(10, (int) (trackHeight * ratio));
+        int maxOffset = getMaxScroll();
+        float thumbPos;
+        if (trackHeight <= thumbHeight) {
+            thumbPos = 0;
+        } else {
+            thumbPos = maxOffset > 0 ? (float) scrollOffset / maxOffset : 0;
+        }
+        thumbY = computedY + (int) (thumbPos * (trackHeight - thumbHeight));
     }
 
     @Override
@@ -95,12 +107,38 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
         if (totalItems <= visibleItems) return false;
         if (mouseX >= computedX && mouseX <= computedX + trackWidth &&
             mouseY >= computedY && mouseY <= computedY + computedHeight) {
+            computeThumb();
+            if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
+                dragging = true;
+                dragGrabOffset = mouseY - thumbY;
+                return true;
+            }
+            int trackHeight = computedHeight;
+            int range = trackHeight - thumbHeight;
             int clickY = mouseY - computedY - thumbHeight / 2;
-            float ratio = (float) clickY / (computedHeight - thumbHeight);
+            float ratio = range > 0 ? (float) clickY / range : 0;
             scrollOffset = Math.round(ratio * getMaxScroll());
             clampScroll();
             return true;
         }
+        return false;
+    }
+
+    @Override
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        if (!dragging || clickedMouseButton != 0) return false;
+        computeThumb();
+        int range = computedHeight - thumbHeight;
+        float ratio = range > 0 ? (float) (mouseY - dragGrabOffset - computedY) / range : 0;
+        ratio = Math.max(0, Math.min(1, ratio));
+        scrollOffset = Math.round(ratio * getMaxScroll());
+        clampScroll();
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(int mouseX, int mouseY, int state) {
+        dragging = false;
         return false;
     }
 

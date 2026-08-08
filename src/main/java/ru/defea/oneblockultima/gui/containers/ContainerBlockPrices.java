@@ -83,6 +83,17 @@ public class ContainerBlockPrices
         filteredEntries = new ArrayList<>(priceEntries);
     }
 
+    public void resetToDefault()
+    {
+        BlockPriceConfig defaults = BlockPriceConfig.loadDefaultFromResources();
+        stagedPrices.clear();
+        stagedPrices.putAll(defaults.getPrices());
+        currentBalanceMode = defaults.getBalanceMode();
+        setCostMultiplierMode = false;
+        setCostIncreaseValue = 50.0;
+        reloadPriceEntries();
+    }
+
     public void toggleBalanceMode()
     {
         currentBalanceMode = (currentBalanceMode == BlockPriceConfig.BalanceMode.BREAK_BLOCK)

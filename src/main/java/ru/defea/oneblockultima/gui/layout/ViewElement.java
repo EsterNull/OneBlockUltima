@@ -35,6 +35,10 @@ public abstract class ViewElement<T extends ViewElement<T>> {
         return false;
     }
 
+    public boolean mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        return false;
+    }
+
     public boolean handleMouseInput(int dWheel) {
         return false;
     }
