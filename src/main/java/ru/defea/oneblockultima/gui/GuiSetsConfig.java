@@ -132,12 +132,18 @@ public class GuiSetsConfig extends GuiScreen
 
     private Entity resolveEntity(String registry)
     {
+        return resolveEntity(registry, null);
+    }
+
+    private Entity resolveEntity(String registry, net.minecraft.nbt.NBTTagCompound nbtTags)
+    {
         if (registry == null || registry.isEmpty())
         {
             return null;
         }
 
-        Entity cached = mobEntityCache.get(registry);
+        String cacheKey = registry + "#" + (nbtTags == null ? "" : nbtTags.toString());
+        Entity cached = mobEntityCache.get(cacheKey);
         if (cached != null)
         {
             return cached;
@@ -153,7 +159,11 @@ public class GuiSetsConfig extends GuiScreen
                 {
                     entity.world = renderWorld;
                 }
-                mobEntityCache.put(registry, entity);
+                if (nbtTags != null && !nbtTags.hasNoTags())
+                {
+                    ru.defea.oneblockultima.util.BlockUtil.applyNbtToEntity(entity, nbtTags);
+                }
+                mobEntityCache.put(cacheKey, entity);
             }
             return entity;
         }
@@ -877,7 +887,7 @@ public class GuiSetsConfig extends GuiScreen
                         if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
 
                         int iconSize = Math.max(4, height - 8);
-                        EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(mob.registry));
+                        EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(mob.registry, mob.nbtTags));
                         mobIcon.scale(iconSize * 2);
                         mobIcon.setComputedPosition(x + 2, y + 2);
                         mobIcon.setComputedSize(iconSize, iconSize);
@@ -895,10 +905,21 @@ public class GuiSetsConfig extends GuiScreen
                         String levelInfo = I18n.format("gui.oneblockultima.config.base_level") + ": " + mob.baseLevel;
                         fr.drawString(levelInfo, textX + fr.getStringWidth(displayName) + 4, y + 2, GRAY_COLOR_7);
                         String chanceInfo = I18n.format("gui.oneblockultima.chance") + ": " + mob.baseChance + "%";
-                        int maxInfoW = Math.max(10, rightBound - textX);
+                        int infoX = textX;
+                        boolean hasNbt = mob.nbtTags != null && !mob.nbtTags.hasNoTags();
+                        if (hasNbt)
+                        {
+                            String nbtLabel = "NBT";
+                            int badgeW = fr.getStringWidth(nbtLabel) + 2 * 2;
+                            int badgeY = y + height - fr.FONT_HEIGHT;
+                            Gui.drawRect(infoX, badgeY, infoX + badgeW, badgeY + fr.FONT_HEIGHT, DARK_BLUE_GRAY_COLOR_1);
+                            fr.drawString(nbtLabel, infoX + 2, badgeY + 1, GOLD_COLOR);
+                            infoX += badgeW + 4;
+                        }
+                        int maxInfoW = Math.max(10, rightBound - infoX);
                         if (fr.getStringWidth(chanceInfo) > maxInfoW)
                             chanceInfo = fr.trimStringToWidth(chanceInfo, maxInfoW - fr.getStringWidth("...")) + "...";
-                        fr.drawString(chanceInfo, textX, y + 14, GRAY_COLOR_1);
+                        fr.drawString(chanceInfo, infoX, y + 14, GRAY_COLOR_1);
 
                         int editX = x + width - btnSize - 2;
                         editButton.setComputedPosition(editX, y + 2);
@@ -1137,7 +1158,7 @@ public class GuiSetsConfig extends GuiScreen
                 return null;
             }
 
-            Entity entity = resolveEntity(entry.registry);
+            Entity entity = resolveEntity(entry.registry, entry.nbtTags);
             if (entity != null)
             {
                 return new CustomDrawCallbackElement((x, y, w, h, fr, mx, my, pt) ->

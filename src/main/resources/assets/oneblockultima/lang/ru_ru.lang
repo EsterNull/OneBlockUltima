@@ -46,7 +46,6 @@ gui.oneblockultima.next_level=Следующий уровень
 gui.oneblockultima.config.sets_title=Управление наборами
 gui.oneblockultima.config.add_set=Создать набор
 gui.oneblockultima.config.delete_set=Удалить набор
-gui.oneblockultima.config.edit_set=Редактирование набора
 gui.oneblockultima.config.edit_title=Редактирование записи
 gui.oneblockultima.config.edit=Редактировать
 gui.oneblockultima.config.set_name=Название набора
@@ -68,25 +67,19 @@ gui.oneblockultima.config.search.help=@Мод &Идентификатор
 gui.oneblockultima.config.required_mods=Требуемые моды
 gui.oneblockultima.config.all=ВСЕ
 gui.oneblockultima.config.any=ЛЮБОЕ
-gui.oneblockultima.config.required_mods_edit=Изменить требуемые моды
 gui.oneblockultima.config.required_mods_add_title=Добавить требуемые моды
 gui.oneblockultima.config.required_mods_add_hint=Выберите моды для добавления
 gui.oneblockultima.config.required_mods_empty=Моды не выбраны
 gui.oneblockultima.config.required_mods_selected=Выбрано: %s
-gui.oneblockultima.config.required_mods_saved=Требуемые моды сохранены
-gui.oneblockultima.config.required_mods_added=Требуемые моды добавлены
-gui.oneblockultima.config.required_mods_removed=Требуемые моды удалены
 gui.oneblockultima.config.none=Нет
 gui.oneblockultima.config.add=Добавить
 gui.oneblockultima.config.confirm=Подтвердить
 gui.oneblockultima.config.confirm_delete_message=Вы действительно хотите удалить набор %s?
 
-gui.oneblockultima.config.edit_level_chance=Редактировать уровень и шанс
 gui.oneblockultima.config.level_chance_updated=Набор обновлён
 gui.oneblockultima.config.base_level=Уровень
 gui.oneblockultima.config.error.invalid_level_chance=Некорректное значение
 
-gui.oneblockultima.config.unlock_conditions_saved=Условия разблокировки сохранены
 gui.oneblockultima.config.unlock_conditions_count=Количество
 gui.oneblockultima.config.unlock_conditions_type_set_level=Уровень набора
 gui.oneblockultima.config.unlock_conditions_type_broken_blocks=Сломано блоков в наборе
@@ -133,7 +126,6 @@ gui.oneblockultima.donate.line1=Если вам нравится мод, вы м
 gui.oneblockultima.donate.line2=поддержать разработчика, чтобы помочь
 gui.oneblockultima.donate.line3=с обновлениями и новыми функциями.
 gui.oneblockultima.donate.copied=Скопировано: %s
-gui.oneblockultima.donate.open_failed=Не удалось открыть ссылку
 gui.oneblockultima.donate.copy_hint=Нажмите, чтобы скопировать адрес
 gui.oneblockultima.donate.copied_short=Адрес скопирован!
 gui.oneblockultima.settings.fluid=Генерация жидкостей
@@ -145,11 +137,9 @@ gui.oneblockultima.settings.enabled=вкл.
 gui.oneblockultima.settings.disabled=выкл.
 
 gui.oneblockultima.ui_settings.title=Настройки UI
-gui.oneblockultima.ui_settings.balance_position=Позиция баланса
 gui.oneblockultima.ui_settings.h_offset=Гор. (%%):
 gui.oneblockultima.ui_settings.v_offset=Верт. (%%):
 gui.oneblockultima.ui_settings.show_balance=Показать баланс
-gui.oneblockultima.ui_settings.preview=Превью
 gui.oneblockultima.ui_settings.pos.top_left=Слева вверху
 gui.oneblockultima.ui_settings.pos.top=Сверху
 gui.oneblockultima.ui_settings.pos.top_right=Справа вверху
@@ -192,7 +182,6 @@ command.not_generated=Данный предмет не является сген
 command.sell_disabled=Команда отключена в текущем режиме начисления баланса.
 command.not_found=Блок не найден в таблице цен.
 command.addUltimaBalance.integer=Сумма должна быть целым числом.
-command.addUltimaBalance.player=Команда должна выполняться игроком.
 command.addUltimaBalance.no_data=Данные игрока недоступны.
 command.addUltimaBalance.success=Ultima баланс игрока %s увеличен на %s. Текущий: %s
 command.inviteGeneratorMember.usage=Использование: /inviteGeneratorMember <playerName>
@@ -311,7 +300,6 @@ gui.oneblockultima.mod_settings.set_cost_increase.value.multiplier=Во скол
 
 # Block prices GUI
 gui.oneblockultima.prices.title=Экономика
-gui.oneblockultima.prices.edit_title=Редактирование цены
 gui.oneblockultima.prices.price=Цена
 gui.oneblockultima.prices.search.no_results=Блоки не найдены
 gui.oneblockultima.prices.price_saved=Цена сохранена
@@ -332,7 +320,6 @@ gui.oneblockultima.tooltip.obu_generated=Блок добыт из генерат
 
 # Guide book
 item.obu_guide_book.name=Руководство OneBlock
-book.oneblockultima.close=Закрыть
 book.oneblockultima.toc.title=Оглавление
 book.oneblockultima.tab.commands=Команды
 book.oneblockultima.tab.recipes=Рецепты

@@ -46,7 +46,6 @@ gui.oneblockultima.next_level=Next Level
 gui.oneblockultima.config.sets_title=Manage Sets
 gui.oneblockultima.config.add_set=Create Set
 gui.oneblockultima.config.delete_set=Delete Set
-gui.oneblockultima.config.edit_set=Edit Set
 gui.oneblockultima.config.edit_title=Edit Entry
 gui.oneblockultima.config.edit=Edit
 gui.oneblockultima.config.set_name=Set Name
@@ -68,25 +67,19 @@ gui.oneblockultima.config.search.help=@Mod &ID
 gui.oneblockultima.config.required_mods=Required mods
 gui.oneblockultima.config.all=ALL
 gui.oneblockultima.config.any=ANY
-gui.oneblockultima.config.required_mods_edit=Edit required mods
 gui.oneblockultima.config.required_mods_add_title=Add required mods
 gui.oneblockultima.config.required_mods_add_hint=Select mods to add
 gui.oneblockultima.config.required_mods_empty=No mods selected
 gui.oneblockultima.config.required_mods_selected=Selected: %s
-gui.oneblockultima.config.required_mods_saved=Required mods saved
-gui.oneblockultima.config.required_mods_added=Required mods added
-gui.oneblockultima.config.required_mods_removed=Required mods removed
 gui.oneblockultima.config.none=None
 gui.oneblockultima.config.add=Add
 gui.oneblockultima.config.confirm=Confirm
 gui.oneblockultima.config.confirm_delete_message=Do you really want to delete the set %s?
 
-gui.oneblockultima.config.edit_level_chance=Edit Level & Chance
 gui.oneblockultima.config.level_chance_updated=Set updated
 gui.oneblockultima.config.base_level=Level
 gui.oneblockultima.config.error.invalid_level_chance=Invalid value
 
-gui.oneblockultima.config.unlock_conditions_saved=Unlock conditions saved
 gui.oneblockultima.config.unlock_conditions_count=Count
 gui.oneblockultima.config.unlock_conditions_type_set_level=Set level
 gui.oneblockultima.config.unlock_conditions_type_broken_blocks=Broken blocks in set
@@ -133,7 +126,6 @@ gui.oneblockultima.donate.line1=If you enjoy the mod, you can support
 gui.oneblockultima.donate.line2=the developer to help with further
 gui.oneblockultima.donate.line3=updates and new features.
 gui.oneblockultima.donate.copied=Copied: %s
-gui.oneblockultima.donate.open_failed=Failed to open link
 gui.oneblockultima.donate.copy_hint=Click to copy the address
 gui.oneblockultima.donate.copied_short=Address copied!
 gui.oneblockultima.settings.fluid=Fluid generation
@@ -145,11 +137,9 @@ gui.oneblockultima.settings.enabled=enabled
 gui.oneblockultima.settings.disabled=disabled
 
 gui.oneblockultima.ui_settings.title=UI Settings
-gui.oneblockultima.ui_settings.balance_position=Balance Position
 gui.oneblockultima.ui_settings.h_offset=H (%%):
 gui.oneblockultima.ui_settings.v_offset=V (%%):
 gui.oneblockultima.ui_settings.show_balance=Show Balance
-gui.oneblockultima.ui_settings.preview=Preview
 gui.oneblockultima.ui_settings.pos.top_left=Top Left
 gui.oneblockultima.ui_settings.pos.top=Top
 gui.oneblockultima.ui_settings.pos.top_right=Top Right
@@ -192,7 +182,6 @@ command.not_generated=This item is not a generated block.
 command.sell_disabled=This command is disabled in the current balance mode.
 command.not_found=Block not found in the price table.
 command.addUltimaBalance.integer=Amount must be an integer.
-command.addUltimaBalance.player=Command must be executed by a player.
 command.addUltimaBalance.no_data=Player data not available.
 command.addUltimaBalance.success=Ultima balance of player %s increased by %s. Current: %s
 command.inviteGeneratorMember.usage=Usage: /inviteGeneratorMember <playerName>
@@ -311,7 +300,6 @@ gui.oneblockultima.mod_settings.set_cost_increase.value.multiplier=By what facto
 
 # Block prices GUI
 gui.oneblockultima.prices.title=Economy
-gui.oneblockultima.prices.edit_title=Edit Price
 gui.oneblockultima.prices.price=Price
 gui.oneblockultima.prices.search.no_results=No blocks found
 gui.oneblockultima.prices.price_saved=Price saved
@@ -332,7 +320,6 @@ gui.oneblockultima.tooltip.obu_generated=Block obtained from generator
 
 # Guide book
 item.obu_guide_book.name=OneBlock Guidebook
-book.oneblockultima.close=Close
 book.oneblockultima.toc.title=Contents
 book.oneblockultima.tab.commands=Commands
 book.oneblockultima.tab.recipes=Recipes

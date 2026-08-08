@@ -881,6 +881,10 @@ public class GuiOneBlock extends GuiContainer
                 {
                     entity.world = mcWorld;
                 }
+                if (entry.nbtTags != null && !entry.nbtTags.hasNoTags())
+                {
+                    BlockUtil.applyNbtToEntity(entity, entry.nbtTags);
+                }
                 mobEntityCache.put(entry, entity);
             }
             return entity;
@@ -1482,6 +1486,10 @@ public class GuiOneBlock extends GuiContainer
             {
                 tooltip.add("x" + hoveredMobEntryLeft.count);
             }
+            if (hoveredMobEntryLeft.nbtTags != null && !hoveredMobEntryLeft.nbtTags.hasNoTags())
+            {
+                tooltip.add(I18n.format("gui.oneblockultima.config.nbt_edit"));
+            }
             drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
         }
         else if (!hoveredStackRight.isEmpty())
@@ -1523,6 +1531,10 @@ public class GuiOneBlock extends GuiContainer
             if (hoveredMobEntryRight.count > 1)
             {
                 tooltip.add("x" + hoveredMobEntryRight.count);
+            }
+            if (hoveredMobEntryRight.nbtTags != null && !hoveredMobEntryRight.nbtTags.hasNoTags())
+            {
+                tooltip.add(I18n.format("gui.oneblockultima.config.nbt_edit"));
             }
             drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
         }

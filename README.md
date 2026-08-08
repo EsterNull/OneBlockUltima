@@ -69,7 +69,7 @@ src/
 
 - Version lives in `build.gradle`, also injected into `mcmod.info` during `processResources`.
 - Runtime config is written to the Forge config dir:
-  - `config/oneblockultima_mod_settings.json` — mod settings.
+  - `config/oneblockultima/oneblockultima_mod_settings.json` — mod settings.
   - `config/oneblockultima/blocksets.json` — block sets (created from bundled defaults on first launch).
   - `config/oneblockultima/block_prices.json` — price table.
 

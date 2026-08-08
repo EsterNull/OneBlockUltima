@@ -37,7 +37,7 @@ public final class ModSettings
         }
     }
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson GSON = new GsonBuilder().create();
     private static final String FILE_NAME = "oneblockultima_mod_settings.json";
     private static ModSettings instance;
     private static volatile boolean debugEnabled;
@@ -110,7 +110,7 @@ public final class ModSettings
     {
         if (Loader.instance().getConfigDir() != null)
         {
-            return new File(Loader.instance().getConfigDir(), FILE_NAME);
+            return new File(Loader.instance().getConfigDir(), OneBlockUltima.MODID + "/" + FILE_NAME);
         }
         return null;
     }
