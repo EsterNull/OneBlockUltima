@@ -1319,6 +1319,7 @@ public class GuiSetsConfig extends GuiScreen
         {
             nbtKeyElement = new TextFieldElement(formWidth)
                     .text(container.nbtEditorGetKeyText())
+                    .fitToText()
                     .focused(focusKey);
             RowElement keyRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
             keyRow.add(new LabelElement(keyLabel).color(GRAY_COLOR_5).width(formLabelWidth));
@@ -1375,6 +1376,7 @@ public class GuiSetsConfig extends GuiScreen
         {
             nbtValueElement = new TextFieldElement(formWidth)
                     .text(container.nbtEditorGetValueText())
+                    .fitToText()
                     .focused(!focusKey);
             RowElement valueRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
             valueRow.add(new LabelElement(valueLabel).color(GRAY_COLOR_5).width(formLabelWidth));

@@ -380,10 +380,10 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void nbtValuePreviewTruncatesLongStrings() {
         NBTTagCompound c = new NBTTagCompound();
-        c.setString("Long", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+        c.setString("Long", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
         String preview = ContainerSetsConfig.nbtValuePreview(c.getTag("Long"));
-        assertEquals(24, preview.length());
+        assertEquals(48, preview.length());
         assertTrue(preview.endsWith("..."));
     }
 

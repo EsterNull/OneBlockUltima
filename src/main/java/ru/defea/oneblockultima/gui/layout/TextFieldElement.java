@@ -12,14 +12,16 @@ import static ru.defea.oneblockultima.Constants.WHITE_COLOR_2;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class TextFieldElement extends ViewElement<TextFieldElement> {
     private int width;
-    private static final int HEIGHT = Minecraft.getMinecraft().fontRenderer.FONT_HEIGHT + 4;
     private GuiTextField textField;
     private String text = "";
     private boolean focused = false;
     private boolean backgroundDrawing = true;
     private boolean enabled = true;
     private int textColor = WHITE_COLOR_2;
-    private int maxStringLength = 256;
+    private int maxStringLength = Integer.MAX_VALUE;
+    private boolean fitToText = false;
+    private static final int FIT_TEXT_PADDING = 8;
+    private static final int MAX_FIT_WIDTH = 440;
 
     public TextFieldElement(int width) {
         this.width = width;
@@ -45,6 +47,11 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
     public TextFieldElement maxLength(int max) {
         this.maxStringLength = max;
         if (textField != null) textField.setMaxStringLength(max);
+        return this;
+    }
+
+    public TextFieldElement fitToText() {
+        this.fitToText = true;
         return this;
     }
 
@@ -91,7 +98,9 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
     public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
         int id = factory.getTextFields().size();
         int fieldWidth = width > 0 ? width : computedWidth;
-        textField = new GuiTextField(id, fontRenderer, computedX, computedY, fieldWidth, HEIGHT);
+        if (fitToText) fieldWidth = fitWidth(fontRenderer, fieldWidth);
+        textField = new GuiTextField(id, fontRenderer, computedX, computedY, fieldWidth, getFieldHeight());
+        textField.setMaxStringLength(maxStringLength);
         textField.setText(text);
         textField.setFocused(focused);
         textField.setMaxStringLength(maxStringLength);
@@ -134,7 +143,24 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
     }
 
     @Override
+    public int getPreferredWidth(FontRenderer fr) {
+        if (!fitToText) return getPreferredWidth();
+        return fitWidth(fr, getPreferredWidth());
+    }
+
+    private int fitWidth(FontRenderer fr, int baseWidth) {
+        if (fr == null || text.isEmpty()) return baseWidth;
+        return Math.max(baseWidth, Math.min(fr.getStringWidth(text) + FIT_TEXT_PADDING, MAX_FIT_WIDTH));
+    }
+
+    @Override
     public int getPreferredHeight() {
-        return HEIGHT;
+        return getFieldHeight();
+    }
+
+    private static int getFieldHeight() {
+        Minecraft mc = Minecraft.getMinecraft();
+        int fontHeight = mc.fontRenderer != null ? mc.fontRenderer.FONT_HEIGHT : 9;
+        return fontHeight + 4;
     }
 }

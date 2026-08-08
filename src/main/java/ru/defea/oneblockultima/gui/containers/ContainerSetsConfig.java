@@ -1368,7 +1368,7 @@ public class ContainerSetsConfig
         if (value instanceof NBTTagByteArray) return "byte[" + ((NBTTagByteArray) value).getByteArray().length + "]";
         if (value instanceof NBTTagIntArray) return "int[" + ((NBTTagIntArray) value).getIntArray().length + "]";
         String preview = formatNbtValue(value);
-        if (preview.length() > 24) preview = preview.substring(0, 21) + "...";
+        if (preview.length() > 48) preview = preview.substring(0, 45) + "...";
         return preview;
     }
 
