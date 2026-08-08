@@ -123,7 +123,7 @@ public final class BlockPriceConfig
     public void setPrice(String registry, double price)
     {
         if (registry == null) return;
-        prices.put(registry, price);
+        prices.put(registry, Math.max(0, price));
         save();
     }
 
@@ -138,7 +138,10 @@ public final class BlockPriceConfig
     {
         if (newPrices == null) return;
         prices.clear();
-        prices.putAll(newPrices);
+        for (Map.Entry<String, Double> entry : newPrices.entrySet())
+        {
+            prices.put(entry.getKey(), Math.max(0, entry.getValue() == null ? 0 : entry.getValue()));
+        }
         save();
     }
 

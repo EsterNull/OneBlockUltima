@@ -1,6 +1,0 @@
-{
-  "parent": "block/cube_all",
-  "textures": {
-    "all": "oneblockultima:blocks/compressed_netherrack_4x"
-  }
-}

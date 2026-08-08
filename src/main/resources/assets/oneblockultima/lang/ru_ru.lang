@@ -81,9 +81,9 @@ gui.oneblockultima.config.confirm=Подтвердить
 gui.oneblockultima.config.confirm_delete_message=Вы действительно хотите удалить набор %s?
 
 gui.oneblockultima.config.edit_level_chance=Редактировать уровень и шанс
-gui.oneblockultima.config.level_chance_updated=Уровень и шанс обновлены
+gui.oneblockultima.config.level_chance_updated=Набор обновлён
 gui.oneblockultima.config.base_level=Уровень
-gui.oneblockultima.config.error.invalid_level_chance=Некорректное значение уровня или шанса
+gui.oneblockultima.config.error.invalid_level_chance=Некорректное значение
 
 gui.oneblockultima.config.unlock_conditions_saved=Условия разблокировки сохранены
 gui.oneblockultima.config.unlock_conditions_count=Количество
@@ -331,7 +331,6 @@ gui.oneblockultima.tooltip.obu_generated=Блок добыт из генерат
 
 # Guide book
 item.obu_guide_book.name=Руководство OneBlock
-book.oneblockultima.title=Гайдбук OneBlock
 book.oneblockultima.close=Закрыть
 book.oneblockultima.toc.title=Оглавление
 book.oneblockultima.tab.commands=Команды

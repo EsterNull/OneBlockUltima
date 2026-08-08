@@ -77,6 +77,7 @@ public class BlockPriceConfigTest {
     @Test
     public void hasPriceReturnsFalseForNull() throws Exception {
         BlockPriceConfig config = newConfig();
+        //noinspection ConstantValue
         assertFalse(config.hasPrice(null));
     }
 
@@ -124,14 +125,15 @@ public class BlockPriceConfigTest {
     public void setPriceWithNullRegistryIsNoOp() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice(null, 10);
+        //noinspection ConstantValue
         assertFalse(config.hasPrice(null));
     }
 
     @Test
-    public void setPriceWithNegativeValue() throws Exception {
+    public void setPriceWithNegativeValueClampsToZero() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", -5);
-        assertEquals(-5, config.getPrice("minecraft:stone"), DELTA);
+        assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
@@ -187,9 +189,21 @@ public class BlockPriceConfigTest {
     public void replaceAllWithEmptyMapClearsAll() throws Exception {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
-        config.replaceAll(new HashMap<String, Double>());
+        config.replaceAll(new HashMap<>());
         assertFalse(config.hasPrice("minecraft:stone"));
         assertEquals(0, config.getPrices().size());
+    }
+
+    @Test
+    public void replaceAllClampsNegativePrices() throws Exception {
+        BlockPriceConfig config = newConfig();
+        Map<String, Double> newPrices = new LinkedHashMap<>();
+        newPrices.put("minecraft:stone", 10.0);
+        newPrices.put("minecraft:dirt", -25.0);
+        config.replaceAll(newPrices);
+
+        assertEquals(10, config.getPrice("minecraft:stone"), DELTA);
+        assertEquals(0, config.getPrice("minecraft:dirt"), DELTA);
     }
 
     @Test
@@ -208,6 +222,7 @@ public class BlockPriceConfigTest {
         config.setPrice("minecraft:stone", 10);
         Map<String, Double> prices = config.getPrices();
         try {
+            //noinspection DataFlowIssue
             prices.put("minecraft:dirt", 5.0);
             fail("Should throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {

@@ -671,4 +671,44 @@ public class ContainerSetsConfigNbtTest {
 
         assertNotEquals("broken_blocks_total", container.getNewConditionTypeToAdd());
     }
+
+    @Test
+    public void saveCurrencyRejectsNegativeLevel() {
+        ContainerSetsConfig container = newBlockEntry();
+        BlockSetConfig.BlockElementDefinition entry = container.getEditingSet().blocks.get(0);
+
+        assertFalse(container.saveCurrency(-1, 50));
+        assertEquals(1, entry.baseLevel);
+        assertEquals(50, entry.baseChance);
+    }
+
+    @Test
+    public void saveCurrencyRejectsNegativeChance() {
+        ContainerSetsConfig container = newBlockEntry();
+        BlockSetConfig.BlockElementDefinition entry = container.getEditingSet().blocks.get(0);
+
+        assertFalse(container.saveCurrency(5, -10));
+        assertEquals(1, entry.baseLevel);
+        assertEquals(50, entry.baseChance);
+    }
+
+    @Test
+    public void saveCurrencyRejectsZeroLevel() {
+        ContainerSetsConfig container = newBlockEntry();
+        BlockSetConfig.BlockElementDefinition entry = container.getEditingSet().blocks.get(0);
+
+        assertFalse(container.saveCurrency(0, 50));
+        assertEquals(1, entry.baseLevel);
+    }
+
+    @Test
+    public void addUnlockConditionClampsNegativeLevelAndCount() {
+        ContainerSetsConfig container = newContainer();
+        container.initUnlockConditionsEditor();
+        container.addUnlockCondition("broken_blocks", "test_nbt", "-3", "-7");
+
+        BlockSetConfig.UnlockConditionDefinition cond = container.getUnlockConditionsEditorConditions().get(0);
+        assertEquals(1, cond.level);
+        assertEquals(0, cond.count);
+    }
 }

@@ -380,13 +380,15 @@ public class ContainerSetsConfig
             }
             editingSet.id = id;
             if (!name.isEmpty()) saveLocalizedName(id, name);
-            try { editingSet.unlockCost = Integer.parseInt(costStr); }
+            int cost;
+            try { cost = Integer.parseInt(costStr); }
             catch (NumberFormatException e)
             {
                 statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_cost");
                 statusTimer = 100;
                 return false;
             }
+            editingSet.unlockCost = cost;
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             if (editingSet.mobs == null) editingSet.mobs = new ArrayList<>();
             if (editingSet.requiredMods == null) editingSet.requiredMods = new BlockSetConfig.SetRequiredModsDefinition();
@@ -404,13 +406,15 @@ public class ContainerSetsConfig
         else
         {
             if (!name.isEmpty()) saveLocalizedName(editingSet.id, name);
-            try { editingSet.unlockCost = Integer.parseInt(costStr); }
+            int cost;
+            try { cost = Integer.parseInt(costStr); }
             catch (NumberFormatException e)
             {
                 statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_cost");
                 statusTimer = 100;
                 return false;
             }
+            editingSet.unlockCost = cost;
             if (editingSetSourceIndex >= 0 && editingSetSourceIndex < sets.size())
                 sets.set(editingSetSourceIndex, editingSet);
             saveConfigToFile();
@@ -1385,6 +1389,12 @@ public class ContainerSetsConfig
     public boolean saveCurrency(int newLevel, int newChance)
     {
         if (editingSet == null || editingCurrencyIndex < 0) return false;
+        if (newLevel < 1 || newChance < 1)
+        {
+            statusMessage = safeFormat("gui.oneblockultima.config.error.invalid_level_chance");
+            statusTimer = 100;
+            return false;
+        }
         try
         {
             if (editingEntryType == EntryType.BLOCK && editingSet.blocks != null && editingCurrencyIndex < editingSet.blocks.size())
@@ -1459,8 +1469,8 @@ public class ContainerSetsConfig
         BlockSetConfig.UnlockConditionDefinition cond = new BlockSetConfig.UnlockConditionDefinition();
         cond.type = type;
         if ("set_level".equals(type) || "broken_blocks".equals(type)) cond.setId = setId;
-        try { if (!levelStr.isEmpty()) cond.level = Integer.parseInt(levelStr); } catch (NumberFormatException ignored) {}
-        try { if (!countStr.isEmpty()) cond.count = Integer.parseInt(countStr); } catch (NumberFormatException ignored) {}
+        try { if (!levelStr.isEmpty()) cond.level = Math.max(1, Integer.parseInt(levelStr)); } catch (NumberFormatException ignored) {}
+        try { if (!countStr.isEmpty()) cond.count = Math.max(0, Integer.parseInt(countStr)); } catch (NumberFormatException ignored) {}
         unlockConditionsEditorConditions.add(cond);
         if ("broken_blocks_total".equals(type))
         {

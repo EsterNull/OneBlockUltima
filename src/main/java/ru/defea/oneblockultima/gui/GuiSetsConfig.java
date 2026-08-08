@@ -492,7 +492,7 @@ public class GuiSetsConfig extends GuiScreen
         try
         {
             int level = Integer.parseInt(editLevelElement.getText().trim());
-            int chance = Math.min(100, Math.max(1, Integer.parseInt(editChanceElement.getText().trim())));
+            int chance = Math.min(100, Integer.parseInt(editChanceElement.getText().trim()));
             if (container.saveCurrency(level, chance))
             {
                 container.clearPendingAdd();

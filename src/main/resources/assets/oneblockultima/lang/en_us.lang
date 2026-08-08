@@ -81,9 +81,9 @@ gui.oneblockultima.config.confirm=Confirm
 gui.oneblockultima.config.confirm_delete_message=Do you really want to delete the set %s?
 
 gui.oneblockultima.config.edit_level_chance=Edit Level & Chance
-gui.oneblockultima.config.level_chance_updated=Level & Chance updated
+gui.oneblockultima.config.level_chance_updated=Set updated
 gui.oneblockultima.config.base_level=Level
-gui.oneblockultima.config.error.invalid_level_chance=Invalid level or chance value
+gui.oneblockultima.config.error.invalid_level_chance=Invalid value
 
 gui.oneblockultima.config.unlock_conditions_saved=Unlock conditions saved
 gui.oneblockultima.config.unlock_conditions_count=Count
@@ -331,7 +331,6 @@ gui.oneblockultima.tooltip.obu_generated=Block obtained from generator
 
 # Guide book
 item.obu_guide_book.name=OneBlock Guidebook
-book.oneblockultima.title=OneBlock Guidebook
 book.oneblockultima.close=Close
 book.oneblockultima.toc.title=Contents
 book.oneblockultima.tab.commands=Commands

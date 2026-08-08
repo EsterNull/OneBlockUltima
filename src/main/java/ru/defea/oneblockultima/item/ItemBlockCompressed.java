@@ -21,6 +21,12 @@ public class ItemBlockCompressed extends ItemBlock {
     }
 
     @Override
+    public int getMetadata(int damage)
+    {
+        return damage;
+    }
+
+    @Override
     @Nonnull
     public String getUnlocalizedName(ItemStack stack)
     {
