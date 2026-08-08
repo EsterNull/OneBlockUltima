@@ -7,6 +7,8 @@ import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.OneBlockUltima;
@@ -90,6 +92,10 @@ public final class GuideBookContent
                     continue;
                 }
                 Recipe recipe = parseRecipe(key);
+                if (recipe == null)
+                {
+                    recipe = parseRecipeFromIRecipe(key);
+                }
                 if (recipe != null && !recipe.result.isEmpty())
                 {
                     String ingredientKey = ingredientKey(recipe.grid);
@@ -223,6 +229,53 @@ public final class GuideBookContent
             }
 
             return new Recipe(key.getResourcePath(), result, grid, shaped);
+        }
+        catch (Exception ignored)
+        {
+            return null;
+        }
+    }
+
+    private static Recipe parseRecipeFromIRecipe(ResourceLocation key)
+    {
+        try
+        {
+            IRecipe recipe = ForgeRegistries.RECIPES.getValue(key);
+            if (recipe == null)
+            {
+                return null;
+            }
+            ItemStack result = recipe.getRecipeOutput();
+            if (result == null || result.isEmpty())
+            {
+                return null;
+            }
+            ItemStack[] grid = new ItemStack[9];
+            Arrays.fill(grid, ItemStack.EMPTY);
+            int index = 0;
+            for (Ingredient ingredient : recipe.getIngredients())
+            {
+                if (index >= 9)
+                {
+                    break;
+                }
+                if (ingredient == null || ingredient == Ingredient.EMPTY)
+                {
+                    continue;
+                }
+                ItemStack display = ItemStack.EMPTY;
+                for (ItemStack stack : ingredient.getMatchingStacks())
+                {
+                    if (stack != null && !stack.isEmpty())
+                    {
+                        display = stack.copy();
+                        break;
+                    }
+                }
+                grid[index] = display;
+                index++;
+            }
+            return new Recipe(key.getResourcePath(), result, grid, false);
         }
         catch (Exception ignored)
         {
