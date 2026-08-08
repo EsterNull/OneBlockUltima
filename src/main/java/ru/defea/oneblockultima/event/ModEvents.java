@@ -195,13 +195,13 @@ public final class ModEvents
             return;
         }
 
-        // Проверяем, есть ли у игрока своя точка возрождения
-        boolean hasSpawn = player.isSpawnForced(0);
+        //noinspection ConstantValue
+        boolean hasBedSpawn = player.getBedLocation(OVERWORLD_DIMENSION_ID) != null;
 
-        // Если у игрока нет своей точки возрождения (кровать или команда)
         //noinspection ConstantConditions
         BlockPos spawnPos = new BlockPos(FLUID_BARRIER_POS);
-        if (!hasSpawn)
+        //noinspection ConstantValue
+        if (!hasBedSpawn)
         {
             world.setSpawnPoint(spawnPos);
             player.setSpawnPoint(spawnPos, true);
@@ -210,7 +210,6 @@ public final class ModEvents
             player.connection.setPlayerLocation(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET, player.rotationYaw, player.rotationPitch);
         }
 
-        // Синхронизируем данные игрока после респавна
         PacketSyncPlayerData.sendToPlayer(player);
     }
 
@@ -304,7 +303,6 @@ public final class ModEvents
         File worldDir = world.getSaveHandler().getWorldDirectory();
         File iconFile = new File(worldDir, "icon.png");
 
-        // Если иконка уже есть - не перезаписываем
         if (iconFile.exists())
         {
             return;
@@ -324,7 +322,6 @@ public final class ModEvents
                 return;
             }
 
-            // Копируем файл
             Files.copy(input, iconFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             OneBlockUltima.getLogger().info("Icon created for world: {}", worldDir.getName());
         }
@@ -399,8 +396,7 @@ public final class ModEvents
             world.setSpawnPoint(spawnPos);
         }
 
-        player.setSpawnPoint(spawnPos, true);
-        player.setSpawnChunk(spawnPos, true, player.dimension);
+        player.getBedLocation(OVERWORLD_DIMENSION_ID);
 
         IOneBlockPlayerData playerData = OneBlockPlayerDataProvider.get(player);
         if (playerData != null)
