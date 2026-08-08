@@ -29,16 +29,16 @@ public final class CompressedBlockTints
 
     static
     {
-        FACTORS.put(ModBlocks.COMPRESSED_BEDROCK, new float[] { 0.7169F, 0.5214F, 0.3868F });
-        FACTORS.put(ModBlocks.COMPRESSED_REDSTONE_BLOCK, new float[] { 0.6763F, 0.4551F, 0.3001F, 0.1962F, 0.1237F });
-        FACTORS.put(ModBlocks.COMPRESSED_GOLD_BLOCK, new float[] { 0.6871F, 0.4705F, 0.3210F, 0.1475F });
-        FACTORS.put(ModBlocks.COMPRESSED_IRON_BLOCK, new float[] { 0.6881F, 0.4723F, 0.3227F, 0.2198F });
-        FACTORS.put(ModBlocks.COMPRESSED_DIAMOND_BLOCK, new float[] { 0.6867F, 0.4704F, 0.3210F, 0.2180F });
-        FACTORS.put(ModBlocks.COMPRESSED_COAL_BLOCK, new float[] { 0.6410F, 0.4106F, 0.2698F, 0.1407F });
-        FACTORS.put(ModBlocks.COMPRESSED_EMERALD_BLOCK, new float[] { 0.6856F, 0.4686F, 0.3191F, 0.2154F });
-        FACTORS.put(ModBlocks.COMPRESSED_LAPIS_BLOCK, new float[] { 0.6781F, 0.4566F, 0.3035F, 0.1962F, 0.1230F });
-        FACTORS.put(ModBlocks.COMPRESSED_END_STONE, new float[] { 0.6873F, 0.4710F, 0.3219F, 0.2173F });
-        FACTORS.put(ModBlocks.COMPRESSED_NETHERRACK, new float[] { 0.6747F, 0.4483F, 0.2931F, 0.1857F });
+        FACTORS.put(ModBlocks.COMPRESSED_BEDROCK, new float[] { 0.7578F, 0.5432F, 0.3951F, 0.2931F });
+        FACTORS.put(ModBlocks.COMPRESSED_REDSTONE_BLOCK, new float[] { 0.7244F, 0.4899F, 0.3297F, 0.2174F, 0.1421F, 0.0896F });
+        FACTORS.put(ModBlocks.COMPRESSED_GOLD_BLOCK, new float[] { 0.7290F, 0.5008F, 0.3430F, 0.2340F, 0.1075F });
+        FACTORS.put(ModBlocks.COMPRESSED_IRON_BLOCK, new float[] { 0.7285F, 0.5013F, 0.3441F, 0.2351F, 0.1602F });
+        FACTORS.put(ModBlocks.COMPRESSED_DIAMOND_BLOCK, new float[] { 0.7290F, 0.5005F, 0.3429F, 0.2340F, 0.1589F });
+        FACTORS.put(ModBlocks.COMPRESSED_COAL_BLOCK, new float[] { 0.6852F, 0.4392F, 0.2813F, 0.1849F, 0.0965F });
+        FACTORS.put(ModBlocks.COMPRESSED_EMERALD_BLOCK, new float[] { 0.7283F, 0.4994F, 0.3413F, 0.2325F, 0.1569F });
+        FACTORS.put(ModBlocks.COMPRESSED_LAPIS_BLOCK, new float[] { 0.7237F, 0.4907F, 0.3304F, 0.2196F, 0.1420F, 0.0890F });
+        FACTORS.put(ModBlocks.COMPRESSED_END_STONE, new float[] { 0.7290F, 0.5011F, 0.3433F, 0.2347F, 0.1584F });
+        FACTORS.put(ModBlocks.COMPRESSED_NETHERRACK, new float[] { 0.7206F, 0.4862F, 0.3231F, 0.2113F, 0.1338F });
     }
 
     private CompressedBlockTints()
@@ -83,11 +83,11 @@ public final class CompressedBlockTints
 
     private static int tintFor(int level, float[] factors)
     {
-        if (level <= 0 || factors == null || level > factors.length)
+        if (level < 0 || factors == null || level >= factors.length)
         {
             return 0xFFFFFFFF;
         }
-        int t = Math.round(255.0F * factors[level - 1]);
+        int t = Math.round(255.0F * factors[level]);
         return 0xFF000000 | (t << 16) | (t << 8) | t;
     }
 }

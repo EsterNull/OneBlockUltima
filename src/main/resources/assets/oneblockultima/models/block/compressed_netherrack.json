@@ -1,6 +1,6 @@
 {
   "parent": "oneblockultima:block/cube_all_tinted",
   "textures": {
-    "all": "oneblockultima:blocks/compressed_netherrack_1x"
+    "all": "minecraft:blocks/netherrack"
   }
 }
