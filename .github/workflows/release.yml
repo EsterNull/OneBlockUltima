@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - 'forge_1.7.10'
+      - 'forge_1.12.x'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read mod version and java version
+        id: version
+        run: |
+          VERSION=$(grep "^version = " build.gradle | sed "s/version = '\(.*\)'/\1/" | tr -d ' \r\n')
+          JAVA_VER=$(grep "^ci.java.version=" gradle.properties | cut -d'=' -f2 | tr -d ' \r\n')
+          echo "mod_version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "java_version=$JAVA_VER" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve MC version keys
+        id: mc
+        run: |
+          if [ "${{ github.ref_name }}" = "forge_1.7.10" ]; then
+            echo "keys=1.7.10" >> "$GITHUB_OUTPUT"
+            echo "keys_json=[\"1.7.10\"]" >> "$GITHUB_OUTPUT"
+          else
+            echo "keys=1.12 1.12.1 1.12.2" >> "$GITHUB_OUTPUT"
+            echo "keys_json=[\"1.12\", \"1.12.1\", \"1.12.2\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check versions.json
+        id: check
+        run: |
+          VERSION="${{ steps.version.outputs.mod_version }}"
+          RESPONSE=$(curl -sf "https://raw.githubusercontent.com/XZSt4nce/OneBlockUltima/main/versions.json" || echo '{}')
+          EXISTS=$(echo "$RESPONSE" | jq --arg v "$VERSION" --argjson keys '${{ steps.mc.outputs.keys_json }}' '[ $keys[] as $k | .[$k] // {} | has($v) ] | any')
+          echo "exists=$EXISTS" >> "$GITHUB_OUTPUT"
+          echo "Version $VERSION exists in versions.json for ${{ github.ref_name }}: $EXISTS"
+
+      - name: Get merged PR info
+        if: steps.check.outputs.exists == 'false'
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR=$(gh pr list --base "${{ github.ref_name }}" --state merged --limit 1 --json number,title,body 2>/dev/null || echo '[]')
+          if [ "$(echo "$PR" | jq -r 'length')" = "0" ]; then
+            echo "No merged PR found, using latest commit message"
+            echo "title=$(git log -1 --pretty=%s)" >> "$GITHUB_OUTPUT"
+            git log -1 --pretty=%B > /tmp/pr_body.md
+          else
+            echo "number=$(echo "$PR" | jq -r '.[0].number')" >> "$GITHUB_OUTPUT"
+            echo "title=$(echo "$PR" | jq -r '.[0].title')" >> "$GITHUB_OUTPUT"
+            echo "$PR" | jq -r '.[0].body' > /tmp/pr_body.md
+          fi
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ steps.version.outputs.java_version }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: false
+          gradle-home-cache-includes: |
+            caches
+            wrapper
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Build mod
+        if: steps.check.outputs.exists == 'false'
+        run: ./gradlew build -x test -x check
+
+      - name: Find jar
+        if: steps.check.outputs.exists == 'false'
+        id: jar
+        run: |
+          JAR=$(find build/libs -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -1)
+          echo "path=$JAR" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}
+          name: ${{ steps.pr.outputs.title }}
+          body_path: /tmp/pr_body.md
+          target_commitish: ${{ github.ref_name }}
+          files: ${{ steps.jar.outputs.path }}
+          draft: false
+          prerelease: false
+
+      - name: Update versions.json on main
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_URL="https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}"
+          git fetch origin main --depth=1
+          git show origin/main:versions.json > /tmp/versions.json
+          python3 .github/scripts/update_versions.py \
+            /tmp/versions.json \
+            /tmp/pr_body.md \
+            "${{ steps.version.outputs.mod_version }}" \
+            "$RELEASE_URL" \
+            ${{ steps.mc.outputs.keys }}
+
+      - name: Commit versions.json to main
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b release-update origin/main
+          cp /tmp/versions.json versions.json
+          git add versions.json
+          git commit -m "Update versions.json: ${{ github.ref_name }} ${{ steps.version.outputs.mod_version }}"
+          git push origin release-update:main
