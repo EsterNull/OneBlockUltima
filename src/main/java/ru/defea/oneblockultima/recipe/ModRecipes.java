@@ -12,6 +12,8 @@ import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.BlockCompressedBase;
 import ru.defea.oneblockultima.block.ModBlocks;
 
+import java.util.Arrays;
+
 @Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
 public final class ModRecipes
 {
@@ -71,19 +73,13 @@ public final class ModRecipes
         Object[] ingredients = new Object[9];
         if (level == 1)
         {
-            Object base = mat.baseOre != null ? (Object) mat.baseOre : mat.baseItem;
-            for (int i = 0; i < ingredients.length; i++)
-            {
-                ingredients[i] = base;
-            }
+            Object base = mat.baseOre != null ? mat.baseOre : mat.baseItem;
+            Arrays.fill(ingredients, base);
         }
         else
         {
             String ore = "compressed" + (level - 1) + "x" + mat.capName;
-            for (int i = 0; i < ingredients.length; i++)
-            {
-                ingredients[i] = ore;
-            }
+            Arrays.fill(ingredients, ore);
         }
         ShapelessOreRecipe recipe = new ShapelessOreRecipe(null, result, ingredients);
         recipe.setRegistryName(new ResourceLocation(OneBlockUltima.MODID, "compressed_" + mat.baseName + "_" + level + "x"));
