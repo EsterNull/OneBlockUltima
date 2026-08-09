@@ -103,15 +103,7 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Print versions.json entry
+      - name: Print release URL
         if: steps.check.outputs.exists == 'false'
         run: |
-          RELEASE_URL="https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}"
-          echo "Release URL: $RELEASE_URL"
-          echo "=== versions.json entry (add to main manually) ==="
-          python3 .github/scripts/update_versions.py \
-            --print \
-            /tmp/pr_body.md \
-            "${{ steps.version.outputs.mod_version }}" \
-            "$RELEASE_URL" \
-            ${{ steps.mc.outputs.keys }}
+          echo "Release URL: https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}"
