@@ -103,30 +103,15 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Update versions.json on main
+      - name: Print versions.json entry
         if: steps.check.outputs.exists == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_URL="https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}"
-          git fetch origin main --depth=1
-          git show origin/main:versions.json > /tmp/versions.json
+          echo "Release URL: $RELEASE_URL"
+          echo "=== versions.json entry (add to main manually) ==="
           python3 .github/scripts/update_versions.py \
-            /tmp/versions.json \
+            --print \
             /tmp/pr_body.md \
             "${{ steps.version.outputs.mod_version }}" \
             "$RELEASE_URL" \
             ${{ steps.mc.outputs.keys }}
-
-      - name: Commit versions.json to main
-        if: steps.check.outputs.exists == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b release-update origin/main
-          cp /tmp/versions.json versions.json
-          git add versions.json
-          git commit -m "Update versions.json: ${{ github.ref_name }} ${{ steps.version.outputs.mod_version }}"
-          git push origin release-update:main
