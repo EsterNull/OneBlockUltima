@@ -29,6 +29,7 @@ The mod is compatible with other mods, and it already has basic support:
     <li><a href="https://tlmods.org/ru/mods/oneblockultima/">TLauncher</a>
     <li><a href="https://minecraft-inside.ru/194280/">Minecraft Inside</a>
     <li><a href="https://obmodin.com/curseforge/1614865/oneblockultima">Obmodin</a>
+    <li><a href="https://foxygame.net/minecraft/mods/oneblockultima-vyzhivanie-na-odnom-bloke-v-minecraft-s-progressom">FoxyGame</a>
 </li>
 </ul>
 
@@ -44,6 +45,7 @@ The mod is compatible with other mods, and it already has basic support:
 <img src="images/eng/world_type.png" alt="World type" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/one_block.png" alt="One block" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/sky_island.png" alt="Sky island" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/eng/guide_book.png" alt="Guide book" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/eng/classic.png" alt="Classic sec" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/eng/plain.png" alt="Plain set " style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/eng/settings.png" alt="Settings" style="width: 100%; max-width: 1280px; height: auto;">
@@ -52,6 +54,9 @@ The mod is compatible with other mods, and it already has basic support:
 <img src="images/eng/add_block.png" alt="Block adding" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/eng/add_mob.png" alt="Mob adding" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/eng/unlock_conditions.png" alt="Unlock conditions" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/eng/economy.png" alt="Economy" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/eng/ui_settings.png" alt="UI settings" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/eng/misc_settings.png" alt="Misc settings" style="width: 100%; max-width: 1280px; height: auto;">
 
 <h1>For developers</h1>
 The latest versions of the mod for specific versions of Minecraft are separated into separate branches

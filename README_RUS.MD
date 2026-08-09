@@ -31,6 +31,7 @@
     <li><a href="https://tlmods.org/ru/mods/oneblockultima/">TLauncher</a>
     <li><a href="https://minecraft-inside.ru/194280/">Minecraft Inside</a>
     <li><a href="https://obmodin.com/curseforge/1614865/oneblockultima">Obmodin</a>
+    <li><a href="https://foxygame.net/minecraft/mods/oneblockultima-vyzhivanie-na-odnom-bloke-v-minecraft-s-progressom">FoxyGame</a>
 </li>
 </ul>
 
@@ -46,6 +47,7 @@
 <img src="images/rus/world_type.png" alt="Тип мира" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/one_block.png" alt="Один блок" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/sky_island.png" alt="Остров в небе" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/rus/guide_book.png" alt="Руководство" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/rus/classic.png" alt="Классический набор" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/rus/plain.png" alt="Набор Равнина " style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/rus/settings.png" alt="Настройки" style="width: 100%; max-width: 1280px; height: auto;">
@@ -54,6 +56,9 @@
 <img src="images/rus/add_block.png" alt="Добавление блока" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/rus/add_mob.png" alt="Добавление моба" style="width: 100%; max-width: 1280px; height: auto;">
 <img src="images/rus/unlock_conditions.png" alt="Условия разблокировки" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/rus/economy.png" alt="Экономика" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/rus/ui_settings.png" alt="Настройки пользовательского интерфейса" style="width: 100%; max-width: 1280px; height: auto;">
+<img src="images/rus/misc_settings.png" alt="Разные настройки" style="width: 100%; max-width: 1280px; height: auto;">
 
 <h1>Для разработчиков</h1>
 Последние версии мода для конкретных версий майнкрафта выделены в отдельные ветки
