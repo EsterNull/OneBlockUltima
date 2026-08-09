@@ -418,6 +418,13 @@ public final class ModEvents
 
     private static void giveGuideBookOnFirstJoin(EntityPlayerMP player)
     {
+        if (player == null || player.world == null
+                || player.world.provider.getDimension() != OVERWORLD_DIMENSION_ID
+                || player.world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        {
+            return;
+        }
+
         NBTTagCompound playerData = player.getEntityData();
         if (playerData.getBoolean(NBT_GUIDE_BOOK_GIVEN))
         {
