@@ -501,6 +501,19 @@ public class GuiBlockPrices extends GuiScreen
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException
     {
+        if (keyCode == Keyboard.KEY_ESCAPE)
+        {
+            if (currentView == VIEW_PRICES)
+            {
+                Keyboard.enableRepeatEvents(false);
+                mc.displayGuiScreen(parent);
+            }
+            else
+            {
+                changeView(VIEW_PRICES);
+            }
+            return;
+        }
         if (!factory.keyTyped(typedChar, keyCode))
         {
             super.keyTyped(typedChar, keyCode);
@@ -553,7 +566,16 @@ public class GuiBlockPrices extends GuiScreen
         boolean statusActive = statusBar != null && statusBar.isActive();
         if (statusActive != statusBarActive)
         {
-            buildView();
+            statusBarActive = statusActive;
+            if (statusBar != null)
+            {
+                statusBar.visible(statusActive);
+            }
+            if (factory != null)
+            {
+                buttonList.clear();
+                factory.build(buttonList, fontRenderer);
+            }
             return;
         }
 

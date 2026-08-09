@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
@@ -225,6 +226,17 @@ public class GuiUiSettings extends GuiScreen
             isShowBalance = !isShowBalance;
             showBalanceToggle.toggle();
         }
+    }
+
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    {
+        if (keyCode == Keyboard.KEY_ESCAPE)
+        {
+            mc.displayGuiScreen(parent);
+            return;
+        }
+        super.keyTyped(typedChar, keyCode);
     }
 
     @Override

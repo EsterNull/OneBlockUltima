@@ -186,6 +186,17 @@ public class GuiMiscSettings extends GuiScreen {
     }
 
     @Override
+    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    {
+        if (keyCode == Keyboard.KEY_ESCAPE)
+        {
+            mc.displayGuiScreen(parent);
+            return;
+        }
+        super.keyTyped(typedChar, keyCode);
+    }
+
+    @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
         super.mouseClicked(mouseX, mouseY, mouseButton);

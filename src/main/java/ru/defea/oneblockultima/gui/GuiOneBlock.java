@@ -1542,18 +1542,26 @@ public class GuiOneBlock extends GuiContainer
 
     private void drawUnlockConditions(BlockSetConfig.BlockSetDefinition set, int x, int y, int width, int height, TileEntityOneBlockGenerator generator)
     {
-        conditionsScrollbar = null;
         if (set == null || set.unlockConditions == null || set.unlockConditions.conditions == null ||
                 set.unlockConditions.conditions.isEmpty())
         {
+            conditionsScrollbar = null;
             return;
         }
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(container.getPlayer());
-        if (data == null) return;
+        if (data == null)
+        {
+            conditionsScrollbar = null;
+            return;
+        }
 
         int currentLevel = generator == null ? 0 : generator.getSetLevel(set.id);
-        if (currentLevel > 0) return;
+        if (currentLevel > 0)
+        {
+            conditionsScrollbar = null;
+            return;
+        }
 
         int columnWidth = 0;
         for (BlockSetConfig.UnlockConditionDefinition condition : set.unlockConditions.conditions)
@@ -1578,7 +1586,11 @@ public class GuiOneBlock extends GuiContainer
         int areaTop = y + fontRenderer.FONT_HEIGHT + 2;
         int areaBottom = y + height;
         int areaHeight = areaBottom - areaTop;
-        if (areaHeight < lineSpacing) return;
+        if (areaHeight < lineSpacing)
+        {
+            conditionsScrollbar = null;
+            return;
+        }
 
         List<BlockSetConfig.UnlockConditionDefinition> conditions = set.unlockConditions.conditions;
         int visibleRows = areaHeight / lineSpacing;

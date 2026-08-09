@@ -5,6 +5,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -1295,8 +1296,46 @@ public final class ModEvents
                 ru.defea.oneblockultima.util.BlockUtil.applyNbtToEntity(entity, mobEntry.nbtTags);
             }
 
+            // Randomize slime size (health scales with size automatically)
+            if (entity instanceof EntitySlime)
+            {
+                EntitySlime slime = (EntitySlime) entity;
+                int size = 1 + world.rand.nextInt(4);
+                java.lang.reflect.Method setSlimeSize = findMethodByName(EntitySlime.class,
+                        new Class<?>[] { int.class, boolean.class }, "setSlimeSize", "func_70799_a");
+                if (setSlimeSize != null)
+                {
+                    try
+                    {
+                        setSlimeSize.invoke(slime, size, true);
+                    }
+                    catch (Exception e)
+                    {
+                        OneBlockUltima.getLogger().error("[Mob Spawn] Failed to randomize slime size", e);
+                    }
+                }
+                OneBlockUltima.getLogger().info("[Mob Spawn] Randomized slime size to {} (health {})", size, slime.getMaxHealth());
+            }
+
             world.spawnEntity(entity);
         }
+    }
+
+    private static java.lang.reflect.Method findMethodByName(@SuppressWarnings("SameParameterValue") Class<?> clazz, Class<?>[] paramTypes, String... names)
+    {
+        for (String name : names)
+        {
+            try
+            {
+                java.lang.reflect.Method method = clazz.getDeclaredMethod(name, paramTypes);
+                method.setAccessible(true);
+                return method;
+            }
+            catch (NoSuchMethodException ignored)
+            {
+            }
+        }
+        return null;
     }
 
     @SubscribeEvent
