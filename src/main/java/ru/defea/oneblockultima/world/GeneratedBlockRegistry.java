@@ -8,14 +8,18 @@ import net.minecraft.world.storage.WorldSavedData;
 import net.minecraftforge.common.util.Constants;
 import ru.defea.oneblockultima.OneBlockUltima;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
 public class GeneratedBlockRegistry extends WorldSavedData
 {
     private static final String DATA_NAME = OneBlockUltima.MODID + "_generated_blocks";
+    private static final long DIRTY_FLUSH_INTERVAL_MS = 2000L;
 
-    private final Map<BlockPos, GeneratedBlockEntry> entries = new HashMap<BlockPos, GeneratedBlockEntry>();
+    private final Map<BlockPos, GeneratedBlockEntry> entries = new HashMap<>();
+    private long lastDirtyMs = 0L;
+    private boolean pendingDirty = false;
 
     public GeneratedBlockRegistry()
     {
@@ -46,7 +50,7 @@ public class GeneratedBlockRegistry extends WorldSavedData
     public void markGenerated(BlockPos pos, BlockPos generatorPos, String setId, int currency, int level, String blockRegistry, int blockMeta)
     {
         entries.put(pos, new GeneratedBlockEntry(generatorPos, setId, currency, level, blockRegistry, blockMeta));
-        markDirty();
+        markDirtyThrottled();
     }
 
     public boolean isGenerated(BlockPos pos)
@@ -69,6 +73,31 @@ public class GeneratedBlockRegistry extends WorldSavedData
     {
         if (entries.remove(pos) != null)
         {
+            markDirtyThrottled();
+        }
+    }
+
+    /**
+     * Throttles write frequency: a heavy NBT dump of the whole registry runs at most once every 2 seconds.
+     * A guaranteed flush on world unload is performed via {@link #flushPendingDirty()}.
+     */
+    private void markDirtyThrottled()
+    {
+        pendingDirty = true;
+        long now = System.currentTimeMillis();
+        if (now - lastDirtyMs >= DIRTY_FLUSH_INTERVAL_MS)
+        {
+            lastDirtyMs = now;
+            pendingDirty = false;
+            markDirty();
+        }
+    }
+
+    public void flushPendingDirty()
+    {
+        if (pendingDirty)
+        {
+            pendingDirty = false;
             markDirty();
         }
     }
@@ -106,7 +135,8 @@ public class GeneratedBlockRegistry extends WorldSavedData
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound)
+    @Nonnull
+    public NBTTagCompound writeToNBT(@Nonnull NBTTagCompound compound)
     {
         NBTTagList list = new NBTTagList();
 

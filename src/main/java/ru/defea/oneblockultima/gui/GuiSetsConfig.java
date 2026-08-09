@@ -1,41 +1,33 @@
 package ru.defea.oneblockultima.gui;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.RenderItem;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
+import ru.defea.oneblockultima.gui.layout.*;
 import ru.defea.oneblockultima.util.ModelUtil;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+
+import static net.minecraftforge.common.util.Constants.NBT.*;
+import static ru.defea.oneblockultima.Constants.*;
+import static ru.defea.oneblockultima.gui.containers.ContainerSetsConfig.*;
 
 public class GuiSetsConfig extends GuiScreen
 {
@@ -64,1213 +56,69 @@ public class GuiSetsConfig extends GuiScreen
     private static final int BUTTON_EDIT_UNLOCK_CONDITIONS = 23;
     private static final int BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE = 24;
     private static final int BUTTON_UNLOCK_CONDITIONS_CYCLE_SET = 25;
-
-    private static final ResourceLocation COIN_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png");
-
-    private static final int VIEW_SETS = 0;
-    private static final int VIEW_SET_DETAILS = 1;
-    private static final int VIEW_ADD_ENTRY = 2;
-    private static final int VIEW_CONFIRM_DELETE = 3;
-    private static final int VIEW_EDIT_CURRENCY = 4;
-    private static final int VIEW_REQUIRED_MODS_EDITOR = 5;
-    private static final int VIEW_REQUIRED_MODS_ADD = 6;
-    private static final int VIEW_UNLOCK_CONDITIONS = 7;
-
-    private static class BlockDisplayEntry
-    {
-        private final int blockIndex;
-        private final int meta;
-
-        private BlockDisplayEntry(int blockIndex, int meta)
-        {
-            this.blockIndex = blockIndex;
-            this.meta = meta;
-        }
-    }
+    private static final int BUTTON_EDIT_NBT = 26;
+    private static final int BUTTON_NBT_ADD = 27;
+    private static final int BUTTON_NBT_BACK = 28;
+    private static final int BUTTON_NBT_DONE = 29;
+    private static final int BUTTON_NBT_CANCEL = 30;
+    private static final int BUTTON_NBT_CYCLE_TYPE = 31;
+    private static final int BUTTON_NBT_CYCLE_ELEM_TYPE = 32;
+    private static final int BUTTON_DELETE_ENTRY = 33;
+    private static final int ENTRY_HEIGHT = 22;
+    private static final int NBT_ROW_PADDING = 4;
+    private static final int NBT_ROW_BUTTON_HEIGHT = 14;
+    private static final int NBT_ROW_TRASH_WIDTH = 18;
+    private static final int NBT_ROW_BUTTON_TEXT_PADDING = 10;
+    private static final int NBT_ROW_TEXT_TOP = 2;
+    private static final int NBT_ROW_TEXT_LINE_GAP = 1;
+    private static final int NBT_ROW_TRUNCATION_SLACK = 30;
+    private static final int ROW_HEIGHT = 20;
+    private static final int PREVIEW_PADDING = 2;
 
     private final GuiScreen parent;
-    private int currentView = VIEW_SETS;
-    private int selectedSetIndex = -1;
-    private int selectedBlockIndex = -1;
-    private int selectedBlockMeta = -1;
-    private int selectedMobIndex = -1;
-    private int scrollOffset = 0;
-    private final int scrollWidth = 4;
-    private int entryScrollOffset = 0;
+    private final ContainerSetsConfig container;
+    private ViewFactory factory;
+    private ViewFactory rootFactory;
+    private ViewSwitcherElement switcher;
+
+    private TextFieldElement searchFieldElement;
+    private TextFieldElement setNameElement;
+    private TextFieldElement setIdElement;
+    private TextFieldElement unlockCostElement;
+    private TextFieldElement entrySearchElement;
+    private TextFieldElement editLevelElement;
+    private TextFieldElement editChanceElement;
+    private TextFieldElement unlockLevelElement;
+    private TextFieldElement unlockCountElement;
+    private TextFieldElement nbtKeyElement;
+    private TextFieldElement nbtValueElement;
+
+    private ScrollableListElement setsList;
+    private TwoColumnListElement entriesList;
+    private ScrollableListElement searchResultsList;
+    private ScrollableListElement requiredModsList;
+    private ScrollableListElement addModsList;
+    private ScrollableListElement conditionsList;
+    private ScrollableListElement nbtList;
+
+    private int setsScrollOffset = 0;
+    private int entriesScrollOffset = 0;
     private int searchScrollOffset = 0;
-    private int deleteTargetIndex = -1;
-    private int editingCurrencyIndex = -1;
-    private int editingSetSourceIndex = -1;
-    private EntryType editingEntryType = EntryType.BLOCK;
-    private int requiredModsScrollOffset = 0;
-    private final int innerPadding = 2;
-    private static Map<String, Map<String, String>> staticSetLocalizedNames = new HashMap<>();
+    private int modsScrollOffset = 0;
+    private int addModsScrollOffset = 0;
+    private int conditionsScrollOffset = 0;
+    private int nbtScrollOffset = 0;
 
-    private BlockSetConfig config;
-    private List<BlockSetConfig.BlockSetDefinition> sets = new ArrayList<>();
-    private List<BlockSetConfig.BlockSetDefinition> filteredSets = new ArrayList<>();
-    private List<SearchResult> searchResults = new ArrayList<>();
-
-    private GuiTextField searchField;
-    private GuiTextField setNameField;
-    private GuiTextField setIdField;
-    private GuiTextField unlockCostField;
-    private GuiTextField entrySearchField;
-    private GuiTextField currencyField;
-    private GuiTextField addLevelField;
-    private GuiTextField addChanceField;
-    private GuiTextField requiredModsField;
-    private GuiTextField editCurrencyField;
-    private GuiTextField editLevelField;
-    private GuiTextField editChanceField;
-
-    private GuiButton addSetButton;
-    private GuiButton saveButton;
-    private GuiButton backButton;
-    private GuiButton addBlockButton;
-    private GuiButton addMobButton;
-    private GuiButton removeEntryButton;
-    private GuiButton confirmDeleteButton;
-    private GuiButton cancelDeleteButton;
-    private GuiButton resetButton;
-    private GuiButton saveCurrencyButton;
-    private GuiButton cancelCurrencyButton;
-    private GuiButton editRequiredModsButton;
-    private GuiButton requiredModsToggleButton;
-    private GuiButton requiredModsBackButton;
-    private GuiButton requiredModsSaveButton;
-    private GuiButton requiredModsDeleteButton;
-    private GuiButton requiredModsAddButton;
-    private GuiButton editUnlockConditionsButton;
-    private GuiButton unlockConditionsToggleButton;
-    private GuiButton unlockConditionsBackButton;
-    private GuiButton unlockConditionsSaveButton;
-    private GuiButton unlockConditionsAddButton;
-    private GuiButton unlockConditionsDeleteButton;
-
-    private String statusMessage = "";
-    private int statusTimer = 0;
-    private BlockSetConfig.BlockSetDefinition editingSet = null;
-    private boolean isNewSet = false;
     private boolean suppressMouseUntilRelease = false;
     private boolean suppressNextMouseClick = false;
+    private String pendingAddEntrySearchText = "";
 
-    private String savedNewSetName = "";
-    private String savedNewSetId = "";
-    private String savedNewSetCost = "0";
-    private String savedNewSetMods = "";
-
-    private String searchQuery = "";
-    private List<String> requiredModsEditorMods = new ArrayList<>();
-    private BlockSetConfig.SetRequiredModsDefinition.TYPE requiredModsEditorType = BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL;
-    private boolean requiredModsEditorInitialized = false;
-    private final Set<String> selectedRequiredModsForRemoval = new LinkedHashSet<>();
-    private final Set<String> selectedRequiredModsToAdd = new LinkedHashSet<>();
-
-    private String unlockConditionsEditorMode = "any";
-    private final List<BlockSetConfig.UnlockConditionDefinition> unlockConditionsEditorConditions = new ArrayList<>();
-    private int selectedUnlockConditionIndex = -1;
-    private int unlockConditionsScrollOffset = 0;
-    private GuiTextField unlockConditionsLevelField;
-    private GuiTextField unlockConditionsCountField;
-    private List<BlockSetConfig.BlockSetDefinition> availableSetsForConditions = new ArrayList<>();
-    private String newConditionTypeToAdd = "broken_blocks_total";
-    private String newConditionSetId = "";
-    private GuiButton unlockConditionsCycleTypeButton;
-    private GuiButton unlockConditionsCycleSetButton;
-
-    private Map<String, Map<String, String>> setLocalizedNames = new HashMap<>();
-
-    private final int pad = 8;
-    private int textHeight;
-    private final int btnHeight = 20;
-    private int gap = 6;
-    private int formMargin;
-    private int formWidth;
-    private int formLabelWidth;
-    private int formFieldX;
-    private int formFieldWidth;
-    private int iconSize;
-    private int entryHeight;
-
-    private enum SearchType { BLOCKS, MOBS }
-    private enum EntryType { BLOCK, MOB }
-
-    private SearchType currentSearchType = SearchType.BLOCKS;
-    private EntryType currentEntryType = EntryType.BLOCK;
-
-    private static class RequiredModEntry
-    {
-        private final String modId;
-        private final String displayName;
-
-        private RequiredModEntry(String modId, String displayName)
-        {
-            this.modId = modId;
-            this.displayName = displayName;
-        }
-    }
-
-    private static class SearchResult
-    {
-        String registry;
-        String name;
-        String modId;
-        ItemStack stack;
-        Class<?> entityClass;
-        boolean isMob;
-        boolean isFluid;
-        Fluid fluid;
-
-        public SearchResult(String registry, String name, String modId, ItemStack stack)
-        {
-            this.registry = registry;
-            this.name = name;
-            this.modId = modId;
-            this.stack = stack;
-            this.isMob = false;
-            this.isFluid = false;
-            this.entityClass = null;
-            this.fluid = null;
-        }
-
-        public SearchResult(String registry, String name, String modId, Class<?> entityClass)
-        {
-            this.registry = registry;
-            this.name = name;
-            this.modId = modId;
-            this.entityClass = entityClass;
-            this.isMob = true;
-            this.isFluid = false;
-            this.stack = ItemStack.EMPTY;
-            this.fluid = null;
-        }
-
-        public SearchResult(String registry, String name, String modId, Fluid fluid)
-        {
-            this.registry = registry;
-            this.name = name;
-            this.modId = modId;
-            this.isFluid = true;
-            this.isMob = false;
-            this.stack = ItemStack.EMPTY;
-            this.entityClass = null;
-            this.fluid = fluid;
-        }
-    }
-
-    private void changeView(int view)
-    {
-        if (currentView != view)
-        {
-            if ((currentView == VIEW_REQUIRED_MODS_EDITOR || currentView == VIEW_REQUIRED_MODS_ADD)
-                    && view != VIEW_REQUIRED_MODS_EDITOR && view != VIEW_REQUIRED_MODS_ADD)
-            {
-                requiredModsEditorInitialized = false;
-            }
-            currentView = view;
-            clearAllTextFieldFocus();
-            suppressMouseUntilRelease = true;
-            suppressNextMouseClick = true;
-            initGui();
-        }
-    }
-
-    private void clearAllTextFieldFocus()
-    {
-        if (searchField != null) searchField.setFocused(false);
-        if (setNameField != null) setNameField.setFocused(false);
-        if (setIdField != null) setIdField.setFocused(false);
-        if (unlockCostField != null) unlockCostField.setFocused(false);
-        if (requiredModsField != null) requiredModsField.setFocused(false);
-        if (entrySearchField != null) entrySearchField.setFocused(false);
-        if (currencyField != null) currencyField.setFocused(false);
-        if (addLevelField != null) addLevelField.setFocused(false);
-        if (addChanceField != null) addChanceField.setFocused(false);
-        if (editCurrencyField != null) editCurrencyField.setFocused(false);
-        if (editLevelField != null) editLevelField.setFocused(false);
-        if (editChanceField != null) editChanceField.setFocused(false);
-        if (unlockConditionsLevelField != null) unlockConditionsLevelField.setFocused(false);
-        if (unlockConditionsCountField != null) unlockConditionsCountField.setFocused(false);
-    }
-
-    private void reloadSetsFromConfig()
-    {
-        BlockSetConfig.reload();
-        config = BlockSetConfig.get();
-        sets.clear();
-        sets.addAll(config != null ? config.getSets() : Collections.emptyList());
-        updateFilteredSets();
-    }
-
-    private void discardEditingSetChanges()
-    {
-        editingSet = null;
-        isNewSet = false;
-        editingSetSourceIndex = -1;
-        selectedBlockIndex = -1;
-        selectedBlockMeta = -1;
-        selectedMobIndex = -1;
-        editingCurrencyIndex = -1;
-        requiredModsEditorInitialized = false;
-        reloadSetsFromConfig();
-    }
-
-    private List<BlockDisplayEntry> buildBlockDisplayEntries()
-    {
-        List<BlockDisplayEntry> entries = new ArrayList<>();
-        if (editingSet == null || editingSet.blocks == null)
-        {
-            return entries;
-        }
-
-        for (int i = 0; i < editingSet.blocks.size(); i++)
-        {
-            BlockSetConfig.BlockElementDefinition block = editingSet.blocks.get(i);
-            if (block == null)
-            {
-                continue;
-            }
-            for (int meta : block.getMetaValues())
-            {
-                entries.add(new BlockDisplayEntry(i, meta));
-            }
-        }
-        return entries;
-    }
-
-    private Set<String> getExistingBlockRegistries()
-    {
-        Set<String> registries = new HashSet<>();
-        if (editingSet != null && editingSet.blocks != null)
-        {
-            for (BlockSetConfig.BlockElementDefinition block : editingSet.blocks)
-            {
-                if (block != null && block.registry != null && !block.registry.isEmpty())
-                {
-                    List<Integer> metaValues = block.getMetaValues();
-                    if (metaValues.isEmpty())
-                    {
-                        registries.add(block.registry);
-                    }
-                    else
-                    {
-                        for (int m : metaValues)
-                        {
-                            registries.add(block.registry + ":" + m);
-                        }
-                    }
-                }
-            }
-        }
-        return registries;
-    }
-
-    private Set<String> getExistingMobRegistries()
-    {
-        Set<String> registries = new HashSet<>();
-        if (editingSet != null && editingSet.mobs != null)
-        {
-            for (BlockSetConfig.MobElementDefinition mob : editingSet.mobs)
-            {
-                if (mob != null && mob.registry != null && !mob.registry.isEmpty())
-                {
-                    registries.add(mob.registry);
-                }
-            }
-        }
-        return registries;
-    }
-
-    private List<Integer> collectMetasForRegistry(String registry)
-    {
-        List<Integer> metas = new ArrayList<>();
-        try
-        {
-            net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
-            if (block != null)
-            {
-                if (getFluidForRegistry(registry) != null)
-                {
-                    return Collections.singletonList(0);
-                }
-
-                Item item = Item.getItemFromBlock(block);
-                if (item != null && item != Items.AIR)
-                {
-                    NonNullList<ItemStack> subItems = NonNullList.create();
-                    item.getSubItems(CreativeTabs.SEARCH, subItems);
-                    for (ItemStack stack : subItems)
-                    {
-                        if (!stack.isEmpty() && stack.getItem() == item)
-                        {
-                            int damage = stack.getMetadata();
-                            if (!metas.contains(damage))
-                            {
-                                metas.add(damage);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ignored)
-        {
-        }
-
-        if (metas.isEmpty())
-        {
-            metas.add(0);
-        }
-        metas.sort(Integer::compareTo);
-        return metas;
-    }
-
-    private int parseNonNegativeInt(String value, int fallback)
-    {
-        if (value == null)
-        {
-            return fallback;
-        }
-        try
-        {
-            return Math.max(0, Integer.parseInt(value.trim()));
-        }
-        catch (NumberFormatException ignored)
-        {
-            return fallback;
-        }
-    }
-
-    private int parsePositiveInt(String value, int fallback)
-    {
-        if (value == null)
-        {
-            return fallback;
-        }
-        try
-        {
-            return Math.max(1, Integer.parseInt(value.trim()));
-        }
-        catch (NumberFormatException ignored)
-        {
-            return fallback;
-        }
-    }
-
-    private void applyMetaListToBlock(BlockSetConfig.BlockElementDefinition block, List<Integer> metas)
-    {
-        if (block == null)
-        {
-            return;
-        }
-
-        if (metas == null || metas.isEmpty())
-        {
-            block.metas = new ArrayList<>();
-            block.meta = 0;
-            return;
-        }
-
-        if (metas.size() == 1)
-        {
-            block.metas = new ArrayList<>();
-            block.meta = metas.get(0);
-            return;
-        }
-
-        block.metas = new ArrayList<>(metas);
-        block.meta = metas.get(0);
-    }
-
-    private String getRequiredModsEditorTypeLabel()
-    {
-        return requiredModsEditorType == BlockSetConfig.SetRequiredModsDefinition.TYPE.ANY
-                ? I18n.format("gui.oneblockultima.config.any")
-                : I18n.format("gui.oneblockultima.config.all");
-    }
-
-    private String getRequiredModsButtonLabel(BlockSetConfig.SetRequiredModsDefinition requiredMods)
-    {
-        if (requiredMods == null || requiredMods.getMods().isEmpty())
-        {
-            return I18n.format("gui.oneblockultima.config.required_mods_edit");
-        }
-
-        String typeLabel = requiredMods.getType() == BlockSetConfig.SetRequiredModsDefinition.TYPE.ANY
-                ? I18n.format("gui.oneblockultima.config.any")
-                : I18n.format("gui.oneblockultima.config.all");
-        return typeLabel + " (" + requiredMods.getMods().size() + ")";
-    }
-
-    private String getUnlockConditionsButtonLabel(BlockSetConfig.UnlockConditionGroup conditions)
-    {
-        if (conditions == null || conditions.conditions == null || conditions.conditions.isEmpty())
-        {
-            return I18n.format("gui.oneblockultima.config.unlock_conditions_edit");
-        }
-
-        String typeLabel = "any".equalsIgnoreCase(conditions.mode)
-                ? I18n.format("gui.oneblockultima.config.any")
-                : I18n.format("gui.oneblockultima.config.all");
-        return typeLabel + " (" + conditions.conditions.size() + ")";
-    }
-
-    private void applyRequiredModsFromFields()
-    {
-        if (editingSet == null)
-        {
-            return;
-        }
-        if (editingSet.requiredMods == null)
-        {
-            editingSet.requiredMods = new BlockSetConfig.SetRequiredModsDefinition();
-        }
-    }
-
-    private List<String> getAvailableModIds()
-    {
-        List<String> ids = new ArrayList<>();
-        if (Loader.instance() != null && Loader.instance().getIndexedModList() != null)
-        {
-            ids.addAll(Loader.instance().getIndexedModList().keySet());
-        }
-        ids.sort(String.CASE_INSENSITIVE_ORDER);
-        return ids;
-    }
-
-    private String getModDisplayName(String modId)
-    {
-        if (modId == null || modId.isEmpty())
-        {
-            return "";
-        }
-
-        if (Loader.instance() != null && Loader.instance().getIndexedModList() != null)
-        {
-            ModContainer container = Loader.instance().getIndexedModList().get(modId);
-            if (container != null)
-            {
-                String name = container.getName();
-                if (name != null && !name.trim().isEmpty())
-                {
-                    return name;
-                }
-            }
-        }
-        return modId;
-    }
-
-    private List<RequiredModEntry> getCurrentRequiredModEntries()
-    {
-        List<RequiredModEntry> entries = new ArrayList<>();
-        for (String modId : requiredModsEditorMods)
-        {
-            entries.add(new RequiredModEntry(modId, getModDisplayName(modId)));
-        }
-        return entries;
-    }
-
-    private List<RequiredModEntry> getAvailableRequiredModEntries()
-    {
-        Set<String> ignoredModIds = new HashSet<>(Arrays.asList(
-                "minecraft",
-                "forge",
-                "fml",
-                "minecraftforge",
-                "mcp",
-                "minecraftcoderpack",
-                "oneblockultima"
-        ));
-
-        List<RequiredModEntry> entries = new ArrayList<>();
-        for (String modId : getAvailableModIds())
-        {
-            if (requiredModsEditorMods.contains(modId) || ignoredModIds.contains(modId.toLowerCase(Locale.ROOT)))
-            {
-                continue;
-            }
-            entries.add(new RequiredModEntry(modId, getModDisplayName(modId)));
-        }
-        return entries;
-    }
-
-    private void openRequiredModsEditor()
-    {
-        if (editingSet == null)
-        {
-            return;
-        }
-
-        requiredModsEditorMods.clear();
-        if (editingSet.requiredMods != null)
-        {
-            requiredModsEditorType = editingSet.requiredMods.getType();
-            requiredModsEditorMods.addAll(editingSet.requiredMods.getMods());
-        }
-        else
-        {
-            requiredModsEditorType = BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL;
-        }
-        requiredModsEditorInitialized = true;
-        selectedRequiredModsForRemoval.clear();
-        selectedRequiredModsToAdd.clear();
-        requiredModsScrollOffset = 0;
-        changeView(VIEW_REQUIRED_MODS_EDITOR);
-    }
-
-    private void openRequiredModsAddView()
-    {
-        selectedRequiredModsToAdd.clear();
-        requiredModsScrollOffset = 0;
-        changeView(VIEW_REQUIRED_MODS_ADD);
-    }
-
-    private void openUnlockConditionsEditor()
-    {
-        if (editingSet == null)
-        {
-            return;
-        }
-
-        unlockConditionsEditorConditions.clear();
-        if (editingSet.unlockConditions != null && editingSet.unlockConditions.conditions != null)
-        {
-            unlockConditionsEditorMode = editingSet.unlockConditions.mode != null ? editingSet.unlockConditions.mode : "any";
-            for (BlockSetConfig.UnlockConditionDefinition cond : editingSet.unlockConditions.conditions)
-            {
-                if (cond == null) continue;
-                BlockSetConfig.UnlockConditionDefinition copy = new BlockSetConfig.UnlockConditionDefinition();
-                copy.type = cond.type;
-                copy.setId = cond.setId;
-                copy.level = cond.level;
-                copy.count = cond.count;
-                unlockConditionsEditorConditions.add(copy);
-            }
-        }
-        else
-        {
-            unlockConditionsEditorMode = "any";
-        }
-        selectedUnlockConditionIndex = -1;
-        unlockConditionsScrollOffset = 0;
-
-        availableSetsForConditions.clear();
-        if (sets != null)
-        {
-            availableSetsForConditions.addAll(sets);
-        }
-
-        changeView(VIEW_UNLOCK_CONDITIONS);
-    }
-
-    private void removeSelectedRequiredMods()
-    {
-        if (selectedRequiredModsForRemoval.isEmpty())
-        {
-            return;
-        }
-
-        requiredModsEditorMods.removeAll(new ArrayList<>(selectedRequiredModsForRemoval));
-        selectedRequiredModsForRemoval.clear();
-        statusMessage = I18n.format("gui.oneblockultima.config.required_mods_removed");
-        statusTimer = 60;
-    }
-
-    private void addSelectedRequiredMods()
-    {
-        if (selectedRequiredModsToAdd.isEmpty())
-        {
-            return;
-        }
-
-        for (String modId : new ArrayList<>(selectedRequiredModsToAdd))
-        {
-            if (!requiredModsEditorMods.contains(modId))
-            {
-                requiredModsEditorMods.add(modId);
-            }
-        }
-        selectedRequiredModsToAdd.clear();
-        statusMessage = I18n.format("gui.oneblockultima.config.required_mods_added");
-        statusTimer = 60;
-        changeView(VIEW_REQUIRED_MODS_EDITOR);
-    }
-
-    private void commitRequiredModsEditor()
-    {
-        if (editingSet == null)
-        {
-            return;
-        }
-
-        if (editingSet.requiredMods == null)
-        {
-            editingSet.requiredMods = new BlockSetConfig.SetRequiredModsDefinition();
-        }
-        editingSet.requiredMods.setType(requiredModsEditorType);
-        editingSet.requiredMods.clear();
-        for (String modId : requiredModsEditorMods)
-        {
-            editingSet.requiredMods.addMod(modId);
-        }
-        editingSet.computedLevels = null;
-        statusMessage = I18n.format("gui.oneblockultima.config.required_mods_saved");
-        statusTimer = 60;
-        changeView(VIEW_SET_DETAILS);
-    }
-
-    private void initUnlockConditionsView()
-    {
-        if (unlockConditionsLevelField == null)
-        {
-            unlockConditionsLevelField = new GuiTextField(12, fontRenderer, 0, 0, 0, btnHeight);
-            unlockConditionsCountField = new GuiTextField(13, fontRenderer, 0, 0, 0, btnHeight);
-        }
-
-        unlockConditionsLevelField.setVisible(false);
-        unlockConditionsCountField.setVisible(false);
-        unlockConditionsLevelField.setFocused(false);
-        unlockConditionsCountField.setFocused(false);
-
-        boolean needsSet = "set_level".equals(newConditionTypeToAdd) || "broken_blocks".equals(newConditionTypeToAdd);
-        boolean canAdd = canAddNewCondition(newConditionTypeToAdd);
-
-        String toggleLabel = "any".equalsIgnoreCase(unlockConditionsEditorMode)
-                ? I18n.format("gui.oneblockultima.config.any")
-                : I18n.format("gui.oneblockultima.config.all");
-        String cycleTypeLabel = I18n.format("gui.oneblockultima.config.unlock_conditions_type_" + newConditionTypeToAdd);
-        String addLabel = I18n.format("gui.oneblockultima.config.add");
-        String deleteLabel = I18n.format("gui.oneblockultima.config.remove");
-        String backLabel = I18n.format("gui.oneblockultima.settings.back");
-        String saveLabel = I18n.format("gui.oneblockultima.save");
-
-        int toggleBtnW = fontRenderer.getStringWidth(toggleLabel) + pad * 2;
-        int typeBtnW = fontRenderer.getStringWidth(cycleTypeLabel) + pad * 2;
-        int addBtnW = fontRenderer.getStringWidth(addLabel) + pad * 2;
-        int smallBtnW = Math.max(fontRenderer.getStringWidth(deleteLabel), fontRenderer.getStringWidth(backLabel));
-        smallBtnW = Math.max(smallBtnW, fontRenderer.getStringWidth(saveLabel)) + pad * 2;
-
-        int row1Y = pad + textHeight + gap;
-        int row1TotalW = toggleBtnW + gap + typeBtnW;
-        int row1StartX = (width - row1TotalW) / 2;
-
-        unlockConditionsToggleButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_TOGGLE, row1StartX, row1Y, toggleBtnW, btnHeight, toggleLabel);
-        unlockConditionsCycleTypeButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE, row1StartX + toggleBtnW + gap, row1Y, typeBtnW, btnHeight, cycleTypeLabel);
-
-        buttonList.add(unlockConditionsToggleButton);
-        buttonList.add(unlockConditionsCycleTypeButton);
-
-        int fieldWidth = Math.max(60, Math.min(100, width / 8));
-        int row2Y = row1Y + btnHeight + gap;
-
-        if (needsSet)
-        {
-            List<BlockSetConfig.BlockSetDefinition> availableSets = getAvailableSetsForType(newConditionTypeToAdd);
-            if (newConditionSetId.isEmpty() && !availableSets.isEmpty())
-            {
-                newConditionSetId = availableSets.get(0).id;
-            }
-
-            String cycleSetLabel = getSetNameForConditions(newConditionSetId);
-            int setBtnW = Math.max(fontRenderer.getStringWidth(cycleSetLabel) + pad * 2, 80);
-            String valueLabelText = "set_level".equals(newConditionTypeToAdd)
-                    ? I18n.format("gui.oneblockultima.config.unlock_conditions_level") + ":"
-                    : I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":";
-            int valueLabelW = fontRenderer.getStringWidth(valueLabelText) + gap;
-            int row2TotalW = setBtnW + gap + valueLabelW + fieldWidth + gap + addBtnW;
-            int row2StartX = (width - row2TotalW) / 2;
-
-            unlockConditionsCycleSetButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_CYCLE_SET, row2StartX, row2Y, setBtnW, btnHeight, cycleSetLabel);
-            unlockConditionsCycleSetButton.enabled = !availableSets.isEmpty();
-            buttonList.add(unlockConditionsCycleSetButton);
-
-            int valueFieldX = row2StartX + setBtnW + gap + valueLabelW;
-            if ("set_level".equals(newConditionTypeToAdd))
-            {
-                unlockConditionsLevelField.x = valueFieldX;
-                unlockConditionsLevelField.y = row2Y;
-                unlockConditionsLevelField.width = fieldWidth;
-                unlockConditionsLevelField.height = btnHeight;
-                unlockConditionsLevelField.setVisible(true);
-                unlockConditionsLevelField.setText("1");
-                unlockConditionsLevelField.setFocused(true);
-                unlockConditionsCountField.setVisible(false);
-            }
-            else
-            {
-                unlockConditionsCountField.x = valueFieldX;
-                unlockConditionsCountField.y = row2Y;
-                unlockConditionsCountField.width = fieldWidth;
-                unlockConditionsCountField.height = btnHeight;
-                unlockConditionsCountField.setVisible(true);
-                unlockConditionsCountField.setText("1");
-                unlockConditionsCountField.setFocused(true);
-                unlockConditionsLevelField.setVisible(false);
-            }
-
-            unlockConditionsAddButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_ADD, valueFieldX + fieldWidth + gap, row2Y, addBtnW, btnHeight, addLabel);
-            unlockConditionsAddButton.enabled = canAdd;
-            buttonList.add(unlockConditionsAddButton);
-        }
-        else
-        {
-            unlockConditionsCycleSetButton = null;
-
-            String valueLabelText = I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":";
-            int valueLabelW = fontRenderer.getStringWidth(valueLabelText) + gap;
-            int row2TotalW = valueLabelW + fieldWidth + gap + addBtnW;
-            int row2StartX = (width - row2TotalW) / 2;
-
-            unlockConditionsCountField.x = row2StartX + valueLabelW;
-            unlockConditionsCountField.y = row2Y;
-            unlockConditionsCountField.width = fieldWidth;
-            unlockConditionsCountField.height = btnHeight;
-            unlockConditionsCountField.setVisible(true);
-            unlockConditionsCountField.setText("1");
-            unlockConditionsCountField.setFocused(true);
-            unlockConditionsLevelField.setVisible(false);
-
-            unlockConditionsAddButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_ADD, unlockConditionsCountField.x + fieldWidth + gap, row2Y, addBtnW, btnHeight, addLabel);
-            unlockConditionsAddButton.enabled = canAdd;
-            buttonList.add(unlockConditionsAddButton);
-        }
-
-        int bottomY = height - pad - gap - btnHeight;
-        int bottomTotalW = smallBtnW * 3 + gap * 2;
-        int bottomStartX = (width - bottomTotalW) / 2;
-
-        unlockConditionsDeleteButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_DELETE, bottomStartX, bottomY, smallBtnW, btnHeight, deleteLabel);
-        unlockConditionsDeleteButton.enabled = selectedUnlockConditionIndex >= 0 && selectedUnlockConditionIndex < unlockConditionsEditorConditions.size();
-        unlockConditionsSaveButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_SAVE, bottomStartX + smallBtnW + gap, bottomY, smallBtnW, btnHeight, saveLabel);
-        unlockConditionsBackButton = new GuiButton(BUTTON_UNLOCK_CONDITIONS_BACK, bottomStartX + (smallBtnW + gap) * 2, bottomY, smallBtnW, btnHeight, backLabel);
-
-        buttonList.add(unlockConditionsDeleteButton);
-        buttonList.add(unlockConditionsSaveButton);
-        buttonList.add(unlockConditionsBackButton);
-    }
-
-    private boolean canAddNewCondition(String type)
-    {
-        if (type == null) return false;
-        switch (type)
-        {
-            case "broken_blocks_total":
-                for (BlockSetConfig.UnlockConditionDefinition c : unlockConditionsEditorConditions)
-                {
-                    if ("broken_blocks_total".equals(c.type)) return false;
-                }
-                return true;
-            case "broken_blocks":
-            case "set_level":
-                return !getAvailableSetsForType(type).isEmpty();
-            default:
-                return false;
-        }
-    }
-
-    private List<BlockSetConfig.BlockSetDefinition> getAvailableSetsForType(String type)
-    {
-        Set<String> usedSetIds = new HashSet<>();
-        for (BlockSetConfig.UnlockConditionDefinition c : unlockConditionsEditorConditions)
-        {
-            if (type.equals(c.type) && c.setId != null && !c.setId.isEmpty())
-            {
-                usedSetIds.add(c.setId);
-            }
-        }
-        List<BlockSetConfig.BlockSetDefinition> result = new ArrayList<>();
-        for (BlockSetConfig.BlockSetDefinition set : availableSetsForConditions)
-        {
-            if (set != null && !usedSetIds.contains(set.id))
-            {
-                result.add(set);
-            }
-        }
-        return result;
-    }
-
-    private int getUnlockConditionsToolbarHeight()
-    {
-        int row1Y = pad + textHeight + gap;
-        int row2Y = row1Y + btnHeight + gap;
-        return row2Y + btnHeight + gap;
-    }
-
-    private void commitUnlockConditionsEditor()
-    {
-        if (editingSet == null) return;
-
-        if (editingSet.unlockConditions == null)
-        {
-            editingSet.unlockConditions = new BlockSetConfig.UnlockConditionGroup();
-        }
-        editingSet.unlockConditions.mode = unlockConditionsEditorMode;
-        editingSet.unlockConditions.conditions = new ArrayList<>();
-        for (BlockSetConfig.UnlockConditionDefinition cond : unlockConditionsEditorConditions)
-        {
-            if (cond == null) continue;
-            BlockSetConfig.UnlockConditionDefinition copy = new BlockSetConfig.UnlockConditionDefinition();
-            copy.type = cond.type;
-            copy.setId = cond.setId;
-            copy.level = cond.level;
-            copy.count = cond.count;
-            editingSet.unlockConditions.conditions.add(copy);
-        }
-        if (editingSet.unlockConditions.conditions.isEmpty())
-        {
-            editingSet.unlockConditions = null;
-        }
-        editingSet.computedLevels = null;
-        statusMessage = I18n.format("gui.oneblockultima.config.unlock_conditions_saved");
-        statusTimer = 60;
-        changeView(VIEW_SET_DETAILS);
-    }
-
-    private void drawUnlockConditionsView(int mouseX, int mouseY)
-    {
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.unlock_conditions_title"), width / 2, pad + textHeight / 2, 0xFFFFFF);
-
-        int listX = pad + gap;
-        int listY = getUnlockConditionsToolbarHeight();
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - listY - pad - btnHeight - gap * 2;
-
-        drawRect(listX, listY, listX + listWidth, listY + listHeight, 0xFF1A1F24);
-
-        if (unlockConditionsEditorConditions.isEmpty())
-        {
-            drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.unlock_conditions_empty"), width / 2, listY + listHeight / 2, 0x808080);
-        }
-        else
-        {
-            int visibleEntries = listHeight / entryHeight;
-            if (visibleEntries < 1) visibleEntries = 1;
-            int maxScroll = Math.max(0, unlockConditionsEditorConditions.size() - visibleEntries);
-            if (unlockConditionsScrollOffset > maxScroll) unlockConditionsScrollOffset = maxScroll;
-
-            for (int i = unlockConditionsScrollOffset; i < Math.min(unlockConditionsEditorConditions.size(), unlockConditionsScrollOffset + visibleEntries); i++)
-            {
-                BlockSetConfig.UnlockConditionDefinition cond = unlockConditionsEditorConditions.get(i);
-                int entryY = listY + innerPadding + (i - unlockConditionsScrollOffset) * entryHeight;
-                boolean isSelected = (i == selectedUnlockConditionIndex);
-                int bgColor = isSelected ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E);
-                drawRect(listX + innerPadding, entryY, listX + listWidth - innerPadding - scrollWidth, entryY + entryHeight, bgColor);
-
-                String typeLabel = getConditionTypeLabel(cond.type);
-                String setText = "";
-                String valueText = "";
-
-                String type = cond.type != null ? cond.type.toLowerCase(Locale.ROOT) : "";
-                switch (type) {
-                    case "set_level":
-                        setText = getSetNameForConditions(cond.setId);
-                        valueText = String.valueOf(cond.level);
-                        break;
-                    case "broken_blocks":
-                        setText = getSetNameForConditions(cond.setId);
-                        valueText = String.valueOf(cond.count);
-                        break;
-                    case "broken_blocks_total":
-                        valueText = String.valueOf(cond.count);
-                        break;
-                }
-
-                int textX = listX + gap;
-                fontRenderer.drawString(typeLabel, textX, entryY + innerPadding, 0xA0A0A0);
-                if (!setText.isEmpty())
-                {
-                    int typeWidth = fontRenderer.getStringWidth(typeLabel + "  ");
-                    fontRenderer.drawString(setText, textX + typeWidth, entryY + innerPadding, 0x808080);
-                }
-                int valueWidth = fontRenderer.getStringWidth(valueText);
-                fontRenderer.drawString(valueText, listX + listWidth - gap - valueWidth - scrollWidth, entryY + innerPadding, 0xA0A0A0);
-            }
-
-            if (unlockConditionsEditorConditions.size() > visibleEntries)
-            {
-                int scrollbarX = listX + listWidth - gap;
-                int scrollbarY = listY + innerPadding;
-                int scrollbarHeight = listHeight - innerPadding * 2;
-                int thumbHeight = Math.max(10, scrollbarHeight * visibleEntries / unlockConditionsEditorConditions.size());
-                int thumbY = scrollbarY + (unlockConditionsScrollOffset * (scrollbarHeight - thumbHeight) / Math.max(1, maxScroll));
-                drawRect(scrollbarX, scrollbarY, scrollbarX + scrollWidth, scrollbarY + scrollbarHeight, 0xFF2A2F34);
-                drawRect(scrollbarX, thumbY, scrollbarX + scrollWidth, thumbY + thumbHeight, 0xFF7A7F84);
-            }
-        }
-
-        if (unlockConditionsLevelField != null && unlockConditionsLevelField.getVisible())
-        {
-            boolean needsSet = "set_level".equals(newConditionTypeToAdd);
-            String valueLabelText = needsSet
-                    ? I18n.format("gui.oneblockultima.config.unlock_conditions_level") + ":"
-                    : I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":";
-            drawString(fontRenderer, valueLabelText, unlockConditionsLevelField.x - fontRenderer.getStringWidth(valueLabelText) - gap, unlockConditionsLevelField.y + btnHeight / 2 - textHeight / 2, 0xA0A0A0);
-            unlockConditionsLevelField.drawTextBox();
-        }
-        if (unlockConditionsCountField != null && unlockConditionsCountField.getVisible())
-        {
-            if (!"set_level".equals(newConditionTypeToAdd) || unlockConditionsCycleSetButton == null)
-            {
-                String valueLabelText = I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":";
-                drawString(fontRenderer, valueLabelText, unlockConditionsCountField.x - fontRenderer.getStringWidth(valueLabelText) - gap, unlockConditionsCountField.y + btnHeight / 2 - textHeight / 2, 0xA0A0A0);
-            }
-            unlockConditionsCountField.drawTextBox();
-        }
-    }
-
-    private boolean handleUnlockConditionsViewClick(int mouseX, int mouseY)
-    {
-        int listX = pad + gap;
-        int listY = getUnlockConditionsToolbarHeight();
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - listY - pad - btnHeight - gap;
-
-        if (mouseX < listX || mouseX > listX + listWidth || mouseY < listY || mouseY > listY + listHeight)
-        {
-            return false;
-        }
-
-        int visibleEntries = listHeight / entryHeight;
-        if (visibleEntries < 1) visibleEntries = 1;
-        int row = (mouseY - listY - innerPadding) / entryHeight;
-        int index = unlockConditionsScrollOffset + row;
-
-        if (index < 0 || index >= unlockConditionsEditorConditions.size())
-        {
-            selectedUnlockConditionIndex = -1;
-            if (unlockConditionsDeleteButton != null) unlockConditionsDeleteButton.enabled = false;
-            return true;
-        }
-
-        if (index == selectedUnlockConditionIndex)
-        {
-            selectedUnlockConditionIndex = -1;
-        }
-        else
-        {
-            selectedUnlockConditionIndex = index;
-        }
-        if (unlockConditionsDeleteButton != null)
-        {
-            unlockConditionsDeleteButton.enabled = selectedUnlockConditionIndex >= 0;
-        }
-        return true;
-    }
-
-    private String getConditionTypeLabel(String type)
-    {
-        if (type == null) return "";
-        switch (type.toLowerCase(Locale.ROOT))
-        {
-            case "set_level": return I18n.format("gui.oneblockultima.config.unlock_conditions_type_set_level");
-            case "broken_blocks": return I18n.format("gui.oneblockultima.config.unlock_conditions_type_broken_blocks");
-            case "broken_blocks_total": return I18n.format("gui.oneblockultima.config.unlock_conditions_type_broken_blocks_total");
-            default: return type;
-        }
-    }
-
-    private String getSetNameForConditions(String setId)
-    {
-        if (setId == null || setId.isEmpty()) return "-";
-        for (BlockSetConfig.BlockSetDefinition set : availableSetsForConditions)
-        {
-            if (set != null && setId.equals(set.id))
-            {
-                return getLocalizedSetName(set);
-            }
-        }
-        return setId;
-    }
-
-    private void addNewUnlockCondition()
-    {
-        if (!canAddNewCondition(newConditionTypeToAdd)) return;
-
-        BlockSetConfig.UnlockConditionDefinition cond = new BlockSetConfig.UnlockConditionDefinition();
-        cond.type = newConditionTypeToAdd;
-
-        if ("set_level".equals(newConditionTypeToAdd) || "broken_blocks".equals(newConditionTypeToAdd))
-        {
-            cond.setId = newConditionSetId;
-            if (cond.setId == null || cond.setId.isEmpty())
-            {
-                List<BlockSetConfig.BlockSetDefinition> available = getAvailableSetsForType(newConditionTypeToAdd);
-                if (!available.isEmpty()) cond.setId = available.get(0).id;
-                else return;
-            }
-        }
-
-        if ("set_level".equals(newConditionTypeToAdd))
-        {
-            try { cond.level = Math.max(1, Integer.parseInt(unlockConditionsLevelField.getText().trim())); }
-            catch (NumberFormatException e) { cond.level = 1; }
-        }
-        else
-        {
-            try { cond.count = Math.max(1, Integer.parseInt(unlockConditionsCountField.getText().trim())); }
-            catch (NumberFormatException e) { cond.count = 1; }
-        }
-
-        unlockConditionsEditorConditions.add(cond);
-        newConditionSetId = "";
-        initGui();
-    }
-
-    private void cycleNewConditionType()
-    {
-        switch (newConditionTypeToAdd)
-        {
-            case "broken_blocks_total":
-                newConditionTypeToAdd = "broken_blocks";
-                break;
-            case "broken_blocks":
-                newConditionTypeToAdd = "set_level";
-                break;
-            case "set_level":
-            default:
-                newConditionTypeToAdd = "broken_blocks_total";
-                break;
-        }
-        newConditionSetId = "";
-        initGui();
-    }
-
-    private void cycleNewConditionSet()
-    {
-        List<BlockSetConfig.BlockSetDefinition> available = getAvailableSetsForType(newConditionTypeToAdd);
-        if (available.isEmpty()) return;
-
-        int currentIndex = -1;
-        for (int i = 0; i < available.size(); i++)
-        {
-            if (newConditionSetId.equals(available.get(i).id))
-            {
-                currentIndex = i;
-                break;
-            }
-        }
-        int nextIndex = (currentIndex + 1) % available.size();
-        newConditionSetId = available.get(nextIndex).id;
-
-        if (unlockConditionsCycleSetButton != null)
-        {
-            unlockConditionsCycleSetButton.displayString = getSetNameForConditions(newConditionSetId);
-        }
-    }
-
-    private void removeSelectedUnlockCondition()
-    {
-        if (selectedUnlockConditionIndex < 0 || selectedUnlockConditionIndex >= unlockConditionsEditorConditions.size()) return;
-        unlockConditionsEditorConditions.remove(selectedUnlockConditionIndex);
-        if (selectedUnlockConditionIndex >= unlockConditionsEditorConditions.size())
-        {
-            selectedUnlockConditionIndex = unlockConditionsEditorConditions.size() - 1;
-        }
-        newConditionSetId = "";
-        initGui();
-    }
-
-    private void selectRequiredModForRemoval(String modId)
-    {
-        if (modId == null || modId.isEmpty())
-        {
-            return;
-        }
-
-        if (selectedRequiredModsForRemoval.contains(modId))
-        {
-            selectedRequiredModsForRemoval.remove(modId);
-        }
-        else
-        {
-            selectedRequiredModsForRemoval.add(modId);
-        }
-    }
-
-    private void selectRequiredModToAdd(String modId)
-    {
-        if (modId == null || modId.isEmpty())
-        {
-            return;
-        }
-
-        if (selectedRequiredModsToAdd.contains(modId))
-        {
-            selectedRequiredModsToAdd.remove(modId);
-        }
-        else
-        {
-            selectedRequiredModsToAdd.add(modId);
-        }
-    }
-
-    private void syncEditingSetFromFields()
-    {
-        if (editingSet == null)
-        {
-            return;
-        }
-
-        if (setNameField != null)
-        {
-            String name = setNameField.getText().trim();
-            if (!name.isEmpty())
-            {
-                saveLocalizedName(editingSet.id, name);
-            }
-        }
-
-        applyRequiredModsFromFields();
-
-        if (unlockCostField != null)
-        {
-            try
-            {
-                editingSet.unlockCost = Integer.parseInt(unlockCostField.getText().trim());
-            }
-            catch (NumberFormatException ignored)
-            {
-                editingSet.unlockCost = 0;
-            }
-        }
-    }
-
-    private Fluid getFluidForRegistry(String registry)
-    {
-        try
-        {
-            net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
-            if (block == null)
-            {
-                return null;
-            }
-            if (block instanceof IFluidBlock)
-            {
-                return ((IFluidBlock) block).getFluid();
-            }
-            return FluidRegistry.lookupFluidForBlock(block);
-        }
-        catch (Exception ignored)
-        {
-            return null;
-        }
-    }
-
-    private void renderFluidIcon(Fluid fluid, int x, int y, int size)
-    {
-        if (fluid == null)
-        {
-            return;
-        }
-        ModelUtil.renderFluidSprite(fluid, x, y, size, size);
-    }
+    private final java.util.Map<String, Entity> mobEntityCache = new java.util.HashMap<>();
 
     public GuiSetsConfig(GuiScreen parent)
     {
         this.parent = parent;
-        this.currentView = VIEW_SETS;
-        loadCustomNames();
+        this.container = new ContainerSetsConfig();
     }
 
     @Override
@@ -1278,1466 +126,104 @@ public class GuiSetsConfig extends GuiScreen
     {
         Keyboard.enableRepeatEvents(true);
         buttonList.clear();
-
-        textHeight = fontRenderer.FONT_HEIGHT;
-        iconSize = btnHeight - innerPadding * 2;
-        entryHeight = btnHeight + innerPadding * 2;
-
-        formMargin = Math.max(10, Math.min(24, width / 24));
-        formWidth = Math.max(220, width - formMargin * 2);
-        formLabelWidth = Math.max(70, Math.min(120, formWidth / 4));
-        formFieldX = formMargin + formLabelWidth + gap;
-        formFieldWidth = Math.max(120, formWidth - formLabelWidth - gap);
-
-        if (config == null)
-        {
-            BlockSetConfig.reload();
-            config = BlockSetConfig.get();
-        }
-
-        sets.clear();
-        sets.addAll(config.getSets());
-        updateFilteredSets();
-
-        loadStaticCustomNames();
-
-        switch (currentView)
-        {
-            case VIEW_SETS:
-                initSetsView();
-                break;
-            case VIEW_SET_DETAILS:
-                initSetDetailsView();
-                break;
-            case VIEW_ADD_ENTRY:
-                initAddEntryView();
-                performSearch();
-                break;
-            case VIEW_CONFIRM_DELETE:
-                initConfirmDeleteView();
-                break;
-            case VIEW_EDIT_CURRENCY:
-                initEditCurrencyView();
-                break;
-            case VIEW_REQUIRED_MODS_EDITOR:
-                initRequiredModsView();
-                break;
-            case VIEW_REQUIRED_MODS_ADD:
-                initRequiredModsAddView();
-                break;
-            case VIEW_UNLOCK_CONDITIONS:
-                initUnlockConditionsView();
-                break;
-        }
-
-        if (statusTimer > 0)
-        {
-            statusTimer--;
-            if (statusTimer == 0) statusMessage = "";
-        }
+        mobEntityCache.clear();
+        buildView();
     }
 
-    private void initSetsView()
+    private Entity resolveEntity(String registry)
     {
-        reloadSetsFromConfig();
-        selectedSetIndex = -1;
-
-        int searchWidth = Math.min(width / 3, 250);
-        int topY = pad + textHeight + pad;
-
-        if (searchField == null)
-        {
-            searchField = new GuiTextField(0, fontRenderer, pad, topY, searchWidth, btnHeight);
-            searchField.setMaxStringLength(100);
-        }
-        searchField.x = pad + gap;
-        searchField.y = topY;
-        searchField.width = searchWidth;
-        searchField.height = btnHeight;
-
-        int addWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.add_set")) + pad * 2;
-        addSetButton = new GuiButton(BUTTON_ADD_SET, pad + searchField.x + searchWidth, topY, addWidth, btnHeight, I18n.format("gui.oneblockultima.config.add_set"));
-
-        int resetWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.reset_default")) + pad * 2;
-        int backWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.settings.back")) + pad * 2;
-
-        resetButton = new GuiButton(BUTTON_RESET, width - pad - backWidth - resetWidth - gap * 2, topY, resetWidth, btnHeight, I18n.format("gui.oneblockultima.reset_default"));
-        backButton = new GuiButton(BUTTON_BACK, width - pad - backWidth, topY, backWidth - gap, btnHeight, I18n.format("gui.oneblockultima.settings.back"));
-
-        buttonList.add(addSetButton);
-        buttonList.add(resetButton);
-        buttonList.add(backButton);
+        return resolveEntity(registry, null);
     }
 
-    private void initSetDetailsView()
+    private Entity resolveEntity(String registry, net.minecraft.nbt.NBTTagCompound nbtTags)
     {
-        int currentY = pad + textHeight + pad;
-        int fieldX = formFieldX;
-        int fieldWidth = formFieldWidth;
-
-        if (setNameField == null)
+        if (registry == null || registry.isEmpty())
         {
-            setNameField = new GuiTextField(1, fontRenderer, 0, 0, 0, btnHeight);
-            setIdField = new GuiTextField(2, fontRenderer, 0, 0, 0, btnHeight);
-            unlockCostField = new GuiTextField(3, fontRenderer, 0, 0, 0, btnHeight);
-            requiredModsField = new GuiTextField(4, fontRenderer, 0, 0, 0, btnHeight); // ← ИНИЦИАЛИЗИРУЙТЕ requiredModsField!
+            return null;
         }
 
-        if (isNewSet)
+        String cacheKey = registry + "#" + (nbtTags == null ? "" : nbtTags.toString());
+        Entity cached = mobEntityCache.get(cacheKey);
+        if (cached != null)
         {
-            setNameField.setText(savedNewSetName);
-            setIdField.setText(savedNewSetId);
-            unlockCostField.setText(savedNewSetCost);
-            if (requiredModsField != null) { // ← Проверка на null
-                requiredModsField.setText(savedNewSetMods);
-            }
+            return cached;
         }
 
-        setNameField.x = fieldX;
-        setNameField.y = currentY;
-        setNameField.width = fieldWidth;
-        setNameField.height = btnHeight;
-
-        currentY += btnHeight + gap;
-        setIdField.x = fieldX;
-        setIdField.y = currentY;
-        setIdField.width = fieldWidth;
-        setIdField.height = btnHeight;
-        setIdField.setEnabled(isNewSet);
-
-        currentY += btnHeight + gap;
-        unlockCostField.x = fieldX;
-        unlockCostField.y = currentY;
-        unlockCostField.width = fieldWidth / 2;
-        unlockCostField.height = btnHeight;
-
-        currentY += btnHeight + gap;
-        int buttonWidth = Math.max(160, Math.min(260, formFieldWidth));
-        int halfButtonWidth = (buttonWidth - gap) / 2;
-        editRequiredModsButton = new GuiButton(
-                BUTTON_EDIT_REQUIRED_MODS,
-                fieldX,
-                currentY,
-                halfButtonWidth,
-                btnHeight,
-                getRequiredModsButtonLabel(editingSet != null ? editingSet.requiredMods : null));
-
-        editUnlockConditionsButton = new GuiButton(
-                BUTTON_EDIT_UNLOCK_CONDITIONS,
-                fieldX + halfButtonWidth + gap,
-                currentY,
-                halfButtonWidth,
-                btnHeight,
-                getUnlockConditionsButtonLabel(editingSet != null ? editingSet.unlockConditions : null));
-
-        if (!isNewSet && editingSet != null)
-        {
-            setNameField.setText(getLocalizedSetName(editingSet));
-            setIdField.setText(editingSet.id);
-            unlockCostField.setText(String.valueOf(editingSet.unlockCost));
-        }
-
-        setNameField.setFocused(true);
-        if (setIdField != null)
-        {
-            setIdField.setFocused(false);
-        }
-
-        buttonList.add(editRequiredModsButton);
-        buttonList.add(editUnlockConditionsButton);
-
-        int footerY = Math.max(pad + btnHeight + gap, height - pad - btnHeight - pad);
-        int btnWidth = 0;
-        String[] labels = {
-                I18n.format("gui.oneblockultima.settings.back"),
-                I18n.format("gui.oneblockultima.save"),
-                I18n.format("gui.oneblockultima.config.add_block"),
-                I18n.format("gui.oneblockultima.config.add_mob"),
-                I18n.format("gui.oneblockultima.config.remove")
-        };
-        for (String s : labels) {
-            btnWidth = Math.max(btnWidth, fontRenderer.getStringWidth(s) + pad * 2);
-        }
-
-        int startX = (width - (btnWidth * 5 + gap * 4)) / 2;
-
-        backButton = new GuiButton(BUTTON_BACK, startX, footerY, btnWidth, btnHeight, labels[0]);
-        saveButton = new GuiButton(BUTTON_SAVE, startX + btnWidth + gap, footerY, btnWidth, btnHeight, labels[1]);
-        addBlockButton = new GuiButton(BUTTON_ADD_BLOCK, startX + (btnWidth + gap) * 2, footerY, btnWidth, btnHeight, labels[2]);
-        addMobButton = new GuiButton(BUTTON_ADD_MOB, startX + (btnWidth + gap) * 3, footerY, btnWidth, btnHeight, labels[3]);
-        removeEntryButton = new GuiButton(BUTTON_REMOVE_ENTRY, startX + (btnWidth + gap) * 4, footerY, btnWidth, btnHeight, labels[4]);
-
-        buttonList.add(backButton);
-        buttonList.add(saveButton);
-        buttonList.add(addBlockButton);
-        buttonList.add(addMobButton);
-        buttonList.add(removeEntryButton);
-    }
-
-    private void initRequiredModsView()
-    {
-        if (editingSet == null)
-        {
-            changeView(VIEW_SET_DETAILS);
-            return;
-        }
-
-        if (!requiredModsEditorInitialized)
-        {
-            requiredModsEditorMods.clear();
-            if (editingSet.requiredMods != null)
-            {
-                requiredModsEditorType = editingSet.requiredMods.getType();
-                requiredModsEditorMods.addAll(editingSet.requiredMods.getMods());
-            }
-            else
-            {
-                requiredModsEditorType = BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL;
-            }
-            requiredModsEditorInitialized = true;
-        }
-        requiredModsScrollOffset = 0;
-
-        int footerY = height - pad - btnHeight - pad;
-        int footerBtnWidth = Math.max(90, Math.min(120, width / 5));
-        int addX = width / 2 - footerBtnWidth - gap / 2;
-        int removeX = width / 2 + gap / 2;
-        int saveX = width - pad - footerBtnWidth - gap;
-
-        requiredModsToggleButton = new GuiButton(BUTTON_REQUIRED_MODS_TOGGLE, pad + gap, pad * 2 + textHeight + gap, footerBtnWidth, btnHeight, getRequiredModsEditorTypeLabel());
-        requiredModsBackButton = new GuiButton(BUTTON_REQUIRED_MODS_BACK, pad + gap, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.settings.back"));
-        requiredModsAddButton = new GuiButton(BUTTON_REQUIRED_MODS_ADD, addX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.config.add"));
-        requiredModsDeleteButton = new GuiButton(BUTTON_REQUIRED_MODS_DELETE, removeX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.config.remove"));
-        requiredModsSaveButton = new GuiButton(BUTTON_REQUIRED_MODS_SAVE, saveX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.save"));
-
-        buttonList.add(requiredModsToggleButton);
-        buttonList.add(requiredModsBackButton);
-        buttonList.add(requiredModsAddButton);
-        buttonList.add(requiredModsDeleteButton);
-        buttonList.add(requiredModsSaveButton);
-    }
-
-    private void initRequiredModsAddView()
-    {
-        requiredModsScrollOffset = 0;
-        selectedRequiredModsToAdd.clear();
-
-        int footerY = height - pad - btnHeight - pad;
-        int footerBtnWidth = Math.max(90, Math.min(120, width / 4));
-        int addX = width - pad - footerBtnWidth - gap;
-
-        requiredModsBackButton = new GuiButton(BUTTON_REQUIRED_MODS_BACK, pad + gap, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.settings.back"));
-        requiredModsAddButton = new GuiButton(BUTTON_REQUIRED_MODS_ADD, addX, footerY, footerBtnWidth, btnHeight, I18n.format("gui.oneblockultima.config.add"));
-
-        buttonList.add(requiredModsBackButton);
-        buttonList.add(requiredModsAddButton);
-    }
-
-    private void initAddEntryView()
-    {
-        int topY = pad + textHeight + pad;
-
-        if (entrySearchField == null)
-        {
-            entrySearchField = new GuiTextField(5, fontRenderer, pad, topY, width - pad * 2, btnHeight);
-        }
-        entrySearchField.x = pad + gap;
-        entrySearchField.y = topY;
-        entrySearchField.width = width - (pad + gap) * 2;
-        entrySearchField.height = btnHeight;
-        entrySearchField.setFocused(true);
-
-        int fieldsY = topY + btnHeight + gap + 6;
-        int fieldHeight = btnHeight;
-        int fieldWidthSmall = 60;
-        int labelGap = 4;
-        int levelLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.base_level") + ":");
-        int chanceLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.chance") + ":");
-
-        if (addLevelField == null)
-        {
-            addLevelField = new GuiTextField(8, fontRenderer, 0, 0, 0, fieldHeight);
-            addChanceField = new GuiTextField(9, fontRenderer, 0, 0, 0, fieldHeight);
-        }
-
-        addLevelField.x = pad + gap + levelLabelWidth + labelGap;
-        addLevelField.y = fieldsY;
-        addLevelField.width = fieldWidthSmall;
-        addLevelField.height = fieldHeight;
-        if (addLevelField.getText().isEmpty())
-        {
-            addLevelField.setText("1");
-        }
-
-        addChanceField.x = addLevelField.x + fieldWidthSmall + gap * 2 + chanceLabelWidth + labelGap;
-        addChanceField.y = fieldsY;
-        addChanceField.width = fieldWidthSmall;
-        addChanceField.height = fieldHeight;
-        if (addChanceField.getText().isEmpty())
-        {
-            addChanceField.setText("1");
-        }
-
-        if (currentEntryType == EntryType.BLOCK)
-        {
-            currentSearchType = SearchType.BLOCKS;
-            if (currencyField == null)
-            {
-                currencyField = new GuiTextField(6, fontRenderer, 0, 0, 0, fieldHeight);
-            }
-            int iconSizeLocal = 12;
-            int currencyX = addChanceField.x + fieldWidthSmall + gap * 2;
-            currencyField.x = currencyX + iconSizeLocal + gap;
-            currencyField.y = fieldsY;
-            currencyField.width = fieldWidthSmall;
-            currencyField.height = fieldHeight;
-            if (currencyField.getText().isEmpty())
-            {
-                currencyField.setText("0");
-            }
-        }
-        else
-        {
-            currentSearchType = SearchType.MOBS;
-        }
-
-        int footerY = height - pad - btnHeight - pad;
-        int backWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.settings.back")) + pad * 2;
-        backButton = new GuiButton(BUTTON_BACK, pad + gap, footerY, backWidth, btnHeight, I18n.format("gui.oneblockultima.settings.back"));
-
-        buttonList.add(backButton);
-    }
-
-    private void initConfirmDeleteView()
-    {
-        int centerX = width / 2;
-        int centerY = height / 2;
-
-        String deleteName = deleteTargetIndex >= 0 && deleteTargetIndex < sets.size()
-                ? getLocalizedSetName(sets.get(deleteTargetIndex))
-                : "";
-        String confirmLabel = I18n.format("gui.oneblockultima.config.confirm", deleteName);
-        String cancelLabel = I18n.format("gui.oneblockultima.cancel");
-
-        int btnWidth = Math.max(fontRenderer.getStringWidth(confirmLabel) + pad * 2,
-                fontRenderer.getStringWidth(cancelLabel) + pad * 2);
-
-        confirmDeleteButton = new GuiButton(BUTTON_CONFIRM_DELETE, centerX - btnWidth - gap / 2, centerY + btnHeight + gap, btnWidth, btnHeight, confirmLabel);
-        cancelDeleteButton = new GuiButton(BUTTON_CANCEL, centerX + gap / 2, centerY + btnHeight + gap, btnWidth, btnHeight, cancelLabel);
-
-        buttonList.add(confirmDeleteButton);
-        buttonList.add(cancelDeleteButton);
-    }
-
-    private void initEditCurrencyView()
-    {
-        if (editCurrencyField == null)
-        {
-            editCurrencyField = new GuiTextField(7, fontRenderer, 0, 0, 0, btnHeight);
-            editLevelField = new GuiTextField(10, fontRenderer, 0, 0, 0, btnHeight);
-            editChanceField = new GuiTextField(11, fontRenderer, 0, 0, 0, btnHeight);
-        }
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int fieldWidth = 100;
-        int fieldGap = btnHeight + gap;
-
-        editLevelField.x = centerX - fieldWidth / 2;
-        editLevelField.y = centerY - fieldGap;
-        editLevelField.width = fieldWidth;
-        editLevelField.height = btnHeight;
-
-        editChanceField.x = centerX - fieldWidth / 2;
-        editChanceField.y = centerY;
-        editChanceField.width = fieldWidth;
-        editChanceField.height = btnHeight;
-
-        editCurrencyField.x = centerX - fieldWidth / 2;
-        editCurrencyField.y = centerY + fieldGap;
-        editCurrencyField.width = fieldWidth;
-        editCurrencyField.height = btnHeight;
-        editCurrencyField.setVisible(editingEntryType == EntryType.BLOCK);
-
-        if (editingEntryType == EntryType.BLOCK
-                && editingSet != null
-                && editingSet.blocks != null
-                && editingCurrencyIndex >= 0
-                && editingCurrencyIndex < editingSet.blocks.size())
-        {
-            BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
-            editLevelField.setText(String.valueOf(entry.baseLevel));
-            editChanceField.setText(String.valueOf(entry.baseChance));
-            editCurrencyField.setText(String.valueOf(entry.currency));
-        }
-        else if (editingEntryType == EntryType.MOB
-                && editingSet != null
-                && editingSet.mobs != null
-                && editingCurrencyIndex >= 0
-                && editingCurrencyIndex < editingSet.mobs.size())
-        {
-            BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
-            editLevelField.setText(String.valueOf(entry.baseLevel));
-            editChanceField.setText(String.valueOf(entry.baseChance));
-            editCurrencyField.setText("0");
-        }
-
-        editLevelField.setFocused(true);
-        editLevelField.setCursorPositionEnd();
-        editChanceField.setFocused(false);
-        editCurrencyField.setFocused(false);
-
-        String saveLabel = I18n.format("gui.oneblockultima.save");
-        String cancelLabel = I18n.format("gui.oneblockultima.cancel");
-        int btnWidth = Math.max(fontRenderer.getStringWidth(saveLabel) + pad * 2,
-                fontRenderer.getStringWidth(cancelLabel) + pad * 2);
-
-        int lastFieldY = editingEntryType == EntryType.BLOCK ? editCurrencyField.y : editChanceField.y;
-
-        saveCurrencyButton = new GuiButton(BUTTON_SAVE_CURRENCY, centerX - btnWidth - gap, lastFieldY + btnHeight + gap, btnWidth, btnHeight, saveLabel);
-        cancelCurrencyButton = new GuiButton(BUTTON_CANCEL_CURRENCY, centerX + gap, lastFieldY + btnHeight + gap, btnWidth, btnHeight, cancelLabel);
-
-        buttonList.add(saveCurrencyButton);
-        buttonList.add(cancelCurrencyButton);
-    }
-
-    private void updateFilteredSets()
-    {
-        if (searchQuery.isEmpty())
-        {
-            filteredSets = new ArrayList<>(sets);
-            return;
-        }
-
-        String query = searchQuery.toLowerCase(Locale.ROOT);
-        filteredSets = sets.stream()
-                .filter(set -> {
-                    String name = getLocalizedSetName(set).toLowerCase(Locale.ROOT);
-                    return name.contains(query) || set.id.toLowerCase(Locale.ROOT).contains(query);
-                })
-                .collect(Collectors.toList());
-    }
-
-    private String getLocalizedSetName(BlockSetConfig.BlockSetDefinition set) {
-        return getLocalizedSetNameStatic(set);
-    }
-
-    private static boolean matchesSearchTerms(String name, List<String> searchTerms)
-    {
-        String lowerName = name == null ? "" : name.toLowerCase(Locale.ROOT);
-
-        if (searchTerms != null && !searchTerms.isEmpty())
-        {
-            for (String term : searchTerms)
-            {
-                if (term.isEmpty()) continue;
-                boolean termMatched = lowerName.contains(term);
-                if (!termMatched) return false;
-            }
-        }
-
-        return true;
-    }
-
-    private void performSearch()
-    {
-        searchResults.clear();
-        String query = entrySearchField != null ? entrySearchField.getText() : "";
-
-        OneBlockUltima.getLogger().info("performSearch: query='" + query + "', registry size=" + ForgeRegistries.BLOCKS.getKeys().size());
-
-        boolean emptyQuery = query.isEmpty();
-
-        String[] parts = emptyQuery ? new String[0] : query.split(" ");
-        List<String> searchTerms = new ArrayList<>();
-        String modFilter = null;
-        String idFilter = null;
-
-        for (String part : parts)
-        {
-            if (part.isEmpty()) continue;
-            if (part.startsWith("@")) modFilter = part.substring(1).toLowerCase(Locale.ROOT);
-            else if (part.startsWith("&")) idFilter = part.substring(1).toLowerCase(Locale.ROOT);
-            else searchTerms.add(part.toLowerCase(Locale.ROOT));
-        }
-
-        if (currentSearchType == SearchType.BLOCKS)
-        {
-            Set<String> existingBlocks = getExistingBlockRegistries();
-            for (net.minecraft.block.Block block : ForgeRegistries.BLOCKS)
-            {
-                ResourceLocation reg = block.getRegistryName();
-                if (reg == null) continue;
-
-                String registry = reg.toString();
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
-
-                if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
-                if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-
-                Fluid fluid = block instanceof IFluidBlock ? ((IFluidBlock) block).getFluid() : FluidRegistry.lookupFluidForBlock(block);
-                if (fluid != null)
-                {
-                    if (existingBlocks.contains(registry))
-                    {
-                        continue;
-                    }
-                    String name = fluid.getLocalizedName(new FluidStack(fluid, 1000));
-
-                    if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms))
-                    {
-                        continue;
-                    }
-
-                    searchResults.add(new SearchResult(registry, name, modId, fluid));
-                    continue;
-                }
-
-                Item item = Item.getItemFromBlock(block);
-                if (item == null || item == Items.AIR) continue;
-
-                NonNullList<ItemStack> subItems = NonNullList.create();
-                item.getSubItems(CreativeTabs.SEARCH, subItems);
-                if (subItems.isEmpty())
-                {
-                    subItems.add(new ItemStack(item, 1, 0));
-                }
-
-                for (ItemStack subStack : subItems)
-                {
-                    if (subStack.isEmpty() || subStack.getItem() != item) continue;
-
-                    if (existingBlocks.contains(registry + ":" + subStack.getMetadata()))
-                    {
-                        continue;
-                    }
-
-                    String name = "";
-                    try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
-
-                    if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms))
-                    {
-                        continue;
-                    }
-
-                    searchResults.add(new SearchResult(registry, name, modId, subStack.copy()));
-                }
-            }
-
-            for (Item item : ForgeRegistries.ITEMS)
-            {
-                ResourceLocation reg = item.getRegistryName();
-                if (reg == null) continue;
-                if (item instanceof net.minecraft.item.ItemBlock) continue;
-                if (item == Items.AIR) continue;
-
-                String registry = reg.toString();
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
-
-                if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
-                if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-
-                String name = "";
-                try { name = new ItemStack(item, 1).getDisplayName(); } catch (Exception ignored) {}
-
-                if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms))
-                {
-                    continue;
-                }
-
-                searchResults.add(new SearchResult(registry, name, modId, new ItemStack(item, 1)));
-            }
-        }
-
-        if (currentSearchType == SearchType.MOBS)
-        {
-            Set<String> existingMobs = getExistingMobRegistries();
-            Set<ResourceLocation> entityNames = EntityList.getEntityNameList();
-            if (entityNames != null)
-            {
-                for (ResourceLocation reg : entityNames)
-                {
-                    String registry = reg.toString();
-                    if (existingMobs.contains(registry))
-                    {
-                        continue;
-                    }
-                    String registryId = reg.getResourcePath();
-                    String modId = reg.getResourceDomain();
-
-                    if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
-                    if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-
-                    String name = registry;
-                    try
-                    {
-                        // Способ 1: через EntityList.getTranslationName
-                        String translationKey = EntityList.getTranslationName(reg);
-                        if (translationKey != null) {
-                            String localized = I18n.format(translationKey);
-                            // Проверяем, что локализация действительно найдена
-                            if (!localized.equals(translationKey)) {
-                                name = localized;
-                            }
-                        }
-
-                        // Способ 2: если не нашли, пробуем через создание сущности
-                        if (name.equals(registry)) {
-                            Entity entity = EntityList.createEntityByIDFromName(reg, mc.world);
-                            if (entity != null) {
-                                String displayName = entity.getDisplayName().getUnformattedText();
-                                if (displayName != null && !displayName.isEmpty()) {
-                                    name = displayName;
-                                }
-                            }
-                        }
-
-                        // Способ 3: пробуем через EntityList.getEntityString
-                        if (name.equals(registry)) {
-                            try {
-                                // Создаем временную сущность для получения имени
-                                Entity tempEntity = EntityList.createEntityByIDFromName(reg, mc.world);
-                                if (tempEntity != null) {
-                                    String entityString = EntityList.getEntityString(tempEntity);
-                                    if (entityString != null) {
-                                        String altKey = "entity." + entityString + ".name";
-                                        String localized = I18n.format(altKey);
-                                        if (!localized.equals(altKey)) {
-                                            name = localized;
-                                        }
-                                    }
-                                }
-                            } catch (Exception ignored) {}
-                        }
-                    }
-                    catch (Exception ignored) {}
-
-                    if (!emptyQuery && !searchTerms.isEmpty() && !matchesSearchTerms(name, searchTerms))
-                    {
-                        continue;
-                    }
-
-                    Class<?> entityClass = EntityList.getClass(reg);
-                    if (entityClass != null && EntityLivingBase.class.isAssignableFrom(entityClass))
-                    {
-                        searchResults.add(new SearchResult(registry, name, modId, entityClass));
-                    }
-                }
-            }
-        }
-
-        searchResults.sort((a, b) -> a.name.compareToIgnoreCase(b.name));
-        if (searchResults.size() > 200) searchResults = searchResults.subList(0, 200);
-
-        OneBlockUltima.getLogger().info("performSearch: found " + searchResults.size() + " results");
-    }
-
-    private ItemStack getItemStackFromEntry(BlockSetConfig.BlockElementDefinition entry, int meta)
-    {
-        ItemStack stack = ItemStack.EMPTY;
-        try {
-            net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(entry.registry));
-            if (block != null) {
-                Fluid fluid = getFluidForRegistry(entry.registry);
-                if (fluid != null) {
-                    return ItemStack.EMPTY;
-                }
-                net.minecraft.block.state.IBlockState state = block.getStateFromMeta(meta);
-                stack = block.getPickBlock(state, null, null, null, null);
-                if (!stack.isEmpty()) return stack;
-
-                net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
-                if (item != null && item != Items.AIR) {
-                    stack = new ItemStack(item, 1, meta);
-                }
-            }
-            if (stack.isEmpty()) {
-                net.minecraft.item.Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.registry));
-                if (item != null && item != Items.AIR) {
-                    stack = new ItemStack(item, 1, meta);
-                }
-            }
-        } catch (Exception ignored) {}
-        return stack;
-    }
-
-    private ItemStack getItemStackFromEntry(BlockSetConfig.BlockElementDefinition entry)
-    {
-        return getItemStackFromEntry(entry, entry.meta);
-    }
-
-    private String getLocalizedNameForBlock(BlockSetConfig.BlockElementDefinition entry, int meta)
-    {
-        try {
-            net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(entry.registry));
-            if (block != null) {
-                if (block instanceof IFluidBlock || FluidRegistry.lookupFluidForBlock(block) != null) {
-                    Fluid fluid = block instanceof IFluidBlock ? ((IFluidBlock) block).getFluid() : FluidRegistry.lookupFluidForBlock(block);
-                    if (fluid != null) {
-                        FluidStack fluidStack = new FluidStack(fluid, 1000);
-                        return fluid.getLocalizedName(fluidStack);
-                    }
-                }
-                ItemStack stack = getItemStackFromEntry(entry, meta);
-                if (!stack.isEmpty()) return stack.getDisplayName();
-            }
-        } catch (Exception ignored) {}
-        return entry.registry + ":" + meta;
-    }
-
-    private String getLocalizedNameForBlock(BlockSetConfig.BlockElementDefinition entry)
-    {
-        return getLocalizedNameForBlock(entry, entry.meta);
-    }
-
-    private String getLocalizedNameForMob(BlockSetConfig.MobElementDefinition entry)
-    {
-        try {
-            ResourceLocation reg = new ResourceLocation(entry.registry);
-            String translationKey = EntityList.getTranslationName(reg);
-            if (translationKey != null) {
-                String name = I18n.format(translationKey);
-                if (name != null && !name.equals(translationKey)) {
-                    return name;
-                }
-            }
-
-            Entity entity = EntityList.createEntityByIDFromName(reg, mc.world);
-            if (entity != null) {
-                String name = entity.getDisplayName().getUnformattedText();
-                if (name != null && !name.isEmpty()) {
-                    return name;
-                }
-            }
-        } catch (Exception ignored) {}
-        return entry.registry;
-    }
-
-    public static String getLocalizedSetNameStatic(BlockSetConfig.BlockSetDefinition set) {
-        if (set == null || set.id == null) return "-";
-
-        // Получаем текущий язык
-        Minecraft mc = Minecraft.getMinecraft();
-        String langCode = mc.getLanguageManager().getCurrentLanguage().getLanguageCode().toLowerCase();
-
-        // Проверяем кастомное имя для текущего языка
-        if (staticSetLocalizedNames.containsKey(set.id)) {
-            Map<String, String> langMap = staticSetLocalizedNames.get(set.id);
-            if (langMap.containsKey(langCode)) {
-                return langMap.get(langCode);
-            }
-        }
-
-        String key = "gui.oneblockultima.set." + set.id;
-        String localized = I18n.format(key);
-        return localized.equals(key) ? set.id : localized;
-    }
-
-    // Статический метод для загрузки имен
-    public static void loadStaticCustomNames() {
-        staticSetLocalizedNames.clear();
-        try {
-            File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
-            if (!langDir.exists()) {
-                return;
-            }
-
-            for (File langFile : langDir.listFiles()) {
-                if (!langFile.getName().endsWith(".lang")) continue;
-
-                String langCode = langFile.getName().replace(".lang", "").toLowerCase();
-                List<String> lines = Files.readAllLines(langFile.toPath(), StandardCharsets.UTF_8);
-
-                for (String line : lines) {
-                    if (line.startsWith("gui.oneblockultima.set.")) {
-                        String[] parts = line.split("=", 2);
-                        if (parts.length == 2) {
-                            String key = parts[0];
-                            String value = parts[1];
-                            if (key.startsWith("gui.oneblockultima.set.")) {
-                                String setId = key.substring("gui.oneblockultima.set.".length());
-                                staticSetLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>())
-                                        .put(langCode, value);
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-    }
-
-    private void loadSetDetails(int index)
-    {
-        if (index < 0 || index >= sets.size()) return;
-        selectedSetIndex = index;
-        editingSetSourceIndex = index;
-        editingSet = BlockSetConfig.copyBlockSetDefinition(sets.get(index));
-        isNewSet = false;
-        selectedBlockIndex = -1;
-        selectedBlockMeta = -1;
-        selectedMobIndex = -1;
-        entryScrollOffset = 0;
-        savedNewSetName = "";
-        savedNewSetId = "";
-        savedNewSetCost = "0";
-        savedNewSetMods = "";
-        changeView(VIEW_SET_DETAILS);
-    }
-
-    private void saveSetDetails()
-    {
-        if (editingSet == null) {
-            OneBlockUltima.getLogger().error("saveSetDetails: editingSet is null!");
-            return;
-        }
-
-        String newName = setNameField != null ? setNameField.getText().trim() : "";
-
-        if (isNewSet)
-        {
-            String newId = setIdField != null ? setIdField.getText().trim() : "";
-            if (newId.isEmpty())
-            {
-                statusMessage = I18n.format("gui.oneblockultima.config.error.empty_id");
-                statusTimer = 100;
-                return;
-            }
-            for (BlockSetConfig.BlockSetDefinition set : sets)
-            {
-                if (set != null && newId.equals(set.id))
-                {
-                    statusMessage = I18n.format("gui.oneblockultima.config.error.duplicate_id");
-                    statusTimer = 100;
-                    return;
-                }
-            }
-
-            syncEditingSetFromFields();
-            editingSet.id = newId;
-
-            if (!newName.isEmpty())
-            {
-                saveLocalizedName(newId, newName);
-            }
-
-            try
-            {
-                editingSet.unlockCost = Integer.parseInt(unlockCostField != null ? unlockCostField.getText().trim() : "0");
-            }
-            catch (NumberFormatException e)
-            {
-                statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_cost");
-                statusTimer = 100;
-                return;
-            }
-
-            if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
-            if (editingSet.mobs == null) editingSet.mobs = new ArrayList<>();
-            if (editingSet.requiredMods == null) editingSet.requiredMods = new BlockSetConfig.SetRequiredModsDefinition();
-
-            sets.add(editingSet);
-            updateFilteredSets();
-            saveConfigToFile();
-
-            statusMessage = I18n.format("gui.oneblockultima.config.set_created", newId);
-            statusTimer = 60;
-
-            isNewSet = false;
-            editingSet = null;
-            savedNewSetName = "";
-            savedNewSetId = "";
-            savedNewSetCost = "0";
-            savedNewSetMods = "";
-            changeView(VIEW_SETS);
-        }
-        else
-        {
-            syncEditingSetFromFields();
-            if (!newName.isEmpty())
-            {
-                saveLocalizedName(editingSet.id, newName);
-            }
-
-            try
-            {
-                editingSet.unlockCost = Integer.parseInt(unlockCostField != null ? unlockCostField.getText().trim() : "0");
-            }
-            catch (NumberFormatException e)
-            {
-                statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_cost");
-                statusTimer = 100;
-                return;
-            }
-
-            if (editingSetSourceIndex >= 0 && editingSetSourceIndex < sets.size())
-            {
-                sets.set(editingSetSourceIndex, editingSet);
-            }
-
-            saveConfigToFile();
-            statusMessage = I18n.format("gui.oneblockultima.config.saved");
-            statusTimer = 60;
-            editingSet.computedLevels = null;
-            editingSetSourceIndex = -1;
-            updateFilteredSets();
-            changeView(VIEW_SETS);
-        }
-    }
-
-    private void saveConfigToFile()
-    {
         try
         {
-            OneBlockUltima.getLogger().info("saveConfigToFile: saving config...");
-            List<BlockSetConfig.BlockSetDefinition> snapshot = new ArrayList<>(sets);
-            BlockSetConfig.applySets(snapshot);
-            boolean saved = BlockSetConfig.saveCurrentConfig();
-            OneBlockUltima.getLogger().info("saveConfigToFile: saveCurrentConfig returned " + saved);
-
-            BlockSetConfig.reload();
-            config = BlockSetConfig.get();
-
-            sets.clear();
-            sets.addAll(config != null ? config.getSets() : Collections.emptyList());
-            OneBlockUltima.getLogger().info("saveConfigToFile: reloaded, sets size=" + sets.size());
-            updateFilteredSets();
-        }
-        catch (Exception e)
-        {
-            statusMessage = I18n.format("gui.oneblockultima.status.save_failed") + ": " + e.getMessage();
-            statusTimer = 100;
-            OneBlockUltima.getLogger().error("saveConfigToFile error", e);
-        }
-    }
-
-    private void loadCustomNames() {
-        setLocalizedNames.clear();
-        try {
-            File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
-            if (!langDir.exists()) {
-                return;
-            }
-
-            for (File langFile : langDir.listFiles()) {
-                if (!langFile.getName().endsWith(".lang")) continue;
-
-                String langCode = langFile.getName().replace(".lang", "").toLowerCase();
-                List<String> lines = Files.readAllLines(langFile.toPath(), StandardCharsets.UTF_8);
-
-                for (String line : lines) {
-                    if (line.startsWith("gui.oneblockultima.set.")) {
-                        String[] parts = line.split("=", 2);
-                        if (parts.length == 2) {
-                            String key = parts[0];
-                            String value = parts[1];
-                            if (key.startsWith("gui.oneblockultima.set.")) {
-                                String setId = key.substring("gui.oneblockultima.set.".length());
-                                setLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>())
-                                        .put(langCode, value);
-                                // Обновляем статическую Map
-                                staticSetLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>())
-                                        .put(langCode, value);
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-    }
-
-    // Метод для сохранения кастомных имен
-    private void saveCustomNames() {
-        try {
-            File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
-            if (!langDir.exists()) {
-                langDir.mkdirs();
-            }
-
-            // Для каждого языка создаем свой файл
-            Map<String, List<String>> langLines = new HashMap<>();
-
-            for (Map.Entry<String, Map<String, String>> setEntry : setLocalizedNames.entrySet()) {
-                String setId = setEntry.getKey();
-                for (Map.Entry<String, String> langEntry : setEntry.getValue().entrySet()) {
-                    String langCode = langEntry.getKey();
-                    String name = langEntry.getValue();
-                    String key = "gui.oneblockultima.set." + setId;
-                    langLines.computeIfAbsent(langCode, k -> new ArrayList<>())
-                            .add(key + "=" + name);
-                }
-            }
-
-            // Сохраняем каждый язык в свой файл
-            for (Map.Entry<String, List<String>> entry : langLines.entrySet()) {
-                String langCode = entry.getKey();
-                List<String> lines = entry.getValue();
-                File langFile = new File(langDir, langCode + ".lang");
-                Files.write(langFile.toPath(), lines, StandardCharsets.UTF_8);
-            }
-        } catch (Exception ignored) {}
-    }
-
-    private void saveLocalizedName(String setId, String name) {
-        String langCode = mc.getLanguageManager().getCurrentLanguage().getLanguageCode().toLowerCase();
-
-        // Сохраняем в файл конкретного языка
-        staticSetLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>())
-                .put(langCode, name);
-        saveCustomNames();
-        if (langCode == null || langCode.isEmpty()) {
-            langCode = "en_us";
-        }
-        langCode = langCode.toLowerCase();
-
-        // Обновляем статическую Map
-        staticSetLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>())
-                .put(langCode, name);
-
-        // Также обновляем локальную Map для текущего экземпляра
-        setLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>())
-                .put(langCode, name);
-        saveCustomNames();
-    }
-
-    private void resetToDefault()
-    {
-        try
-        {
-            File file = BlockSetConfig.getConfigFile();
-            if (file == null)
+            World renderWorld = ModelUtil.getWorldOrCreateDummy();
+            Entity entity = renderWorld != null ? EntityList.createEntityByIDFromName(new ResourceLocation(registry), renderWorld) : null;
+            if (entity != null)
             {
-                statusMessage = I18n.format("gui.oneblockultima.status.reset_failed");
-                statusTimer = 100;
-                return;
+                if (entity.world == null)
+                {
+                    entity.world = renderWorld;
+                }
+                if (nbtTags != null && !nbtTags.hasNoTags())
+                {
+                    ru.defea.oneblockultima.util.BlockUtil.applyNbtToEntity(entity, nbtTags);
+                }
+                mobEntityCache.put(cacheKey, entity);
             }
-            if (file.getParentFile() != null && !file.getParentFile().exists())
-            {
-                file.getParentFile().mkdirs();
-            }
-            try (java.io.InputStream input = BlockSetConfig.class.getResourceAsStream("/assets/oneblockultima/blocksets.json"))
-            {
-                if (input == null)
-                {
-                    statusMessage = I18n.format("gui.oneblockultima.status.reset_failed");
-                    statusTimer = 100;
-                    return;
-                }
-                java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
-                byte[] buffer = new byte[4096];
-                int read;
-                while ((read = input.read(buffer)) != -1)
-                {
-                    output.write(buffer, 0, read);
-                }
-                Files.write(file.toPath(), output.toByteArray());
-            }
-            BlockSetConfig.reload();
-            config = BlockSetConfig.get();
-            sets.clear();
-            sets.addAll(config.getSets());
-            updateFilteredSets();
-            currentView = VIEW_SETS;
-            initGui();
-            statusMessage = I18n.format("gui.oneblockultima.status.reset_success");
-            statusTimer = 60;
+            return entity;
         }
-        catch (Exception e)
+        catch (Exception ignored)
         {
-            statusMessage = I18n.format("gui.oneblockultima.status.reset_failed");
-            statusTimer = 100;
+            return null;
         }
     }
 
-    private void addNewSet()
+    private void buildView()
     {
-        BlockSetConfig.BlockSetDefinition newSet = new BlockSetConfig.BlockSetDefinition();
-        newSet.id = "";
-        newSet.unlockCost = 0;
-        newSet.blocks = new ArrayList<>();
-        newSet.mobs = new ArrayList<>();
-        newSet.requiredMods = new BlockSetConfig.SetRequiredModsDefinition();
-        newSet.unlockConditions = new BlockSetConfig.UnlockConditionGroup();
-        newSet.unlockConditions.conditions = new ArrayList<>();
+        saveScrollOffsets();
 
-        editingSet = newSet;
-        isNewSet = true;
-        editingSetSourceIndex = -1;
-        selectedBlockIndex = -1;
-        selectedBlockMeta = -1;
-        selectedMobIndex = -1;
-        entryScrollOffset = 0;
-        savedNewSetName = "";
-        savedNewSetId = "";
-        savedNewSetCost = "0";
-        savedNewSetMods = "";
+        if (rootFactory == null || rootFactory.getScreenWidth() != width || rootFactory.getScreenHeight() != height)
+        {
+            rootFactory = new ViewFactory(width, height)
+                    .margin(2)
+                    .padding(4)
+                    .gap(6)
+                    .align(Alignment.CENTER)
+                    .panel(0, 0);
+            switcher = new ViewSwitcherElement().widthPercent(100).flexible(true);
+            rootFactory.add(switcher);
+        }
 
-        changeView(VIEW_SET_DETAILS);
+        factory = new ViewFactory(width, height)
+                .margin(2)
+                .padding(4)
+                .gap(6)
+                .align(Alignment.CENTER);
+
+        switch (container.getCurrentView())
+        {
+            case VIEW_SETS: buildSetsView(); break;
+            case VIEW_SET_DETAILS: buildSetDetailsView(); break;
+            case VIEW_ADD_ENTRY: buildAddEntryView(); break;
+            case VIEW_CONFIRM_DELETE: buildConfirmDeleteView(); break;
+            case VIEW_EDIT: buildEditView(); break;
+            case VIEW_REQUIRED_MODS_EDITOR: buildRequiredModsEditorView(); break;
+            case VIEW_REQUIRED_MODS_ADD: buildRequiredModsAddView(); break;
+            case VIEW_UNLOCK_CONDITIONS: buildUnlockConditionsView(); break;
+            case VIEW_EDIT_NBT: buildEditNbtView(); break;
+            case VIEW_NBT_ADD: buildNbtAddView(); break;
+        }
+
+        int view = container.getCurrentView();
+        switcher.replaceView(view, new ViewFactoryElement(factory));
+        switcher.setView(view);
+        rootFactory.build(buttonList, fontRenderer);
     }
 
-    private void confirmDeleteSet(int index)
+    private void saveScrollOffsets()
     {
-        if (index < 0 || index >= sets.size()) return;
-        deleteTargetIndex = index;
-        changeView(VIEW_CONFIRM_DELETE);
-    }
-
-    private void executeDeleteSet()
-    {
-        if (deleteTargetIndex < 0 || deleteTargetIndex >= sets.size()) {
-            OneBlockUltima.getLogger().error("executeDeleteSet: invalid index " + deleteTargetIndex);
-            return;
-        }
-
-        String id = sets.get(deleteTargetIndex).id;
-        OneBlockUltima.getLogger().info("executeDeleteSet: deleting " + id);
-
-        sets.remove(deleteTargetIndex);
-        OneBlockUltima.getLogger().info("executeDeleteSet: sets size after removal=" + sets.size());
-        updateFilteredSets();
-        if (selectedSetIndex >= sets.size()) selectedSetIndex = sets.size() - 1;
-
-        saveConfigToFile();
-
-        statusMessage = I18n.format("gui.oneblockultima.config.set_deleted", id);
-        statusTimer = 60;
-        deleteTargetIndex = -1;
-        changeView(VIEW_SETS);
-    }
-
-    private void addEntryToCurrentSet(EntryType type, SearchResult result)
-    {
-        if (editingSet == null) return;
-
-        int baseLevel = 1;
-        int baseChance = 1;
-        int currency = 0;
-
-        if (addLevelField != null)
-        {
-            try { baseLevel = Integer.parseInt(addLevelField.getText().trim()); } catch (NumberFormatException ignored) {}
-        }
-        if (addChanceField != null)
-        {
-            try { baseChance = Math.min(100, Math.max(1, Integer.parseInt(addChanceField.getText().trim()))); } catch (NumberFormatException ignored) {}
-        }
-        if (type == EntryType.BLOCK && currencyField != null)
-        {
-            try { currency = Integer.parseInt(currencyField.getText().trim()); } catch (NumberFormatException ignored) {}
-        }
-
-        if (type == EntryType.BLOCK)
-        {
-            BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
-            entry.registry = result.registry;
-            entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
-            entry.baseLevel = baseLevel;
-            entry.baseChance = baseChance;
-            entry.currency = currency;
-            if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
-            editingSet.blocks.add(entry);
-            statusMessage = I18n.format("gui.oneblockultima.config.block_added", result.name);
-        }
-        else
-        {
-            BlockSetConfig.MobElementDefinition entry = new BlockSetConfig.MobElementDefinition();
-            entry.registry = result.registry;
-            entry.baseLevel = baseLevel;
-            entry.baseChance = baseChance;
-            entry.count = 1;
-            if (editingSet.mobs == null) editingSet.mobs = new ArrayList<>();
-            editingSet.mobs.add(entry);
-            statusMessage = I18n.format("gui.oneblockultima.config.mob_added", result.name);
-        }
-
-        statusTimer = 60;
-        editingSet.computedLevels = null;
-        changeView(VIEW_SET_DETAILS);
-    }
-
-    private void removeSelectedEntry()
-    {
-        if (editingSet == null) return;
-
-        if (selectedBlockIndex >= 0 && editingSet.blocks != null && selectedBlockIndex < editingSet.blocks.size())
-        {
-            BlockSetConfig.BlockElementDefinition block = editingSet.blocks.get(selectedBlockIndex);
-            boolean hasSpecificMeta = selectedBlockMeta >= 0 && block.metas != null && block.metas.size() > 1 && block.metas.contains(selectedBlockMeta);
-
-            if (hasSpecificMeta)
-            {
-                block.metas.remove(Integer.valueOf(selectedBlockMeta));
-                statusMessage = I18n.format("gui.oneblockultima.config.removed");
-                statusTimer = 60;
-            }
-            else
-            {
-                editingSet.blocks.remove(selectedBlockIndex);
-                statusMessage = I18n.format("gui.oneblockultima.config.removed");
-                statusTimer = 60;
-            }
-
-            selectedBlockIndex = -1;
-            selectedBlockMeta = -1;
-            editingSet.computedLevels = null;
-            changeView(VIEW_SET_DETAILS);
-        }
-        else if (selectedMobIndex >= 0 && editingSet.mobs != null && selectedMobIndex < editingSet.mobs.size())
-        {
-            editingSet.mobs.remove(selectedMobIndex);
-            statusMessage = I18n.format("gui.oneblockultima.config.removed");
-            statusTimer = 60;
-            selectedMobIndex = -1;
-            editingSet.computedLevels = null;
-            changeView(VIEW_SET_DETAILS);
-        }
-    }
-
-    private void editBlock(int index, EntryType type)
-    {
-        if (editingSet == null) return;
-
-        editingEntryType = type;
-        editingCurrencyIndex = index;
-        changeView(VIEW_EDIT_CURRENCY);
-    }
-
-    private void saveCurrency()
-    {
-        if (editingSet == null || editingCurrencyIndex < 0) return;
-
-        try {
-            if (editingEntryType == EntryType.BLOCK && editingSet.blocks != null && editingCurrencyIndex < editingSet.blocks.size())
-            {
-                BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
-                entry.baseLevel = Integer.parseInt(editLevelField.getText().trim());
-                entry.baseChance = Math.min(100, Math.max(1, Integer.parseInt(editChanceField.getText().trim())));
-                entry.currency = Integer.parseInt(editCurrencyField.getText().trim());
-            }
-            else if (editingEntryType == EntryType.MOB && editingSet.mobs != null && editingCurrencyIndex < editingSet.mobs.size())
-            {
-                BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
-                entry.baseLevel = Integer.parseInt(editLevelField.getText().trim());
-                entry.baseChance = Math.min(100, Math.max(1, Integer.parseInt(editChanceField.getText().trim())));
-            }
-            else
-            {
-                return;
-            }
-            editingSet.computedLevels = null;
-            statusMessage = I18n.format("gui.oneblockultima.config.currency_updated");
-            statusTimer = 60;
-        } catch (NumberFormatException e) {
-            statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_currency");
-            statusTimer = 100;
-            return;
-        }
-
-        changeView(VIEW_SET_DETAILS);
-    }
-
-    private void cancelCurrencyEdit()
-    {
-        changeView(VIEW_SET_DETAILS);
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton button)
-    {
-        OneBlockUltima.getLogger().info("actionPerformed: button id=" + button.id);
-
-        switch (button.id)
-        {
-            case BUTTON_BACK:
-                if (currentView == VIEW_ADD_ENTRY || currentView == VIEW_EDIT_CURRENCY)
-                {
-                    if (currentView == VIEW_EDIT_CURRENCY) cancelCurrencyEdit();
-                    else changeView(VIEW_SET_DETAILS);
-                }
-                else if (currentView == VIEW_REQUIRED_MODS_EDITOR)
-                {
-                    changeView(VIEW_SET_DETAILS);
-                }
-                else if (currentView == VIEW_UNLOCK_CONDITIONS)
-                {
-                    changeView(VIEW_SET_DETAILS);
-                }
-                else if (currentView == VIEW_SET_DETAILS)
-                {
-                    savedNewSetName = "";
-                    savedNewSetId = "";
-                    savedNewSetCost = "0";
-                    savedNewSetMods = "";
-                    discardEditingSetChanges();
-                    changeView(VIEW_SETS);
-                }
-                else
-                {
-                    mc.displayGuiScreen(parent);
-                }
-                break;
-
-            case BUTTON_SAVE:
-                if (currentView == VIEW_SET_DETAILS)
-                {
-                    saveSetDetails();
-                }
-                break;
-
-            case BUTTON_REQUIRED_MODS_BACK:
-                if (currentView == VIEW_REQUIRED_MODS_ADD)
-                {
-                    changeView(VIEW_REQUIRED_MODS_EDITOR);
-                }
-                else if (currentView == VIEW_REQUIRED_MODS_EDITOR)
-                {
-                    changeView(VIEW_SET_DETAILS);
-                }
-                break;
-
-            case BUTTON_SAVE_CURRENCY:
-                saveCurrency();
-                break;
-
-            case BUTTON_CANCEL:
-            case BUTTON_CANCEL_CURRENCY:
-                if (currentView == VIEW_CONFIRM_DELETE)
-                {
-                    deleteTargetIndex = -1;
-                    changeView(VIEW_SETS);
-                }
-                else if (currentView == VIEW_EDIT_CURRENCY)
-                {
-                    cancelCurrencyEdit();
-                }
-                break;
-
-            case BUTTON_CONFIRM_DELETE:
-                executeDeleteSet();
-                break;
-
-            case BUTTON_RESET:
-                resetToDefault();
-                break;
-
-            case BUTTON_ADD_SET:
-                addNewSet();
-                break;
-
-            case BUTTON_ADD_BLOCK:
-                if (editingSet != null)
-                {
-                    if (isNewSet)
-                    {
-                        savedNewSetName = setNameField.getText().trim();
-                        savedNewSetId = setIdField.getText().trim();
-                        savedNewSetCost = unlockCostField.getText().trim();
-                        savedNewSetMods = requiredModsField.getText().trim();
-                    }
-                    currentEntryType = EntryType.BLOCK;
-                    searchScrollOffset = 0;
-                    changeView(VIEW_ADD_ENTRY);
-                }
-                break;
-
-            case BUTTON_ADD_MOB:
-                if (editingSet != null)
-                {
-                    if (isNewSet)
-                    {
-                        savedNewSetName = setNameField.getText().trim();
-                        savedNewSetId = setIdField.getText().trim();
-                        savedNewSetCost = unlockCostField.getText().trim();
-                        savedNewSetMods = requiredModsField.getText().trim();
-                    }
-                    currentEntryType = EntryType.MOB;
-                    searchScrollOffset = 0;
-                    changeView(VIEW_ADD_ENTRY);
-                }
-                break;
-
-            case BUTTON_EDIT_REQUIRED_MODS:
-                if (editingSet != null)
-                {
-                    openRequiredModsEditor();
-                }
-                break;
-
-            case BUTTON_REQUIRED_MODS_TOGGLE:
-                requiredModsEditorType = requiredModsEditorType == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL
-                        ? BlockSetConfig.SetRequiredModsDefinition.TYPE.ANY
-                        : BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL;
-                if (requiredModsToggleButton != null)
-                {
-                    requiredModsToggleButton.displayString = getRequiredModsEditorTypeLabel();
-                }
-                break;
-
-            case BUTTON_REQUIRED_MODS_SAVE:
-                commitRequiredModsEditor();
-                break;
-
-            case BUTTON_REQUIRED_MODS_ADD:
-                if (currentView == VIEW_REQUIRED_MODS_EDITOR)
-                {
-                    openRequiredModsAddView();
-                }
-                else if (currentView == VIEW_REQUIRED_MODS_ADD)
-                {
-                    addSelectedRequiredMods();
-                }
-                break;
-
-            case BUTTON_REQUIRED_MODS_DELETE:
-                removeSelectedRequiredMods();
-                break;
-
-            case BUTTON_EDIT_UNLOCK_CONDITIONS:
-                if (editingSet != null)
-                {
-                    openUnlockConditionsEditor();
-                }
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_TOGGLE:
-                unlockConditionsEditorMode = "any".equalsIgnoreCase(unlockConditionsEditorMode) ? "all" : "any";
-                if (unlockConditionsToggleButton != null)
-                {
-                    unlockConditionsToggleButton.displayString = "any".equalsIgnoreCase(unlockConditionsEditorMode)
-                            ? I18n.format("gui.oneblockultima.config.any")
-                            : I18n.format("gui.oneblockultima.config.all");
-                }
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_BACK:
-                changeView(VIEW_SET_DETAILS);
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_SAVE:
-                commitUnlockConditionsEditor();
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_ADD:
-                addNewUnlockCondition();
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_DELETE:
-                removeSelectedUnlockCondition();
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE:
-                cycleNewConditionType();
-                break;
-
-            case BUTTON_UNLOCK_CONDITIONS_CYCLE_SET:
-                cycleNewConditionSet();
-                break;
-
-            case BUTTON_REMOVE_ENTRY:
-                removeSelectedEntry();
-                break;
-        }
+        if (setsList != null) setsScrollOffset = setsList.getScrollOffset();
+        if (entriesList != null) entriesScrollOffset = entriesList.getScrollOffset();
+        if (searchResultsList != null) searchScrollOffset = searchResultsList.getScrollOffset();
+        if (requiredModsList != null) modsScrollOffset = requiredModsList.getScrollOffset();
+        if (addModsList != null) addModsScrollOffset = addModsList.getScrollOffset();
+        if (conditionsList != null) conditionsScrollOffset = conditionsList.getScrollOffset();
+        if (nbtList != null) nbtScrollOffset = nbtList.getScrollOffset();
     }
 
     @Override
@@ -2745,854 +231,32 @@ public class GuiSetsConfig extends GuiScreen
     {
         drawDefaultBackground();
 
-        drawRect(pad, pad, width - pad, height - pad, 0xCC22272E);
-        drawRect(pad, pad, width - pad, pad + 1, 0xFF3A3F44);
-        drawRect(pad, height - pad - 1, width - pad, height - pad, 0xFF3A3F44);
-        drawRect(pad, pad, pad + 1, height - pad, 0xFF3A3F44);
-        drawRect(width - pad - 1, pad, width - pad, height - pad, 0xFF3A3F44);
-
-        switch (currentView)
-        {
-            case VIEW_SETS: drawSetsView(mouseX, mouseY); break;
-            case VIEW_SET_DETAILS: drawSetDetailsView(mouseX, mouseY); break;
-            case VIEW_ADD_ENTRY: drawAddEntryView(mouseX, mouseY); break;
-            case VIEW_CONFIRM_DELETE: drawConfirmDeleteView(); break;
-            case VIEW_EDIT_CURRENCY: drawEditCurrencyView(mouseX, mouseY); break;
-            case VIEW_REQUIRED_MODS_EDITOR: drawRequiredModsEditorView(mouseX, mouseY); break;
-            case VIEW_REQUIRED_MODS_ADD: drawRequiredModsAddView(mouseX, mouseY); break;
-            case VIEW_UNLOCK_CONDITIONS: drawUnlockConditionsView(mouseX, mouseY); break;
-        }
-
-        if (!statusMessage.isEmpty())
-        {
-            int color = statusMessage.contains("error") || statusMessage.contains("failed") ? 0xFFFF4444 : 0xFFA0A0A0;
-            drawCenteredString(fontRenderer, statusMessage, width / 2, height - pad - textHeight, color);
-        }
+        if (factory != null) rootFactory.draw(fontRenderer, mouseX, mouseY, partialTicks);
 
         if (suppressMouseUntilRelease && Mouse.isButtonDown(0))
         {
             for (GuiButton button : buttonList)
-            {
                 button.drawButton(mc, mouseX, mouseY, partialTicks);
-            }
         }
         else
         {
-            if (suppressMouseUntilRelease)
-            {
-                suppressMouseUntilRelease = false;
-            }
+            if (suppressMouseUntilRelease) suppressMouseUntilRelease = false;
             super.drawScreen(mouseX, mouseY, partialTicks);
         }
-    }
 
-    private void drawSetsView(int mouseX, int mouseY)
-    {
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.sets_title"), width / 2, pad + textHeight / 2, 0xFFFFFF);
-
-        if (searchField != null) searchField.drawTextBox();
-
-        int listX = pad + gap;
-        assert searchField != null;
-        int listY = searchField.y + btnHeight + gap;
-        int listWidth = width - pad * 2 - gap - scrollWidth;
-        int listHeight = height - pad * 2 - textHeight - btnHeight - gap * 3;
-
-        int visibleEntries = listHeight / entryHeight;
-        if (visibleEntries < 1) visibleEntries = 1;
-        int maxScroll = Math.max(0, filteredSets.size() - visibleEntries);
-        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
-
-        drawRect(listX, listY, listX + listWidth - scrollWidth, listY + listHeight, 0xFF1A1F24);
-
-        int startEntry = scrollOffset;
-        int endEntry = Math.min(filteredSets.size(), startEntry + visibleEntries);
-
-        for (int i = startEntry; i < endEntry; i++)
+        String status = container.getStatusMessage();
+        if (status != null && !status.isEmpty() && container.getStatusTimer() > 0)
         {
-            BlockSetConfig.BlockSetDefinition set = filteredSets.get(i);
-            int entryX = listX + innerPadding;
-            int entryY = listY + innerPadding + (i - startEntry) * entryHeight;
-            int entryWidth = listWidth - innerPadding * 2 - scrollWidth;
-
-            boolean isSelected = selectedSetIndex >= 0 && selectedSetIndex < sets.size() &&
-                    sets.get(selectedSetIndex).id.equals(set.id);
-
-            int bgColor = isSelected ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E);
-            drawRect(entryX, entryY, entryX + entryWidth, entryY + entryHeight, bgColor);
-
-            String name = getLocalizedSetName(set);
-            fontRenderer.drawString(name, entryX + gap, entryY + gap / 2, 0xFFFFFF);
-            fontRenderer.drawString(set.id, entryX + gap, entryY + gap / 2 + textHeight + innerPadding, 0xA0A0A0);
-
-            String editLabel = I18n.format("gui.oneblockultima.config.edit");
-            String delLabel = I18n.format("gui.oneblockultima.config.delete_set");
-            int editWidth = fontRenderer.getStringWidth(editLabel) + pad;
-            int delWidth = fontRenderer.getStringWidth(delLabel) + pad;
-
-            int entryEnd = entryX + entryWidth;
-            int editX = entryEnd - editWidth - delWidth - gap - pad;
-            int delX = entryEnd - delWidth - pad;
-
-            boolean editHover = mouseX >= editX && mouseX <= editX + editWidth &&
-                    mouseY >= entryY && mouseY <= entryY + entryHeight;
-            boolean delHover = mouseX >= delX && mouseX <= delX + delWidth &&
-                    mouseY >= entryY && mouseY <= entryY + entryHeight;
-
-            int editColor = editHover ? 0xFF6A7A8A : 0xFF3A4A5A;
-            drawRect(editX, entryY + gap / 2, editX + editWidth, entryY + entryHeight - gap / 2, editColor);
-            drawCenteredString(fontRenderer, editLabel, editX + editWidth / 2, entryY + entryHeight / 2 - textHeight / 2, 0xFFFFFF);
-
-            int delColor = delHover ? 0xFF6A3A3A : 0xFF3A2A2A;
-            drawRect(delX, entryY + gap / 2, delX + delWidth, entryY + entryHeight - gap / 2, delColor);
-            drawCenteredString(fontRenderer, delLabel, delX + delWidth / 2, entryY + entryHeight / 2 - textHeight / 2, 0xFFFF4444);
-        }
-
-        if (filteredSets.size() > visibleEntries)
-        {
-            int scrollbarX = listX + listWidth - gap;
-            int scrollbarY = listY + innerPadding;
-            int scrollbarHeight = listHeight - innerPadding * 2;
-            int thumbHeight = Math.max(10, scrollbarHeight * visibleEntries / filteredSets.size());
-            int thumbY = scrollbarY + (scrollOffset * (scrollbarHeight - thumbHeight) / Math.max(1, maxScroll));
-
-            drawRect(scrollbarX, scrollbarY, scrollbarX + scrollWidth, scrollbarY + scrollbarHeight, 0xFF2A2F34);
-            drawRect(scrollbarX, thumbY, scrollbarX + scrollWidth, thumbY + thumbHeight, 0xFF7A7F84);
-        }
-    }
-
-    private void drawSetDetailsView(int mouseX, int mouseY)
-    {
-        if (editingSet == null) return;
-
-        String title = isNewSet ? I18n.format("gui.oneblockultima.config.add_set") : I18n.format("gui.oneblockultima.config.edit_set");
-        drawCenteredString(fontRenderer, title, width / 2, pad + textHeight / 2, 0xFFFFFF);
-
-        int currentY = pad + textHeight + pad;
-
-        drawString(fontRenderer, I18n.format("gui.oneblockultima.config.set_name") + ":", formMargin, currentY + btnHeight / 2 - textHeight / 2, 0xA0A0A0);
-        setNameField.drawTextBox();
-
-        currentY += btnHeight + gap;
-
-        drawString(fontRenderer, I18n.format("gui.oneblockultima.config.set_id") + ":", formMargin, currentY + btnHeight / 2 - textHeight / 2, 0xA0A0A0);
-        setIdField.drawTextBox();
-
-        currentY += btnHeight + gap;
-        drawString(fontRenderer, I18n.format("gui.oneblockultima.config.unlock_cost") + ":", formMargin, currentY + btnHeight / 2 - textHeight / 2, 0xA0A0A0);
-        unlockCostField.drawTextBox();
-
-        currentY += btnHeight + gap;
-        if (editRequiredModsButton != null)
-        {
-            editRequiredModsButton.x = formFieldX;
-            editRequiredModsButton.y = currentY;
-            editRequiredModsButton.displayString = getRequiredModsButtonLabel(editingSet != null ? editingSet.requiredMods : null);
-            editRequiredModsButton.drawButton(mc, mouseX, mouseY, 1.0F);
-        }
-        if (editUnlockConditionsButton != null)
-        {
-            editUnlockConditionsButton.x = formFieldX + editRequiredModsButton.width + gap;
-            editUnlockConditionsButton.y = currentY;
-            editUnlockConditionsButton.displayString = getUnlockConditionsButtonLabel(editingSet != null ? editingSet.unlockConditions : null);
-            editUnlockConditionsButton.drawButton(mc, mouseX, mouseY, 1.0F);
-        }
-
-        int listY = currentY + btnHeight + gap;
-        int listX = pad + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = Math.max(80, height - listY - btnHeight - pad - gap - innerPadding * 2);
-
-        drawRect(listX, listY, listX + listWidth, listY + listHeight, 0xFF1A1F24);
-
-        int colWidth = (listWidth - innerPadding * 2) / 2;
-
-        List<BlockDisplayEntry> blockDisplayEntries = buildBlockDisplayEntries();
-        int blockDisplayCount = blockDisplayEntries.size();
-        int mobCount = editingSet.mobs != null ? editingSet.mobs.size() : 0;
-        int maxEntries = Math.max(blockDisplayCount, mobCount);
-        int visibleEntries = listHeight / entryHeight;
-        if (visibleEntries < 1) visibleEntries = 1;
-        int maxScroll = Math.max(0, maxEntries - visibleEntries);
-        if (entryScrollOffset > maxScroll) entryScrollOffset = maxScroll;
-
-        for (int i = 0; i < visibleEntries && i + entryScrollOffset < maxEntries; i++)
-        {
-            int idx = i + entryScrollOffset;
-
-            if (idx < blockDisplayCount)
-            {
-                BlockDisplayEntry displayEntry = blockDisplayEntries.get(idx);
-                assert editingSet.blocks != null;
-                BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(displayEntry.blockIndex);
-                int entryX = listX + innerPadding;
-                int entryY = listY + innerPadding + i * entryHeight;
-
-                boolean isSelected = (selectedBlockIndex == displayEntry.blockIndex && selectedBlockMeta == displayEntry.meta);
-                int bgColor = isSelected ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E);
-                drawRect(entryX, entryY, entryX + colWidth - innerPadding, entryY + entryHeight, bgColor);
-
-                ItemStack stack = getItemStackFromEntry(entry, displayEntry.meta);
-                Fluid entryFluid = getFluidForRegistry(entry.registry);
-                if (entryFluid != null)
-                {
-                    renderFluidIcon(entryFluid, entryX + innerPadding, entryY + innerPadding, iconSize);
-                }
-                else if (!stack.isEmpty())
-                {
-                    RenderHelper.enableGUIStandardItemLighting();
-                    GlStateManager.enableDepth();
-                    RenderItem renderItem = Minecraft.getMinecraft().getRenderItem();
-                    renderItem.renderItemAndEffectIntoGUI(stack, entryX + innerPadding, entryY + innerPadding);
-                    GlStateManager.disableDepth();
-                    RenderHelper.disableStandardItemLighting();
-                }
-                else
-                {
-                    drawRect(entryX, entryY, entryX + iconSize, entryY + iconSize, 0xFF444444);
-                    drawString(fontRenderer, "B", entryX + iconSize / 2 - textHeight / 4, entryY + iconSize / 2 - textHeight / 2, 0xFFFFFF);
-                }
-
-                String name = getLocalizedNameForBlock(entry, displayEntry.meta);
-                int textX = entryX + iconSize + gap + innerPadding * 2;
-                int maxNameWidth = colWidth - iconSize - gap * 4 - 70;
-                String displayName = name;
-                if (fontRenderer.getStringWidth(displayName) > maxNameWidth)
-                {
-                    displayName = fontRenderer.trimStringToWidth(displayName, maxNameWidth - fontRenderer.getStringWidth("...")) + "...";
-                }
-                String levelLabel = I18n.format("gui.oneblockultima.config.base_level") + ": " + entry.baseLevel;
-                fontRenderer.drawString(displayName, textX, entryY + innerPadding, 0xA0A0A0);
-                int nameWidth = fontRenderer.getStringWidth(displayName);
-                fontRenderer.drawString(levelLabel, textX + nameWidth + gap * 2, entryY + innerPadding, 0x707070);
-                fontRenderer.drawString(entry.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": " + entry.baseChance + "%", textX, entryY + innerPadding * 2 + textHeight, 0x808080);
-
-                String currencyStr = String.valueOf(entry.currency);
-                int editBtnWidth = entryHeight - innerPadding * 2;
-                int coinSize = 10;
-                int currencyWidth = fontRenderer.getStringWidth(currencyStr);
-                int currencyLabelWidth = coinSize + innerPadding + currencyWidth;
-                int coinX = entryX + colWidth - innerPadding - editBtnWidth - gap - currencyLabelWidth;
-                int coinY = entryY + innerPadding + (entryHeight - textHeight) / 2;
-                int textY = entryY + innerPadding + (entryHeight - textHeight) / 2;
-                GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                mc.getTextureManager().bindTexture(COIN_TEXTURE);
-                drawModalRectWithCustomSizedTexture(coinX, coinY, 0, 0, coinSize, coinSize, coinSize, coinSize);
-                fontRenderer.drawString(currencyStr, coinX + coinSize + innerPadding, textY, 0xFFD700);
-
-                int editCurrX = entryX + colWidth - innerPadding - editBtnWidth - gap / 2;
-                boolean currHover = mouseX >= editCurrX && mouseX <= editCurrX + editBtnWidth &&
-                        mouseY >= entryY && mouseY <= entryY + entryHeight;
-                int currColor = currHover ? 0xFF6A7A8A : 0xFF3A4A5A;
-                drawRect(editCurrX, entryY + gap / 2, editCurrX + editBtnWidth, entryY + entryHeight - gap / 2, currColor);
-                drawCenteredString(fontRenderer, "\u270E", editCurrX + editBtnWidth / 2, entryY + entryHeight / 2 - textHeight / 2, 0xFFFFFF);
-            }
-
-            if (idx < mobCount)
-            {
-                BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(idx);
-                int entryX = listX + colWidth + innerPadding;
-                int entryY = listY + innerPadding + i * entryHeight;
-
-                boolean isSelected = (selectedMobIndex == idx);
-                int bgColor = isSelected ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E);
-                drawRect(entryX, entryY, entryX + colWidth - innerPadding, entryY + entryHeight, bgColor);
-
-                try {
-                    Entity entity = EntityList.createEntityByIDFromName(new ResourceLocation(entry.registry), mc.world);
-                    if (entity instanceof EntityLivingBase) {
-                        int drawSize = iconSize;
-                        int centerX = entryX + drawSize / 2 + innerPadding;
-                        int centerY = entryY + innerPadding + drawSize * 3 / 4;
-                        ModelUtil.drawEntityOnScreen(centerX, centerY, entity, drawSize);
-                    } else {
-                        drawRect(entryX + innerPadding, entryY + innerPadding, entryX + iconSize + innerPadding, entryY + iconSize + innerPadding, 0xFF444444);
-                        drawString(fontRenderer, "M", entryX + iconSize / 2 - textHeight / 4, entryY + iconSize / 2 - textHeight / 2, 0xFFFFFF);
-                    }
-                } catch (Exception ignored) {
-                    drawRect(entryX + innerPadding, entryY + innerPadding, entryX + iconSize + innerPadding, entryY + iconSize + innerPadding, 0xFF444444);
-                    drawString(fontRenderer, "M", entryX + iconSize / 2 - textHeight / 4, entryY + iconSize / 2 - textHeight / 2, 0xFFFFFF);
-                }
-
-                String name = getLocalizedNameForMob(entry);
-                int textX = entryX + iconSize + gap + innerPadding * 2;
-                int maxMobNameWidth = colWidth - iconSize - gap * 6 - 40;
-                String mobDisplayName = name;
-                if (fontRenderer.getStringWidth(mobDisplayName) > maxMobNameWidth)
-                {
-                    mobDisplayName = fontRenderer.trimStringToWidth(mobDisplayName, maxMobNameWidth - fontRenderer.getStringWidth("...")) + "...";
-                }
-                String mobLevelLabel = I18n.format("gui.oneblockultima.config.base_level") + ": " + entry.baseLevel;
-                fontRenderer.drawString(mobDisplayName, textX, entryY + innerPadding, 0xA0A0A0);
-                int mobNameWidth = fontRenderer.getStringWidth(mobDisplayName);
-                fontRenderer.drawString(mobLevelLabel, textX + mobNameWidth + gap * 2, entryY + innerPadding, 0x707070);
-                fontRenderer.drawString(I18n.format("gui.oneblockultima.chance") + ": " + entry.baseChance + "%", textX, entryY + textHeight + innerPadding * 2, 0x808080);
-
-                int mobEditBtnWidth = entryHeight - innerPadding * 2;
-                int mobEditX = entryX + colWidth - innerPadding - mobEditBtnWidth - gap / 2;
-                boolean mobEditHover = mouseX >= mobEditX && mouseX <= mobEditX + mobEditBtnWidth &&
-                        mouseY >= entryY && mouseY <= entryY + entryHeight;
-                int mobEditColor = mobEditHover ? 0xFF6A7A8A : 0xFF3A4A5A;
-                drawRect(mobEditX, entryY + gap / 2, mobEditX + mobEditBtnWidth, entryY + entryHeight - gap / 2, mobEditColor);
-                drawCenteredString(fontRenderer, "\u270E", mobEditX + mobEditBtnWidth / 2, entryY + entryHeight / 2 - textHeight / 2, 0xFFFFFF);
-            }
-        }
-
-        if (maxEntries > visibleEntries)
-        {
-            int scrollbarX = listX + listWidth - gap;
-            int scrollbarY = listY + innerPadding;
-            int scrollbarHeight = listHeight - innerPadding * 2;
-            int thumbHeight = Math.max(10, scrollbarHeight * visibleEntries / maxEntries);
-            int thumbY = scrollbarY + (entryScrollOffset * (scrollbarHeight - thumbHeight) / Math.max(1, maxScroll));
-
-            drawRect(scrollbarX, scrollbarY, scrollbarX + scrollWidth, scrollbarY + scrollbarHeight, 0xFF2A2F34);
-            drawRect(scrollbarX, thumbY, scrollbarX + scrollWidth, thumbY + thumbHeight, 0xFF7A7F84);
-        }
-    }
-
-    private void drawRequiredModsEditorView(int mouseX, int mouseY)
-    {
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.required_mods_title"), width / 2, pad + textHeight / 2, 0xFFFFFF);
-
-        String summary = requiredModsEditorMods.isEmpty()
-                ? I18n.format("gui.oneblockultima.config.required_mods_empty")
-                : I18n.format("gui.oneblockultima.config.required_mods_selected", requiredModsEditorMods.size());
-        drawString(fontRenderer, summary, pad + gap, pad + gap * 3 + textHeight + btnHeight, 0xA0A0A0);
-
-        int listX = pad + gap;
-        int listY = pad + textHeight + pad + btnHeight + gap + textHeight + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - listY - pad - btnHeight - gap * 2;
-
-        drawRect(listX, listY, listX + listWidth, listY + listHeight, 0xFF1A1F24);
-
-        List<RequiredModEntry> modsToShow = getCurrentRequiredModEntries();
-        if (modsToShow.isEmpty())
-        {
-            drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.required_mods_empty"), width / 2, listY + listHeight / 2, 0x808080);
-            return;
-        }
-
-        int visibleEntries = listHeight / entryHeight;
-        if (visibleEntries < 1) visibleEntries = 1;
-        int maxScroll = Math.max(0, modsToShow.size() - visibleEntries);
-        if (requiredModsScrollOffset > maxScroll) requiredModsScrollOffset = maxScroll;
-
-        int startEntry = requiredModsScrollOffset;
-        int endEntry = Math.min(modsToShow.size(), startEntry + visibleEntries);
-
-        for (int i = startEntry; i < endEntry; i++)
-        {
-            RequiredModEntry entry = modsToShow.get(i);
-            boolean hovered = mouseX >= listX + innerPadding && mouseX <= listX + listWidth - innerPadding && mouseY >= listY + innerPadding + (i - startEntry) * entryHeight && mouseY <= listY + innerPadding + (i - startEntry) * entryHeight + entryHeight;
-            boolean selected = selectedRequiredModsForRemoval.contains(entry.modId);
-            int bgColor = selected ? 0xFF2F4F2F : (hovered ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E));
-            drawRect(listX + innerPadding, listY + innerPadding + (i - startEntry) * entryHeight, listX + listWidth - innerPadding, listY + innerPadding + (i - startEntry) * entryHeight + entryHeight, bgColor);
-            drawString(fontRenderer, entry.displayName.isEmpty() ? entry.modId : entry.displayName, listX + gap, listY + gap + (i - startEntry) * entryHeight, 0xFFFFFF);
-        }
-
-        if (modsToShow.size() > visibleEntries)
-        {
-            int scrollbarX = listX + listWidth - gap;
-            int scrollbarY = listY + innerPadding;
-            int scrollbarHeight = listHeight - innerPadding * 2;
-            int thumbHeight = Math.max(10, scrollbarHeight * visibleEntries / modsToShow.size());
-            int thumbY = scrollbarY + (requiredModsScrollOffset * (scrollbarHeight - thumbHeight) / Math.max(1, maxScroll));
-            drawRect(scrollbarX, scrollbarY, scrollbarX + scrollWidth, scrollbarY + scrollbarHeight, 0xFF2A2F34);
-            drawRect(scrollbarX, thumbY, scrollbarX + scrollWidth, thumbY + thumbHeight, 0xFF7A7F84);
-        }
-    }
-
-    private void drawRequiredModsAddView(int mouseX, int mouseY)
-    {
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.required_mods_add_title"), width / 2, pad + textHeight / 2, 0xFFFFFF);
-
-        String summary = selectedRequiredModsToAdd.isEmpty()
-                ? I18n.format("gui.oneblockultima.config.required_mods_add_hint")
-                : I18n.format("gui.oneblockultima.config.required_mods_selected", selectedRequiredModsToAdd.size());
-        drawString(fontRenderer, summary, pad + gap, pad + textHeight + pad + btnHeight + gap / 2, 0xA0A0A0);
-
-        int listX = pad + gap;
-        int listY = pad + textHeight + pad + btnHeight + gap + textHeight + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - pad * 2 - btnHeight - gap * 4 - textHeight - pad;
-
-        drawRect(listX, listY, listX + listWidth, listY + listHeight, 0xFF1A1F24);
-
-        List<RequiredModEntry> availableEntries = getAvailableRequiredModEntries();
-        if (availableEntries.isEmpty())
-        {
-            drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.required_mods_empty"), width / 2, listY + listHeight / 2, 0x808080);
-            return;
-        }
-
-        int visibleEntries = listHeight / entryHeight;
-        if (visibleEntries < 1) visibleEntries = 1;
-        int maxScroll = Math.max(0, availableEntries.size() - visibleEntries);
-        if (requiredModsScrollOffset > maxScroll) requiredModsScrollOffset = maxScroll;
-
-        int startEntry = requiredModsScrollOffset;
-        int endEntry = Math.min(availableEntries.size(), startEntry + visibleEntries);
-
-        for (int i = startEntry; i < endEntry; i++)
-        {
-            RequiredModEntry entry = availableEntries.get(i);
-            boolean hovered = mouseX >= listX + innerPadding && mouseX <= listX + listWidth - innerPadding && mouseY >= listY + innerPadding + (i - startEntry) * entryHeight && mouseY <= listY + innerPadding + (i - startEntry) * entryHeight + entryHeight;
-            boolean selected = selectedRequiredModsToAdd.contains(entry.modId);
-            int bgColor = selected ? 0xFF2F4F2F : (hovered ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E));
-            drawRect(listX + innerPadding, listY + innerPadding + (i - startEntry) * entryHeight, listX + listWidth - innerPadding, listY + innerPadding + (i - startEntry) * entryHeight + entryHeight, bgColor);
-            drawString(fontRenderer, entry.displayName.isEmpty() ? entry.modId : entry.displayName, listX + gap, listY + gap + (i - startEntry) * entryHeight, 0xFFFFFF);
-        }
-
-        if (availableEntries.size() > visibleEntries)
-        {
-            int scrollbarX = listX + listWidth - gap;
-            int scrollbarY = listY + innerPadding;
-            int scrollbarHeight = listHeight - innerPadding * 2;
-            int thumbHeight = Math.max(10, scrollbarHeight * visibleEntries / availableEntries.size());
-            int thumbY = scrollbarY + (requiredModsScrollOffset * (scrollbarHeight - thumbHeight) / Math.max(1, maxScroll));
-            drawRect(scrollbarX, scrollbarY, scrollbarX + scrollWidth, scrollbarY + scrollbarHeight, 0xFF2A2F34);
-            drawRect(scrollbarX, thumbY, scrollbarX + scrollWidth, thumbY + thumbHeight, 0xFF7A7F84);
-        }
-    }
-
-    private int getAddEntryListY()
-    {
-        return Math.max(addLevelField != null ? addLevelField.y + addLevelField.height + gap : 0,
-                currentEntryType == EntryType.BLOCK && currencyField != null ? currencyField.y + currencyField.height + gap : 0);
-    }
-
-    private void drawAddEntryView(int mouseX, int mouseY)
-    {
-        String title = currentEntryType == EntryType.BLOCK ?
-                I18n.format("gui.oneblockultima.config.add_block") :
-                I18n.format("gui.oneblockultima.config.add_mob");
-        drawCenteredString(fontRenderer, title, width / 2, pad + textHeight / 2, 0xFFFFFF);
-
-        entrySearchField.drawTextBox();
-
-        int labelGap = 4;
-
-        if (addLevelField != null)
-        {
-            int levelLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.base_level") + ":");
-            int labelX = addLevelField.x - labelGap - levelLabelWidth;
-            int textY = addLevelField.y + addLevelField.height / 2 - textHeight / 2;
-            drawString(fontRenderer, I18n.format("gui.oneblockultima.config.base_level") + ":", labelX, textY, 0xA0A0A0);
-            addLevelField.drawTextBox();
-        }
-
-        if (addChanceField != null)
-        {
-            int chanceLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.chance") + ":");
-            int labelX = addChanceField.x - labelGap - chanceLabelWidth;
-            int textY = addChanceField.y + addChanceField.height / 2 - textHeight / 2;
-            drawString(fontRenderer, I18n.format("gui.oneblockultima.chance") + ":", labelX, textY, 0xA0A0A0);
-            addChanceField.drawTextBox();
-        }
-
-        if (currentEntryType == EntryType.BLOCK && currencyField != null)
-        {
-            int iconSize = 12;
-            int iconX = currencyField.x - iconSize - gap;
-            int iconY = currencyField.y + currencyField.height / 2 - iconSize / 2;
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            mc.getTextureManager().bindTexture(COIN_TEXTURE);
-            drawModalRectWithCustomSizedTexture(iconX, iconY, 0, 0, iconSize, iconSize, iconSize, iconSize);
-            currencyField.drawTextBox();
-        }
-
-        int listY = getAddEntryListY();
-        int listX = pad + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - listY - pad - textHeight - btnHeight - gap * 3;
-
-        drawRect(listX, listY, listX + listWidth, listY + listHeight, 0xFF1A1F24);
-
-        if (searchResults.isEmpty())
-        {
-            String msg = I18n.format("gui.oneblockultima.config.search.no_results");
-            drawCenteredString(fontRenderer, msg, width / 2, listY + listHeight / 2, 0x808080);
-        }
-        else
-        {
-            int visibleEntries = listHeight / entryHeight;
-            if (visibleEntries < 1) visibleEntries = 1;
-            int maxScroll = Math.max(0, searchResults.size() - visibleEntries);
-            if (searchScrollOffset > maxScroll) searchScrollOffset = maxScroll;
-
-            int startEntry = searchScrollOffset;
-            int endEntry = Math.min(searchResults.size(), startEntry + visibleEntries);
-
-            for (int i = startEntry; i < endEntry; i++)
-            {
-                SearchResult result = searchResults.get(i);
-                int entryX = listX + innerPadding;
-                int entryY = listY + innerPadding + (i - startEntry) * entryHeight;
-                int entryWidth = listWidth - innerPadding * 2 - scrollWidth;
-
-                boolean isHovered = mouseX >= entryX && mouseX <= entryX + entryWidth &&
-                        mouseY >= entryY && mouseY <= entryY + entryHeight;
-
-                int bgColor = isHovered ? 0xFF3F5060 : (i % 2 == 0 ? 0xFF2A2F34 : 0xFF22272E);
-                drawRect(entryX, entryY, entryX + entryWidth, entryY + entryHeight, bgColor);
-
-                if (!result.stack.isEmpty())
-                {
-                    RenderHelper.enableGUIStandardItemLighting();
-                    GlStateManager.enableDepth();
-                    RenderItem renderItem = Minecraft.getMinecraft().getRenderItem();
-                    renderItem.renderItemAndEffectIntoGUI(result.stack, entryX + innerPadding, entryY + innerPadding);
-                    GlStateManager.disableDepth();
-                    RenderHelper.disableStandardItemLighting();
-                }
-                else if (result.isFluid && result.fluid != null)
-                {
-                    renderFluidIcon(result.fluid, entryX + innerPadding, entryY + innerPadding, iconSize);
-                }
-                else if (result.isMob && result.entityClass != null)
-                {
-                    try
-                    {
-                        Entity entity = (Entity) result.entityClass.getConstructor(net.minecraft.world.World.class)
-                                .newInstance(Minecraft.getMinecraft().world);
-                        if (entity instanceof EntityLivingBase) {
-                            int drawSize = iconSize;
-                            int centerX = entryX + drawSize / 2 + innerPadding;
-                            int centerY = entryY + innerPadding + drawSize * 3 / 4;
-                            ModelUtil.drawEntityOnScreen(centerX, centerY, entity, drawSize);
-                        }
-                    }
-                    catch (Exception ignored)
-                    {
-                        drawRect(entryX + innerPadding, entryY + innerPadding, entryX + iconSize + innerPadding, entryY + iconSize + innerPadding, 0xFF444444);
-                        drawString(fontRenderer, "M", entryX + iconSize / 2 - textHeight / 4, entryY + iconSize / 2 - textHeight / 2, 0xFFFFFF);
-                    }
-                }
-
-                int textX = entryX + iconSize + gap + innerPadding * 2;
-                fontRenderer.drawString(result.name, textX, entryY + innerPadding, 0xFFFFFF);
-                fontRenderer.drawString(result.registry, textX, entryY + innerPadding + textHeight + 1, 0x808080);
-            }
-
-            if (searchResults.size() > visibleEntries)
-            {
-                int scrollbarX = listX + listWidth - gap;
-                int scrollbarY = listY + innerPadding;
-                int scrollbarHeight = listHeight - innerPadding * 2;
-                int thumbHeight = Math.max(10, scrollbarHeight * visibleEntries / searchResults.size());
-                int thumbY = scrollbarY + (searchScrollOffset * (scrollbarHeight - thumbHeight) / Math.max(1, maxScroll));
-
-                drawRect(scrollbarX, scrollbarY, scrollbarX + scrollWidth, scrollbarY + scrollbarHeight, 0xFF2A2F34);
-                drawRect(scrollbarX, thumbY, scrollbarX + scrollWidth, thumbY + thumbHeight, 0xFF7A7F84);
-            }
-        }
-
-        String help = I18n.format("gui.oneblockultima.config.search.help");
-        drawString(fontRenderer, help, pad + gap, height - pad - btnHeight - textHeight - gap * 2, 0x808080);
-    }
-
-    private void drawConfirmDeleteView()
-    {
-        String deleteName = deleteTargetIndex >= 0 && deleteTargetIndex < sets.size()
-                ? getLocalizedSetName(sets.get(deleteTargetIndex))
-                : "";
-        String message = I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName);
-        drawCenteredString(fontRenderer, message, width / 2, height / 2 - textHeight, 0xFFFFFF);
-    }
-
-    private void drawEditCurrencyView(int mouseX, int mouseY)
-    {
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int fieldWidth = 100;
-        int labelGap = 4;
-
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.config.edit_currency"), centerX, pad + textHeight / 2, 0xFFFFFF);
-
-        int levelLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.base_level") + ":");
-        int chanceLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.chance") + ":");
-        int currencyLabelWidth = fontRenderer.getStringWidth(I18n.format("gui.oneblockultima.config.currency") + ":");
-
-        if (editLevelField != null)
-        {
-            int labelX = centerX - fieldWidth / 2 - labelGap - levelLabelWidth;
-            int textY = editLevelField.y + editLevelField.height / 2 - textHeight / 2;
-            drawString(fontRenderer, I18n.format("gui.oneblockultima.config.base_level") + ":", labelX, textY, 0xA0A0A0);
-            editLevelField.drawTextBox();
-        }
-
-        if (editChanceField != null)
-        {
-            int labelX = centerX - fieldWidth / 2 - labelGap - chanceLabelWidth;
-            int textY = editChanceField.y + editChanceField.height / 2 - textHeight / 2;
-            drawString(fontRenderer, I18n.format("gui.oneblockultima.chance") + ":", labelX, textY, 0xA0A0A0);
-            editChanceField.drawTextBox();
-        }
-
-        if (editCurrencyField != null && editingEntryType == EntryType.BLOCK)
-        {
-            int labelX = centerX - fieldWidth / 2 - labelGap - currencyLabelWidth;
-            int textY = editCurrencyField.y + editCurrencyField.height / 2 - textHeight / 2;
-            drawString(fontRenderer, I18n.format("gui.oneblockultima.config.currency") + ":", labelX, textY, 0xA0A0A0);
-            editCurrencyField.drawTextBox();
-        }
-    }
-
-    private int getSetDetailsListY()
-    {
-        return pad + textHeight + pad + (btnHeight + gap) * 4 + gap;
-    }
-
-    private int getSetDetailsListHeight()
-    {
-        return height - pad * 2 - textHeight - btnHeight - gap * 3 - (btnHeight + gap) * 4 - gap * 2;
-    }
-
-    private boolean handleSetsViewClick(int mouseX, int mouseY)
-    {
-        int listX = pad + gap;
-        int listY = searchField.y + btnHeight + gap;
-        int listWidth = width - pad * 2 - gap - scrollWidth;
-        int listHeight = height - pad * 2 - textHeight - btnHeight - gap * 3;
-
-        if (mouseX < listX || mouseX > listX + listWidth || mouseY < listY || mouseY > listY + listHeight)
-        {
-            return false;
-        }
-
-        int row = (mouseY - listY - innerPadding) / entryHeight;
-        int index = scrollOffset + row;
-        if (index < 0 || index >= filteredSets.size())
-        {
-            return false;
-        }
-
-        BlockSetConfig.BlockSetDefinition set = filteredSets.get(index);
-        int entryX = listX + innerPadding;
-        int entryY = listY + innerPadding + row * entryHeight;
-        int entryWidth = listWidth - innerPadding * 2 - scrollWidth;
-
-        String editLabel = I18n.format("gui.oneblockultima.config.edit");
-        String delLabel = I18n.format("gui.oneblockultima.config.delete_set");
-        int editWidth = fontRenderer.getStringWidth(editLabel) + pad;
-        int delWidth = fontRenderer.getStringWidth(delLabel) + pad;
-
-        int entryEnd = entryX + entryWidth;
-        int editX = entryEnd - editWidth - delWidth - gap - pad;
-        int delX = entryEnd - delWidth - pad;
-
-        if (mouseX >= delX && mouseX <= delX + delWidth && mouseY >= entryY && mouseY <= entryY + entryHeight)
-        {
-            confirmDeleteSet(sets.indexOf(set));
-            return true;
-        }
-        if (mouseX >= editX && mouseX <= editX + editWidth && mouseY >= entryY && mouseY <= entryY + entryHeight)
-        {
-            loadSetDetails(sets.indexOf(set));
-            return true;
-        }
-
-        selectedSetIndex = sets.indexOf(set);
-        return true;
-    }
-
-    private boolean handleSetDetailsViewClick(int mouseX, int mouseY)
-    {
-        if (editingSet == null)
-        {
-            return false;
-        }
-
-        int listY = getSetDetailsListY();
-        int listX = pad + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = getSetDetailsListHeight();
-        int colWidth = (listWidth) / 2 - innerPadding;
-        List<BlockDisplayEntry> blockDisplayEntries = buildBlockDisplayEntries();
-        int blockDisplayCount = blockDisplayEntries.size();
-        int mobCount = editingSet.mobs != null ? editingSet.mobs.size() : 0;
-
-        if (mouseX < listX || mouseX > listX + listWidth || mouseY < listY || mouseY > listY + listHeight)
-        {
-            return false;
-        }
-
-        int row = (mouseY - listY - innerPadding) / entryHeight + entryScrollOffset;
-        if (row < 0)
-        {
-            return false;
-        }
-
-        if (mouseX >= listX + innerPadding && mouseX < listX + innerPadding + colWidth - innerPadding * 2)
-        {
-            if (row >= blockDisplayCount)
-            {
-                return false;
-            }
-
-            BlockDisplayEntry displayEntry = blockDisplayEntries.get(row);
-            selectedBlockIndex = displayEntry.blockIndex;
-            selectedBlockMeta = displayEntry.meta;
-            selectedMobIndex = -1;
-
-            int entryX = listX + innerPadding;
-            int entryY = listY + innerPadding + (row - entryScrollOffset) * entryHeight;
-            int editBtnWidth = 24;
-            int editCurrX = entryX + colWidth - innerPadding - editBtnWidth - gap / 2;
-            if (mouseX >= editCurrX && mouseX <= editCurrX + editBtnWidth && mouseY >= entryY && mouseY <= entryY + entryHeight)
-            {
-                editBlock(displayEntry.blockIndex, EntryType.BLOCK);
-            }
-            return true;
-        }
-
-        if (mouseX >= listX + colWidth + innerPadding && mouseX < listX + listWidth - innerPadding)
-        {
-            if (row >= mobCount)
-            {
-                return false;
-            }
-
-            selectedMobIndex = row;
-            selectedBlockIndex = -1;
-            selectedBlockMeta = -1;
-
-            int entryX = listX + colWidth + innerPadding;
-            int entryY = listY + innerPadding + (row - entryScrollOffset) * entryHeight;
-            int mobEditBtnWidth = entryHeight - innerPadding * 2;
-            int mobEditX = entryX + colWidth - innerPadding - mobEditBtnWidth - gap / 2;
-            if (mouseX >= mobEditX && mouseX <= mobEditX + mobEditBtnWidth && mouseY >= entryY && mouseY <= entryY + entryHeight)
-            {
-                editBlock(row, EntryType.MOB);
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean handleAddEntryViewClick(int mouseX, int mouseY)
-    {
-        int listX = pad + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listY = getAddEntryListY();
-        int listHeight = height - pad * 2 - textHeight - pad - btnHeight - pad - gap * 2 -
-                (currentEntryType == EntryType.BLOCK ? btnHeight + gap : 0);
-
-        if (mouseX < listX || mouseX > listX + listWidth || mouseY < listY || mouseY > listY + listHeight)
-        {
-            return false;
-        }
-
-        int row = (mouseY - listY - innerPadding) / entryHeight;
-        int index = searchScrollOffset + row;
-        if (index < 0 || index >= searchResults.size())
-        {
-            return false;
-        }
-
-        addEntryToCurrentSet(currentEntryType, searchResults.get(index));
-        return true;
-    }
-
-    private boolean handleRequiredModsViewClick(int mouseX, int mouseY)
-    {
-        int listX = pad + gap;
-        int listY = pad + textHeight + pad + btnHeight + gap + textHeight + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - pad * 2 - btnHeight - gap * 4 - textHeight - pad;
-
-        if (mouseX < listX || mouseX > listX + listWidth || mouseY < listY || mouseY > listY + listHeight)
-        {
-            return false;
-        }
-
-        int row = (mouseY - listY - innerPadding) / entryHeight;
-        int index = requiredModsScrollOffset + row;
-        List<RequiredModEntry> modsToShow = getCurrentRequiredModEntries();
-        if (index < 0 || index >= modsToShow.size())
-        {
-            return false;
-        }
-
-        selectRequiredModForRemoval(modsToShow.get(index).modId);
-        return true;
-    }
-
-    private boolean handleRequiredModsAddViewClick(int mouseX, int mouseY)
-    {
-        int listX = pad + gap;
-        int listY = pad + textHeight + pad + btnHeight + gap + textHeight + gap;
-        int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-        int listHeight = height - pad * 2 - btnHeight - gap * 4 - textHeight - pad;
-
-        if (mouseX < listX || mouseX > listX + listWidth || mouseY < listY || mouseY > listY + listHeight)
-        {
-            return false;
-        }
-
-        int row = (mouseY - listY - innerPadding) / entryHeight;
-        int index = requiredModsScrollOffset + row;
-        List<RequiredModEntry> availableEntries = getAvailableRequiredModEntries();
-        if (index < 0 || index >= availableEntries.size())
-        {
-            return false;
-        }
-
-        selectRequiredModToAdd(availableEntries.get(index).modId);
-        return true;
-    }
-
-    private void handleTextFieldClicks(int mouseX, int mouseY, int mouseButton) throws IOException
-    {
-        if (currentView == VIEW_ADD_ENTRY && entrySearchField != null)
-        {
-            entrySearchField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (addLevelField != null) addLevelField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (addChanceField != null) addChanceField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (currencyField != null) currencyField.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-        else if (searchField != null)
-        {
-            searchField.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-
-        if (currentView == VIEW_SET_DETAILS)
-        {
-            if (setNameField != null) setNameField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (setIdField != null) setIdField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (unlockCostField != null) unlockCostField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (requiredModsField != null) requiredModsField.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-        else if (currentView == VIEW_EDIT_CURRENCY)
-        {
-            if (editLevelField != null) editLevelField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (editChanceField != null) editChanceField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (editCurrencyField != null) editCurrencyField.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-        else if (currentView == VIEW_UNLOCK_CONDITIONS)
-        {
-            if (unlockConditionsLevelField != null) unlockConditionsLevelField.mouseClicked(mouseX, mouseY, mouseButton);
-            if (unlockConditionsCountField != null) unlockConditionsCountField.mouseClicked(mouseX, mouseY, mouseButton);
+            int color = status.contains("error") || status.contains("failed") ? REDDISH_COLOR : GRAY_COLOR_5;
+            drawString(fontRenderer, status, width - fontRenderer.getStringWidth(status) - 10, 10, color);
         }
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
     {
-        if (suppressNextMouseClick)
-        {
-            suppressNextMouseClick = false;
-            return;
-        }
-
-        if (suppressMouseUntilRelease)
-        {
-            suppressMouseUntilRelease = false;
-            return;
-        }
+        if (suppressNextMouseClick) { suppressNextMouseClick = false; return; }
+        if (suppressMouseUntilRelease) { suppressMouseUntilRelease = false; return; }
 
         if (mouseButton == 0)
         {
@@ -3605,193 +269,88 @@ public class GuiSetsConfig extends GuiScreen
                     return;
                 }
             }
-
-            if (currentView == VIEW_SET_DETAILS)
-            {
-                boolean handled = handleSetDetailsViewClick(mouseX, mouseY);
-                if (handled)
-                {
-                    handleTextFieldClicks(mouseX, mouseY, mouseButton);
-                    return;
-                }
-            }
-            else if (currentView == VIEW_REQUIRED_MODS_EDITOR)
-            {
-                boolean handled = handleRequiredModsViewClick(mouseX, mouseY);
-                if (handled)
-                {
-                    return;
-                }
-            }
-            else if (currentView == VIEW_REQUIRED_MODS_ADD)
-            {
-                boolean handled = handleRequiredModsAddViewClick(mouseX, mouseY);
-                if (handled)
-                {
-                    return;
-                }
-            }
-            else if (currentView == VIEW_UNLOCK_CONDITIONS)
-            {
-                boolean handled = handleUnlockConditionsViewClick(mouseX, mouseY);
-                if (handled)
-                {
-                    handleTextFieldClicks(mouseX, mouseY, mouseButton);
-                    return;
-                }
-            }
-            else if (currentView == VIEW_SETS)
-            {
-                boolean handled = handleSetsViewClick(mouseX, mouseY);
-                if (handled)
-                {
-                    return;
-                }
-            }
-            else if (currentView == VIEW_ADD_ENTRY)
-            {
-                boolean handled = handleAddEntryViewClick(mouseX, mouseY);
-                if (handled)
-                {
-                    return;
-                }
-            }
         }
 
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        handleTextFieldClicks(mouseX, mouseY, mouseButton);
+        if (rootFactory != null) rootFactory.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public void mouseReleased(int mouseX, int mouseY, int state)
     {
-        if (state == 0)
-        {
-            suppressMouseUntilRelease = false;
-            suppressNextMouseClick = false;
-        }
         super.mouseReleased(mouseX, mouseY, state);
+        if (rootFactory != null) rootFactory.mouseReleased(mouseX, mouseY, state);
+    }
+
+    @Override
+    public void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick)
+    {
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+        if (rootFactory != null) rootFactory.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
     }
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException
     {
-        super.keyTyped(typedChar, keyCode);
-
-        if (searchField != null && searchField.isFocused())
-        {
-            searchField.textboxKeyTyped(typedChar, keyCode);
-            searchQuery = searchField.getText();
-            updateFilteredSets();
-            return;
-        }
-        if (setNameField != null && setNameField.isFocused())
-        {
-            setNameField.textboxKeyTyped(typedChar, keyCode);
-            if (isNewSet) savedNewSetName = setNameField.getText();
-            return;
-        }
-        if (setIdField != null && setIdField.isFocused() && isNewSet)
-        {
-            setIdField.textboxKeyTyped(typedChar, keyCode);
-            savedNewSetId = setIdField.getText();
-            return;
-        }
-        if (unlockCostField != null && unlockCostField.isFocused())
-        {
-            unlockCostField.textboxKeyTyped(typedChar, keyCode);
-            if (isNewSet) savedNewSetCost = unlockCostField.getText();
-            return;
-        }
-        if (requiredModsField != null && requiredModsField.isFocused())
-        {
-            requiredModsField.textboxKeyTyped(typedChar, keyCode);
-            if (isNewSet) savedNewSetMods = requiredModsField.getText();
-            return;
-        }
-        if (entrySearchField != null && entrySearchField.isFocused())
-        {
-            entrySearchField.textboxKeyTyped(typedChar, keyCode);
-            performSearch();
-            return;
-        }
-        if (currencyField != null && currencyField.isFocused())
-        {
-            currencyField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (addLevelField != null && addLevelField.isFocused())
-        {
-            addLevelField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (addChanceField != null && addChanceField.isFocused())
-        {
-            addChanceField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (editLevelField != null && editLevelField.isFocused())
-        {
-            editLevelField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (editChanceField != null && editChanceField.isFocused())
-        {
-            editChanceField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (editCurrencyField != null && editCurrencyField.isFocused())
-        {
-            editCurrencyField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (unlockConditionsLevelField != null && unlockConditionsLevelField.isFocused())
-        {
-            if (keyCode == Keyboard.KEY_RETURN)
-            {
-                addNewUnlockCondition();
-                return;
-            }
-            unlockConditionsLevelField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-        if (unlockConditionsCountField != null && unlockConditionsCountField.isFocused())
-        {
-            if (keyCode == Keyboard.KEY_RETURN)
-            {
-                addNewUnlockCondition();
-                return;
-            }
-            unlockConditionsCountField.textboxKeyTyped(typedChar, keyCode);
-            return;
-        }
-
         if (keyCode == Keyboard.KEY_ESCAPE)
         {
-            if (currentView == VIEW_ADD_ENTRY)
+            handleBack();
+            return;
+        }
+
+        if (!rootFactory.keyTyped(typedChar, keyCode))
+        {
+            super.keyTyped(typedChar, keyCode);
+        }
+
+        int view = container.getCurrentView();
+        if (view == VIEW_SETS && searchFieldElement != null && searchFieldElement.isFocused())
+        {
+            String query = searchFieldElement.getText();
+            if (!query.equals(container.getSearchQuery()))
             {
-                changeView(VIEW_SET_DETAILS);
+                container.setSearchQuery(query);
+                container.updateFilteredSets();
+                int cursor = searchFieldElement.getTextField().getCursorPosition();
+                int selection = searchFieldElement.getTextField().getSelectionEnd();
+                initGui();
+                if (searchFieldElement != null)
+                {
+                    searchFieldElement.focused(true);
+                    if (searchFieldElement.getTextField() != null)
+                    {
+                        searchFieldElement.getTextField().setCursorPosition(cursor);
+                        searchFieldElement.getTextField().setSelectionPos(selection);
+                    }
+                }
             }
-            else if (currentView == VIEW_REQUIRED_MODS_EDITOR)
+        }
+        if (view == VIEW_ADD_ENTRY && entrySearchElement != null && entrySearchElement.isFocused())
+        {
+            String text = entrySearchElement.getText();
+            if (!text.equals(pendingAddEntrySearchText))
             {
-                changeView(VIEW_SET_DETAILS);
+                pendingAddEntrySearchText = text;
+                container.performSearch(pendingAddEntrySearchText);
+                searchScrollOffset = 0;
+                int cursor = entrySearchElement.getTextField().getCursorPosition();
+                int selection = entrySearchElement.getTextField().getSelectionEnd();
+                initGui();
+                if (entrySearchElement != null)
+                {
+                    entrySearchElement.focused(true);
+                    if (entrySearchElement.getTextField() != null)
+                    {
+                        entrySearchElement.getTextField().setCursorPosition(cursor);
+                        entrySearchElement.getTextField().setSelectionPos(selection);
+                    }
+                }
             }
-            else if (currentView == VIEW_UNLOCK_CONDITIONS)
-            {
-                changeView(VIEW_SET_DETAILS);
-            }
-            else if (currentView == VIEW_EDIT_CURRENCY)
-            {
-                cancelCurrencyEdit();
-            }
-            else if (currentView == VIEW_SET_DETAILS || currentView == VIEW_CONFIRM_DELETE)
-            {
-                changeView(VIEW_SETS);
-            }
-            else
-            {
-                mc.displayGuiScreen(parent);
-            }
+        }
+        if (view == VIEW_NBT_ADD)
+        {
+            if (nbtKeyElement != null && nbtKeyElement.isFocused()) container.setNbtEditorKeyText(nbtKeyElement.getText());
+            if (nbtValueElement != null && nbtValueElement.isFocused()) container.setNbtEditorValueText(nbtValueElement.getText());
         }
     }
 
@@ -3799,114 +358,10 @@ public class GuiSetsConfig extends GuiScreen
     public void handleMouseInput() throws IOException
     {
         super.handleMouseInput();
-        int d = Mouse.getEventDWheel();
-
-        if (d != 0)
+        int dWheel = Mouse.getEventDWheel();
+        if (dWheel != 0 && rootFactory != null)
         {
-            int delta = d > 0 ? -1 : 1;
-
-            if (currentView == VIEW_SETS)
-            {
-                int listX = pad + gap;
-                int listY = searchField.y + btnHeight + gap;
-                int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-                int listHeight = height - pad * 2 - textHeight - btnHeight - gap * 3;
-
-                int mouseX = Mouse.getEventX() * width / mc.displayWidth;
-                int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-
-                if (mouseX >= listX && mouseX <= listX + listWidth &&
-                        mouseY >= listY && mouseY <= listY + listHeight)
-                {
-                    int visibleEntries = listHeight / entryHeight;
-                    if (visibleEntries < 1) visibleEntries = 1;
-                    int maxScroll = Math.max(0, filteredSets.size() - visibleEntries);
-                    scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset + delta));
-                }
-            }
-            else if (currentView == VIEW_SET_DETAILS && editingSet != null)
-            {
-                int listY = getSetDetailsListY();
-                int listX = pad + gap;
-                int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-                int listHeight = getSetDetailsListHeight();
-
-                int mouseX = Mouse.getEventX() * width / mc.displayWidth;
-                int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-
-                if (mouseX >= listX && mouseX <= listX + listWidth &&
-                        mouseY >= listY && mouseY <= listY + listHeight)
-                {
-                    int blockDisplayCount = buildBlockDisplayEntries().size();
-                    int mobCount = editingSet.mobs != null ? editingSet.mobs.size() : 0;
-                    int maxEntries = Math.max(blockDisplayCount, mobCount);
-                    int visibleEntries = listHeight / entryHeight;
-                    if (visibleEntries < 1) visibleEntries = 1;
-                    int maxScroll = Math.max(0, maxEntries - visibleEntries);
-                    entryScrollOffset = Math.max(0, Math.min(maxScroll, entryScrollOffset + delta));
-                }
-            }
-            else if (currentView == VIEW_ADD_ENTRY)
-            {
-                int listX = pad + gap;
-                int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-                int listY = getAddEntryListY();
-                int listHeight = height - pad * 2 - textHeight - pad - btnHeight - pad - gap * 2 -
-                        (currentEntryType == EntryType.BLOCK ? btnHeight + gap : 0);
-
-                int mouseX = Mouse.getEventX() * width / mc.displayWidth;
-                int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-
-                if (mouseX >= listX && mouseX <= listX + listWidth &&
-                        mouseY >= listY && mouseY <= listY + listHeight)
-                {
-                    int visibleEntries = listHeight / entryHeight;
-                    if (visibleEntries < 1) visibleEntries = 1;
-                    int maxScroll = Math.max(0, searchResults.size() - visibleEntries);
-                    searchScrollOffset = Math.max(0, Math.min(maxScroll, searchScrollOffset + delta));
-                }
-            }
-            else if (currentView == VIEW_REQUIRED_MODS_EDITOR || currentView == VIEW_REQUIRED_MODS_ADD)
-            {
-                int listX = pad + gap;
-                int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-                int listY = pad + textHeight + pad + btnHeight + gap + textHeight + gap;
-                int listHeight = height - pad * 2 - btnHeight - gap * 4 - textHeight - pad;
-
-                int mouseX = Mouse.getEventX() * width / mc.displayWidth;
-                int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-
-                if (mouseX >= listX && mouseX <= listX + listWidth &&
-                        mouseY >= listY && mouseY <= listY + listHeight)
-                {
-                    List<RequiredModEntry> mods = currentView == VIEW_REQUIRED_MODS_EDITOR
-                            ? getCurrentRequiredModEntries()
-                            : getAvailableRequiredModEntries();
-                    int visibleEntries = listHeight / entryHeight;
-                    if (visibleEntries < 1) visibleEntries = 1;
-                    int maxScroll = Math.max(0, mods.size() - visibleEntries);
-                    requiredModsScrollOffset = Math.max(0, Math.min(maxScroll, requiredModsScrollOffset + delta));
-                }
-            }
-            else if (currentView == VIEW_UNLOCK_CONDITIONS)
-            {
-                int listX = pad + gap;
-                int listY = getUnlockConditionsToolbarHeight();
-                int listWidth = width - pad * 2 - gap * 2 - scrollWidth;
-                int listHeight = height - listY - pad - btnHeight - gap;
-
-                int mouseX = Mouse.getEventX() * width / mc.displayWidth;
-                int mouseY = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-
-                if (mouseX >= listX && mouseX <= listX + listWidth &&
-                        mouseY >= listY && mouseY <= listY + listHeight)
-                {
-                    int visibleEntries = listHeight / entryHeight;
-                    if (visibleEntries < 1) visibleEntries = 1;
-                    int maxScroll = Math.max(0, unlockConditionsEditorConditions.size() - visibleEntries);
-                    unlockConditionsScrollOffset = Math.max(0, Math.min(maxScroll, unlockConditionsScrollOffset + delta));
-                }
-            }
+            rootFactory.handleMouseInput(dWheel);
         }
     }
 
@@ -3914,35 +369,1277 @@ public class GuiSetsConfig extends GuiScreen
     public void updateScreen()
     {
         super.updateScreen();
-
-        if (searchField != null) searchField.updateCursorCounter();
-        if (setNameField != null) setNameField.updateCursorCounter();
-        if (setIdField != null) setIdField.updateCursorCounter();
-        if (unlockCostField != null) unlockCostField.updateCursorCounter();
-        if (requiredModsField != null) requiredModsField.updateCursorCounter();
-        if (entrySearchField != null) entrySearchField.updateCursorCounter();
-        if (currencyField != null) currencyField.updateCursorCounter();
-        if (editCurrencyField != null) editCurrencyField.updateCursorCounter();
-        if (unlockConditionsLevelField != null) unlockConditionsLevelField.updateCursorCounter();
-        if (unlockConditionsCountField != null) unlockConditionsCountField.updateCursorCounter();
-
-        if (statusTimer > 0)
+        if (rootFactory != null) rootFactory.updateScreen();
+        if (container.getStatusTimer() > 0)
         {
-            statusTimer--;
-            if (statusTimer == 0) statusMessage = "";
+            container.setStatusTimer(container.getStatusTimer() - 1);
         }
     }
 
-    @Override
-    public boolean doesGuiPauseGame()
+    private int getCurrentView() { return container.getCurrentView(); }
+
+    private void changeView(int view)
     {
-        return false;
+        saveCurrentFormState();
+        int prev = getCurrentView();
+        container.changeView(view);
+        if (prev != view)
+        {
+            clearTextFieldFocus();
+            initGui();
+        }
+    }
+
+    private void clearTextFieldFocus()
+    {
+        if (searchFieldElement != null) searchFieldElement.focused(false);
+        if (setNameElement != null) setNameElement.focused(false);
+        if (setIdElement != null) setIdElement.focused(false);
+        if (unlockCostElement != null) unlockCostElement.focused(false);
+        if (entrySearchElement != null) entrySearchElement.focused(false);
+        if (editLevelElement != null) editLevelElement.focused(false);
+        if (editChanceElement != null) editChanceElement.focused(false);
+        if (unlockLevelElement != null) unlockLevelElement.focused(false);
+        if (unlockCountElement != null) unlockCountElement.focused(false);
+        if (nbtKeyElement != null) nbtKeyElement.focused(false);
+        if (nbtValueElement != null) nbtValueElement.focused(false);
     }
 
     @Override
     public void onGuiClosed()
     {
+        saveCurrentFormState();
         Keyboard.enableRepeatEvents(false);
-        super.onGuiClosed();
+    }
+
+    @Override
+    protected void actionPerformed(GuiButton button)
+    {
+        if (button.id == BUTTON_BACK) { handleBack(); return; }
+        if (button.id == BUTTON_SAVE) { handleSave(); return; }
+        if (button.id == BUTTON_ADD_SET) { container.addNewSet(); changeView(VIEW_SET_DETAILS); return; }
+        if (button.id == BUTTON_RESET) { container.resetToDefault(); initGui(); return; }
+        if (button.id == BUTTON_ADD_BLOCK) { saveCurrentFormState(); container.setCurrentEntryType(EntryType.BLOCK); container.setCurrentSearchType(SearchType.BLOCKS); changeView(VIEW_ADD_ENTRY); return; }
+        if (button.id == BUTTON_ADD_MOB) { saveCurrentFormState(); container.setCurrentEntryType(EntryType.MOB); container.setCurrentSearchType(SearchType.MOBS); changeView(VIEW_ADD_ENTRY); return; }
+        if (button.id == BUTTON_REMOVE_ENTRY) { saveCurrentFormState(); container.removeSelectedEntry(); initGui(); return; }
+        if (button.id == BUTTON_CONFIRM_DELETE) { container.executeDeleteSet(); changeView(VIEW_SETS); return; }
+        if (button.id == BUTTON_CANCEL) { changeView(container.getCurrentView() == VIEW_CONFIRM_DELETE ? VIEW_SETS : VIEW_SET_DETAILS); return; }
+        if (button.id == BUTTON_SAVE_CURRENCY) { handleSaveCurrency(); return; }
+        if (button.id == BUTTON_CANCEL_CURRENCY) { container.cancelPendingAdd(); changeView(VIEW_SET_DETAILS); return; }
+        if (button.id == BUTTON_DELETE_ENTRY) { container.removeSelectedEntry(); changeView(VIEW_SET_DETAILS); return; }
+        if (button.id == BUTTON_EDIT_REQUIRED_MODS) { saveCurrentFormState(); container.initRequiredModsEditor(); changeView(VIEW_REQUIRED_MODS_EDITOR); return; }
+        if (button.id == BUTTON_REQUIRED_MODS_TOGGLE) { toggleRequiredModsType(); return; }
+        if (button.id == BUTTON_REQUIRED_MODS_BACK) { handleRequiredModsBack(); return; }
+        if (button.id == BUTTON_REQUIRED_MODS_SAVE) { handleRequiredModsSave(); return; }
+        if (button.id == BUTTON_REQUIRED_MODS_DELETE) { container.deleteSelectedRequiredMods(); initGui(); return; }
+        if (button.id == BUTTON_REQUIRED_MODS_ADD) { handleRequiredModsAdd(); return; }
+        if (button.id == BUTTON_EDIT_UNLOCK_CONDITIONS) { saveCurrentFormState(); container.initUnlockConditionsEditor(); changeView(VIEW_UNLOCK_CONDITIONS); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_TOGGLE) { toggleUnlockConditionsMode(); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_BACK) { handleUnlockConditionsBack(); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_SAVE) { handleUnlockConditionsSave(); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_ADD) { handleUnlockConditionsAdd(); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_DELETE) { handleUnlockConditionsDelete(); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE) { container.cycleUnlockConditionType(); initGui(); return; }
+        if (button.id == BUTTON_UNLOCK_CONDITIONS_CYCLE_SET) { container.cycleUnlockConditionSet(); initGui(); return; }
+        if (button.id == BUTTON_EDIT_NBT) { container.nbtEditorStartAdd(); changeView(VIEW_EDIT_NBT); return; }
+        if (button.id == BUTTON_NBT_ADD) { container.nbtEditorStartAdd(); changeView(VIEW_NBT_ADD); return; }
+        if (button.id == BUTTON_NBT_BACK) { handleNbtBack(); return; }
+        if (button.id == BUTTON_NBT_DONE) { handleNbtSave(); return; }
+        if (button.id == BUTTON_NBT_CANCEL) { changeView(VIEW_EDIT_NBT); return; }
+        if (button.id == BUTTON_NBT_CYCLE_TYPE) { container.cycleNbtEditorAddType(); initGui(); return; }
+        if (button.id == BUTTON_NBT_CYCLE_ELEM_TYPE) { container.cycleNbtEditorListElementType(); initGui(); }
+    }
+
+    private void handleBack()
+    {
+        saveCurrentFormState();
+        int v = getCurrentView();
+        if (v == VIEW_SET_DETAILS)
+        {
+            container.discardEditingSetChanges();
+            changeView(VIEW_SETS);
+        }
+        else if (v == VIEW_ADD_ENTRY) changeView(VIEW_SET_DETAILS);
+        else if (v == VIEW_EDIT) { container.cancelPendingAdd(); changeView(VIEW_SET_DETAILS); }
+        else if (v == VIEW_REQUIRED_MODS_ADD) changeView(VIEW_REQUIRED_MODS_EDITOR);
+        else if (v == VIEW_EDIT_NBT) handleNbtBack();
+        else if (v == VIEW_NBT_ADD) changeView(VIEW_EDIT_NBT);
+        else mc.displayGuiScreen(parent);
+    }
+
+    private void handleSave()
+    {
+        if (container.getEditingSet() == null) return;
+        String name = setNameElement != null ? setNameElement.getText().trim() : "";
+        String id = setIdElement != null ? setIdElement.getText().trim() : "";
+        String cost = unlockCostElement != null ? unlockCostElement.getText().trim() : "0";
+        boolean saved = container.saveSetDetails(name, id, cost);
+        if (saved) changeView(VIEW_SETS);
+        else initGui();
+    }
+
+    private void saveCurrentFormState()
+    {
+        if (getCurrentView() == VIEW_SET_DETAILS)
+        {
+            if (setNameElement != null)
+            {
+                container.setSavedNewSetName(setNameElement.getText());
+            }
+            if (setIdElement != null)
+            {
+                container.setSavedNewSetId(setIdElement.getText());
+            }
+            if (unlockCostElement != null)
+            {
+                container.setSavedNewSetCost(unlockCostElement.getText());
+            }
+        }
+    }
+
+    private void handleSaveCurrency()
+    {
+        try
+        {
+            int level = Integer.parseInt(editLevelElement.getText().trim());
+            int chance = Math.min(100, Integer.parseInt(editChanceElement.getText().trim()));
+            if (container.saveCurrency(level, chance))
+            {
+                container.clearPendingAdd();
+                changeView(VIEW_SET_DETAILS);
+            }
+            else initGui();
+        } catch (NumberFormatException e) { initGui(); }
+    }
+
+    private void handleNbtBack()
+    {
+        if (container.nbtEditorAtRoot())
+        {
+            changeView(VIEW_EDIT);
+        }
+        else
+        {
+            container.nbtEditorPop();
+            initGui();
+        }
+    }
+
+    private void handleNbtSave()
+    {
+        String key = nbtKeyElement != null ? nbtKeyElement.getText() : "";
+        String value = nbtValueElement != null ? nbtValueElement.getText() : "";
+        if (container.nbtEditorApply(key, value))
+        {
+            changeView(VIEW_EDIT_NBT);
+        }
+        else
+        {
+            if (key != null && !key.trim().isEmpty()) container.setNbtEditorValueText("");
+            initGui();
+        }
+    }
+
+    private void handleRequiredModsBack()
+    {
+        if (container.getCurrentView() == VIEW_REQUIRED_MODS_ADD)
+            changeView(VIEW_REQUIRED_MODS_EDITOR);
+        else
+            changeView(VIEW_SET_DETAILS);
+    }
+
+    private void handleRequiredModsSave()
+    {
+        container.applyRequiredModsToEditingSet();
+        container.setRequiredModsEditorInitialized(false);
+        changeView(VIEW_SET_DETAILS);
+    }
+
+    private void handleRequiredModsAdd()
+    {
+        if (container.getCurrentView() == VIEW_REQUIRED_MODS_EDITOR)
+        {
+            changeView(VIEW_REQUIRED_MODS_ADD);
+        }
+        else
+        {
+            container.addSelectedRequiredMods();
+            changeView(VIEW_REQUIRED_MODS_EDITOR);
+        }
+    }
+
+    private void handleUnlockConditionsBack()
+    {
+        changeView(VIEW_SET_DETAILS);
+    }
+
+    private void handleUnlockConditionsSave()
+    {
+        container.applyUnlockConditionsToEditingSet();
+        changeView(VIEW_SET_DETAILS);
+    }
+
+    private void handleUnlockConditionsAdd()
+    {
+        String level = unlockLevelElement != null ? unlockLevelElement.getText() : "";
+        String count = unlockCountElement != null ? unlockCountElement.getText() : "";
+        container.addUnlockCondition(container.getNewConditionTypeToAdd(), container.getNewConditionSetId(), level, count);
+        initGui();
+    }
+
+    private void handleUnlockConditionsDelete()
+    {
+        container.deleteSelectedUnlockCondition();
+        initGui();
+    }
+
+    private void toggleRequiredModsType()
+    {
+        container.setRequiredModsEditorType(
+                container.getRequiredModsEditorType() == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL
+                        ? BlockSetConfig.SetRequiredModsDefinition.TYPE.ANY
+                        : BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL);
+        initGui();
+    }
+
+    private void toggleUnlockConditionsMode()
+    {
+        container.setUnlockConditionsEditorMode(
+                "any".equals(container.getUnlockConditionsEditorMode()) ? "all" : "any");
+        initGui();
+    }
+
+    // ======== VIEW BUILDERS ========
+
+    private void buildSetsView()
+    {
+        container.reloadConfig();
+        container.updateFilteredSets();
+
+        factory.title("gui.oneblockultima.config.sets_title");
+
+        int searchWidth = Math.min(width / 3, 250);
+        searchFieldElement = new TextFieldElement(searchWidth)
+                .text(container.getSearchQuery())
+                .focused(false);
+        factory.add(searchFieldElement);
+
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        List<BlockSetConfig.BlockSetDefinition> filtered = container.getFilteredSets();
+        for (int i = 0; i < filtered.size(); i++)
+        {
+            final int idx = i;
+            final BlockSetConfig.BlockSetDefinition set = filtered.get(i);
+            entries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    boolean isSelected = container.getSelectedSetIndex() == idx;
+                    if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    String name = ContainerSetsConfig.getLocalizedSetName(set);
+                    fr.drawString(name, x + 4, y + 2, WHITE_COLOR_1);
+                    fr.drawString("ID: " + set.id, x + 4, y + 12, GRAY_COLOR_5);
+
+                    String editLabel = I18n.format("gui.oneblockultima.config.edit");
+                    String delLabel = I18n.format("gui.oneblockultima.config.delete_set");
+                    int editW = fr.getStringWidth(editLabel) + 8;
+                    int delW = fr.getStringWidth(delLabel) + 8;
+                    int right = x + width - 4;
+                    int btnY = y + (height - 14) / 2;
+
+                    int delX = right - delW;
+                    boolean delHov = mouseX >= delX && mouseX <= delX + delW && mouseY >= btnY && mouseY <= btnY + 14;
+                    Gui.drawRect(delX, btnY, delX + delW, btnY + 14, delHov ? DARK_RED_COLOR_1 : DARK_RED_COLOR_2);
+                    drawCenteredString(fr, delLabel, delX + delW / 2, btnY + 3, REDDISH_COLOR);
+
+                    int editX = delX - 4 - editW;
+                    boolean editHov = mouseX >= editX && mouseX <= editX + editW && mouseY >= btnY && mouseY <= btnY + 14;
+                    Gui.drawRect(editX, btnY, editX + editW, btnY + 14, editHov ? BLUE_GRAY_COLOR : DARK_BLUE_GRAY_COLOR_1);
+                    drawCenteredString(fr, editLabel, editX + editW / 2, btnY + 3, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    String editLabel = I18n.format("gui.oneblockultima.config.edit");
+                    String delLabel = I18n.format("gui.oneblockultima.config.delete_set");
+                    int editW = fontRenderer.getStringWidth(editLabel) + 8;
+                    int delW = fontRenderer.getStringWidth(delLabel) + 8;
+                    int right = entryWidth - 4;
+                    int btnY = (entryHeight - 14) / 2;
+
+                    int delX = right - delW;
+                    int editX = delX - 4 - editW;
+
+                    if (mouseXOffset >= delX && mouseXOffset <= delX + delW && mouseYOffset >= btnY && mouseYOffset <= btnY + 14)
+                    {
+                        container.confirmDeleteSet(idx);
+                        changeView(VIEW_CONFIRM_DELETE);
+                        return true;
+                    }
+
+                    if (mouseXOffset >= editX && mouseXOffset <= editX + editW && mouseYOffset >= btnY && mouseYOffset <= btnY + 14)
+                    {
+                        container.loadSetDetails(idx);
+                        changeView(VIEW_SET_DETAILS);
+                        return true;
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+        setsList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(setsScrollOffset);
+        setsList.flexible(true);
+        setsList.visible(true);
+        factory.add(setsList);
+
+        RowElement topRow = new RowElement(Alignment.CENTER).gap(4).widthPercent(100);
+        topRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+        topRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
+        topRow.button(BUTTON_ADD_SET, I18n.format("gui.oneblockultima.config.add_set"));
+        factory.add(topRow);
+    }
+
+    private void buildSetDetailsView()
+    {
+        BlockSetConfig.BlockSetDefinition editingSet = container.getEditingSet();
+        if (editingSet == null) { changeView(VIEW_SETS); return; }
+
+        factory.title(container.isNewSet()
+                ? I18n.format("gui.oneblockultima.config.add_set")
+                : ContainerSetsConfig.getLocalizedSetName(editingSet));
+
+        int contentWidth = rootFactory.getContentWidth() - 2 * rootFactory.getContentX();
+        int formMargin = Math.max(10, Math.min(24, contentWidth / 24));
+        int formLabelWidth = Math.max(90, Math.min(160, contentWidth / 3));
+        int formFieldWidth = Math.max(120, contentWidth - formMargin - formLabelWidth - 12);
+
+        setNameElement = new TextFieldElement(formFieldWidth).text(
+                container.isNewSet() ? container.getSavedNewSetName()
+                        : ContainerSetsConfig.getLocalizedSetName(editingSet));
+        RowElement nameRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
+        nameRow.add(new SpacerElement(formMargin, 20));
+        nameRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.set_name") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
+        nameRow.add(setNameElement);
+        factory.add(nameRow);
+
+        setIdElement = new TextFieldElement(formFieldWidth).text(
+                container.isNewSet() ? container.getSavedNewSetId() : editingSet.id)
+                .enabled(container.isNewSet());
+        RowElement idRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
+        idRow.add(new SpacerElement(formMargin, 20));
+        idRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.set_id") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
+        idRow.add(setIdElement);
+        factory.add(idRow);
+
+        unlockCostElement = new TextFieldElement(formFieldWidth / 2).text(
+                container.isNewSet() ? container.getSavedNewSetCost() : String.valueOf(editingSet.unlockCost));
+        RowElement costRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
+        costRow.add(new SpacerElement(formMargin, 20));
+        costRow.add(new LabelElement(I18n.format("gui.oneblockultima.unlock_cost") + ":").color(GRAY_COLOR_5).width(formLabelWidth).height(20));
+        costRow.add(unlockCostElement);
+        factory.add(costRow);
+
+        RowElement configButtons = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
+        configButtons.add(new SpacerElement(formMargin, 20));
+        configButtons.add(new LabelElement("").width(formLabelWidth).height(20));
+        configButtons.button(BUTTON_EDIT_REQUIRED_MODS, container.getRequiredModsButtonLabel());
+        configButtons.button(BUTTON_EDIT_UNLOCK_CONDITIONS, container.getUnlockConditionsButtonLabel());
+        factory.add(configButtons);
+
+        factory.add(new SeparatorElement());
+
+        List<TwoColumnListElement.TwoColumnEntry> leftEntries = new ArrayList<>();
+        List<TwoColumnListElement.TwoColumnEntry> rightEntries = new ArrayList<>();
+
+        if (editingSet.blocks != null)
+        {
+            List<BlockDisplayEntry> blockEntries = container.buildBlockDisplayEntries();
+            for (final BlockDisplayEntry bde : blockEntries)
+            {
+                if (bde.blockIndex < 0 || bde.blockIndex >= editingSet.blocks.size()) continue;
+                final BlockSetConfig.BlockElementDefinition block = editingSet.blocks.get(bde.blockIndex);
+                final InlineClickableElement editButton = new InlineClickableElement("\u270E", DARK_BLUE_GRAY_COLOR_1, BLUE_GRAY_COLOR, (mx, my, mb) -> {
+                    container.setSelectedBlockIndex(bde.blockIndex);
+                    container.setSelectedBlockMeta(bde.meta);
+                    container.setSelectedMobIndex(-1);
+                    container.editEntry(bde.blockIndex, EntryType.BLOCK);
+                    changeView(VIEW_EDIT);
+                    return true;
+                });
+                leftEntries.add(new TwoColumnListElement.TwoColumnEntry() {
+                    @Override
+                    public void drawLeft(int x, int y, int width, int height, boolean hovered, int index, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                        boolean isSelected = container.getSelectedBlockIndex() == bde.blockIndex
+                                && container.getSelectedBlockMeta() == bde.meta;
+                        if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+
+                        ItemStack stack = container.getItemStackFromEntry(block, bde.meta);
+
+                        final int cellPadding = 2;
+                        final int itemIconSize = 16;
+                        final int textGap = 4;
+                        final int fontHeight = fr.FONT_HEIGHT;
+                        final int badgeTextPadding = 2;
+
+                        if (!stack.isEmpty())
+                        {
+                            GlStateManager.enableDepth();
+                            RenderHelper.enableGUIStandardItemLighting();
+                            GlStateManager.enableRescaleNormal();
+                            Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(stack, x + cellPadding, y + cellPadding);
+                            RenderHelper.disableStandardItemLighting();
+                            GlStateManager.disableRescaleNormal();
+                            GlStateManager.disableDepth();
+                        }
+                        else
+                        {
+                            Fluid fluid = container.getFluidForRegistry(block.registry);
+                            if (fluid != null)
+                            {
+                                int iconSize = Math.min(itemIconSize, height - 2 * cellPadding);
+                                FluidElement fluidIcon = new FluidElement(fluid).size(iconSize);
+                                fluidIcon.setComputedPosition(x + cellPadding, y + cellPadding);
+                                fluidIcon.setComputedSize(iconSize, iconSize);
+                                fluidIcon.draw(fr, mouseX, mouseY, 0);
+                            }
+                        }
+
+                        String name = container.getLocalizedNameForBlock(block, bde.meta);
+                        int btnSize = height - 2 * cellPadding;
+                        int rightBound = x + width - btnSize - 2 * cellPadding;
+                        int textX = x + cellPadding + itemIconSize + cellPadding;
+                        int maxNameW = Math.max(10, rightBound - textX - textGap - cellPadding);
+                        String displayName = name;
+                        if (fr.getStringWidth(displayName) > maxNameW)
+                            displayName = fr.trimStringToWidth(displayName, maxNameW - fr.getStringWidth("...")) + "...";
+                        fr.drawString(displayName, textX, y + cellPadding, GRAY_COLOR_5);
+                        String levelInfo = I18n.format("gui.oneblockultima.config.base_level") + ": " + block.baseLevel;
+                        fr.drawString(levelInfo, textX + fr.getStringWidth(displayName) + textGap, y + cellPadding, GRAY_COLOR_7);
+                        int infoX = textX;
+                        boolean hasNbt = block.nbtTags != null && !block.nbtTags.hasNoTags();
+                        if (hasNbt)
+                        {
+                            String nbtLabel = "NBT";
+                            int badgeW = fr.getStringWidth(nbtLabel) + 2 * badgeTextPadding;
+                            int badgeY = y + height - fontHeight;
+                            Gui.drawRect(infoX, badgeY, infoX + badgeW, badgeY + fontHeight, DARK_BLUE_GRAY_COLOR_1);
+                            fr.drawString(nbtLabel, infoX + badgeTextPadding, badgeY + 1, GOLD_COLOR);
+                            infoX += badgeW + 2 * badgeTextPadding;
+                        }
+                        String registryInfo = block.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": " + block.baseChance + "%";
+                        int maxRegW = Math.max(10, rightBound - infoX);
+                        if (fr.getStringWidth(registryInfo) > maxRegW)
+                            registryInfo = fr.trimStringToWidth(registryInfo, maxRegW - fr.getStringWidth("...")) + "...";
+                        fr.drawString(registryInfo, infoX, y + height - fontHeight + 1, GRAY_COLOR_1);
+
+                        int editX = x + width - btnSize - cellPadding;
+                        editButton.setComputedPosition(editX, y + cellPadding);
+                        editButton.setComputedSize(btnSize, btnSize);
+                        editButton.draw(fr, mouseX, mouseY, 0);
+                    }
+
+                    @Override
+                    public void drawRight(int x, int y, int width, int height, boolean hovered, int index, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {}
+
+                    @Override
+                    public boolean mouseClickedLeft(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton) {
+                        int btnSize = entryHeight - 4;
+                        editButton.setComputedPosition(mouseX - localX + entryWidth - btnSize - 2, mouseY - localY + 2);
+                        editButton.setComputedSize(btnSize, btnSize);
+                        if (editButton.mouseClicked(mouseX, mouseY, mouseButton)) return true;
+                        container.setSelectedBlockIndex(bde.blockIndex);
+                        container.setSelectedBlockMeta(bde.meta);
+                        container.setSelectedMobIndex(-1);
+                        return true;
+                    }
+
+                    @Override
+                    public boolean mouseClickedRight(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton) { return false; }
+                });
+            }
+        }
+
+        if (editingSet.mobs != null)
+        {
+            for (int i = 0; i < editingSet.mobs.size(); i++)
+            {
+                final int mobIdx = i;
+                final BlockSetConfig.MobElementDefinition mob = editingSet.mobs.get(i);
+                final InlineClickableElement editButton = new InlineClickableElement("\u270E", DARK_BLUE_GRAY_COLOR_1, BLUE_GRAY_COLOR, (mx, my, mb) -> {
+                    container.setSelectedMobIndex(mobIdx);
+                    container.setSelectedBlockIndex(-1);
+                    container.setSelectedBlockMeta(-1);
+                    container.editEntry(mobIdx, EntryType.MOB);
+                    changeView(VIEW_EDIT);
+                    return true;
+                });
+                rightEntries.add(new TwoColumnListElement.TwoColumnEntry() {
+                    @Override
+                    public void drawLeft(int x, int y, int width, int height, boolean hovered, int index, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {}
+
+                    @Override
+                    public void drawRight(int x, int y, int width, int height, boolean hovered, int index, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                        boolean isSelected = container.getSelectedMobIndex() == mobIdx;
+                        if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+
+                        int iconSize = Math.max(4, height - 8);
+                        EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(mob.registry, mob.nbtTags));
+                        mobIcon.scale(iconSize * 2);
+                        mobIcon.setComputedPosition(x + 2, y + 2);
+                        mobIcon.setComputedSize(iconSize, iconSize);
+                        mobIcon.draw(fr, mouseX, mouseY, 0);
+
+                        String name = container.getLocalizedNameForMob(mob);
+                        int btnSize = height - 4;
+                        int rightBound = x + width - btnSize - 4;
+                        int textX = x + iconSize + 6;
+                        int maxNameW = Math.max(10, rightBound - textX - 6);
+                        String displayName = name;
+                        if (fr.getStringWidth(displayName) > maxNameW)
+                            displayName = fr.trimStringToWidth(displayName, maxNameW - fr.getStringWidth("...")) + "...";
+                        fr.drawString(displayName, textX, y + 2, GRAY_COLOR_5);
+                        String levelInfo = I18n.format("gui.oneblockultima.config.base_level") + ": " + mob.baseLevel;
+                        fr.drawString(levelInfo, textX + fr.getStringWidth(displayName) + 4, y + 2, GRAY_COLOR_7);
+                        String chanceInfo = I18n.format("gui.oneblockultima.chance") + ": " + mob.baseChance + "%";
+                        int infoX = textX;
+                        boolean hasNbt = mob.nbtTags != null && !mob.nbtTags.hasNoTags();
+                        if (hasNbt)
+                        {
+                            String nbtLabel = "NBT";
+                            int badgeW = fr.getStringWidth(nbtLabel) + 2 * 2;
+                            int badgeY = y + height - fr.FONT_HEIGHT;
+                            Gui.drawRect(infoX, badgeY, infoX + badgeW, badgeY + fr.FONT_HEIGHT, DARK_BLUE_GRAY_COLOR_1);
+                            fr.drawString(nbtLabel, infoX + 2, badgeY + 1, GOLD_COLOR);
+                            infoX += badgeW + 4;
+                        }
+                        int maxInfoW = Math.max(10, rightBound - infoX);
+                        if (fr.getStringWidth(chanceInfo) > maxInfoW)
+                            chanceInfo = fr.trimStringToWidth(chanceInfo, maxInfoW - fr.getStringWidth("...")) + "...";
+                        fr.drawString(chanceInfo, infoX, y + 14, GRAY_COLOR_1);
+
+                        int editX = x + width - btnSize - 2;
+                        editButton.setComputedPosition(editX, y + 2);
+                        editButton.setComputedSize(btnSize, btnSize);
+                        editButton.draw(fr, mouseX, mouseY, 0);
+                    }
+
+                    @Override
+                    public boolean mouseClickedLeft(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton) { return false; }
+
+                    @Override
+                    public boolean mouseClickedRight(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton) {
+                        int btnSize = entryHeight - 4;
+                        editButton.setComputedPosition(mouseX - localX + entryWidth - btnSize - 2, mouseY - localY + 2);
+                        editButton.setComputedSize(btnSize, btnSize);
+                        if (editButton.mouseClicked(mouseX, mouseY, mouseButton)) return true;
+                        container.setSelectedMobIndex(mobIdx);
+                        container.setSelectedBlockIndex(-1);
+                        container.setSelectedBlockMeta(-1);
+                        return true;
+                    }
+                });
+            }
+        }
+
+        entriesList = new TwoColumnListElement(ENTRY_HEIGHT)
+                .leftEntries(leftEntries)
+                .rightEntries(rightEntries)
+                .scrollOffset(entriesScrollOffset);
+        entriesList.flexible(true);
+        entriesList.visible(true);
+        factory.add(entriesList);
+
+        RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
+        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.add(new DangerButtonElement(BUTTON_REMOVE_ENTRY, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.button(BUTTON_ADD_BLOCK, I18n.format("gui.oneblockultima.config.add_block"));
+        btnRow.button(BUTTON_ADD_MOB, I18n.format("gui.oneblockultima.config.add_mob"));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
+        factory.add(btnRow);
+    }
+
+    private void buildAddEntryView()
+    {
+        container.setCurrentSearchType(container.getCurrentEntryType() == EntryType.BLOCK ? SearchType.BLOCKS : SearchType.MOBS);
+        container.performSearch(pendingAddEntrySearchText);
+
+        factory.title(container.getCurrentEntryType() == EntryType.BLOCK
+                ? I18n.format("gui.oneblockultima.config.add_block")
+                : I18n.format("gui.oneblockultima.config.add_mob"));
+
+        entrySearchElement = new TextFieldElement(0).widthPercent(80).focused(true);
+        if (!pendingAddEntrySearchText.isEmpty())
+            entrySearchElement.text(pendingAddEntrySearchText);
+        factory.add(entrySearchElement);
+
+        String helpText = I18n.format("gui.oneblockultima.config.search.help");
+        factory.add(new LabelElement(helpText).color(GRAY_COLOR_1));
+
+        List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
+        List<SearchResult> results = container.getSearchResults();
+        for (final SearchResult result : results) {
+            searchEntries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+
+                    int iconSize = Math.min(16, height - 4);
+                    if (!result.isMob && !result.stack.isEmpty()) {
+                        GlStateManager.enableDepth();
+                        RenderHelper.enableGUIStandardItemLighting();
+                        GlStateManager.enableRescaleNormal();
+                        Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(result.stack, x + 2, y + 2);
+                        RenderHelper.disableStandardItemLighting();
+                        GlStateManager.disableRescaleNormal();
+                        GlStateManager.disableDepth();
+                    } else if (result.isFluid && result.fluid != null) {
+                        FluidElement fluidIcon = new FluidElement(result.fluid).size(iconSize);
+                        fluidIcon.setComputedPosition(x + 2, y + 2);
+                        fluidIcon.setComputedSize(iconSize, iconSize);
+                        fluidIcon.draw(fr, mouseX, mouseY, 0);
+                    } else if (result.isMob && result.entityClass != null) {
+                        EntityRendererElement mobIcon = new EntityRendererElement(resolveEntity(result.registry));
+                        mobIcon.scale(iconSize * 2);
+                        mobIcon.setComputedPosition(x + 2, y + 2);
+                        mobIcon.setComputedSize(iconSize, iconSize);
+                        mobIcon.draw(fr, mouseX, mouseY, 0);
+                    }
+
+                    String displayName = result.name != null && !result.name.isEmpty() ? result.name : result.registry;
+                    int textX = x + iconSize + 6;
+                    fr.drawStringWithShadow(displayName, textX, y + 2, WHITE_COLOR_1);
+                    fr.drawStringWithShadow(result.registry, textX, y + 12, GRAY_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    pendingAddEntrySearchText = entrySearchElement != null ? entrySearchElement.getText() : "";
+                    container.stagePendingAdd(container.getCurrentEntryType(), result);
+                    changeView(VIEW_EDIT);
+                    return true;
+                }
+            });
+        }
+
+        searchResultsList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(searchEntries)
+                .scrollOffset(searchScrollOffset);
+        searchResultsList.flexible(true);
+        searchResultsList.visible(true);
+        factory.add(searchResultsList);
+
+        if (searchEntries.isEmpty())
+        {
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered());
+        }
+
+        factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+    }
+
+    private void buildConfirmDeleteView()
+    {
+        List<BlockSetConfig.BlockSetDefinition> sets = container.getSets();
+        int deleteTargetIndex = container.getDeleteTargetIndex();
+        String deleteName = deleteTargetIndex >= 0 && deleteTargetIndex < sets.size()
+                ? ContainerSetsConfig.getLocalizedSetName(sets.get(deleteTargetIndex))
+                : "";
+
+        factory.fitContent().centerVertical();
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.confirm_delete_message", deleteName)).centered());
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
+        btnRow.button(BUTTON_CANCEL, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.add(new DangerButtonElement(BUTTON_CONFIRM_DELETE, I18n.format("gui.oneblockultima.done")));
+    }
+
+    private void buildEditView()
+    {
+        BlockSetConfig.BlockSetDefinition editingSet = container.getEditingSet();
+        int editingCurrencyIndex = container.getEditingCurrencyIndex();
+        EntryType editingEntryType = container.getEditingEntryType();
+
+        String entryName = container.getEditingEntryDisplayName();
+        int currentLevel = 1;
+        int currentChance = 1;
+        if (editingEntryType == EntryType.BLOCK && editingSet != null && editingSet.blocks != null
+                && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.blocks.size())
+        {
+            BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
+            currentLevel = entry.baseLevel;
+            currentChance = entry.baseChance;
+        }
+        else if (editingEntryType == EntryType.MOB && editingSet != null && editingSet.mobs != null
+                && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.mobs.size())
+        {
+            BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
+            currentLevel = entry.baseLevel;
+            currentChance = entry.baseChance;
+        }
+
+        factory.gap(3).centerVertical().fitContent();
+
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.edit_title")).centered());
+        if (!entryName.isEmpty())
+        {
+            factory.add(new LabelElement(entryName).centered());
+        }
+
+        ViewElement<?> preview = buildEditPreview(editingSet, editingCurrencyIndex, editingEntryType,
+                ROW_HEIGHT - 2 * PREVIEW_PADDING);
+        if (preview != null)
+        {
+            RowElement previewRow = factory.row(Alignment.CENTER).gap(6).height(ROW_HEIGHT);
+            previewRow.add(preview);
+        }
+
+        int fieldWidth = Math.max(24, width * 2 / 100);
+
+        ColumnElement labelCol = new ColumnElement().align(Alignment.RIGHT).gap(4);
+        labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ":"));
+        labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.chance") + ":"));
+
+        ColumnElement fieldCol = new ColumnElement().gap(4);
+        editLevelElement = new TextFieldElement(fieldWidth).text(String.valueOf(currentLevel)).focused(true);
+        fieldCol.add(editLevelElement);
+        editChanceElement = new TextFieldElement(fieldWidth).text(String.valueOf(currentChance));
+        fieldCol.add(editChanceElement);
+
+        RowElement formRow = factory.row(Alignment.CENTER).gap(10).height(ROW_HEIGHT);
+        formRow.add(labelCol);
+        formRow.add(fieldCol);
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6).height(ROW_HEIGHT);
+        btnRow.button(BUTTON_CANCEL_CURRENCY, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.add(new DangerButtonElement(BUTTON_DELETE_ENTRY, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.button(BUTTON_EDIT_NBT, I18n.format("gui.oneblockultima.config.nbt_edit"));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE_CURRENCY, I18n.format("gui.oneblockultima.done")));
+    }
+
+    private ViewElement<?> buildEditPreview(BlockSetConfig.BlockSetDefinition editingSet, int editingCurrencyIndex, EntryType editingEntryType, @SuppressWarnings("SameParameterValue") int previewSize)
+    {
+        if (editingEntryType == EntryType.BLOCK && editingSet != null && editingSet.blocks != null
+                && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.blocks.size())
+        {
+            BlockSetConfig.BlockElementDefinition entry = editingSet.blocks.get(editingCurrencyIndex);
+            if (entry == null || entry.registry == null || entry.registry.isEmpty())
+            {
+                return null;
+            }
+
+            int meta = container.getSelectedBlockMeta();
+            if (meta < 0)
+            {
+                meta = entry.meta;
+            }
+            ItemStack stack = container.getItemStackFromEntry(entry, meta);
+            if (!stack.isEmpty())
+            {
+                return new ItemStackElement(stack).size(previewSize);
+            }
+
+            Fluid fluid = container.getFluidForRegistry(entry.registry);
+            if (fluid != null)
+            {
+                return new FluidElement(fluid).size(previewSize);
+            }
+            return null;
+        }
+
+        if (editingEntryType == EntryType.MOB && editingSet != null && editingSet.mobs != null
+                && editingCurrencyIndex >= 0 && editingCurrencyIndex < editingSet.mobs.size())
+        {
+            BlockSetConfig.MobElementDefinition entry = editingSet.mobs.get(editingCurrencyIndex);
+            if (entry == null || entry.registry == null || entry.registry.isEmpty())
+            {
+                return null;
+            }
+
+            Entity entity = resolveEntity(entry.registry, entry.nbtTags);
+            if (entity != null)
+            {
+                return new CustomDrawCallbackElement((x, y, w, h, fr, mx, my, pt) ->
+                {
+                    if (!(entity instanceof EntityLivingBase))
+                    {
+                        return;
+                    }
+                    float[] units = ModelUtil.getModelUnits(entity);
+                    float finalScale = Math.min(previewSize / units[0], previewSize / units[1]);
+                    int ox = x + w / 2 - Math.round(units[2] * finalScale);
+                    int oy = y + h / 2 + Math.round(units[3] * finalScale);
+                    ModelUtil.drawEntityOnScreenScaled(ox, oy, entity, finalScale);
+                }, previewSize, previewSize);
+            }
+            return null;
+        }
+
+        return null;
+    }
+
+    private void buildEditNbtView()
+    {
+        String entryName = container.getEditingEntryDisplayName();
+        boolean atRoot = container.nbtEditorAtRoot();
+        boolean atList = container.nbtEditorIsListContext();
+        boolean atArray = container.nbtEditorIsArrayContext();
+        boolean atContainer = atList || atArray;
+
+        if (atRoot)
+        {
+            factory.title("gui.oneblockultima.config.nbt_title");
+            if (!entryName.isEmpty())
+            {
+                factory.add(new LabelElement(entryName).centered());
+            }
+        }
+        else
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_subtitle", container.nbtEditorPathLabel()));
+        }
+
+        List<NbtTagEntry> tags = container.getNbtTags();
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        for (final NbtTagEntry tag : tags)
+        {
+            entries.add(new ScrollableListElement.ScrollableListEntry()
+            {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY)
+                {
+                    boolean navigable = tag.isCompound() || tag.isList() || tag.isArray();
+                    String typeLabel = getNbtTypeLabel(tag.getTypeId());
+                    String preview = nbtValuePreview(tag.value);
+
+                    int btnY = y + (height - NBT_ROW_BUTTON_HEIGHT) / 2;
+                    int trashX = x + width - NBT_ROW_PADDING - NBT_ROW_TRASH_WIDTH;
+                    boolean trashHov = mouseX >= trashX && mouseX <= trashX + NBT_ROW_TRASH_WIDTH
+                            && mouseY >= btnY && mouseY <= btnY + NBT_ROW_BUTTON_HEIGHT;
+
+                    String actionLabel = navigable
+                            ? I18n.format("gui.oneblockultima.config.nbt_open")
+                            : I18n.format("gui.oneblockultima.config.nbt_edit_value");
+                    int actionW = fr.getStringWidth(actionLabel) + NBT_ROW_BUTTON_TEXT_PADDING;
+                    int actionX = trashX - NBT_ROW_PADDING - actionW;
+                    boolean actionHov = mouseX >= actionX && mouseX <= actionX + actionW
+                            && mouseY >= btnY && mouseY <= btnY + NBT_ROW_BUTTON_HEIGHT;
+
+                    if (navigable && hovered && !trashHov && !actionHov)
+                    {
+                        Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    }
+
+                    fr.drawString(tag.key, x + NBT_ROW_PADDING, y + NBT_ROW_TEXT_TOP, navigable ? WHITE_COLOR_1 : WHITE_COLOR_2);
+                    String detail = typeLabel + ": " + preview;
+                    int maxDetailW = width - actionW - NBT_ROW_TRASH_WIDTH - NBT_ROW_TRUNCATION_SLACK;
+                    if (fr.getStringWidth(detail) > maxDetailW)
+                    {
+                        detail = fr.trimStringToWidth(detail, maxDetailW) + "...";
+                    }
+                    fr.drawString(detail, x + NBT_ROW_PADDING, y + NBT_ROW_TEXT_TOP + fr.FONT_HEIGHT + NBT_ROW_TEXT_LINE_GAP, GRAY_COLOR_5);
+
+                    Gui.drawRect(trashX, btnY, trashX + NBT_ROW_TRASH_WIDTH, btnY + NBT_ROW_BUTTON_HEIGHT, trashHov ? DARK_RED_COLOR_1 : DARK_RED_COLOR_2);
+                    drawXIcon(trashX, btnY, trashHov ? REDDISH_COLOR : GRAY_COLOR_5);
+
+                    Gui.drawRect(actionX, btnY, actionX + actionW, btnY + NBT_ROW_BUTTON_HEIGHT, actionHov ? BLUE_GRAY_COLOR : DARK_BLUE_GRAY_COLOR_1);
+                    drawCenteredString(fr, actionLabel, actionX + actionW / 2, btnY + (NBT_ROW_BUTTON_HEIGHT - fr.FONT_HEIGHT) / 2 + 1, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton)
+                {
+                    if (mouseButton != 0) return false;
+                    int btnY = (entryHeight - NBT_ROW_BUTTON_HEIGHT) / 2;
+                    int trashX = entryWidth - NBT_ROW_PADDING - NBT_ROW_TRASH_WIDTH;
+
+                    if (mouseXOffset >= trashX && mouseXOffset <= trashX + NBT_ROW_TRASH_WIDTH
+                            && mouseYOffset >= btnY && mouseYOffset <= btnY + NBT_ROW_BUTTON_HEIGHT)
+                    {
+                        if (tag.index >= 0) container.nbtEditorRemoveIndex(tag.index);
+                        else container.nbtEditorRemove(tag.key);
+                        initGui();
+                        return true;
+                    }
+
+                    if (tag.isCompound() || tag.isList() || tag.isArray())
+                    {
+                        if (tag.index >= 0) container.nbtEditorPushIndex(tag.index);
+                        else container.nbtEditorPush(tag.key);
+                        initGui();
+                        return true;
+                    }
+
+                    if (tag.index >= 0) container.nbtEditorStartEditIndex(tag.index);
+                    else container.nbtEditorStartEdit(tag.key);
+                    changeView(VIEW_NBT_ADD);
+                    return true;
+                }
+            });
+        }
+
+        nbtList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(nbtScrollOffset);
+        nbtList.flexible(true);
+        factory.add(nbtList);
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_NBT_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.button(BUTTON_NBT_ADD, I18n.format(atContainer
+                ? "gui.oneblockultima.config.nbt_add_element"
+                : "gui.oneblockultima.config.nbt_add_tag"));
+    }
+
+    private void buildNbtAddView()
+    {
+        factory.fitContent();
+        factory.centerVertical();
+
+        boolean atList = container.nbtEditorIsListContext();
+        boolean atArray = container.nbtEditorIsArrayContext();
+        boolean atContainer = atList || atArray;
+        boolean editing = container.nbtEditorIsEditing();
+
+        if (editing)
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_edit_value"));
+        }
+        else if (atContainer)
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_add_element"));
+        }
+        else
+        {
+            factory.title(I18n.format("gui.oneblockultima.config.nbt_add_tag"));
+        }
+
+        int formWidth = Math.max(160, Math.min(280, width / 2));
+
+        boolean showKeyField = !atContainer;
+        boolean focusKey = showKeyField && !editing;
+
+        String keyLabel = I18n.format("gui.oneblockultima.config.nbt_key") + ":";
+        String valueLabel = I18n.format("gui.oneblockultima.config.nbt_value") + ":";
+        String typeLabel = I18n.format("gui.oneblockultima.config.nbt_type") + ":";
+        String elementTypeLabel = I18n.format("gui.oneblockultima.config.nbt_element_type") + ":";
+        String[] labels = new String[]{
+                keyLabel,
+                valueLabel,
+                typeLabel,
+                elementTypeLabel
+        };
+        int formLabelWidth = 0;
+        for (String s : labels) {
+            formLabelWidth = Math.max(formLabelWidth, fontRenderer.getStringWidth(s));
+        }
+
+        if (showKeyField)
+        {
+            nbtKeyElement = new TextFieldElement(formWidth)
+                    .text(container.nbtEditorGetKeyText())
+                    .fitToText()
+                    .focused(focusKey);
+            RowElement keyRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
+            keyRow.add(new LabelElement(keyLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            keyRow.add(nbtKeyElement);
+        }
+        else
+        {
+            nbtKeyElement = null;
+        }
+
+        int valueTypeId;
+        boolean typeFixed;
+        boolean showValueField;
+        if (editing)
+        {
+            valueTypeId = container.nbtEditorGetEditingTypeId();
+            typeFixed = true;
+        }
+        else if (atArray)
+        {
+            valueTypeId = container.nbtEditorGetArrayElementType();
+            typeFixed = true;
+        }
+        else if (atList)
+        {
+            valueTypeId = container.getNbtEditorListElementType();
+            typeFixed = container.nbtEditorListTypeIsFixed();
+        }
+        else
+        {
+            valueTypeId = container.getNbtEditorAddType();
+            typeFixed = false;
+        }
+        showValueField = isScalarNbtType(valueTypeId);
+
+        RowElement typeRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
+        if (typeFixed)
+        {
+            typeRow.add(new LabelElement(typeLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            typeRow.add(new LabelElement(getNbtTypeLabel(valueTypeId)).color(WHITE_COLOR_1));
+        }
+        else if (atList)
+        {
+            typeRow.add(new LabelElement(elementTypeLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            typeRow.button(BUTTON_NBT_CYCLE_ELEM_TYPE, getNbtTypeLabel(container.getNbtEditorListElementType()));
+        }
+        else
+        {
+            typeRow.add(new LabelElement(typeLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            typeRow.button(BUTTON_NBT_CYCLE_TYPE, getNbtTypeLabel(container.getNbtEditorAddType()));
+        }
+
+        if (showValueField)
+        {
+            nbtValueElement = new TextFieldElement(formWidth)
+                    .text(container.nbtEditorGetValueText())
+                    .fitToText()
+                    .focused(!focusKey);
+            RowElement valueRow = factory.row(Alignment.LEFT).gap(6).align(Alignment.LEFT);
+            valueRow.add(new LabelElement(valueLabel).color(GRAY_COLOR_5).width(formLabelWidth));
+            valueRow.add(nbtValueElement);
+        }
+        else
+        {
+            nbtValueElement = null;
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.nbt_hint_container"))
+                    .color(GRAY_COLOR_5).centered());
+        }
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6);
+        btnRow.button(BUTTON_NBT_CANCEL, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.add(new SuccessButtonElement(BUTTON_NBT_DONE, I18n.format("gui.oneblockultima.done")));
+    }
+
+    private static boolean isScalarNbtType(int typeId)
+    {
+        return typeId != TAG_COMPOUND && typeId != TAG_LIST
+                && typeId != TAG_BYTE_ARRAY && typeId != TAG_INT_ARRAY;
+    }
+
+    private void drawXIcon(int x, int y, int color)
+    {
+        int cx = x + GuiSetsConfig.NBT_ROW_TRASH_WIDTH / 2;
+        int cy = y + GuiSetsConfig.NBT_ROW_BUTTON_HEIGHT / 2;
+        for (int i = 0; i < 5; i++)
+        {
+            Gui.drawRect(cx - 3 + i, cy - 3 + i, cx - 2 + i, cy - 2 + i, color);
+            Gui.drawRect(cx + 2 - i, cy - 3 + i, cx + 3 - i, cy - 2 + i, color);
+        }
+    }
+
+    private void buildRequiredModsEditorView()
+    {
+        if (container.getEditingSet() == null) { changeView(VIEW_SET_DETAILS); return; }
+        if (!container.isRequiredModsEditorInitialized()) container.initRequiredModsEditor();
+        container.getSelectedRequiredModsForRemoval().clear();
+
+        factory.title("gui.oneblockultima.config.required_mods");
+
+        factory.button(BUTTON_REQUIRED_MODS_TOGGLE, container.getRequiredModsEditorTypeLabel());
+
+        String summary = container.getCurrentRequiredModEntries().isEmpty()
+                ? I18n.format("gui.oneblockultima.config.required_mods_empty")
+                : I18n.format("gui.oneblockultima.config.required_mods_selected", container.getCurrentRequiredModEntries().size());
+        factory.add(new LabelElement(summary).color(GRAY_COLOR_5));
+        factory.add(new SeparatorElement());
+
+        List<RequiredModEntry> currentMods = container.getCurrentRequiredModEntries();
+        List<ScrollableListElement.ScrollableListEntry> entries = getListModsForRemoval(currentMods);
+
+        requiredModsList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(modsScrollOffset);
+        requiredModsList.flexible(true);
+        requiredModsList.visible(true);
+        factory.add(requiredModsList);
+
+        RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
+        btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.add(new DangerButtonElement(BUTTON_REQUIRED_MODS_DELETE, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
+        btnRow.add(new SuccessButtonElement(BUTTON_REQUIRED_MODS_SAVE, I18n.format("gui.oneblockultima.done")));
+        factory.add(btnRow);
+    }
+
+    private void buildRequiredModsAddView()
+    {
+        container.getSelectedRequiredModsToAdd().clear();
+
+        factory.title("gui.oneblockultima.config.required_mods_add_title");
+
+        String summary = I18n.format("gui.oneblockultima.config.required_mods_add_hint");
+        factory.add(new LabelElement(summary).color(GRAY_COLOR_5));
+
+        List<RequiredModEntry> availableMods = container.getAvailableRequiredModEntries();
+        List<ScrollableListElement.ScrollableListEntry> entries = getListMods(availableMods);
+
+        addModsList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(addModsScrollOffset);
+        addModsList.flexible(true);
+        addModsList.visible(true);
+        factory.add(addModsList);
+
+        RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
+        btnRow.button(BUTTON_REQUIRED_MODS_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.button(BUTTON_REQUIRED_MODS_ADD, I18n.format("gui.oneblockultima.config.add"));
+        factory.add(btnRow);
+    }
+
+    private List<ScrollableListElement.ScrollableListEntry> getListMods(List<RequiredModEntry> availableMods) {
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        for (final RequiredModEntry mod : availableMods)
+        {
+            entries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    boolean isSel = container.getSelectedRequiredModsToAdd().contains(mod.modId);
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    String label = mod.displayName.isEmpty() ? mod.modId : mod.displayName + " (" + mod.modId + ")";
+                    fr.drawStringWithShadow(label, x + 4, y + 4, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    container.selectRequiredModToAdd(mod.modId);
+                    return true;
+                }
+            });
+        }
+        return entries;
+    }
+
+    private List<ScrollableListElement.ScrollableListEntry> getListModsForRemoval(List<RequiredModEntry> mods)
+    {
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        for (final RequiredModEntry mod : mods)
+        {
+            entries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    boolean isSel = container.getSelectedRequiredModsForRemoval().contains(mod.modId);
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    String label = mod.displayName.isEmpty() ? mod.modId : mod.displayName + " (" + mod.modId + ")";
+                    fr.drawStringWithShadow(label, x + 4, y + 4, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    container.selectRequiredModToRemove(mod.modId);
+                    return true;
+                }
+            });
+        }
+        return entries;
+    }
+
+    private void buildUnlockConditionsView()
+    {
+        if (container.getEditingSet() == null) { changeView(VIEW_SET_DETAILS); return; }
+
+        factory.title("gui.oneblockultima.unlock_conditions");
+
+        String toggleLabel = "any".equalsIgnoreCase(container.getUnlockConditionsEditorMode())
+                ? I18n.format("gui.oneblockultima.config.any")
+                : I18n.format("gui.oneblockultima.config.all");
+        factory.button(BUTTON_UNLOCK_CONDITIONS_TOGGLE, toggleLabel);
+
+        String type = container.getNewConditionTypeToAdd();
+        String typeLabelText = I18n.format("gui.oneblockultima.config.unlock_conditions_type_" + type);
+
+        RowElement addRow = new RowElement(Alignment.CENTER).gap(4);
+        addRow.button(BUTTON_UNLOCK_CONDITIONS_CYCLE_TYPE, typeLabelText);
+
+        if ("set_level".equals(type) || "broken_blocks".equals(type))
+        {
+            String setId = container.getNewConditionSetId();
+            boolean hasSet = setId != null && !setId.isEmpty();
+            String setLabel;
+            if (hasSet)
+            {
+                setLabel = ContainerSetsConfig.getLocalizedSetName(
+                        container.getAvailableSetsForConditions().stream()
+                                .filter(s -> s.id.equals(setId)).findFirst().orElse(null));
+                if (setLabel.equals(setId)) setLabel = setId;
+            }
+            else setLabel = "-";
+            addRow.button(BUTTON_UNLOCK_CONDITIONS_CYCLE_SET, setLabel).enabled(hasSet);
+        }
+
+        int fieldWidth = Math.max(40, width * 4 / 100);
+        if ("set_level".equals(type))
+        {
+            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.base_level") + ":"));
+            unlockLevelElement = new TextFieldElement(fieldWidth).text("1");
+            addRow.add(unlockLevelElement);
+        }
+        else
+        {
+            addRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.unlock_conditions_count") + ":"));
+            unlockCountElement = new TextFieldElement(fieldWidth).text("1");
+            addRow.add(unlockCountElement);
+        }
+        factory.add(addRow);
+        factory.add(new SeparatorElement());
+
+        List<ScrollableListElement.ScrollableListEntry> entries = getListConditions();
+
+        conditionsList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(conditionsScrollOffset);
+        conditionsList.flexible(true);
+        conditionsList.visible(true);
+        factory.add(conditionsList);
+
+        RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
+        btnRow.button(BUTTON_UNLOCK_CONDITIONS_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.add(new DangerButtonElement(BUTTON_UNLOCK_CONDITIONS_DELETE, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.button(BUTTON_UNLOCK_CONDITIONS_ADD, I18n.format("gui.oneblockultima.config.add"));
+        btnRow.add(new SuccessButtonElement(BUTTON_UNLOCK_CONDITIONS_SAVE, I18n.format("gui.oneblockultima.done")));
+        factory.add(btnRow);
+    }
+
+    private List<ScrollableListElement.ScrollableListEntry> getListConditions() {
+        List<BlockSetConfig.UnlockConditionDefinition> conditions = container.getUnlockConditionsEditorConditions();
+        List<BlockSetConfig.BlockSetDefinition> availableSets = container.getAvailableSetsForConditions();
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        for (int i = 0; i < conditions.size(); i++)
+        {
+            final int condIdx = i;
+            final BlockSetConfig.UnlockConditionDefinition cond = conditions.get(i);
+            entries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    boolean isSel = container.getSelectedUnlockConditionIndex() == condIdx;
+                    if (isSel) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+
+                    String info = I18n.format("gui.oneblockultima.config.unlock_conditions_type_" + cond.type);
+                    if (cond.setId != null)
+                    {
+                        String setName = ContainerSetsConfig.getLocalizedSetName(
+                                availableSets.stream().filter(s -> s.id.equals(cond.setId)).findFirst().orElse(null));
+                        info += " [" + setName + "]";
+                    }
+                    if (cond.level > 0) info += ": " + cond.level + " " + I18n.format("gui.oneblockultima.lv").toLowerCase();
+                    else if (cond.count > 0) info += ": x" + cond.count;
+                    fr.drawStringWithShadow(info, x + 4, y + 4, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    container.setSelectedUnlockConditionIndex(condIdx);
+                    return true;
+                }
+            });
+        }
+        return entries;
     }
 }

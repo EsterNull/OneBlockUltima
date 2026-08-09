@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:adv_icon_brian_fry"
+    },
+    "title": {
+      "translate": "advancements.brian_fry.title"
+    },
+    "description": {
+      "translate": "advancements.brian_fry.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "drank_natural_poison": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "item": "oneblockultima:natural_poison"
+        }
+      }
+    }
+  },
+  "parent": "oneblockultima:natural_poison"
+}

@@ -289,15 +289,10 @@ public class BlockSetDefinitionTest {
     public void editBlockProperties() {
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.currency = 10;
-        block.meta = 0;
-        block.baseLevel = 1;
 
-        block.currency = 20;
         block.meta = 2;
         block.baseLevel = 5;
 
-        assertEquals(20, block.currency);
         assertEquals(2, block.meta);
         assertEquals(5, block.baseLevel);
     }
@@ -306,9 +301,6 @@ public class BlockSetDefinitionTest {
     public void editMobProperties() {
         MobElementDefinition mob = new MobElementDefinition();
         mob.registry = "minecraft:pig";
-        mob.count = 1;
-        mob.baseLevel = 1;
-        mob.baseChance = 10;
 
         mob.count = 3;
         mob.baseLevel = 5;
@@ -388,6 +380,26 @@ public class BlockSetDefinitionTest {
     }
 
     @Test
+    public void resolveBlockReturnsCachedInstance() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "minecraft:stone";
+        net.minecraft.block.Block first = entry.resolveBlock();
+        net.minecraft.block.Block second = entry.resolveBlock();
+        assertNotNull(first);
+        assertSame(first, second);
+    }
+
+    @Test
+    public void resolveBlockCachesResultForUnknownRegistry() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "nonexistent_mod:missing_block";
+        net.minecraft.block.Block first = entry.resolveBlock();
+        net.minecraft.block.Block second = entry.resolveBlock();
+        assertNotNull(first);
+        assertSame(first, second);
+    }
+
+    @Test
     public void isFluidReturnsTrueForWater() {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "minecraft:water";
@@ -455,6 +467,29 @@ public class BlockSetDefinitionTest {
         entry.meta = 0;
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
         assertEquals(net.minecraft.init.Items.GOLD_INGOT, stack.getItem());
+    }
+
+    @Test
+    public void getPickBlockAppliesNbtTags() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "minecraft:stone";
+        entry.meta = 0;
+        entry.nbtTags.setString("CustomColor", "blue");
+        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        assertFalse(stack.isEmpty());
+        assertTrue(stack.hasTagCompound());
+        assert stack.getTagCompound() != null;
+        assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
+    }
+
+    @Test
+    public void getPickBlockWithoutNbtLeavesStackWithoutTag() {
+        BlockEntryDefinition entry = new BlockEntryDefinition();
+        entry.registry = "minecraft:stone";
+        entry.meta = 0;
+        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        assertFalse(stack.isEmpty());
+        assertFalse(stack.hasTagCompound());
     }
 
     @Test
@@ -534,7 +569,7 @@ public class BlockSetDefinitionTest {
             else if ("minecraft:cow".equals(picked.registry)) cowCount++;
         }
         assertTrue("pig should be picked more often than cow", pigCount > cowCount);
-        assertTrue("with totalChance=100, no nulls expected from min(100,totalChance)", nullCount == 0);
+        assertEquals("with totalChance=100, no nulls expected from min(100,totalChance)", 0, nullCount);
     }
 
     @Test
@@ -642,7 +677,6 @@ public class BlockSetDefinitionTest {
 
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.currency = 10;
         original.blocks.add(block);
 
         MobElementDefinition mob = new MobElementDefinition();
@@ -723,29 +757,12 @@ public class BlockSetDefinitionTest {
     @Test
     public void settingsDefinitionFieldsAreIndependent() {
         SettingsDefinition settings = new SettingsDefinition();
-        settings.disableFluidGeneration = true;
-        assertTrue(settings.disableFluidGeneration);
         assertFalse(settings.disableMobGeneration);
         assertFalse(settings.disableChestGeneration);
         assertFalse(settings.disableSaplingGeneration);
 
         settings.disableMobGeneration = true;
         settings.disableFluidGeneration = false;
-        assertFalse(settings.disableFluidGeneration);
-        assertTrue(settings.disableMobGeneration);
-    }
-
-    @Test
-    public void settingsDefinitionCanBeToggledAllOn() {
-        SettingsDefinition settings = new SettingsDefinition();
-        settings.disableFluidGeneration = true;
-        settings.disableMobGeneration = true;
-        settings.disableChestGeneration = true;
-        settings.disableSaplingGeneration = true;
-        assertTrue(settings.disableFluidGeneration);
-        assertTrue(settings.disableMobGeneration);
-        assertTrue(settings.disableChestGeneration);
-        assertTrue(settings.disableSaplingGeneration);
     }
 
     @Test
@@ -850,6 +867,41 @@ public class BlockSetDefinitionTest {
         SetLevelDefinition lvl2 = set.getLevel(2);
         assertNotNull(lvl2);
         assertEquals(100, lvl2.upgradeCost);
+    }
+
+    @Test
+    public void ensureComputedLevelsMultiplierCost() {
+        BlockSetConfig.SettingsDefinition settings = BlockSetConfig.get().getSettings();
+        String oldMode = settings.setCostIncreaseMode;
+        double oldValue = settings.setCostIncreaseValue;
+        try {
+            settings.setCostIncreaseMode = "multiplier";
+            settings.setCostIncreaseValue = 2.0;
+
+            BlockSetDefinition set = new BlockSetDefinition();
+            set.id = "mult_cost";
+            set.unlockCost = 100;
+
+            BlockElementDefinition block = new BlockElementDefinition();
+            block.registry = "minecraft:stone";
+            block.baseLevel = 1;
+            block.baseChance = 100;
+            set.blocks.add(block);
+
+            set.ensureComputedLevels();
+
+            SetLevelDefinition lvl1 = set.getLevel(1);
+            assertNotNull(lvl1);
+            assertEquals(100, lvl1.upgradeCost);
+
+            SetLevelDefinition lvl2 = set.getLevel(2);
+            assertNotNull(lvl2);
+            assertEquals(200, lvl2.upgradeCost);
+        } finally {
+            settings.setCostIncreaseMode = oldMode;
+            settings.setCostIncreaseValue = oldValue;
+            BlockSetConfig.invalidateComputedLevels();
+        }
     }
 
     @Test

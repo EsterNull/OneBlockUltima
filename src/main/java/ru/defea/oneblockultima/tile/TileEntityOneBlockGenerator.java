@@ -17,16 +17,21 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.ModBlocks;
+import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.util.BlockUtil;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
+
 public class TileEntityOneBlockGenerator extends TileEntity
 {
-    private static final int NON_PLAYER_BREAK_COOLDOWN_TICKS = 20;
+    private static final Set<TileEntityOneBlockGenerator> ACTIVE_GENERATORS = Collections.synchronizedSet(new HashSet<>());
 
     private String selectedSetId;
     private UUID ownerId;
@@ -45,6 +50,35 @@ public class TileEntityOneBlockGenerator extends TileEntity
     {
     }
 
+    @Override
+    public void onLoad()
+    {
+        super.onLoad();
+        if (world != null && !world.isRemote)
+        {
+            ACTIVE_GENERATORS.add(this);
+        }
+    }
+
+    @Override
+    public void onChunkUnload()
+    {
+        ACTIVE_GENERATORS.remove(this);
+        super.onChunkUnload();
+    }
+
+    @Override
+    public void invalidate()
+    {
+        ACTIVE_GENERATORS.remove(this);
+        super.invalidate();
+    }
+
+    public static Set<TileEntityOneBlockGenerator> getActiveGenerators()
+    {
+        return ACTIVE_GENERATORS;
+    }
+
     public boolean canProcessNonPlayerBreak(long worldTick)
     {
         boolean active = isNonPlayerBreakCooldownActive(worldTick);
@@ -61,7 +95,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return false;
         }
 
-        boolean active = worldTick - lastNonPlayerBreakTick < NON_PLAYER_BREAK_COOLDOWN_TICKS;
+        boolean active = worldTick - lastNonPlayerBreakTick < Math.max(0, ModSettings.get().getNonPlayerBreakCooldownTicks());
         if (!active)
         {
             nonPlayerBreakCooldownActive = false;
@@ -76,8 +110,9 @@ public class TileEntityOneBlockGenerator extends TileEntity
         nonPlayerBreakCooldownActive = true;
         if (world != null && !world.isRemote)
         {
-            world.scheduleUpdate(pos, ModBlocks.ONE_BLOCK_GENERATOR, NON_PLAYER_BREAK_COOLDOWN_TICKS);
-            OneBlockUltima.getLogger().info("[BreakDebug] Scheduled delayed generation for generator {} in {} ticks", pos, NON_PLAYER_BREAK_COOLDOWN_TICKS);
+            int cooldownTicks = Math.max(1, ModSettings.get().getNonPlayerBreakCooldownTicks());
+            world.scheduleUpdate(pos, ModBlocks.ONE_BLOCK_GENERATOR, cooldownTicks);
+            OneBlockUltima.getLogger().info("[BreakDebug] Scheduled delayed generation for generator {} in {} ticks", pos, cooldownTicks);
         }
         markDirty();
     }
@@ -108,10 +143,10 @@ public class TileEntityOneBlockGenerator extends TileEntity
         }
 
         int level = resolveGenerationLevel();
-        OneBlockUltima.getLogger().info("[Generator] Resolved level: " + level + " for setId: " + selectedSetId);
+        OneBlockUltima.getLogger().info("[Generator] Resolved level: {} for setId: {}", level, selectedSetId);
         if (level <= 0)
         {
-            OneBlockUltima.getLogger().info("[Generator] Level is " + level + ", resetting to default set");
+            OneBlockUltima.getLogger().info("[Generator] Level is {}, resetting to default set", level);
             selectedSetId = BlockSetConfig.get().getDefaultSetId();
             set = BlockSetConfig.get().getSet(selectedSetId);
             if (set == null)
@@ -124,7 +159,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
         BlockSetConfig.SetLevelDefinition levelDefinition = set.getLevel(level);
         if (levelDefinition == null)
         {
-            OneBlockUltima.getLogger().info("[Generator] Level definition is null for level=" + level);
+            OneBlockUltima.getLogger().info("[Generator] Level definition is null for level={}", level);
             return;
         }
 
@@ -135,12 +170,12 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return;
         }
 
-        OneBlockUltima.getLogger().info("[Generator] Trying to generate entry registry=" + entry.registry + " meta=" + entry.meta + " chance=" + entry.getChance());
+        OneBlockUltima.getLogger().info("[Generator] Trying to generate entry registry={} meta={} chance={}", entry.registry, entry.meta, entry.getChance());
         IBlockState state = BlockUtil.toState(entry);
-        OneBlockUltima.getLogger().info("[Generator] BlockUtil.toState returned " + (state == null ? "null" : state.getBlock().getRegistryName()));
+        OneBlockUltima.getLogger().info("[Generator] BlockUtil.toState returned {}", state == null ? "null" : state.getBlock().getRegistryName());
         if (state == null)
         {
-            OneBlockUltima.getLogger().info("[Generator] Attempting item->block fallback for registry=" + entry.registry);
+            OneBlockUltima.getLogger().info("[Generator] Attempting item->block fallback for registry={}", entry.registry);
         }
             if (state == null)
             {
@@ -148,7 +183,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                 try
                 {
                     Item item = ForgeRegistries.ITEMS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
-                    OneBlockUltima.getLogger().info("[Generator] Fallback item lookup for registry=" + entry.registry + " -> item=" + (item == null ? "null" : item.getRegistryName()));
+                    OneBlockUltima.getLogger().info("[Generator] Fallback item lookup for registry={} -> item={}", entry.registry, item == null ? "null" : item.getRegistryName());
                     Block resolvedBlock = null;
                     if (item instanceof ItemBlock)
                     {
@@ -169,94 +204,95 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (resolvedBlock != null)
                     {
                         try { state = resolvedBlock.getStateFromMeta(entry.meta); } catch (Exception ex) { state = resolvedBlock.getDefaultState(); }
-                        OneBlockUltima.getLogger().info("[Generator] Fallback resolved block=" + (state == null ? "null" : state.getBlock().getRegistryName()));
+                        OneBlockUltima.getLogger().info("[Generator] Fallback resolved block={}", state.getBlock().getRegistryName());
                     }
                 }
                 catch (Exception ex)
                 {
-                    OneBlockUltima.getLogger().error("[Generator] Exception during item->block fallback for " + entry.registry, ex);
+                    OneBlockUltima.getLogger().error("[Generator] Exception during item->block fallback for {}", entry.registry, ex);
                 }
 
                 if (state == null)
                 {
-                    OneBlockUltima.getLogger().info("[Generator] Could not resolve placeable block for registry=" + entry.registry);
+                    OneBlockUltima.getLogger().info("[Generator] Could not resolve placeable block for registry={}", entry.registry);
                     return;
                 }
             }
 
         BlockPos targetPos = pos.up();
 
-        // Вместо спавна предмета, пытаемся разместить блок
-        if (state == null || state.getBlock() == Blocks.AIR)
+        // Instead of spawning an item, try to place the block
+        if (state.getBlock() == Blocks.AIR)
         {
-            OneBlockUltima.getLogger().info("[Generator] State is null or AIR for registry=" + entry.registry + ", trying to place as block anyway");
+            OneBlockUltima.getLogger().info("[Generator] State is null or AIR for registry={}, trying to place as block anyway", entry.registry);
 
-            // Пытаемся найти блок через различные способы
+            // Try to find the block through various ways
             Block resolvedBlock = null;
 
-            // 1. Пробуем через ItemBlock
+            // 1. Try via ItemBlock
             try {
                 Item item = ForgeRegistries.ITEMS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
                 if (item instanceof ItemBlock) {
                     resolvedBlock = ((ItemBlock) item).getBlock();
-                    OneBlockUltima.getLogger().info("[Generator] Found block via ItemBlock: " + (resolvedBlock == null ? "null" : resolvedBlock.getRegistryName()));
+                    OneBlockUltima.getLogger().info("[Generator] Found block via ItemBlock: {}", resolvedBlock.getRegistryName());
                 }
             } catch (Exception ex) {
                 OneBlockUltima.getLogger().error("[Generator] Error getting ItemBlock", ex);
             }
 
-            // 2. Если не нашли, пробуем через BlockUtil (с обновленной обработкой Forestry)
+            // 2. If not found, try via BlockUtil (with updated Forestry handling)
             if (resolvedBlock == null || resolvedBlock == Blocks.AIR) {
-                Block tempBlock = BlockUtil.toState(entry) != null ? BlockUtil.toState(entry).getBlock() : null;
+                Block tempBlock = BlockUtil.toState(entry) != null ? Objects.requireNonNull(BlockUtil.toState(entry)).getBlock() : null;
                 if (tempBlock != null && tempBlock != Blocks.AIR) {
                     resolvedBlock = tempBlock;
-                    OneBlockUltima.getLogger().info("[Generator] Found block via BlockUtil: " + resolvedBlock.getRegistryName());
+                    OneBlockUltima.getLogger().info("[Generator] Found block via BlockUtil: {}", resolvedBlock.getRegistryName());
                 }
             }
 
-            // 3. Если всё ещё не нашли, пробуем прямой поиск по registry
+            // 3. If still not found, try a direct registry lookup
             if (resolvedBlock == null || resolvedBlock == Blocks.AIR) {
                 try {
                     resolvedBlock = ForgeRegistries.BLOCKS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
-                    OneBlockUltima.getLogger().info("[Generator] Found block via direct registry lookup: " + (resolvedBlock == null ? "null" : resolvedBlock.getRegistryName()));
+                    OneBlockUltima.getLogger().info("[Generator] Found block via direct registry lookup: {}", resolvedBlock == null ? "null" : resolvedBlock.getRegistryName());
                 } catch (Exception ex) {
                     OneBlockUltima.getLogger().error("[Generator] Error in direct registry lookup", ex);
                 }
             }
 
-            // Если нашли блок - размещаем его
+            // If a block was found - place it
             if (resolvedBlock != null && resolvedBlock != Blocks.AIR) {
                 try {
-                    // Получаем состояние блока
+                    // Get the block state
                     IBlockState newState;
                     try {
                         newState = resolvedBlock.getStateFromMeta(entry.meta);
-                        if (newState == null || newState.getBlock() == Blocks.AIR) {
+                        if (newState.getBlock() == Blocks.AIR) {
                             newState = resolvedBlock.getDefaultState();
                         }
                     } catch (Exception ex) {
                         newState = resolvedBlock.getDefaultState();
                     }
 
-                    if (newState != null && newState.getBlock() != Blocks.AIR) {
-                        OneBlockUltima.getLogger().info("[Generator] Placing block: " + newState.getBlock().getRegistryName() + " at " + targetPos);
+                    if (newState.getBlock() != Blocks.AIR) {
+                        OneBlockUltima.getLogger().info("[Generator] Placing block: {} at {}", newState.getBlock().getRegistryName(), targetPos);
 
-                        // Размещаем блок с NBT
-                        BlockUtil.placeBlockWithNBT(world, targetPos, newState, entry.nbtTags);
+                        // Place the block with NBT (add obuGenerated)
+                        NBTTagCompound genNbt = ensureObuGenerated(entry.nbtTags);
+                        BlockUtil.placeBlockWithNBT(world, targetPos, newState, genNbt);
 
-                        // Отмечаем как сгенерированное
+                        // Mark as generated
                         GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                        registry.markGenerated(targetPos, pos, selectedSetId, entry.currency, level, entry.registry, entry.meta);
+                        registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
 
-                        return; // Успешно разместили блок
+                        return; // Block placed successfully
                     }
                 } catch (Exception ex) {
                     OneBlockUltima.getLogger().error("[Generator] Failed to place block", ex);
                 }
             }
 
-            // Если ничего не сработало - спавним как предмет (fallback)
-            OneBlockUltima.getLogger().warn("[Generator] Could not place as block, spawning as item fallback for " + entry.registry);
+            // If nothing worked - spawn as an item (fallback)
+            OneBlockUltima.getLogger().warn("[Generator] Could not place as block, spawning as item fallback for {}", entry.registry);
             try {
                 Item item = ForgeRegistries.ITEMS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
                 if (item != null) {
@@ -264,6 +300,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (entry.nbtTags != null && !entry.nbtTags.hasNoTags()) {
                         itemStack.setTagCompound(entry.nbtTags.copy());
                     }
+                    // Add obuGenerated to the fallback item
+                    if (itemStack.getTagCompound() == null) {
+                        itemStack.setTagCompound(new NBTTagCompound());
+                    }
+                    itemStack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
                     net.minecraft.entity.item.EntityItem entityItem = new net.minecraft.entity.item.EntityItem(
                             world, targetPos.getX(), targetPos.getY(), targetPos.getZ(), itemStack
@@ -271,7 +312,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     world.spawnEntity(entityItem);
 
                     GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                    registry.markGenerated(targetPos, pos, selectedSetId, entry.currency, level, entry.registry, entry.meta);
+                    registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
                 }
             } catch (Exception ex) {
                 OneBlockUltima.getLogger().error("[Generator] Failed to spawn item fallback", ex);
@@ -283,10 +324,10 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return;
         }
 
-        OneBlockUltima.getLogger().info("[Generator] Target position=" + targetPos + ", current block=" + world.getBlockState(targetPos).getBlock().getRegistryName());
+        OneBlockUltima.getLogger().info("[Generator] Target position={}, current block={}", targetPos, world.getBlockState(targetPos).getBlock().getRegistryName());
         if (!BlockUtil.canReplaceForGeneration(world, targetPos))
         {
-            OneBlockUltima.getLogger().info("[Generator] Cannot replace target position=" + targetPos);
+            OneBlockUltima.getLogger().info("[Generator] Cannot replace target position={}", targetPos);
             return;
         }
 
@@ -296,15 +337,16 @@ public class TileEntityOneBlockGenerator extends TileEntity
             registry.remove(targetPos);
         }
 
-        OneBlockUltima.getLogger().info("[Generator] Placing state=" + state.getBlock().getRegistryName() + " at " + targetPos);
+        OneBlockUltima.getLogger().info("[Generator] Placing state={} at {}", state.getBlock().getRegistryName(), targetPos);
         if (entry.nbtTags != null && !entry.nbtTags.hasNoTags())
         {
-            OneBlockUltima.getLogger().info("[Generator] Placing block with NBT tags at " + targetPos + ": " + entry.nbtTags);
+            OneBlockUltima.getLogger().info("[Generator] Placing block with NBT tags at {}: {}", targetPos, entry.nbtTags);
         }
-        // Размещаем блок и применяем NBT теги одновременно
-        BlockUtil.placeBlockWithNBT(world, targetPos, state, entry.nbtTags);
-        OneBlockUltima.getLogger().info("[Generator] After place block at " + targetPos + ", now=" + world.getBlockState(targetPos).getBlock().getRegistryName());
-        registry.markGenerated(targetPos, pos, selectedSetId, entry.currency, level, entry.registry, entry.meta);
+        // Place the block and apply NBT tags simultaneously (add obuGenerated)
+        NBTTagCompound genNbt2 = ensureObuGenerated(entry.nbtTags);
+        BlockUtil.placeBlockWithNBT(world, targetPos, state, genNbt2);
+        OneBlockUltima.getLogger().info("[Generator] After place block at {}, now={}", targetPos, world.getBlockState(targetPos).getBlock().getRegistryName());
+        registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
         if (world != null && !world.isRemote)
         {
             nonPlayerBreakCooldownActive = false;
@@ -313,6 +355,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
         }
     }
 
+    private BlockSetConfig.SetLevelDefinition cachedWeightedLevel;
+    private int cachedDisableMask = -1;
+    private BlockSetConfig.BlockEntryDefinition[] cachedWeightedEntries;
+    private int cachedWeightedChance = -1;
+
     private BlockSetConfig.BlockEntryDefinition pickGenerationEntry(BlockSetConfig.SetLevelDefinition levelDefinition)
     {
         if (levelDefinition == null || levelDefinition.blocks == null || levelDefinition.blocks.isEmpty())
@@ -320,26 +367,34 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return null;
         }
 
-        List<BlockSetConfig.BlockEntryDefinition> allowed = new ArrayList<>();
-        int totalChance = 0;
-        for (BlockSetConfig.BlockEntryDefinition candidate : levelDefinition.blocks)
+        int disableMask = (disableFluidGeneration ? 1 : 0) | (disableChestGeneration ? 2 : 0) | (disableSaplingGeneration ? 4 : 0);
+        if (levelDefinition != cachedWeightedLevel || disableMask != cachedDisableMask)
         {
-            if (candidate == null || !isAllowedGenerationEntry(candidate))
+            List<BlockSetConfig.BlockEntryDefinition> allowed = new ArrayList<>();
+            int totalChance = 0;
+            for (BlockSetConfig.BlockEntryDefinition candidate : levelDefinition.blocks)
             {
-                continue;
+                if (!isAllowedGenerationEntry(candidate))
+                {
+                    continue;
+                }
+                totalChance += candidate.getChance();
+                allowed.add(candidate);
             }
-            totalChance += candidate.getChance();
-            allowed.add(candidate);
+            cachedWeightedLevel = levelDefinition;
+            cachedDisableMask = disableMask;
+            cachedWeightedChance = totalChance;
+            cachedWeightedEntries = allowed.toArray(new BlockSetConfig.BlockEntryDefinition[0]);
         }
 
-        if (allowed.isEmpty())
+        if (cachedWeightedEntries.length == 0 || cachedWeightedChance <= 0)
         {
             return null;
         }
 
-        int roll = world.rand.nextInt(Math.max(1, totalChance));
+        int roll = world.rand.nextInt(cachedWeightedChance);
         int current = 0;
-        for (BlockSetConfig.BlockEntryDefinition candidate : allowed)
+        for (BlockSetConfig.BlockEntryDefinition candidate : cachedWeightedEntries)
         {
             current += candidate.getChance();
             if (roll < current)
@@ -347,7 +402,14 @@ public class TileEntityOneBlockGenerator extends TileEntity
                 return candidate;
             }
         }
-        return allowed.get(allowed.size() - 1);
+        return cachedWeightedEntries[cachedWeightedEntries.length - 1];
+    }
+
+    private static NBTTagCompound ensureObuGenerated(NBTTagCompound nbtTags)
+    {
+        NBTTagCompound result = nbtTags != null ? nbtTags.copy() : new NBTTagCompound();
+        result.setBoolean(NBT_OBU_GENERATED, true);
+        return result;
     }
 
     private boolean isAllowedGenerationEntry(BlockSetConfig.BlockEntryDefinition entry)
@@ -360,35 +422,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
         {
             return false;
         }
-        if (disableChestGeneration && isChestEntry(entry))
+        if (disableChestGeneration && entry.isChestEntry())
         {
             return false;
         }
-        if (disableSaplingGeneration && isSaplingEntry(entry))
-        {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean isChestEntry(BlockSetConfig.BlockEntryDefinition entry)
-    {
-        if (entry == null || entry.registry == null)
-        {
-            return false;
-        }
-        String registry = entry.registry.toLowerCase(Locale.ROOT);
-        return registry.contains("chest") || registry.contains("barrel");
-    }
-
-    private boolean isSaplingEntry(BlockSetConfig.BlockEntryDefinition entry)
-    {
-        if (entry == null || entry.registry == null)
-        {
-            return false;
-        }
-        String registry = entry.registry.toLowerCase(Locale.ROOT);
-        return registry.contains("sapling");
+        return !disableSaplingGeneration || !entry.isSaplingEntry();
     }
 
     private int resolveGenerationLevel()
@@ -435,11 +473,6 @@ public class TileEntityOneBlockGenerator extends TileEntity
         setLevels.put(setId, currentLevel + 1);
         markDirty();
         return true;
-    }
-
-    public Map<String, Integer> getSetLevels()
-    {
-        return setLevels;
     }
 
     public String getSelectedSetId()
@@ -497,7 +530,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
     public void setSelectedSetId(String selectedSetId)
     {
-        System.out.println("[DEBUG] TileEntity setSelectedSetId: " + selectedSetId + " at pos " + pos);
+        OneBlockUltima.getLogger().debug("TileEntity setSelectedSetId: {} at pos {}", selectedSetId, pos);
         this.selectedSetId = selectedSetId;
         markDirty();
 
@@ -505,7 +538,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
         {
             IBlockState state = world.getBlockState(pos);
             world.notifyBlockUpdate(pos, state, state, 3);
-            System.out.println("[DEBUG] TileEntity notifyBlockUpdate sent");
+            OneBlockUltima.getLogger().debug("TileEntity notifyBlockUpdate sent");
         }
     }
 
@@ -532,6 +565,17 @@ public class TileEntityOneBlockGenerator extends TileEntity
     public boolean isOwner(EntityPlayer player)
     {
         return player != null && ownerId != null && ownerId.equals(player.getUniqueID());
+    }
+
+    public int getMemberCount()
+    {
+        return (ownerId != null ? 1 : 0) + memberIds.size();
+    }
+
+    public boolean isMemberLimitReached()
+    {
+        int limit = ModSettings.get().getMaxGeneratorMembers();
+        return limit > 0 && getMemberCount() >= limit;
     }
 
     public boolean isFree()
@@ -607,12 +651,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return true;
         }
 
-        if (ownerId != null && ownerId.equals(playerId))
-        {
-            return true;
-        }
-
-        return false;
+        return ownerId != null && ownerId.equals(playerId);
     }
 
     public boolean isPlacedByPlayer()
@@ -644,15 +683,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return;
         }
 
-        Iterator<PendingInvite> iterator = pendingInvites.iterator();
-        while (iterator.hasNext())
-        {
-            PendingInvite invite = iterator.next();
-            if (invite.targetPlayerId.equals(targetPlayerId))
-            {
-                iterator.remove();
-            }
-        }
+        pendingInvites.removeIf(invite -> invite.targetPlayerId.equals(targetPlayerId));
 
         pendingInvites.add(new PendingInvite(targetPlayerId, senderPlayerId, ticks));
         markDirty();
@@ -672,6 +703,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
             if (invite.targetPlayerId.equals(targetPlayerId))
             {
                 iterator.remove();
+
+                if (!hasAccess(targetPlayerId) && isMemberLimitReached())
+                {
+                    return false;
+                }
 
                 if (world != null && !world.isRemote)
                 {
@@ -730,6 +766,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
     public void tickInvites()
     {
+        if (pendingInvites.isEmpty())
+        {
+            return;
+        }
+
         Iterator<PendingInvite> iterator = pendingInvites.iterator();
         while (iterator.hasNext())
         {
@@ -802,7 +843,8 @@ public class TileEntityOneBlockGenerator extends TileEntity
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound)
+    @Nonnull
+    public NBTTagCompound writeToNBT(@Nonnull NBTTagCompound compound)
     {
         super.writeToNBT(compound);
         compound.setString("selectedSetId", getSelectedSetId());
@@ -842,6 +884,12 @@ public class TileEntityOneBlockGenerator extends TileEntity
         }
         compound.setTag("memberIds", membersTag);
 
+        NBTTagList invitesTag = getInvitesTag();
+        compound.setTag("pendingInvites", invitesTag);
+        return compound;
+    }
+
+    private NBTTagList getInvitesTag() {
         NBTTagList invitesTag = new NBTTagList();
         for (PendingInvite invite : pendingInvites)
         {
@@ -856,12 +904,11 @@ public class TileEntityOneBlockGenerator extends TileEntity
             inviteTag.setInteger("ticksLeft", invite.ticksLeft);
             invitesTag.appendTag(inviteTag);
         }
-        compound.setTag("pendingInvites", invitesTag);
-        return compound;
+        return invitesTag;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound compound)
+    public void readFromNBT(@Nonnull NBTTagCompound compound)
     {
         super.readFromNBT(compound);
         selectedSetId = compound.getString("selectedSetId");
@@ -926,6 +973,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
     }
 
     @Override
+    @Nonnull
     public NBTTagCompound getUpdateTag()
     {
         return writeToNBT(new NBTTagCompound());
@@ -939,13 +987,13 @@ public class TileEntityOneBlockGenerator extends TileEntity
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt)
+    public void onDataPacket(@Nonnull NetworkManager net, SPacketUpdateTileEntity pkt)
     {
         readFromNBT(pkt.getNbtCompound());
     }
 
     @Override
-    public void handleUpdateTag(NBTTagCompound tag)
+    public void handleUpdateTag(@Nonnull NBTTagCompound tag)
     {
         readFromNBT(tag);
     }

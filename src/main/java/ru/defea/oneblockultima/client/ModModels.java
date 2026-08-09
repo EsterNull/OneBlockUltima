@@ -1,10 +1,13 @@
 package ru.defea.oneblockultima.client;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.block.statemap.StateMapperBase;
+import net.minecraft.init.Items;
 import net.minecraft.item.Item;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.fml.common.Mod;
@@ -12,10 +15,13 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import ru.defea.oneblockultima.OneBlockUltima;
-import ru.defea.oneblockultima.block.BlockCustomPortalFrame;
+import ru.defea.oneblockultima.block.BlockCustomBreakable;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.item.ModItems;
 
+import javax.annotation.Nonnull;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(value = Side.CLIENT, modid = OneBlockUltima.MODID)
@@ -25,20 +31,35 @@ public final class ModModels
     {
     }
 
+    private static final ModelResourceLocation FALLBACK_LOCATION =
+            new ModelResourceLocation(new ResourceLocation(OneBlockUltima.MODID, "custom_breakable"), "normal");
+
+    private static final Map<ResourceLocation, Boolean> BLOCKSTATE_EXISTS_CACHE = new HashMap<>();
+
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
     public static void registerModels(ModelRegistryEvent event)
     {
         for (ModBlocks.RegisterBlock modBlock : ModBlocks.modBlocks)
         {
-            registerBlockModel(modBlock.getBlock(), modBlock.getVariantIn(), modBlock.getMeta());
+            if (modBlock.getSubBlockCount() > 1)
+            {
+                Item item = Item.getItemFromBlock(modBlock.getBlock());
+                for (int m = 0; m < modBlock.getSubBlockCount(); m++)
+                {
+                    registerItemModel(item, String.valueOf(m), m);
+                }
+            }
+            else
+            {
+                registerBlockModel(modBlock.getBlock(), modBlock.getVariantIn(), modBlock.getMeta());
+            }
         }
         for (ModItems.RegisterItem modItems : ModItems.modItems)
         {
             registerItemModel(modItems.getItem(), modItems.getVariantIn(), modItems.getMeta());
         }
-        registerCustomPortalFrameStateMapper();
-        registerCustomBedrockStateMapper();
+        registerCustomBreakableStateMappers();
     }
 
     @SideOnly(Side.CLIENT)
@@ -51,6 +72,10 @@ public final class ModModels
     @SideOnly(Side.CLIENT)
     private static void registerItemModel(net.minecraft.item.Item item, String variantIn, int meta)
     {
+        if (item == Items.AIR)
+        {
+            return;
+        }
         ModelLoader.setCustomModelResourceLocation(
                 item,
                 meta,
@@ -59,40 +84,61 @@ public final class ModModels
     }
 
     @SideOnly(Side.CLIENT)
-    private static void registerCustomPortalFrameStateMapper()
+    private static void registerCustomBreakableStateMappers()
     {
-        ModelLoader.setCustomStateMapper(
-                ModBlocks.CUSTOM_PORTAL_FRAME,
-                new StateMapperBase()
-                {
-                    @Override
-                    protected ModelResourceLocation getModelResourceLocation(IBlockState state)
+        for (final BlockCustomBreakable customBreakable : ModBlocks.CUSTOM_BREAKABLE_POOL)
+        {
+            ModelLoader.setCustomStateMapper(
+                    customBreakable,
+                    new StateMapperBase()
                     {
-                        boolean eye = state.getValue(BlockCustomPortalFrame.EYE);
-                        EnumFacing facing = state.getValue(BlockCustomPortalFrame.FACING);
-                        String modelName = "minecraft:end_portal_frame";
-                        String variant = "eye=" + eye + ",facing=" + facing.getName();
-                        return new ModelResourceLocation(modelName, variant);
+                        @Override
+                        @Nonnull
+                        protected ModelResourceLocation getModelResourceLocation(@Nonnull IBlockState state)
+                        {
+                            Block emulated = customBreakable.getEmulated();
+                            if (emulated == null || emulated.getRegistryName() == null || hasNoBlockstateModel(emulated))
+                            {
+                                return FALLBACK_LOCATION;
+                            }
+                            IBlockState emuState = customBreakable.getEmulatedState(state);
+                            return new ModelResourceLocation(
+                                    emulated.getRegistryName(),
+                                    BlockCustomBreakable.buildVariantString(emuState == null ? emulated.getDefaultState() : emuState)
+                            );
+                        }
                     }
-                }
-        );
+            );
+        }
     }
 
     @SideOnly(Side.CLIENT)
-    private static void registerCustomBedrockStateMapper()
+    public static boolean hasNoBlockstateModel(Block block)
     {
-        ModelLoader.setCustomStateMapper(
-                ModBlocks.CUSTOM_BEDROCK,
-                new StateMapperBase()
-                {
-                    @Override
-                    protected ModelResourceLocation getModelResourceLocation(IBlockState state)
-                    {
-                        String modelName = "minecraft:bedrock";
-                        String variant = "normal";
-                        return new ModelResourceLocation(modelName, variant);
-                    }
-                }
-        );
+        ResourceLocation registryName = block.getRegistryName();
+        if (registryName == null)
+        {
+            return true;
+        }
+        Boolean cached = BLOCKSTATE_EXISTS_CACHE.get(registryName);
+        if (cached != null)
+        {
+            return !cached;
+        }
+        boolean exists = false;
+        try
+        {
+            exists = !Minecraft.getMinecraft().getResourceManager()
+                    .getAllResources(new ResourceLocation(
+                            registryName.getResourceDomain(),
+                            "blockstates/" + registryName.getResourcePath() + ".json"
+                    ))
+                    .isEmpty();
+        }
+        catch (Exception ignored)
+        {
+        }
+        BLOCKSTATE_EXISTS_CACHE.put(registryName, exists);
+        return !exists;
     }
 }

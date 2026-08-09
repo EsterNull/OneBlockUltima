@@ -14,6 +14,7 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.Constants;
 import ru.defea.oneblockultima.OneBlockUltima;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public abstract class CustomPotion extends ItemPotion {
@@ -27,14 +28,14 @@ public abstract class CustomPotion extends ItemPotion {
     }
 
     @Override
-    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable NBTTagCompound nbt) {
-        // Добавляем эффекты при создании предмета
+    public ICapabilityProvider initCapabilities(@Nonnull ItemStack stack, @Nullable NBTTagCompound nbt) {
+        // Add effects when the item is created
         addPotionEffectsToStack(stack);
         return super.initCapabilities(stack, nbt);
     }
 
     @Override
-    public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
+    public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
             ItemStack stack = new ItemStack(this);
             items.add(stack);
@@ -42,12 +43,14 @@ public abstract class CustomPotion extends ItemPotion {
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
+    @Nonnull
+    public String getItemStackDisplayName(@Nonnull ItemStack stack) {
         return net.minecraft.util.text.translation.I18n.translateToLocal(this.getUnlocalizedNameInefficiently(stack) + ".name").trim();
     }
 
     @Override
-    public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityLivingBase entityLiving) {
+    @Nonnull
+    public ItemStack onItemUseFinish(@Nonnull ItemStack stack, @Nonnull World worldIn, @Nonnull EntityLivingBase entityLiving) {
         ItemStack resultStack = super.onItemUseFinish(stack, worldIn, entityLiving);
 
         if (!worldIn.isRemote) {
@@ -69,7 +72,7 @@ public abstract class CustomPotion extends ItemPotion {
 
         NBTTagList effectsList = nbt.getTagList("CustomPotionEffects", Constants.NBT.TAG_COMPOUND);
 
-        // Сохраняем эффект в NBT
+        // Save the effect in NBT
         for (PotionEffect potionEffect : potionEffects)
         {
             NBTTagCompound effectTag = new NBTTagCompound();

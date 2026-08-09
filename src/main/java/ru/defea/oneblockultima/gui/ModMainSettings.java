@@ -3,12 +3,20 @@ package ru.defea.oneblockultima.gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
+import ru.defea.oneblockultima.gui.layout.Alignment;
+import ru.defea.oneblockultima.gui.layout.ButtonElement;
+import ru.defea.oneblockultima.gui.layout.ViewFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ModMainSettings extends GuiScreen
 {
+    private static final int BUTTON_BACK = 999;
     private static final int BUTTON_CONFIG_EDITOR = 0;
-    private static final int BUTTON_MOD_SETTINGS = 1;
-    private static final int BUTTON_BACK = 2;
+    private static final int BUTTON_UI_SETTINGS = 1;
+    private static final int BUTTON_BLOCK_PRICES = 2;
+    private static final int BUTTON_MISC_SETTINGS = 3;
 
     private final GuiScreen parent;
 
@@ -20,17 +28,33 @@ public class ModMainSettings extends GuiScreen
     @Override
     public void initGui()
     {
-        int centerX = width / 2;
-        int btnWidth = 200;
-        int btnHeight = 20;
-        int startY = height / 2 - 35;
+        ViewFactory factory = new ViewFactory(width, height)
+                .padding(10)
+                .gap(8)
+                .align(Alignment.CENTER)
+                .centerVertical();
 
-        buttonList.add(new GuiButton(BUTTON_CONFIG_EDITOR, centerX - btnWidth / 2, startY, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.settings.open_editor")));
-        buttonList.add(new GuiButton(BUTTON_MOD_SETTINGS, centerX - btnWidth / 2, startY + btnHeight + 8, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.settings.mod_settings")));
-        buttonList.add(new GuiButton(BUTTON_BACK, centerX - btnWidth / 2, startY + (btnHeight + 8) * 2, btnWidth, btnHeight,
-                I18n.format("gui.oneblockultima.cancel")));
+        Map<Integer, String> labels = new HashMap<>();
+        labels.put(BUTTON_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title"));
+        labels.put(BUTTON_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title"));
+        labels.put(BUTTON_BLOCK_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
+        labels.put(BUTTON_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title"));
+        labels.put(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+
+        int maxWidth = 0;
+        for (String s : labels.values()) {
+            int stringWidth = fontRenderer.getStringWidth(s);
+            if (stringWidth > maxWidth) maxWidth = stringWidth;
+        }
+        maxWidth += ButtonElement.BUTTON_PADDING;
+
+        factory.title("gui.oneblockultima.ui_settings.title");
+        for (int i : labels.keySet())
+        {
+            factory.button(i, maxWidth, labels.get(i));
+        }
+
+        factory.build(buttonList, fontRenderer);
     }
 
     @Override
@@ -40,9 +64,17 @@ public class ModMainSettings extends GuiScreen
         {
             mc.displayGuiScreen(new GuiSetsConfig(this));
         }
-        else if (button.id == BUTTON_MOD_SETTINGS)
+        else if (button.id == BUTTON_UI_SETTINGS)
         {
-            mc.displayGuiScreen(new GuiModSettings(this));
+            mc.displayGuiScreen(new GuiUiSettings(this));
+        }
+        else if (button.id == BUTTON_BLOCK_PRICES)
+        {
+            mc.displayGuiScreen(new GuiBlockPrices(this));
+        }
+        else if (button.id == BUTTON_MISC_SETTINGS)
+        {
+            mc.displayGuiScreen(new GuiMiscSettings(this));
         }
         else if (button.id == BUTTON_BACK)
         {
@@ -54,13 +86,6 @@ public class ModMainSettings extends GuiScreen
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.mod_settings.title"), width / 2, 14, 0xFFFFFF);
         super.drawScreen(mouseX, mouseY, partialTicks);
-    }
-
-    @Override
-    public boolean doesGuiPauseGame()
-    {
-        return false;
     }
 }

@@ -225,4 +225,131 @@ public class GeneratedBlockRegistryTest {
         assertEquals(genPos, loaded.getGeneratorPos(blockPos));
     }
 
+    // --- Self-referencing generatorPos (player re-placed blocks) ---
+
+    @Test
+    public void selfReferencingEntryIsGenerated() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos pos = new BlockPos(0, 65, 0);
+        reg.markGenerated(pos, pos, "", 0, 0, "minecraft:dirt", 0);
+
+        assertTrue(reg.isGenerated(pos));
+    }
+
+    @Test
+    public void selfReferencingEntryGetGeneratorPosReturnsSelf() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos pos = new BlockPos(0, 65, 0);
+        reg.markGenerated(pos, pos, "", 0, 0, "minecraft:dirt", 0);
+
+        assertEquals(pos, reg.getGeneratorPos(pos));
+    }
+
+    @Test
+    public void selfReferencingEntryHasEmptySetId() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos pos = new BlockPos(0, 65, 0);
+        reg.markGenerated(pos, pos, "", 0, 0, "minecraft:dirt", 0);
+
+        GeneratedBlockEntry entry = reg.getEntry(pos);
+        assertNotNull(entry);
+        assertEquals("", entry.setId);
+        assertEquals(0, entry.currency);
+        assertEquals(0, entry.level);
+        assertEquals("minecraft:dirt", entry.blockRegistry);
+        assertEquals(0, entry.blockMeta);
+    }
+
+    @Test
+    public void selfReferencingEntryDistinguishesFromDirectGeneration() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos genPos = new BlockPos(0, 64, 0);
+        BlockPos targetPos = new BlockPos(0, 65, 0);
+
+        // Direct generation: generatorPos points to the generator
+        reg.markGenerated(targetPos, genPos, "classic", 10, 1, "minecraft:stone", 0);
+        GeneratedBlockEntry direct = reg.getEntry(targetPos);
+        assertFalse("Direct generation: generatorPos != pos",
+                direct.generatorPos.equals(targetPos));
+        assertEquals(genPos, direct.generatorPos);
+
+        // Re-placed by player: generatorPos == pos (self-reference)
+        reg.markGenerated(targetPos, targetPos, "", 0, 0, "minecraft:stone", 0);
+        GeneratedBlockEntry replaced = reg.getEntry(targetPos);
+        assertTrue("Re-placed: generatorPos == pos",
+                replaced.generatorPos.equals(targetPos));
+    }
+
+    @Test
+    public void selfReferencingEntryNbtRoundtrip() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos pos = new BlockPos(3, 65, 7);
+        reg.markGenerated(pos, pos, "", 0, 0, "minecraft:gold_ore", 0);
+
+        NBTTagCompound nbt = reg.writeToNBT(new NBTTagCompound());
+        GeneratedBlockRegistry loaded = newRegistry();
+        loaded.readFromNBT(nbt);
+
+        assertTrue(loaded.isGenerated(pos));
+        GeneratedBlockEntry entry = loaded.getEntry(pos);
+        assertNotNull(entry);
+        assertEquals(pos, entry.generatorPos);
+        assertEquals("", entry.setId);
+        assertEquals("minecraft:gold_ore", entry.blockRegistry);
+    }
+
+    @Test
+    public void removeSelfReferencingEntryWorks() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos pos = new BlockPos(0, 65, 0);
+        reg.markGenerated(pos, pos, "", 0, 0, "minecraft:dirt", 0);
+        assertTrue(reg.isGenerated(pos));
+
+        reg.remove(pos);
+        assertFalse(reg.isGenerated(pos));
+        assertNull(reg.getEntry(pos));
+    }
+
+    @Test
+    public void selfReferencingAndDirectEntriesAreIndependent() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos genPos = new BlockPos(0, 64, 0);
+        BlockPos posA = new BlockPos(0, 65, 0);
+        BlockPos posB = new BlockPos(1, 65, 1);
+
+        reg.markGenerated(posA, genPos, "classic", 10, 1, "minecraft:stone", 0);
+        reg.markGenerated(posB, posB, "", 0, 0, "minecraft:dirt", 0);
+
+        assertEquals(genPos, reg.getGeneratorPos(posA));
+        assertEquals(posB, reg.getGeneratorPos(posB));
+
+        reg.remove(posA);
+        assertTrue(reg.isGenerated(posA) == false);
+        assertTrue(reg.isGenerated(posB));
+    }
+
+    @Test
+    public void multipleSelfReferencingEntries() {
+        GeneratedBlockRegistry reg = newRegistry();
+        BlockPos pos1 = new BlockPos(0, 65, 0);
+        BlockPos pos2 = new BlockPos(1, 66, 1);
+        BlockPos pos3 = new BlockPos(2, 67, 2);
+
+        reg.markGenerated(pos1, pos1, "", 0, 0, "minecraft:dirt", 0);
+        reg.markGenerated(pos2, pos2, "", 0, 0, "minecraft:cobblestone", 0);
+        reg.markGenerated(pos3, pos3, "", 0, 0, "minecraft:stone", 0);
+
+        assertTrue(reg.isGenerated(pos1));
+        assertTrue(reg.isGenerated(pos2));
+        assertTrue(reg.isGenerated(pos3));
+
+        assertEquals(pos1, reg.getGeneratorPos(pos1));
+        assertEquals(pos2, reg.getGeneratorPos(pos2));
+        assertEquals(pos3, reg.getGeneratorPos(pos3));
+
+        assertEquals("minecraft:dirt", reg.getEntry(pos1).blockRegistry);
+        assertEquals("minecraft:cobblestone", reg.getEntry(pos2).blockRegistry);
+        assertEquals("minecraft:stone", reg.getEntry(pos3).blockRegistry);
+    }
+
 }

@@ -1,10 +1,14 @@
 package ru.defea.oneblockultima;
 
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Bootstrap;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.defea.oneblockultima.block.BlockCustomBreakable;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
 import ru.defea.oneblockultima.command.CommandAcceptGeneratorInvite;
@@ -19,11 +23,14 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
 public class BlockSetConfigUnlockConditionTest
 {
+    private static final double DELTA = 0.0001;
+
     @BeforeClass
     public static void initMinecraftBootstrap()
     {
@@ -36,6 +43,7 @@ public class BlockSetConfigUnlockConditionTest
         Path tempDir = Files.createTempDirectory("oneblockultima-test");
         File configDir = tempDir.toFile();
         File configFile = new File(configDir, "oneblockultima/blocksets.json");
+        //noinspection ResultOfMethodCallIgnored
         configFile.getParentFile().mkdirs();
         Files.write(configFile.toPath(), "{\"sets\":[],\"settings\":{}}".getBytes(StandardCharsets.UTF_8));
 
@@ -74,20 +82,81 @@ public class BlockSetConfigUnlockConditionTest
         OneBlockPlayerData target = new OneBlockPlayerData();
         target.copyFrom(source);
 
-        assertEquals(120, target.getCurrency());
+        assertEquals(120, target.getCurrency(), DELTA);
         assertEquals(7, target.getBrokenBlocksCount());
         assertEquals(7, target.getBrokenBlocksCount("classic"));
         assertEquals(2, target.getSetLevel("classic"));
     }
 
     @Test
-    public void replacesBedrockAndEndPortalFrameWhenPlacedAboveGenerator()
+    public void replacesUnbreakableBlocksWhenPlacedAboveGenerator()
     {
-        assertEquals(ModBlocks.CUSTOM_BEDROCK.getDefaultState(),
-                BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BEDROCK.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState()));
+        IBlockState barrier = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BARRIER.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
+        assertTrue("barrier must be substituted", barrier.getBlock() instanceof BlockCustomBreakable);
+        assertEquals(Blocks.BARRIER, ((BlockCustomBreakable) barrier.getBlock()).getEmulated());
 
-        assertEquals(ModBlocks.CUSTOM_PORTAL_FRAME.getDefaultState(),
-                BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.END_PORTAL_FRAME.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState()));
+        IBlockState bedrock = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BEDROCK.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
+        assertTrue("bedrock must be substituted", bedrock.getBlock() instanceof BlockCustomBreakable);
+        assertEquals(Blocks.BEDROCK, ((BlockCustomBreakable) bedrock.getBlock()).getEmulated());
+
+        IBlockState frame = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.END_PORTAL_FRAME.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
+        assertTrue("end portal frame must be substituted", frame.getBlock() instanceof BlockCustomBreakable);
+        assertEquals(Blocks.END_PORTAL_FRAME, ((BlockCustomBreakable) frame.getBlock()).getEmulated());
+    }
+
+    @Test
+    public void keepsBreakableBlocksWhenPlacedAboveGenerator()
+    {
+        assertSame(Blocks.STONE.getDefaultState(),
+                BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.STONE.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState()));
+    }
+
+    @Test
+    public void keepsUnbreakableBlocksWhenNotPlacedAboveGenerator()
+    {
+        assertSame(Blocks.BARRIER.getDefaultState(),
+                BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BARRIER.getDefaultState(), Blocks.STONE.getDefaultState()));
+    }
+
+    @Test
+    public void customBreakableIsBreakableAndDropsOriginalBlock()
+    {
+        IBlockState state = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.END_PORTAL_FRAME.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
+
+        //noinspection DataFlowIssue
+        assertTrue("substitute must be breakable", state.getBlockHardness(null, null) >= 0.0F);
+        //noinspection DataFlowIssue
+        List<ItemStack> drops = state.getBlock().getDrops(null, null, state, 0);
+        assertEquals(1, drops.size());
+        assertEquals(Item.getItemFromBlock(Blocks.END_PORTAL_FRAME), drops.get(0).getItem());
+        assertEquals(Blocks.END_PORTAL_FRAME.getDefaultState().getBlock().getMetaFromState(Blocks.END_PORTAL_FRAME.getDefaultState()),
+                drops.get(0).getMetadata());
+    }
+
+    @Test
+    public void fluidBarrierIsTransparentToExplosions()
+    {
+        //noinspection DataFlowIssue
+        float resistance = ModBlocks.FLUID_BARRIER.getExplosionResistance(null, null, null, null);
+        assertEquals("FluidBarrier must not absorb explosion rays", 0.0F, resistance, DELTA);
+    }
+
+    @Test
+    public void fluidBarrierIsAirLikeForPlacement()
+    {
+        // ItemFlintAndSteel/ItemFireball require world.isAirBlock to place fire
+        //noinspection DataFlowIssue
+        assertTrue("FluidBarrier must be treated as air so fire can be placed on its slot",
+                ModBlocks.FLUID_BARRIER.isAir(null, null, null));
+    }
+
+    @Test
+    public void fluidBarrierMaterialStillBlocksLiquids()
+    {
+        // Liquid flow (BlockDynamicLiquid.canFlowInto -> isBlocked) relies on the material
+        // blocking movement; making the barrier air-like must not lift this.
+        assertTrue("FluidBarrier must keep a movement-blocking material so liquids cannot flow into it",
+                ModBlocks.FLUID_BARRIER.getDefaultState().getMaterial().blocksMovement());
     }
 
     @Test
@@ -98,14 +167,17 @@ public class BlockSetConfigUnlockConditionTest
         CommandDeclineGeneratorInvite declineCommand = new CommandDeclineGeneratorInvite();
 
         assertEquals("inviteGeneratorMember", inviteCommand.getName());
+        //noinspection DataFlowIssue
         assertEquals("/inviteGeneratorMember <playerName>", inviteCommand.getUsage(null));
         assertEquals(0, inviteCommand.getRequiredPermissionLevel());
 
         assertEquals("acceptGeneratorInvite", acceptCommand.getName());
+        //noinspection DataFlowIssue
         assertEquals("/acceptGeneratorInvite", acceptCommand.getUsage(null));
         assertEquals(0, acceptCommand.getRequiredPermissionLevel());
 
         assertEquals("declineGeneratorInvite", declineCommand.getName());
+        //noinspection DataFlowIssue
         assertEquals("/declineGeneratorInvite", declineCommand.getUsage(null));
         assertEquals(0, declineCommand.getRequiredPermissionLevel());
     }
@@ -132,7 +204,9 @@ public class BlockSetConfigUnlockConditionTest
         java.util.UUID playerId = java.util.UUID.fromString("33333333-3333-3333-3333-333333333333");
         otherGenerator.setOwnerId(playerId);
 
+        //noinspection DataFlowIssue
         freeGenerator.setWorld(null);
+        //noinspection DataFlowIssue
         otherGenerator.setWorld(null);
 
         assertFalse(freeGenerator.tryAssignOwnerIfEligible(playerId));

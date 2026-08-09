@@ -6,8 +6,8 @@
     "DGD"
   ],
   "key": {
-    "D": { "item": "oneblockultima:compressed_diamond_block_5x" },
-    "G": { "item": "oneblockultima:compressed_gold_block_5x" }
+    "D": { "item": "oneblockultima:compressed_diamond_block", "data": 4 },
+    "G": { "item": "oneblockultima:compressed_gold_block", "data": 4 }
   },
   "result": {
     "item": "oneblockultima:higgs_boson"

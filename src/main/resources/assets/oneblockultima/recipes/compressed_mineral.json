@@ -2,31 +2,40 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "oneblockultima:compressed_redstone_block_6x"
+      "type": "forge:ore_dict",
+      "ore": "compressed6xRedstoneBlock"
     },
     {
-      "item": "oneblockultima:compressed_lapis_block_6x"
+      "type": "forge:ore_dict",
+      "ore": "compressed6xLapisBlock"
     },
     {
-      "item": "oneblockultima:compressed_diamond_block_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed5xDiamondBlock"
     },
     {
-      "item": "oneblockultima:compressed_gold_block_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed5xGoldBlock"
     },
     {
-      "item": "oneblockultima:compressed_iron_block_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed5xIronBlock"
     },
     {
-      "item": "oneblockultima:compressed_end_stone_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed6xEndStone"
     },
     {
-      "item": "oneblockultima:compressed_emerald_block_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed5xEmeraldBlock"
     },
     {
-      "item": "oneblockultima:compressed_coal_block_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed6xStone"
     },
     {
-      "item": "oneblockultima:compressed_netherrack_5x"
+      "type": "forge:ore_dict",
+      "ore": "compressed6xNetherrack"
     }
   ],
   "result": {

@@ -4,13 +4,12 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockCrops;
-import net.minecraft.block.BlockEndPortalFrame;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
@@ -32,7 +31,7 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.OneBlockUltima;
-import ru.defea.oneblockultima.block.BlockCustomPortalFrame;
+import ru.defea.oneblockultima.block.BlockCustomBreakable;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
@@ -57,31 +56,63 @@ public final class BlockUtil
             return state;
         }
 
-        if (state.getBlock() == Blocks.BEDROCK)
-        {
-            return ModBlocks.CUSTOM_BEDROCK.getDefaultState();
-        }
-
-        if (state.getBlock() == Blocks.END_PORTAL_FRAME)
-        {
-            IBlockState replacement = ModBlocks.CUSTOM_PORTAL_FRAME.getDefaultState();
-            if (state.getProperties().containsKey(BlockEndPortalFrame.FACING))
-            {
-                replacement = replacement.withProperty(BlockCustomPortalFrame.FACING, state.getValue(BlockEndPortalFrame.FACING));
-            }
-            if (state.getProperties().containsKey(BlockEndPortalFrame.EYE))
-            {
-                replacement = replacement.withProperty(BlockCustomPortalFrame.EYE, state.getValue(BlockEndPortalFrame.EYE));
-            }
-            return replacement;
-        }
-
-        return state;
+        return toBreakableIfUnbreakable(state);
     }
 
     /**
-     * Размещает блок с применением NBT тегов одновременно (атомарно)
-     * Теги применяются ДО размещения блока для BlockContainer блоков
+     * Replaces an unbreakable block (hardness &lt; 0) with a breakable copy {@link BlockCustomBreakable},
+     * so it can be mined like obsidian. All other blocks are returned unchanged.
+     */
+    @Nullable
+    public static IBlockState toBreakableIfUnbreakable(IBlockState state)
+    {
+        if (state == null || isBreakable(state.getBlock()))
+        {
+            return state;
+        }
+
+        BlockCustomBreakable substitute = ModBlocks.getBreakableFor(state.getBlock());
+        if (substitute == null)
+        {
+            return state;
+        }
+
+        int meta;
+        try
+        {
+            meta = state.getBlock().getMetaFromState(state) & 15;
+        }
+        catch (Exception ex)
+        {
+            meta = 0;
+        }
+        return substitute.getDefaultState().withProperty(BlockCustomBreakable.ORIGINAL_META, meta);
+    }
+
+    public static boolean isBreakable(Block block)
+    {
+        if (block == null || block == Blocks.AIR || block instanceof BlockCustomBreakable)
+        {
+            return true;
+        }
+        if (block == ModBlocks.ONE_BLOCK_GENERATOR || block == ModBlocks.FLUID_BARRIER)
+        {
+            return true;
+        }
+        try
+        {
+            //noinspection DataFlowIssue
+            return !(block.getDefaultState().getBlockHardness(null, null) < 0.0F);
+        }
+        catch (Exception ex)
+        {
+            return true;
+        }
+    }
+
+    /**
+     * Places a block with NBT tags applied atomically.
+     * Tags are applied BEFORE placing the block for BlockContainer blocks.
      */
     public static void placeBlockWithNBT(World world, BlockPos pos, IBlockState state, @javax.annotation.Nullable NBTTagCompound nbtTags)
     {
@@ -90,7 +121,7 @@ public final class BlockUtil
             return;
         }
 
-        // Обработка жидкостей
+        // Handle liquids
         if (state.getMaterial().isLiquid())
         {
             state = normalizeLiquidState(state);
@@ -99,13 +130,13 @@ public final class BlockUtil
         state = getReplacementStateForGeneratorPlacement(state, world.getBlockState(pos.down()));
         Block block = state.getBlock();
         
-        // Для BlockContainer блоков с NBT тегами - создаем TileEntity ДО размещения
+        // For BlockContainer blocks with NBT tags - create the TileEntity BEFORE placing
         TileEntity preCreatedTileEntity = null;
         if (nbtTags != null && !nbtTags.hasNoTags() && block instanceof net.minecraft.block.BlockContainer)
         {
             try
             {
-                // Создаем TileEntity с полными NBT данными ДО размещения блока
+                // Create a TileEntity with full NBT data BEFORE placing the block
                 TileEntity tileEntity = ((net.minecraft.block.BlockContainer) block).createNewTileEntity(world, block.getMetaFromState(state));
                 
                 if (tileEntity != null)
@@ -154,19 +185,19 @@ public final class BlockUtil
             }
         }
         
-        // Размещаем блок
+        // Place the block
         world.setBlockState(pos, state, 3);
         if (preCreatedTileEntity != null)
         {
-            // Удаляем старый TileEntity, если есть
+            // Remove the old TileEntity if present
             world.removeTileEntity(pos);
-            // Устанавливаем наш
+            // Set ours
             world.setTileEntity(pos, preCreatedTileEntity);
             preCreatedTileEntity.setPos(pos);
             preCreatedTileEntity.markDirty();
         }
 
-        // Если есть NBT теги, но блок не BlockContainer, пытаемся применить их после размещения
+        // If NBT tags exist but the block is not a BlockContainer, try applying them after placement
         if (nbtTags != null && !nbtTags.hasNoTags() && !(block instanceof net.minecraft.block.BlockContainer))
         {
             applyNbtToBlock(world, pos, nbtTags);
@@ -193,7 +224,7 @@ public final class BlockUtil
         return net.minecraft.util.text.translation.I18n.translateToLocal(net.minecraft.util.text.translation.I18n.translateToLocal(block.getUnlocalizedName()) + ".name").trim();
     }
 
-    public static List<String> getTooltip(BlockSetConfig.BlockEntryDefinition hoveredEntry, ITooltipFlag advanced) {
+    public static List<String> getTooltip(BlockSetConfig.BlockEntryDefinition hoveredEntry, boolean isAdvanced) {
         java.util.List<String> tooltip = new java.util.ArrayList<>();
         Block resolvedBlock = hoveredEntry.resolveBlock();
         boolean hasTagCompound = hoveredEntry.nbtTags != null;
@@ -205,7 +236,7 @@ public final class BlockUtil
             s = hoveredEntry.registry;
         }
 
-        if (advanced.isAdvanced())
+        if (isAdvanced)
         {
             String s1 = "";
 
@@ -267,7 +298,7 @@ public final class BlockUtil
 
             if (nbttagcompound1.hasKey("color", Constants.NBT.TAG_INT))
             {
-                if (advanced.isAdvanced())
+                if (isAdvanced)
                 {
                     tooltip.add(net.minecraft.util.text.translation.I18n.translateToLocalFormatted("block.color", String.format("#%06X", nbttagcompound1.getInteger("color"))));
                 }
@@ -329,7 +360,7 @@ public final class BlockUtil
             }
         }
 
-        if (advanced.isAdvanced())
+        if (isAdvanced)
         {
 
             tooltip.add(TextFormatting.DARK_GRAY + Block.REGISTRY.getNameForObject(resolvedBlock).toString());
@@ -373,7 +404,7 @@ public final class BlockUtil
     }
 
     /**
-     * Нормализирует жидкости (вода и лава) в их неподвижные состояния
+     * Normalizes liquids (water and lava) to their still states
      */
     private static IBlockState normalizeLiquidState(IBlockState state)
     {
@@ -420,7 +451,7 @@ public final class BlockUtil
     }
 
     /**
-     * Универсальное применение NBT тегов к блоку на указанной позиции
+     * Universal application of NBT tags to the block at the given position
      */
     public static void applyNbtToBlock(World world, BlockPos pos, NBTTagCompound nbtTags)
     {
@@ -434,11 +465,11 @@ public final class BlockUtil
             TileEntity tileEntity = world.getTileEntity(pos);
             if (tileEntity != null)
             {
-                // Читаем текущее состояние TileEntity
+                // Read the current TileEntity state
                 NBTTagCompound tileNbt = new NBTTagCompound();
                 tileEntity.writeToNBT(tileNbt);
 
-                // Добавляем все теги из nbtTags в tileNbt (перезаписываем если уже есть)
+                // Add all tags from nbtTags into tileNbt (overwrite if already present)
                 for (String key : nbtTags.getKeySet())
                 {
                     NBTBase tag = nbtTags.getTag(key);
@@ -449,11 +480,11 @@ public final class BlockUtil
                     }
                 }
 
-                // Применяем обновленные теги
+                // Apply the updated tags
                 tileEntity.readFromNBT(tileNbt);
                 tileEntity.markDirty();
 
-                // Обновляем блок
+                // Update the block
                 IBlockState state = world.getBlockState(pos);
                 world.notifyBlockUpdate(pos, state, state, 3);
 
@@ -470,8 +501,42 @@ public final class BlockUtil
         }
     }
 
+    public static boolean isFullBlock(net.minecraft.block.Block block, int meta)
+    {
+        try
+        {
+            net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
+            if (item == Items.AIR)
+            {
+                return false;
+            }
+
+            net.minecraft.block.state.IBlockState state = null;
+            try
+            {
+                state = block.getStateFromMeta(meta);
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    state = block.getDefaultState();
+                }
+                catch (Exception ignored) {}
+            }
+
+            if (state == null) return false;
+
+            return block.isFullBlock(state) && block.isFullCube(state);
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
     /**
-     * Рекурсивное объединение NBT тегов
+     * Recursive merging of NBT tags
      */
     private static void mergeNbtTags(NBTTagCompound target, NBTTagCompound source)
     {
@@ -489,7 +554,7 @@ public final class BlockUtil
                 continue;
             }
 
-            // Если в целевом объекте уже есть такой ключ и оба - CompoundTag, объединяем рекурсивно
+            // If the target already has this key and both are CompoundTags, merge recursively
             if (target.hasKey(key))
             {
                 NBTBase targetTag = target.getTag(key);
@@ -500,7 +565,7 @@ public final class BlockUtil
                 }
             }
 
-            // В остальных случаях просто копируем (заменяем)
+            // Otherwise just copy (replace)
             target.setTag(key, sourceTag.copy());
         }
     }
@@ -521,9 +586,9 @@ public final class BlockUtil
         Block block = entry.resolveBlock();
         if (block == null || block == Blocks.AIR)
         {
-            // Специальная обработка для Forestry
+            // Special handling for Forestry
             if (entry.registry != null && entry.registry.toLowerCase().contains("forestry")) {
-                // Пробуем найти блок через ItemBlock
+                // Try to find the block via ItemBlock
                 try {
                     Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.registry));
                     if (item instanceof ItemBlock) {
@@ -552,7 +617,7 @@ public final class BlockUtil
         {
             IBlockState state;
 
-            // Для Forestry саженцев всегда используем default state (meta игнорируется)
+            // For Forestry saplings always use the default state (meta is ignored)
             if (entry.registry != null && entry.registry.toLowerCase().contains("forestry") &&
                     entry.registry.toLowerCase().contains("sapling"))
             {
@@ -629,7 +694,7 @@ public final class BlockUtil
         {
             OneBlockUltima.getLogger().info("[BlockUtil] Trying to resolve Forestry sapling: {}", registry);
 
-            // Самый надежный способ - через ItemBlock
+            // The most reliable way - via ItemBlock
             try {
                 Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(registry));
                 if (item instanceof ItemBlock) {
@@ -641,7 +706,7 @@ public final class BlockUtil
                 }
             } catch (Exception ignored) {}
 
-            // Если не получилось через ItemBlock, пробуем прямой поиск
+            // If ItemBlock lookup failed, try direct lookup
             try {
                 Block b = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("forestry:sapling"));
                 if (b != null && b != Blocks.AIR) {
@@ -655,8 +720,8 @@ public final class BlockUtil
     }
 
     /**
-     * Применяет NBT теги к сущности (мобу)
-     * Используется при спауне мобов для применения кастомных свойств
+     * Applies NBT tags to an entity (mob)
+     * Used when spawning mobs to apply custom properties
      */
     public static void applyNbtToEntity(net.minecraft.entity.Entity entity, @Nullable NBTTagCompound nbtTags)
     {
@@ -667,14 +732,14 @@ public final class BlockUtil
 
         try
         {
-            // Получаем текущие NBT теги сущности
+            // Get the entity's current NBT tags
             NBTTagCompound entityNbt = new NBTTagCompound();
             entity.writeToNBT(entityNbt);
 
-            // Рекурсивно объединяем теги
+            // Merge tags recursively
             mergeNbtTags(entityNbt, nbtTags);
 
-            // Применяем обновленные теги
+            // Apply the updated tags
             entity.readFromNBT(entityNbt);
 
             OneBlockUltima.getLogger().info("[Mob Spawn] Applied NBT tags to entity: {}", entity.getName());

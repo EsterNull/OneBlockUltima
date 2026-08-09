@@ -13,7 +13,7 @@ public class OneBlockPlayerDataStorage implements Capability.IStorage<IOneBlockP
     public NBTBase writeNBT(Capability<IOneBlockPlayerData> capability, IOneBlockPlayerData instance, EnumFacing side)
     {
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("currency", instance.getCurrency());
+        tag.setDouble("currency", instance.getCurrency());
 
         NBTTagCompound levels = new NBTTagCompound();
         NBTTagCompound brokenBlocks = new NBTTagCompound();
@@ -45,7 +45,7 @@ public class OneBlockPlayerDataStorage implements Capability.IStorage<IOneBlockP
 
         NBTTagCompound tag = (NBTTagCompound) nbt;
         OneBlockPlayerData data = (OneBlockPlayerData) instance;
-        data.setCurrency(tag.getInteger("currency"));
+        data.setCurrency(tag.getDouble("currency"));
         data.getSetLevels().clear();
 
         NBTTagCompound levels = tag.getCompoundTag("setLevels");

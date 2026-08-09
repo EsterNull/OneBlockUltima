@@ -7,19 +7,19 @@ import java.util.Map;
 
 public class OneBlockPlayerData implements IOneBlockPlayerData
 {
-    private int currency;
+    private double currency;
     private final Map<String, Integer> setLevels = new HashMap<String, Integer>();
     private final Map<String, Integer> brokenBlocksBySet = new HashMap<String, Integer>();
     private int brokenBlocksTotal;
 
     @Override
-    public int getCurrency()
+    public double getCurrency()
     {
         return currency;
     }
 
     @Override
-    public void addCurrency(int amount)
+    public void addCurrency(double amount)
     {
         if (amount > 0)
         {
@@ -28,7 +28,7 @@ public class OneBlockPlayerData implements IOneBlockPlayerData
     }
 
     @Override
-    public boolean spendCurrency(int amount)
+    public boolean spendCurrency(double amount)
     {
         if (amount < 0 || currency < amount)
         {
@@ -129,7 +129,7 @@ public class OneBlockPlayerData implements IOneBlockPlayerData
         getSetLevels().clear();
     }
 
-    public void setCurrency(int currency)
+    public void setCurrency(double currency)
     {
         this.currency = Math.max(0, currency);
     }

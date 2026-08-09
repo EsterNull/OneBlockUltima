@@ -2,12 +2,15 @@ package ru.defea.oneblockultima;
 
 import net.minecraft.init.Bootstrap;
 import net.minecraft.nbt.NBTTagCompound;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -31,6 +34,12 @@ public class TileEntityOneBlockGeneratorTest
     private TileEntityOneBlockGenerator newGenerator()
     {
         return new TileEntityOneBlockGenerator();
+    }
+
+    @After
+    public void clearActiveGenerators()
+    {
+        TileEntityOneBlockGenerator.getActiveGenerators().clear();
     }
 
     // 1
@@ -209,7 +218,6 @@ public class TileEntityOneBlockGeneratorTest
         gen.setOwnerId(OWNER);
         gen.addMember(MEMBER);
         gen.setOwnerId(OWNER);
-        List<TileEntityOneBlockGenerator.PendingInvite> invites = gen.getPendingInvites();
         assertFalse(gen.hasAccess(MEMBER));
         gen.setOwnerId(STRANGER);
         assertFalse(gen.hasAccess(MEMBER));
@@ -307,6 +315,96 @@ public class TileEntityOneBlockGeneratorTest
         gen.addPendingInvite(INVITEE, SENDER, 1200);
         assertTrue(gen.declineInvite(INVITEE));
         assertEquals(0, gen.getPendingInvites().size());
+    }
+
+    // 27a
+    @Test
+    public void getMemberCountCountsOwnerAndMembers()
+    {
+        TileEntityOneBlockGenerator gen = newGenerator();
+        assertEquals(0, gen.getMemberCount());
+        gen.setOwnerId(OWNER);
+        assertEquals(1, gen.getMemberCount());
+        gen.addMember(MEMBER);
+        assertEquals(2, gen.getMemberCount());
+        gen.addMember(INVITEE);
+        assertEquals(3, gen.getMemberCount());
+    }
+
+    // 27b
+    @Test
+    public void memberLimitZeroMeansNoLimit()
+    {
+        ModSettings.get().setMaxGeneratorMembers(0);
+        try
+        {
+            TileEntityOneBlockGenerator gen = newGenerator();
+            gen.setOwnerId(OWNER);
+            gen.addMember(MEMBER);
+            assertFalse(gen.isMemberLimitReached());
+        }
+        finally
+        {
+            ModSettings.get().setMaxGeneratorMembers(0);
+        }
+    }
+
+    // 27c
+    @Test
+    public void memberLimitReachedWhenCountEqualsLimit()
+    {
+        ModSettings.get().setMaxGeneratorMembers(2);
+        try
+        {
+            TileEntityOneBlockGenerator gen = newGenerator();
+            gen.setOwnerId(OWNER);
+            gen.addMember(MEMBER);
+            assertTrue(gen.isMemberLimitReached());
+        }
+        finally
+        {
+            ModSettings.get().setMaxGeneratorMembers(0);
+        }
+    }
+
+    // 27d
+    @Test
+    public void acceptInviteRejectedWhenMemberLimitReached()
+    {
+        ModSettings.get().setMaxGeneratorMembers(2);
+        try
+        {
+            TileEntityOneBlockGenerator gen = newGenerator();
+            gen.setOwnerId(OWNER);
+            gen.addMember(MEMBER);
+            gen.addPendingInvite(INVITEE, SENDER, 1200);
+            assertFalse(gen.acceptInvite(INVITEE));
+            assertFalse(gen.hasAccess(INVITEE));
+        }
+        finally
+        {
+            ModSettings.get().setMaxGeneratorMembers(0);
+        }
+    }
+
+    // 27e
+    @Test
+    public void acceptInviteAllowedWithinMemberLimit()
+    {
+        ModSettings.get().setMaxGeneratorMembers(3);
+        try
+        {
+            TileEntityOneBlockGenerator gen = newGenerator();
+            gen.setOwnerId(OWNER);
+            gen.addMember(MEMBER);
+            gen.addPendingInvite(INVITEE, SENDER, 1200);
+            assertTrue(gen.acceptInvite(INVITEE));
+            assertTrue(gen.hasAccess(INVITEE));
+        }
+        finally
+        {
+            ModSettings.get().setMaxGeneratorMembers(0);
+        }
     }
 
     // 28
@@ -501,5 +599,81 @@ public class TileEntityOneBlockGeneratorTest
         assertFalse(gen.hasAccess(MEMBER));
         assertTrue(gen.hasAccess(INVITEE));
         assertTrue(gen.hasAccess(OWNER));
+    }
+
+    // ------------------------------------------------------------------
+    // active-generator set (the set iterated by ModEvents.onWorldTick)
+    // ------------------------------------------------------------------
+
+    @Test
+    public void activeGeneratorsSetStartsEmpty()
+    {
+        assertTrue(TileEntityOneBlockGenerator.getActiveGenerators().isEmpty());
+    }
+
+    @Test
+    public void getActiveGeneratorsReturnsSharedSet()
+    {
+        assertSame("getActiveGenerators must expose the single static set",
+                TileEntityOneBlockGenerator.getActiveGenerators(),
+                TileEntityOneBlockGenerator.getActiveGenerators());
+    }
+
+    @Test
+    public void invalidateRemovesGeneratorFromActiveSet()
+    {
+        TileEntityOneBlockGenerator gen = newGenerator();
+        addToActiveSet(gen);
+
+        assertTrue("the generator must be tracked until it is invalidated",
+                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
+
+        gen.invalidate();
+
+        assertFalse("invalidate must unregister the generator from the active set",
+                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
+    }
+
+    @Test
+    public void onChunkUnloadRemovesGeneratorFromActiveSet()
+    {
+        TileEntityOneBlockGenerator gen = newGenerator();
+        addToActiveSet(gen);
+
+        gen.onChunkUnload();
+
+        assertFalse("onChunkUnload must unregister the generator from the active set",
+                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
+    }
+
+    @Test
+    public void invalidateLeavesOtherGeneratorsInActiveSet()
+    {
+        TileEntityOneBlockGenerator a = newGenerator();
+        TileEntityOneBlockGenerator b = newGenerator();
+        addToActiveSet(a);
+        addToActiveSet(b);
+
+        a.invalidate();
+
+        Set<TileEntityOneBlockGenerator> active = TileEntityOneBlockGenerator.getActiveGenerators();
+        assertFalse("the invalidated generator must be removed", active.contains(a));
+        assertTrue("unrelated generators must stay tracked", active.contains(b));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addToActiveSet(TileEntityOneBlockGenerator generator)
+    {
+        try
+        {
+            Field field = TileEntityOneBlockGenerator.class.getDeclaredField("ACTIVE_GENERATORS");
+            field.setAccessible(true);
+            Set<TileEntityOneBlockGenerator> active = (Set<TileEntityOneBlockGenerator>) field.get(null);
+            active.add(generator);
+        }
+        catch (Exception e)
+        {
+            throw new AssertionError("Unable to access ACTIVE_GENERATORS", e);
+        }
     }
 }
