@@ -174,7 +174,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
         {
             ModEvents.applyPendingGeneratorOwner(world, pos);
 
-            // Ставим барьер над генератором
+            // Place the barrier above the generator
             ensureFluidBarrier(world, pos);
 
             world.scheduleUpdate(pos, this, 1);
@@ -190,7 +190,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
             return;
         }
 
-        // Проверяем, нужно ли восстановить барьер
+        // Check whether the barrier needs to be restored
         ensureFluidBarrier(world, pos);
 
         TileEntity tileEntity = world.getTileEntity(pos);
@@ -234,7 +234,7 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
         }
     }
 
-    private static void ensureFluidBarrier(World world, BlockPos generatorPos)
+    public static void ensureFluidBarrier(World world, BlockPos generatorPos)
     {
         BlockPos barrierPos = generatorPos.up(2);
         IBlockState barrierState = world.getBlockState(barrierPos);

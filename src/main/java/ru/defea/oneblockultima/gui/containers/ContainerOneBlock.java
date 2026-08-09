@@ -188,7 +188,7 @@ public class ContainerOneBlock extends Container
             return;
         }
 
-        // Проверяем, не выбран ли уже этот набор
+        // Check whether this set is already selected
         String currentSelected = generator.getSelectedSetId();
         if (setId.equals(currentSelected))
         {
@@ -216,14 +216,14 @@ public class ContainerOneBlock extends Container
         {
             EntityPlayerMP playerMP = (EntityPlayerMP) player;
 
-            // Отправляем обновление тайла
+            // Send the tile update
             net.minecraft.network.play.server.SPacketUpdateTileEntity packet = generator.getUpdatePacket();
             if (packet != null)
             {
                 playerMP.connection.sendPacket(packet);
             }
 
-            // Синхронизируем данные игрока
+            // Synchronize the player data
             PacketSyncPlayerData.sendToPlayer(player);
         }
     }
@@ -260,10 +260,10 @@ public class ContainerOneBlock extends Container
         int currentLevel = generator.getSetLevel(setId);
         OneBlockUltima.getLogger().info("[OneBlock] Current level: " + currentLevel);
 
-        // Проверяем, разблокирован ли набор
+        // Check whether the set is unlocked
         if (currentLevel <= 0)
         {
-            // Попытка разблокировать набор
+            // Attempt to unlock the set
             if (!set.hasUnlockRequirementsMet(data, generator))
             {
                 if (player instanceof EntityPlayerMP)
@@ -299,7 +299,7 @@ public class ContainerOneBlock extends Container
 
             OneBlockPlayerDataProvider.saveToEntity(player, data);
 
-            // Разблокируем набор
+            // Unlock the set
             boolean success = generator.upgradeSet(setId, cost, set.getMaxLevel());
             if (!success)
             {
@@ -311,7 +311,7 @@ public class ContainerOneBlock extends Container
                 return false;
             }
 
-            // После разблокировки автоматически выбираем набор
+            // After unlocking, automatically select the set
             generator.setSelectedSetId(setId);
             if (!generator.ensureOwnership(player.getUniqueID()))
             {
@@ -327,7 +327,7 @@ public class ContainerOneBlock extends Container
         }
         else
         {
-            // Попытка улучшить набор
+            // Attempt to upgrade the set
             BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
             if (nextLevel == null)
             {
@@ -361,7 +361,7 @@ public class ContainerOneBlock extends Container
 
             OneBlockPlayerDataProvider.saveToEntity(player, data);
 
-            // Улучшаем набор
+            // Upgrade the set
             boolean success = generator.upgradeSet(setId, cost, set.getMaxLevel());
             if (!success)
             {
@@ -373,7 +373,7 @@ public class ContainerOneBlock extends Container
                 return false;
             }
 
-            // После улучшения автоматически выбираем набор
+            // After upgrading, automatically select the set
             generator.setSelectedSetId(setId);
             if (!generator.ensureOwnership(player.getUniqueID()))
             {
@@ -392,14 +392,14 @@ public class ContainerOneBlock extends Container
 
             ModEvents.ensureGeneratorAccess(world, generatorPos, player, generator);
 
-            // Отправляем обновление тайла
+            // Send the tile update
             net.minecraft.network.play.server.SPacketUpdateTileEntity packet = generator.getUpdatePacket();
             if (packet != null)
             {
                 playerMP.connection.sendPacket(packet);
             }
 
-            // Синхронизируем данные игрока
+            // Synchronize the player data
             PacketSyncPlayerData.sendToPlayer(player);
             OneBlockPlayerDataProvider.saveToEntity(player, data);
         }

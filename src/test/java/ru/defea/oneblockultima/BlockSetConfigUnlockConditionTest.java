@@ -134,6 +134,32 @@ public class BlockSetConfigUnlockConditionTest
     }
 
     @Test
+    public void fluidBarrierIsTransparentToExplosions()
+    {
+        //noinspection DataFlowIssue
+        float resistance = ModBlocks.FLUID_BARRIER.getExplosionResistance(null, null, null, null);
+        assertEquals("FluidBarrier must not absorb explosion rays", 0.0F, resistance, DELTA);
+    }
+
+    @Test
+    public void fluidBarrierIsAirLikeForPlacement()
+    {
+        // ItemFlintAndSteel/ItemFireball require world.isAirBlock to place fire
+        //noinspection DataFlowIssue
+        assertTrue("FluidBarrier must be treated as air so fire can be placed on its slot",
+                ModBlocks.FLUID_BARRIER.isAir(null, null, null));
+    }
+
+    @Test
+    public void fluidBarrierMaterialStillBlocksLiquids()
+    {
+        // Liquid flow (BlockDynamicLiquid.canFlowInto -> isBlocked) relies on the material
+        // blocking movement; making the barrier air-like must not lift this.
+        assertTrue("FluidBarrier must keep a movement-blocking material so liquids cannot flow into it",
+                ModBlocks.FLUID_BARRIER.getDefaultState().getMaterial().blocksMovement());
+    }
+
+    @Test
     public void inviteCommandsExposeExpectedMetadata()
     {
         CommandInviteGeneratorMember inviteCommand = new CommandInviteGeneratorMember();

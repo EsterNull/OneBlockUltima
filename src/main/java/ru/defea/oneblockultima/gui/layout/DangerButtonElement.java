@@ -3,7 +3,7 @@ package ru.defea.oneblockultima.gui.layout;
 import static ru.defea.oneblockultima.Constants.*;
 
 /**
- * Красная кнопка-«опасность» для разрушающих действий (удаление).
+ * Red "danger" button for destructive actions (deletion).
  */
 public class DangerButtonElement extends ButtonElement<DangerButtonElement>
 {

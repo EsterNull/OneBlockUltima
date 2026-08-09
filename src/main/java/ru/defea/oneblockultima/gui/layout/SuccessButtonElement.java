@@ -3,7 +3,7 @@ package ru.defea.oneblockultima.gui.layout;
 import static ru.defea.oneblockultima.Constants.*;
 
 /**
- * Зелёная кнопка для позитивных/сохраняющих действий.
+ * Green button for positive/saving actions.
  */
 public class SuccessButtonElement extends ButtonElement<SuccessButtonElement>
 {

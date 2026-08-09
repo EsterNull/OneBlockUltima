@@ -78,8 +78,8 @@ public class GeneratedBlockRegistry extends WorldSavedData
     }
 
     /**
-     * Ограничивает частоту записи: тяжелый NBT-дамп всего реестра выполняется не чаще раза в 2 секунды.
-     * Гарантированный сброс при выгрузке мира выполняется через {@link #flushPendingDirty()}.
+     * Throttles write frequency: a heavy NBT dump of the whole registry runs at most once every 2 seconds.
+     * A guaranteed flush on world unload is performed via {@link #flushPendingDirty()}.
      */
     private void markDirtyThrottled()
     {

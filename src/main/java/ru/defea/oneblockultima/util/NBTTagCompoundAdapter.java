@@ -93,7 +93,7 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
                 return new NBTTagString(primitive.getAsString());
             } else if (primitive.isNumber()) {
                 Number number = primitive.getAsNumber();
-                // Определяем тип числа
+                // Determine the number type
                 if (number instanceof Byte) {
                     return new NBTTagByte(number.byteValue());
                 } else if (number instanceof Short) {
@@ -107,7 +107,7 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
                 } else if (number instanceof Double) {
                     return new NBTTagDouble(number.doubleValue());
                 }
-                // По умолчанию как Integer
+                // Default to Integer
                 return new NBTTagInt(primitive.getAsInt());
             } else if (primitive.isBoolean()) {
                 return new NBTTagByte((byte) (primitive.getAsBoolean() ? 1 : 0));
@@ -120,7 +120,7 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
                 return new NBTTagList();
             }
 
-            // Проверяем, все ли элементы - числа одного типа
+            // Check whether all elements are numbers of the same type
             JsonElement firstElement = array.get(0);
 
             if (firstElement.isJsonPrimitive() && firstElement.getAsJsonPrimitive().isNumber()) {
@@ -133,7 +133,7 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
                 }
 
                 if (allNumbers) {
-                    // Проверяем, все ли элементы в пределах byte
+                    // Check whether all elements fit in a byte
                     boolean allBytes = true;
                     for (JsonElement elem : array) {
                         int val = elem.getAsInt();
@@ -159,7 +159,7 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
                 }
             }
 
-            // Иначе создаем NBTTagList с разнотипными элементами
+            // Otherwise create an NBTTagList with mixed-type elements
             NBTTagList list = new NBTTagList();
             for (JsonElement elem : array) {
                 NBTBase tag = deserializeTag(elem);

@@ -139,7 +139,7 @@ public final class BlockSetConfig
         BlockSetConfig loaded = loadFromFile(configFile);
         if (loaded == null || loaded.getSets().isEmpty())
         {
-            // Если файл не существует или не содержит наборов, копируем конфиг по умолчанию
+            // If the file does not exist or contains no sets, copy the default config
             copyDefaultToConfigFile(configFile);
             loaded = loadFromFile(configFile);
         }

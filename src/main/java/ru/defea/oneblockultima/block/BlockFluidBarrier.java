@@ -11,6 +11,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.OneBlockUltima;
@@ -36,6 +37,12 @@ public class BlockFluidBarrier extends Block
     public RayTraceResult collisionRayTrace(@Nonnull IBlockState blockState, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Vec3d start, @Nonnull Vec3d end)
     {
         return null;
+    }
+
+    @Override
+    public float getExplosionResistance(@Nonnull World world, @Nonnull BlockPos pos, @Nullable Entity exploder, @Nonnull Explosion explosion)
+    {
+        return 0.0F;
     }
 
     @Override
@@ -104,6 +111,15 @@ public class BlockFluidBarrier extends Block
     @Override
     public boolean canBeReplacedByLeaves(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos)
     {
+        return true;
+    }
+
+    @Override
+    public boolean isAir(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos)
+    {
+        // Transparent for placement (flint and steel / fire charge etc.):
+        // ItemFlintAndSteel requires world.isAirBlock for the slot. Liquids are still
+        // blocked by the GROUND material (Material#blocksMovement).
         return true;
     }
 }

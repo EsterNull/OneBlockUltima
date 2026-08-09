@@ -29,6 +29,7 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.block.BlockOneBlockGenerator;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
@@ -607,7 +608,7 @@ public final class ModEvents
         BlockPos pos = event.getPos();
         IBlockState placedState = event.getPlacedBlock();
 
-        // Передаём obuGenerated из ItemStack при повторном размещении через PlaceEvent
+        // Propagate obuGenerated from the ItemStack when re-placing through PlaceEvent
         if (event.getPlayer() != null)
         {
             ItemStack heldItem = event.getPlayer().getHeldItemMainhand();
@@ -1007,10 +1008,10 @@ public final class ModEvents
 
         // Mob spawn and registry removal now handled in onBlockBreak
 
-        // Получаем стандартные дропы
+        // Get the standard drops
         List<net.minecraft.item.ItemStack> drops = new java.util.ArrayList<>(event.getDrops());
 
-        // Проверяем, есть ли реальные дропы
+        // Check whether there are any real drops
         boolean hasRealDrops = false;
         for (net.minecraft.item.ItemStack drop : drops)
         {
@@ -1021,16 +1022,16 @@ public final class ModEvents
             }
         }
 
-        // Если дропов нет - проверяем, должен ли блок дропаться вообще
+        // If there are no drops - check whether the block should drop at all
         if (!hasRealDrops)
         {
             net.minecraft.block.Block block = event.getState().getBlock();
 
-            // Проверяем, может ли блок быть добыт без специальных условий
+            // Check whether the block can be mined without special conditions
             // noinspection ConstantConditions
             if (block != null && block != Blocks.AIR)
             {
-                // Список блоков, которые не должны дропаться без инструмента
+                // Blocks that should not drop without a tool
                 boolean shouldDropBlock = isShouldDropBlock(block, player, drops);
 
                 if (shouldDropBlock)
@@ -1076,12 +1077,12 @@ public final class ModEvents
             return;
         }
 
-        // Очищаем все дропы
+        // Clear all drops
         event.getDrops().clear();
 
-        // Определяем, есть ли obuGenerated — любой блок из GeneratedBlockRegistry считается сгенерированным
+        // Check for obuGenerated - any block from GeneratedBlockRegistry counts as generated
 
-        // Добавляем дропы в инвентарь игрока
+        // Add drops to the player's inventory
         for (net.minecraft.item.ItemStack drop : drops)
         {
             if (drop.isEmpty()) continue;
@@ -1113,7 +1114,7 @@ public final class ModEvents
 
         boolean shouldDropBlock = true;
 
-        // Проверяем на траву
+        // Check for grass
         if (block == Blocks.TALLGRASS || block == Blocks.DOUBLE_PLANT || block == Blocks.DEADBUSH)
         {
             ItemStack heldItem = player.getHeldItemMainhand();
@@ -1123,7 +1124,7 @@ public final class ModEvents
             }
         }
 
-        // Проверяем на листья
+        // Check for leaves
         if (block == Blocks.LEAVES || block == Blocks.LEAVES2)
         {
             ItemStack heldItem = player.getHeldItemMainhand();
@@ -1145,7 +1146,7 @@ public final class ModEvents
             }
         }
 
-        // Проверяем на паутину
+        // Check for cobwebs
         if (block == Blocks.WEB)
         {
             ItemStack heldItem = player.getHeldItemMainhand();
@@ -1168,8 +1169,8 @@ public final class ModEvents
         World world = event.getWorld();
         BlockPos pos = event.getPos();
 
-        // Восстанавливаем барьер над генератором, если слот барьера снова стал AIR
-        // (например, после того как блок, поставленный над генератором, был сломан)
+        // Restore the barrier above the generator if the barrier slot became AIR again
+        // (e.g. after a block placed above the generator was broken)
         if (world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR
                 && world.getBlockState(pos).getBlock() == Blocks.AIR)
         {
@@ -1180,7 +1181,7 @@ public final class ModEvents
 
         IBlockState state = world.getBlockState(pos);
 
-        // Проверяем только блок над генератором
+        // Check only the block above the generator
         if (world.getBlockState(event.getPos().down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             if (state.getBlock() == Blocks.AIR)
@@ -1196,12 +1197,16 @@ public final class ModEvents
                     registry.remove(pos);
                 }
             }
+
+            // Restore the barrier above the generator when its slot becomes empty
+            // (e.g. after fire placed on the barrier slot burns out)
+            BlockOneBlockGenerator.ensureFluidBarrier(world, event.getPos().down());
             return;
         }
 
         if (state.getBlock() != Blocks.AIR)
         {
-            // Блок существует
+            // Block exists
             processingBlocks.put(pos, false);
         }
     }
@@ -1276,7 +1281,7 @@ public final class ModEvents
             OneBlockUltima.getLogger().info("[Mob Spawn] Successfully spawned mob: {}", mobEntry.registry);
             entity.setPosition(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + BLOCK_TOP_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
 
-            // Применяем NBT теги к мобу если они есть
+            // Apply NBT tags to the mob if present
             if (mobEntry.nbtTags != null && !mobEntry.nbtTags.hasNoTags())
             {
                 OneBlockUltima.getLogger().info("[Mob Spawn] Applying NBT tags to mob: {}", mobEntry.nbtTags);

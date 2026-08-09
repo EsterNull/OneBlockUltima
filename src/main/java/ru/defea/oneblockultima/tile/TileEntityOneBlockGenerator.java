@@ -221,15 +221,15 @@ public class TileEntityOneBlockGenerator extends TileEntity
 
         BlockPos targetPos = pos.up();
 
-        // Вместо спавна предмета, пытаемся разместить блок
+        // Instead of spawning an item, try to place the block
         if (state.getBlock() == Blocks.AIR)
         {
             OneBlockUltima.getLogger().info("[Generator] State is null or AIR for registry={}, trying to place as block anyway", entry.registry);
 
-            // Пытаемся найти блок через различные способы
+            // Try to find the block through various ways
             Block resolvedBlock = null;
 
-            // 1. Пробуем через ItemBlock
+            // 1. Try via ItemBlock
             try {
                 Item item = ForgeRegistries.ITEMS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
                 if (item instanceof ItemBlock) {
@@ -240,7 +240,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                 OneBlockUltima.getLogger().error("[Generator] Error getting ItemBlock", ex);
             }
 
-            // 2. Если не нашли, пробуем через BlockUtil (с обновленной обработкой Forestry)
+            // 2. If not found, try via BlockUtil (with updated Forestry handling)
             if (resolvedBlock == null || resolvedBlock == Blocks.AIR) {
                 Block tempBlock = BlockUtil.toState(entry) != null ? Objects.requireNonNull(BlockUtil.toState(entry)).getBlock() : null;
                 if (tempBlock != null && tempBlock != Blocks.AIR) {
@@ -249,7 +249,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                 }
             }
 
-            // 3. Если всё ещё не нашли, пробуем прямой поиск по registry
+            // 3. If still not found, try a direct registry lookup
             if (resolvedBlock == null || resolvedBlock == Blocks.AIR) {
                 try {
                     resolvedBlock = ForgeRegistries.BLOCKS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
@@ -259,10 +259,10 @@ public class TileEntityOneBlockGenerator extends TileEntity
                 }
             }
 
-            // Если нашли блок - размещаем его
+            // If a block was found - place it
             if (resolvedBlock != null && resolvedBlock != Blocks.AIR) {
                 try {
-                    // Получаем состояние блока
+                    // Get the block state
                     IBlockState newState;
                     try {
                         newState = resolvedBlock.getStateFromMeta(entry.meta);
@@ -276,22 +276,22 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (newState.getBlock() != Blocks.AIR) {
                         OneBlockUltima.getLogger().info("[Generator] Placing block: {} at {}", newState.getBlock().getRegistryName(), targetPos);
 
-                        // Размещаем блок с NBT (добавляем obuGenerated)
+                        // Place the block with NBT (add obuGenerated)
                         NBTTagCompound genNbt = ensureObuGenerated(entry.nbtTags);
                         BlockUtil.placeBlockWithNBT(world, targetPos, newState, genNbt);
 
-                        // Отмечаем как сгенерированное
+                        // Mark as generated
                         GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
                         registry.markGenerated(targetPos, pos, selectedSetId, (int) Math.round(BlockPriceConfig.get().getPrice(entry.registry)), level, entry.registry, entry.meta);
 
-                        return; // Успешно разместили блок
+                        return; // Block placed successfully
                     }
                 } catch (Exception ex) {
                     OneBlockUltima.getLogger().error("[Generator] Failed to place block", ex);
                 }
             }
 
-            // Если ничего не сработало - спавним как предмет (fallback)
+            // If nothing worked - spawn as an item (fallback)
             OneBlockUltima.getLogger().warn("[Generator] Could not place as block, spawning as item fallback for {}", entry.registry);
             try {
                 Item item = ForgeRegistries.ITEMS.getValue(new net.minecraft.util.ResourceLocation(entry.registry));
@@ -300,7 +300,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
                     if (entry.nbtTags != null && !entry.nbtTags.hasNoTags()) {
                         itemStack.setTagCompound(entry.nbtTags.copy());
                     }
-                    // Добавляем obuGenerated к предмету-fallback
+                    // Add obuGenerated to the fallback item
                     if (itemStack.getTagCompound() == null) {
                         itemStack.setTagCompound(new NBTTagCompound());
                     }
@@ -342,7 +342,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
         {
             OneBlockUltima.getLogger().info("[Generator] Placing block with NBT tags at {}: {}", targetPos, entry.nbtTags);
         }
-        // Размещаем блок и применяем NBT теги одновременно (добавляем obuGenerated)
+        // Place the block and apply NBT tags simultaneously (add obuGenerated)
         NBTTagCompound genNbt2 = ensureObuGenerated(entry.nbtTags);
         BlockUtil.placeBlockWithNBT(world, targetPos, state, genNbt2);
         OneBlockUltima.getLogger().info("[Generator] After place block at {}, now={}", targetPos, world.getBlockState(targetPos).getBlock().getRegistryName());
