@@ -48,24 +48,30 @@ public class PacketSyncBlockSetConfig implements IMessage
     public static class Handler implements IMessageHandler<PacketSyncBlockSetConfig, IMessage>
     {
         @Override
-        @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketSyncBlockSetConfig message, MessageContext ctx)
         {
-            OneBlockUltima.getLogger().info("[Sync] Received BlockSetConfig, size: " + (message.jsonBytes != null ? message.jsonBytes.length : 0) + " bytes");
-            Minecraft.getMinecraft().addScheduledTask(new Runnable()
+            if (ctx.side.isClient())
             {
-                @Override
-                public void run()
+                ClientHandler.apply(message);
+            }
+            return null;
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static class ClientHandler
+    {
+        private static void apply(PacketSyncBlockSetConfig message)
+        {
+            OneBlockUltima.getLogger().info("[Sync] Received BlockSetConfig, size: {} bytes", message.jsonBytes != null ? message.jsonBytes.length : 0);
+            Minecraft.getMinecraft().addScheduledTask(() -> {
+                String json = message.getJson();
+                if (json != null && !json.isEmpty())
                 {
-                    String json = message.getJson();
-                    if (json != null && !json.isEmpty())
-                    {
-                        BlockSetConfig.loadFromServerJson(json);
-                        OneBlockUltima.getLogger().info("[Sync] Applied server BlockSetConfig, sets count: " + BlockSetConfig.get().getSets().size());
-                    }
+                    BlockSetConfig.loadFromServerJson(json);
+                    OneBlockUltima.getLogger().info("[Sync] Applied server BlockSetConfig, sets count: {}", BlockSetConfig.get().getSets().size());
                 }
             });
-            return null;
         }
     }
 }
