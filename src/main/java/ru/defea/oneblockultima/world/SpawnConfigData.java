@@ -26,7 +26,10 @@ public class SpawnConfigData extends WorldSavedData
     public static SpawnConfigData get(World world)
     {
         MapStorage storage = world.mapStorage;
-        SpawnConfigData data = (SpawnConfigData) storage.loadData(SpawnConfigData.class, DATA_NAME);
+        SpawnConfigData data = (SpawnConfigData) storage.loadData(
+                SpawnConfigData.class,
+                DATA_NAME
+        );
 
         if (data == null)
         {

@@ -6,23 +6,27 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
-import net.minecraft.entity.EntityList;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
-import ru.defea.oneblockultima.NBTTagCompoundAdapter;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.IFluidBlock;
+import cpw.mods.fml.common.Loader;
+import ru.defea.oneblockultima.util.NBTTagCompoundAdapter;
+import ru.defea.oneblockultima.util.MobIdUtil;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
+
+import static ru.defea.oneblockultima.Constants.MINECRAFT_DOMAIN;
 
 public final class BlockSetConfig
 {
@@ -46,10 +50,12 @@ public final class BlockSetConfig
         configFile = null;
     }
 
-    private List<BlockSetDefinition> sets = new ArrayList<BlockSetDefinition>();
+    private List<BlockSetDefinition> sets = new ArrayList<>();
     private SettingsDefinition settings = new SettingsDefinition();
 
-    private transient Map<String, BlockSetDefinition> setsById = new HashMap<String, BlockSetDefinition>();
+    private transient Map<String, BlockSetDefinition> setsById = new HashMap<>();
+    private transient String cachedDefaultSetId;
+    private transient boolean defaultSetIdComputed;
 
     public static BlockSetConfig get()
     {
@@ -77,15 +83,30 @@ public final class BlockSetConfig
         return configFile;
     }
 
-    public static boolean saveCurrentConfig()
+    public static void saveCurrentConfig()
     {
         if (instance == null || configFile == null)
         {
-            return false;
+            return;
         }
 
         saveToFile(configFile, instance);
-        return true;
+    }
+
+    public static void invalidateComputedLevels()
+    {
+        if (instance == null)
+        {
+            return;
+        }
+
+        for (BlockSetDefinition set : instance.sets)
+        {
+            if (set != null)
+            {
+                set.computedLevels = null;
+            }
+        }
     }
 
     public static void applySets(List<BlockSetDefinition> newSets)
@@ -95,7 +116,7 @@ public final class BlockSetConfig
             instance = new BlockSetConfig();
         }
 
-        instance.sets = newSets != null ? new ArrayList<BlockSetDefinition>(newSets) : new ArrayList<BlockSetDefinition>();
+        instance.sets = newSets != null ? new ArrayList<>(newSets) : new ArrayList<>();
         for (BlockSetDefinition set : instance.sets)
         {
             if (set != null)
@@ -116,6 +137,7 @@ public final class BlockSetConfig
         BlockSetConfig loaded = loadFromFile(configFile);
         if (loaded == null || loaded.getSets().isEmpty())
         {
+            // If the file does not exist or contains no sets, copy the default config
             copyDefaultToConfigFile(configFile);
             loaded = loadFromFile(configFile);
         }
@@ -135,7 +157,7 @@ public final class BlockSetConfig
             loaded = new BlockSetConfig();
         }
 
-        if (loaded != null && loaded.getSets().isEmpty())
+        if (loaded.getSets().isEmpty())
         {
             saveToFile(configFile, loaded);
         }
@@ -165,23 +187,14 @@ public final class BlockSetConfig
             return null;
         }
 
-        FileReader reader = null;
-        try
+        try (FileReader reader = new FileReader(file))
         {
-            reader = new FileReader(file);
             return GSON.fromJson(reader, BlockSetConfig.class);
         }
         catch (Exception e)
         {
             OneBlockUltima.getLogger().error("Failed to load blocksets.json from config directory", e);
             return null;
-        }
-        finally
-        {
-            if (reader != null)
-            {
-                try { reader.close(); } catch (Exception ignored) {}
-            }
         }
     }
 
@@ -192,28 +205,14 @@ public final class BlockSetConfig
             return;
         }
 
-        OutputStream outputStream = null;
-        java.io.Writer writer = null;
-        try
+        try (OutputStream outputStream = Files.newOutputStream(file.toPath());
+             java.io.Writer writer = new java.io.OutputStreamWriter(outputStream, StandardCharsets.UTF_8))
         {
-            outputStream = new FileOutputStream(file);
-            writer = new OutputStreamWriter(outputStream, "UTF-8");
-            writer.write(GSON.toJson(config));
+            writer.write(COMPACT_GSON.toJson(config));
         }
         catch (Exception e)
         {
             OneBlockUltima.getLogger().error("Failed to save blocksets.json to config directory", e);
-        }
-        finally
-        {
-            if (writer != null)
-            {
-                try { writer.close(); } catch (Exception ignored) {}
-            }
-            else if (outputStream != null)
-            {
-                try { outputStream.close(); } catch (Exception ignored) {}
-            }
         }
     }
 
@@ -224,10 +223,8 @@ public final class BlockSetConfig
             return;
         }
 
-        InputStream input = null;
-        try
+        try (InputStream input = BlockSetConfig.class.getResourceAsStream("/assets/oneblockultima/blocksets.json"))
         {
-            input = BlockSetConfig.class.getResourceAsStream("/assets/oneblockultima/blocksets.json");
             if (input == null)
             {
                 return;
@@ -235,13 +232,12 @@ public final class BlockSetConfig
 
             if (file.getParentFile() != null && !file.getParentFile().exists())
             {
+                //noinspection ResultOfMethodCallIgnored
                 file.getParentFile().mkdirs();
             }
 
-            OutputStream output = null;
-            try
+            try (OutputStream output = Files.newOutputStream(file.toPath()))
             {
-                output = new FileOutputStream(file);
                 byte[] buffer = new byte[4096];
                 int read;
                 while ((read = input.read(buffer)) >= 0)
@@ -249,50 +245,25 @@ public final class BlockSetConfig
                     output.write(buffer, 0, read);
                 }
             }
-            finally
-            {
-                if (output != null)
-                {
-                    try { output.close(); } catch (Exception ignored) {}
-                }
-            }
         }
         catch (Exception e)
         {
             OneBlockUltima.getLogger().error("Failed to copy default blocksets.json to config directory", e);
         }
-        finally
-        {
-            if (input != null)
-            {
-                try { input.close(); } catch (Exception ignored) {}
-            }
-        }
     }
 
     private static BlockSetConfig loadDefaultFromResources()
     {
-        InputStream input = null;
-        try
+        try (InputStream input = BlockSetConfig.class.getResourceAsStream("/assets/oneblockultima/blocksets.json"))
         {
-            input = BlockSetConfig.class.getResourceAsStream("/assets/oneblockultima/blocksets.json");
             if (input == null)
             {
                 return new BlockSetConfig();
             }
 
-            InputStreamReader reader = null;
-            try
+            try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8))
             {
-                reader = new InputStreamReader(input, "UTF-8");
                 return GSON.fromJson(reader, BlockSetConfig.class);
-            }
-            finally
-            {
-                if (reader != null)
-                {
-                    try { reader.close(); } catch (Exception ignored) {}
-                }
             }
         }
         catch (Exception e)
@@ -300,24 +271,16 @@ public final class BlockSetConfig
             OneBlockUltima.getLogger().error("Failed to load default blocksets.json from resources", e);
             return new BlockSetConfig();
         }
-        finally
-        {
-            if (input != null)
-            {
-                try { input.close(); } catch (Exception ignored) {}
-            }
-        }
     }
 
     public static class BlockElementDefinition
     {
         public String registry;
         public int meta;
-        public List<Integer> metas = new ArrayList<Integer>();
+        public List<Integer> metas = new ArrayList<>();
         public int baseLevel = 1;
         public int baseChance = 0;
-        public int currency = 0;
-        String dropItem = null;
+        public String dropItem = null;
         public NBTTagCompound nbtTags = new NBTTagCompound();
 
         public List<Integer> getMetaValues()
@@ -340,13 +303,13 @@ public final class BlockSetConfig
         public NBTTagCompound nbtTags = new NBTTagCompound();
     }
 
+    // internal runtime element used for unified computations of percentages
     private static class InternalElement
     {
         String registry;
         int meta;
         int baseLevel;
         int baseChance;
-        int currency;
         String dropItem = null;
         int count;
         boolean isMob;
@@ -355,25 +318,62 @@ public final class BlockSetConfig
 
     private void buildIndex()
     {
-        setsById = new HashMap<String, BlockSetDefinition>();
+        setsById = new HashMap<>();
+        defaultSetIdComputed = false;
         if (sets == null)
         {
-            sets = new ArrayList<BlockSetDefinition>();
+            sets = new ArrayList<>();
         }
 
         for (BlockSetDefinition set : sets)
         {
             if (set != null && set.id != null)
             {
+                mergeBlockMetas(set);
                 setsById.put(set.id, set);
             }
         }
     }
 
+    private static void mergeBlockMetas(BlockSetDefinition set)
+    {
+        if (set.blocks == null || set.blocks.size() <= 1) return;
+
+        Map<String, BlockElementDefinition> merged = new LinkedHashMap<>();
+        List<BlockElementDefinition> result = new ArrayList<>();
+
+        for (BlockElementDefinition block : set.blocks)
+        {
+            if (block == null) continue;
+
+            String key = block.registry + "@" + block.baseLevel + "@" + block.baseChance + "@"
+                    + (block.nbtTags == null ? "" : block.nbtTags.toString());
+            BlockElementDefinition existing = merged.get(key);
+
+            if (existing == null)
+            {
+                merged.put(key, block);
+                result.add(block);
+            }
+            else
+            {
+                List<Integer> existingMetas = existing.getMetaValues();
+                List<Integer> newMetas = block.getMetaValues();
+                Set<Integer> combined = new LinkedHashSet<>(existingMetas);
+                combined.addAll(newMetas);
+                List<Integer> sorted = new ArrayList<>(combined);
+                sorted.sort(Integer::compareTo);
+                existing.metas = sorted;
+                existing.meta = sorted.get(0);
+            }
+        }
+
+        set.blocks = result;
+    }
+
     public List<BlockSetDefinition> getSets()
     {
-        if (sets == null) return new java.util.ArrayList<BlockSetDefinition>();
-        return (List<BlockSetDefinition>) sets;
+        return sets == null ? Collections.emptyList() : sets;
     }
 
     public String toJson()
@@ -394,7 +394,7 @@ public final class BlockSetConfig
         }
         catch (Exception e)
         {
-            OneBlockUltima.getLogger().warn("Failed to load server blockset config");
+            OneBlockUltima.getLogger().error("Failed to load server blockset config", e);
         }
     }
 
@@ -406,6 +406,11 @@ public final class BlockSetConfig
     @Nonnull
     public String getDefaultSetId()
     {
+        if (defaultSetIdComputed)
+        {
+            return cachedDefaultSetId;
+        }
+
         BlockSetConfig current = get();
         if (current != null && current.sets != null && !current.sets.isEmpty())
         {
@@ -413,90 +418,159 @@ public final class BlockSetConfig
             {
                 if (set != null && set.isAvailable() && set.id != null && !set.id.isEmpty())
                 {
-                    return set.id;
+                    cachedDefaultSetId = set.id;
+                    defaultSetIdComputed = true;
+                    return cachedDefaultSetId;
                 }
             }
 
             BlockSetDefinition first = current.sets.get(0);
             if (first != null && first.id != null && !first.id.isEmpty())
             {
-                return first.id;
+                cachedDefaultSetId = first.id;
+                defaultSetIdComputed = true;
+                return cachedDefaultSetId;
             }
         }
 
         BlockSetConfig fallback = loadDefaultFromResources();
         if (fallback != null && fallback.getSets() != null && !fallback.getSets().isEmpty())
         {
-            return fallback.getDefaultSetId();
+            cachedDefaultSetId = fallback.getDefaultSetId();
+            defaultSetIdComputed = true;
+            return cachedDefaultSetId;
         }
 
-        return "";
+        cachedDefaultSetId = "";
+        defaultSetIdComputed = true;
+        return cachedDefaultSetId;
     }
 
-    private static String[] parseRegistryName(String registry)
+    public static boolean isRegistryModUnloaded(String registry)
     {
         if (registry == null || registry.isEmpty())
         {
-            return new String[]{ "minecraft", "" };
-        }
-
-        int colonIndex = registry.indexOf(':');
-        if (colonIndex > 0)
-        {
-            return new String[]{ registry.substring(0, colonIndex), registry.substring(colonIndex + 1) };
-        }
-
-        return new String[]{ "minecraft", registry };
-    }
-
-    public static boolean isRegistryModLoaded(String registry)
-    {
-        if (registry == null || registry.isEmpty())
-        {
-            return false;
+            return true;
         }
 
         try
         {
-            String[] parsed = parseRegistryName(registry);
-            String domain = parsed[0];
-            if ("minecraft".equals(domain))
+            // NOTE: ResourceLocation lowercases the domain in 1.7.10, while
+            // Loader.isModLoaded is case-sensitive against the registered modid
+            // (e.g. "Botania", "Forestry"). Extract the domain preserving case.
+            String domain = getRegistryDomainPreservingCase(registry);
+            if (domain == null || domain.isEmpty())
             {
                 return true;
             }
-            if (Loader.instance() == null)
+            if (MINECRAFT_DOMAIN.equalsIgnoreCase(domain))
             {
                 return false;
             }
-            return Loader.isModLoaded(domain);
+            if (Loader.instance() == null)
+            {
+                return true;
+            }
+            return !isModLoadedIgnoreCase(domain);
         }
         catch (Exception e)
         {
+            return true;
+        }
+    }
+
+    private static String getRegistryDomainPreservingCase(String registry)
+    {
+        int idx = registry.indexOf(':');
+        if (idx < 0)
+        {
+            return null;
+        }
+        String domain = registry.substring(0, idx);
+        return domain.isEmpty() ? null : domain;
+    }
+
+    private static boolean isModLoadedIgnoreCase(String modid)
+    {
+        if (modid == null || modid.isEmpty())
+        {
             return false;
         }
+        if (Loader.isModLoaded(modid))
+        {
+            return true;
+        }
+        for (Object keyObj : Loader.instance().getIndexedModList().keySet())
+        {
+            String key = keyObj == null ? null : keyObj.toString();
+            if (key != null && key.equalsIgnoreCase(modid))
+            {
+                return Loader.isModLoaded(key);
+            }
+        }
+        return false;
+    }
+
+    public static Block resolveBlockKey(String registry)
+    {
+        if (registry == null || registry.isEmpty())
+        {
+            return null;
+        }
+        Block block = (Block) Block.blockRegistry.getObject(registry);
+        if (block != null)
+        {
+            return block;
+        }
+        for (Object keyObj : Block.blockRegistry.getKeys())
+        {
+            if (keyObj != null && keyObj.toString().equalsIgnoreCase(registry))
+            {
+                return (Block) Block.blockRegistry.getObject(keyObj);
+            }
+        }
+        return null;
+    }
+
+    public static Item resolveItemKey(String registry)
+    {
+        if (registry == null || registry.isEmpty())
+        {
+            return null;
+        }
+        Item item = (Item) Item.itemRegistry.getObject(registry);
+        if (item != null)
+        {
+            return item;
+        }
+        for (Object keyObj : Item.itemRegistry.getKeys())
+        {
+            if (keyObj != null && keyObj.toString().equalsIgnoreCase(registry))
+            {
+                return (Item) Item.itemRegistry.getObject(keyObj);
+            }
+        }
+        return null;
     }
 
     public static boolean isBlockAvailable(String registry)
     {
-        if (!isRegistryModLoaded(registry))
+        if (isRegistryModUnloaded(registry))
         {
             return false;
         }
 
-        String[] parsed = parseRegistryName(registry);
-        return GameRegistry.findBlock(parsed[0], parsed[1]) != null;
+        return resolveBlockKey(registry) != null || resolveItemKey(registry) != null;
     }
 
     public static boolean isMobAvailable(String registry)
     {
-        if (!isRegistryModLoaded(registry))
+        if (isRegistryModUnloaded(registry))
         {
             return false;
         }
 
-        String[] parsed = parseRegistryName(registry);
-        String entityName = parsed[1];
-        return EntityList.stringToClassMapping.containsKey(entityName);
+        return MobIdUtil.resolveKey(registry) != null;
     }
 
     public SettingsDefinition getSettings()
@@ -514,12 +588,15 @@ public final class BlockSetConfig
         public boolean disableMobGeneration = false;
         public boolean disableChestGeneration = false;
         public boolean disableSaplingGeneration = false;
+
+        public String setCostIncreaseMode = "fixed";
+        public double setCostIncreaseValue = 50.0;
     }
 
     public static class UnlockConditionGroup
     {
         public String mode = "any";
-        public List<UnlockConditionDefinition> conditions = new ArrayList<UnlockConditionDefinition>();
+        public List<UnlockConditionDefinition> conditions = new ArrayList<>();
     }
 
     public static class UnlockConditionDefinition
@@ -541,23 +618,17 @@ public final class BlockSetConfig
                 return false;
             }
 
-            String lowerType = type == null ? "" : type.toLowerCase(Locale.ROOT);
-            if ("broken_blocks_total".equals(lowerType))
+            switch (type == null ? "" : type.toLowerCase(Locale.ROOT))
             {
-                return data.getBrokenBlocksCount() >= count;
-            }
-            else if ("broken_blocks".equals(lowerType))
-            {
-                return data.getBrokenBlocksCount(setId) >= count;
-            }
-            else if ("set_level".equals(lowerType))
-            {
-                int generatorLevel = generator == null ? data.getSetLevel(setId) : generator.getSetLevel(setId);
-                return generatorLevel >= level;
-            }
-            else
-            {
-                return false;
+                case "broken_blocks_total":
+                    return data.getBrokenBlocksCount() >= count;
+                case "broken_blocks":
+                    return data.getBrokenBlocksCount(setId) >= count;
+                case "set_level":
+                    int generatorLevel = generator == null ? data.getSetLevel(setId) : generator.getSetLevel(setId);
+                    return generatorLevel >= level;
+                default:
+                    return false;
             }
         }
     }
@@ -571,14 +642,14 @@ public final class BlockSetConfig
         }
 
         private TYPE type = TYPE.ALL;
-        private List<String> mods = new ArrayList<String>();
+        private List<String> mods = new ArrayList<>();
 
         public SetRequiredModsDefinition() {}
 
         public SetRequiredModsDefinition(TYPE type, List<String> mods)
         {
             this.type = type != null ? type : TYPE.ALL;
-            this.mods = mods != null ? new ArrayList<String>(mods) : new ArrayList<String>();
+            this.mods = mods != null ? new ArrayList<>(mods) : new ArrayList<>();
         }
 
         public boolean isAvailable()
@@ -623,7 +694,7 @@ public final class BlockSetConfig
         {
             try
             {
-                return Loader.isModLoaded(modId);
+                return isModLoadedIgnoreCase(modId);
             }
             catch (Exception e)
             {
@@ -635,7 +706,7 @@ public final class BlockSetConfig
         {
             if (mods == null)
             {
-                mods = new ArrayList<String>();
+                mods = new ArrayList<>();
             }
             return mods;
         }
@@ -761,9 +832,11 @@ public final class BlockSetConfig
         public int unlockCost = 0;
         public UnlockConditionGroup unlockConditions;
 
-        public List<BlockElementDefinition> blocks = new ArrayList<BlockElementDefinition>();
-        public List<MobElementDefinition> mobs = new ArrayList<MobElementDefinition>();
+        // New format: separate lists for block-elements and mob-elements
+        public List<BlockElementDefinition> blocks = new ArrayList<>();
+        public List<MobElementDefinition> mobs = new ArrayList<>();
 
+        // transient cache for computed levels
         public transient java.util.Map<Integer, SetLevelDefinition> computedLevels = null;
 
         public boolean isAvailable()
@@ -808,7 +881,22 @@ public final class BlockSetConfig
 
         public SetLevelDefinition getLevel(int level)
         {
+            // Ensure computedLevels built
             ensureComputedLevels();
+            if (computedLevels == null || computedLevels.isEmpty())
+            {
+                return null;
+            }
+            int min = Integer.MAX_VALUE;
+            int max = 0;
+            for (Integer lvl : computedLevels.keySet())
+            {
+                if (lvl < min) min = lvl;
+                if (lvl > max) max = lvl;
+            }
+            if (level <= 0) level = 1;
+            if (level < min) level = min;
+            if (level > max) level = max;
             return computedLevels.get(level);
         }
 
@@ -820,19 +908,22 @@ public final class BlockSetConfig
             return max;
         }
 
+        @SuppressWarnings("unchecked")
         public void ensureComputedLevels()
         {
             if (computedLevels != null) return;
 
-            OneBlockUltima.getLogger().info("[Config] ensureComputedLevels called for set: {}", id);
-            OneBlockUltima.getLogger().info("[Config] blocks size: {}", blocks.size());
-            OneBlockUltima.getLogger().info("[Config] mobs size: {}", mobs.size());
+            OneBlockUltima.getRawLogger().info("[Config] ensureComputedLevels called for set: {}", id);
+            OneBlockUltima.getRawLogger().info("[Config] blocks size: {}", blocks.size());
+            OneBlockUltima.getRawLogger().info("[Config] mobs size: {}", mobs.size());
 
-            computedLevels = new java.util.HashMap<Integer, SetLevelDefinition>();
+            computedLevels = new java.util.HashMap<>();
 
+            // If still no elements, nothing to compute
             if (blocks.isEmpty() && mobs.isEmpty()) return;
 
-            java.util.List<InternalElement> elems = new ArrayList<InternalElement>();
+            // Build levels iteratively until stabilization
+            java.util.List<InternalElement> elems = new ArrayList<>();
             for (BlockElementDefinition be : blocks) {
                 if (be == null || !isBlockAvailable(be.registry)) continue;
                 List<Integer> metaValues = be.getMetaValues();
@@ -848,16 +939,13 @@ public final class BlockSetConfig
                     ie.meta = metaValue == null ? 0 : metaValue;
                     ie.baseLevel = be.baseLevel;
                     ie.baseChance = be.baseChance;
-                    ie.currency = be.currency;
                     ie.dropItem = be.dropItem;
                     ie.count = 1;
                     ie.isMob = false;
-                    if (be.nbtTags != null) {
-                        Set<String> keys = be.nbtTags.func_150296_c();
-                        for (String key : keys) {
-                            NBTBase tag = be.nbtTags.getTag(key);
-                            ie.nbtTags.setTag(key, tag.copy());
-                        }
+                    Set<String> keys = be.nbtTags.getKeySet();
+                    for (String key : keys) {
+                        NBTBase tag = be.nbtTags.getTag(key);
+                        ie.nbtTags.setTag(key, tag.copy());
                     }
                     elems.add(ie);
                 }
@@ -869,26 +957,39 @@ public final class BlockSetConfig
                 ie.meta = 0;
                 ie.baseLevel = me.baseLevel;
                 ie.baseChance = me.baseChance;
-                ie.currency = 0;
                 ie.dropItem = null;
                 ie.count = me.count;
                 ie.isMob = true;
-                if (me.nbtTags != null) {
-                    Set<String> keys = me.nbtTags.func_150296_c();
-                    for (String key : keys) {
-                        NBTBase tag = me.nbtTags.getTag(key);
-                        ie.nbtTags.setTag(key, tag.copy());
-                    }
+                Set<String> keys = me.nbtTags.getKeySet();
+                for (String key : keys) {
+                    NBTBase tag = me.nbtTags.getTag(key);
+                    ie.nbtTags.setTag(key, tag.copy());
                 }
                 elems.add(ie);
             }
+            if (elems.isEmpty())
+            {
+                return;
+            }
 
+            OneBlockUltima.getRawLogger().info("[Config] set {} resolved elements (blocks+mobs): {}", id, elems.size());
+
+            // determine minimal baseLevel and iterate
             int minLevel = Integer.MAX_VALUE;
-            for (InternalElement e : elems) if (e.baseLevel < minLevel) minLevel = e.baseLevel;
-            if (minLevel == Integer.MAX_VALUE) minLevel = 1;
+            int maxBaseLevel = 0;
+            for (InternalElement e : elems)
+            {
+                if (e.baseLevel < minLevel) minLevel = e.baseLevel;
+                if (e.baseLevel > maxBaseLevel) maxBaseLevel = e.baseLevel;
+            }
+            if (minLevel == Integer.MAX_VALUE)
+            {
+                minLevel = 1;
+                maxBaseLevel = 1;
+            }
 
-            java.util.List<InternalElement> blockElems = new ArrayList<InternalElement>();
-            java.util.List<InternalElement> mobElems = new ArrayList<InternalElement>();
+            java.util.List<InternalElement> blockElems = new ArrayList<>();
+            java.util.List<InternalElement> mobElems = new ArrayList<>();
             for (InternalElement e : elems)
             {
                 if (e.isMob)
@@ -901,14 +1002,14 @@ public final class BlockSetConfig
                 }
             }
 
-            java.util.Map<String, Double> prevPercBlocks = new java.util.HashMap<String, Double>();
-            java.util.Map<String, Double> prevPercMobs = new java.util.HashMap<String, Double>();
+            java.util.Map<String, Double> prevPercBlocks = new java.util.HashMap<>();
+            java.util.Map<String, Double> prevPercMobs = new java.util.HashMap<>();
 
             int level = minLevel;
             while (true)
             {
-                java.util.List<InternalElement> availBlocks = new ArrayList<InternalElement>();
-                java.util.List<InternalElement> availMobs = new ArrayList<InternalElement>();
+                java.util.List<InternalElement> availBlocks = new ArrayList<>();
+                java.util.List<InternalElement> availMobs = new ArrayList<>();
                 for (InternalElement e : blockElems) if (e.baseLevel <= level) availBlocks.add(e);
                 for (InternalElement e : mobElems) if (e.baseLevel <= level) availMobs.add(e);
 
@@ -920,31 +1021,28 @@ public final class BlockSetConfig
                 }
 
                 java.util.Map<String, Integer> proposedBlocks = computeLevelPercentages(availBlocks, prevPercBlocks, 100);
-                java.util.Map<String, Integer> proposedMobs = computeLevelPercentages(availMobs, prevPercMobs, 10);
+                java.util.Map<String, Integer> proposedMobs = computeLevelPercentages(availMobs, prevPercMobs, Math.max(0, ModSettings.get().getMaxMobSpawnPercent()));
 
                 SetLevelDefinition lvlDef = new SetLevelDefinition();
                 lvlDef.level = level;
                 int baseOpenLevel = minLevel <= 0 ? 1 : minLevel;
-                lvlDef.upgradeCost = Math.max(0, unlockCost + 50 * (level - baseOpenLevel));
-                lvlDef.blocks = new java.util.ArrayList<BlockEntryDefinition>();
-                lvlDef.mobs = new java.util.ArrayList<MobEntryDefinition>();
+                lvlDef.upgradeCost = computeUpgradeCost(unlockCost, level, baseOpenLevel);
+                lvlDef.blocks = new java.util.ArrayList<>();
+                lvlDef.mobs = new java.util.ArrayList<>();
 
                 for (InternalElement e : availBlocks)
                 {
                     String key = elementKey(e);
-                    int percent = proposedBlocks.containsKey(key) ? proposedBlocks.get(key) : 0;
+                    int percent = proposedBlocks.getOrDefault(key, 0);
                     BlockEntryDefinition b = new BlockEntryDefinition();
                     b.registry = e.registry;
                     b.meta = e.meta;
                     b.chance = percent;
-                    b.currency = e.currency;
                     b.dropItem = e.dropItem;
-                    if (e.nbtTags != null) {
-                        Set<String> keys = e.nbtTags.func_150296_c();
-                        for (String nbtKey : keys) {
-                            NBTBase tag = e.nbtTags.getTag(nbtKey);
-                            b.nbtTags.setTag(nbtKey, tag.copy());
-                        }
+                    Set<String> keys = e.nbtTags.getKeySet();
+                    for (String nbtKey : keys) {
+                        NBTBase tag = e.nbtTags.getTag(nbtKey);
+                        b.nbtTags.setTag(nbtKey, tag.copy());
                     }
                     lvlDef.blocks.add(b);
                 }
@@ -952,17 +1050,15 @@ public final class BlockSetConfig
                 for (InternalElement e : availMobs)
                 {
                     String key = elementKey(e);
-                    int percent = proposedMobs.containsKey(key) ? proposedMobs.get(key) : 0;
+                    int percent = proposedMobs.getOrDefault(key, 0);
                     MobEntryDefinition m = new MobEntryDefinition();
                     m.registry = e.registry;
                     m.chance = percent;
                     m.count = e.count;
-                    if (e.nbtTags != null) {
-                        Set<String> keys = e.nbtTags.func_150296_c();
-                        for (String nbtKey : keys) {
-                            NBTBase tag = e.nbtTags.getTag(nbtKey);
-                            m.nbtTags.setTag(nbtKey, tag.copy());
-                        }
+                    Set<String> keys = e.nbtTags.getKeySet();
+                    for (String nbtKey : keys) {
+                        NBTBase tag = e.nbtTags.getTag(nbtKey);
+                        m.nbtTags.setTag(nbtKey, tag.copy());
                     }
                     lvlDef.mobs.add(m);
                 }
@@ -976,35 +1072,64 @@ public final class BlockSetConfig
                 for (String k : proposedMobs.keySet()) prevPercMobs.put(k, proposedMobs.get(k).doubleValue());
 
                 level++;
-                if (!changed)
+                if (!changed && level > maxBaseLevel)
                 {
                     break;
                 }
-                if (level > 200) break;
+                if (level > 200 && level > maxBaseLevel) break;
             }
         }
     }
 
+    private static int computeUpgradeCost(int unlockCost, int level, int baseOpenLevel)
+    {
+        SettingsDefinition settings = get().getSettings();
+        if (settings == null)
+        {
+            return Math.max(0, unlockCost + 50 * (level - baseOpenLevel));
+        }
+
+        int steps = Math.max(0, level - baseOpenLevel);
+        String mode = settings.setCostIncreaseMode == null ? "fixed" : settings.setCostIncreaseMode;
+        double value = settings.setCostIncreaseValue;
+
+        if ("multiplier".equalsIgnoreCase(mode))
+        {
+            if (value <= 0)
+            {
+                return Math.max(0, unlockCost);
+            }
+            double cost = unlockCost * Math.pow(value, steps);
+            return Math.max(0, (int) Math.round(cost));
+        }
+
+        if (value <= 0)
+        {
+            return Math.max(0, unlockCost);
+        }
+        return Math.max(0, unlockCost + (int) Math.round(value * steps));
+    }
+
     private static java.util.Map<String, Integer> computeLevelPercentages(java.util.List<InternalElement> avail, java.util.Map<String, Double> prevPerc, int maximumTotal)
     {
-        java.util.Map<String, Integer> result = new java.util.HashMap<String, Integer>();
+        java.util.Map<String, Integer> result = new java.util.HashMap<>();
         if (avail == null || avail.isEmpty())
         {
             return result;
         }
 
-        java.util.Map<String, Double> prevForThis = new java.util.HashMap<String, Double>();
+        java.util.Map<String, Double> prevForThis = new java.util.HashMap<>();
         for (InternalElement e : avail)
         {
             String key = elementKey(e);
-            prevForThis.put(key, prevPerc.containsKey(key) ? prevPerc.get(key) : (double) Math.max(1, e.baseChance));
+            prevForThis.put(key, prevPerc.getOrDefault(key, (double)Math.max(1, e.baseChance)));
         }
 
         double mean = 0.0;
         for (Double v : prevForThis.values()) mean += v;
         mean = mean / prevForThis.size();
 
-        java.util.Map<String, Double> proposed = new java.util.HashMap<String, Double>();
+        java.util.Map<String, Double> proposed = new java.util.HashMap<>();
         double totalChange = 0.0;
         for (InternalElement e : avail)
         {
@@ -1049,33 +1174,24 @@ public final class BlockSetConfig
         for (Double v : proposed.values()) sum += v;
         if (sum <= 0.0) sum = proposed.size();
         double scale = (double) maximumTotal / sum;
-        java.util.Map<String, Double> scaled = new java.util.HashMap<String, Double>();
-        for (java.util.Map.Entry<String, Double> entry : proposed.entrySet())
-        {
-            scaled.put(entry.getKey(), entry.getValue() * scale);
-        }
+        proposed.replaceAll((k, v) -> v * scale);
 
-        java.util.Map<String, Integer> rounded = new java.util.HashMap<String, Integer>();
-        java.util.List<java.util.Map.Entry<String, Double>> remainderList = new ArrayList<java.util.Map.Entry<String, Double>>();
+        java.util.Map<String, Integer> rounded = new java.util.HashMap<>();
+        java.util.List<java.util.Map.Entry<String, Double>> remainderList = new ArrayList<>();
         int totalRounded = 0;
-        for (String k : scaled.keySet())
+        for (String k : proposed.keySet())
         {
-            double value = scaled.get(k);
+            double value = proposed.get(k);
             int floorValue = (int) Math.floor(value);
             rounded.put(k, floorValue);
             totalRounded += floorValue;
-            remainderList.add(new java.util.AbstractMap.SimpleEntry<String, Double>(k, value - floorValue));
+            remainderList.add(new java.util.AbstractMap.SimpleEntry<>(k, value - floorValue));
         }
 
         int diff = maximumTotal - totalRounded;
         if (diff > 0)
         {
-            java.util.Collections.sort(remainderList, new Comparator<java.util.Map.Entry<String, Double>>() {
-                @Override
-                public int compare(java.util.Map.Entry<String, Double> a, java.util.Map.Entry<String, Double> b) {
-                    return Double.compare(b.getValue(), a.getValue());
-                }
-            });
+            remainderList.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
             for (int i = 0; i < remainderList.size() && diff > 0; i++, diff--)
             {
                 String key = remainderList.get(i).getKey();
@@ -1084,17 +1200,11 @@ public final class BlockSetConfig
         }
         else if (diff < 0)
         {
-            java.util.Collections.sort(remainderList, new Comparator<java.util.Map.Entry<String, Double>>() {
-                @Override
-                public int compare(java.util.Map.Entry<String, Double> a, java.util.Map.Entry<String, Double> b) {
-                    return Double.compare(a.getValue(), b.getValue());
-                }
-            });
+            remainderList.sort(Comparator.comparingDouble(Map.Entry::getValue));
             for (int i = 0; i < remainderList.size() && diff < 0; i++, diff++)
             {
                 String key = remainderList.get(i).getKey();
-                Integer current = rounded.get(key);
-                rounded.put(key, Math.max(0, current == null ? 0 : current - 1));
+                rounded.compute(key, (k, current) -> Math.max(0, current == null ? 0 : current - 1));
             }
         }
 
@@ -1110,7 +1220,7 @@ public final class BlockSetConfig
         for (InternalElement e : avail)
         {
             String key = elementKey(e);
-            double prev = prevPerc.containsKey(key) ? prevPerc.get(key) : 0.0;
+            double prev = prevPerc.getOrDefault(key, 0.0);
             Number nextValue = proposed.get(key);
             double next = nextValue == null ? 0.0 : nextValue.doubleValue();
             if (Math.abs(next - prev) >= 0.5)
@@ -1130,8 +1240,11 @@ public final class BlockSetConfig
     {
         public int level;
         public int upgradeCost;
-        public List<BlockEntryDefinition> blocks = new ArrayList<BlockEntryDefinition>();
-        public List<MobEntryDefinition> mobs = new ArrayList<MobEntryDefinition>();
+        public List<BlockEntryDefinition> blocks = new ArrayList<>();
+        public List<MobEntryDefinition> mobs = new ArrayList<>();
+
+        private transient MobEntryDefinition[] weightedMobs;
+        private transient int totalMobChance = -1;
 
         public MobEntryDefinition pickMob(Random random)
         {
@@ -1140,31 +1253,35 @@ public final class BlockSetConfig
                 return null;
             }
 
-            int totalChance = 0;
-            for (MobEntryDefinition entry : mobs)
+            if (weightedMobs == null)
             {
-                if (entry != null && entry.getChance() > 0 && isMobAvailable(entry.registry))
+                List<MobEntryDefinition> filtered = new ArrayList<>();
+                int total = 0;
+                for (MobEntryDefinition entry : mobs)
                 {
-                    totalChance += entry.getChance();
+                    if (entry != null && entry.getChance() > 0 && isMobAvailable(entry.registry))
+                    {
+                        filtered.add(entry);
+                        total += entry.getChance();
+                    }
                 }
+                weightedMobs = filtered.toArray(new MobEntryDefinition[0]);
+                totalMobChance = total;
             }
 
-            if (totalChance <= 0)
+            if (weightedMobs.length == 0 || totalMobChance <= 0)
             {
                 return null;
             }
 
-            int roll = random.nextInt(Math.max(100, totalChance));
+            int roll = random.nextInt(Math.max(100, totalMobChance));
             int current = 0;
-            for (MobEntryDefinition entry : mobs)
+            for (MobEntryDefinition entry : weightedMobs)
             {
-                if (entry != null && entry.getChance() > 0 && isMobAvailable(entry.registry))
+                current += entry.getChance();
+                if (roll < current)
                 {
-                    current += entry.getChance();
-                    if (roll < current)
-                    {
-                        return entry;
-                    }
+                    return entry;
                 }
             }
 
@@ -1178,9 +1295,18 @@ public final class BlockSetConfig
         public String registry;
         public int meta;
         public int chance;
-        public int currency;
         public String dropItem = null;
         public NBTTagCompound nbtTags = new NBTTagCompound();
+
+        private transient Block resolvedBlockCache;
+        private transient boolean resolvedBlockCacheSet;
+        private transient ItemStack cachedPickStack;
+        private transient boolean pickStackCached;
+        private transient int classification = -1;
+
+        private static final int CLASS_FLUID = 1;
+        private static final int CLASS_CHEST = 2;
+        private static final int CLASS_SAPLING = 4;
 
         public int getChance()
         {
@@ -1189,33 +1315,85 @@ public final class BlockSetConfig
 
         public Block resolveBlock()
         {
-            if (registry == null || registry.isEmpty())
+            if (!resolvedBlockCacheSet)
             {
-                return null;
+                resolvedBlockCacheSet = true;
+                if (registry == null || registry.isEmpty())
+                {
+                    resolvedBlockCache = null;
+                }
+                else
+                {
+                    resolvedBlockCache = resolveBlockKey(registry);
+                }
             }
-
-            String[] parsed = parseRegistryName(registry);
-            return GameRegistry.findBlock(parsed[0], parsed[1]);
+            return resolvedBlockCache;
         }
 
-        public boolean isFluid()
+        private void ensureClassification()
         {
-            Block block = this.resolveBlock();
-            if (block == null) return false;
-            return block == Blocks.water || block == Blocks.lava;
+            if (classification != -1)
+            {
+                return;
+            }
+            classification = 0;
+            if (registry != null && !registry.isEmpty())
+            {
+                String lowered = registry.toLowerCase(Locale.ROOT);
+                if (lowered.contains("chest") || lowered.contains("barrel"))
+                {
+                    classification |= CLASS_CHEST;
+                }
+                if (lowered.contains("sapling"))
+                {
+                    classification |= CLASS_SAPLING;
+                }
+            }
+            Block block = resolveBlock();
+            if (block != null && (block instanceof IFluidBlock
+                    || FluidRegistry.lookupFluidForBlock(block) != null
+                    || block.getMaterial().isLiquid()))
+            {
+                classification |= CLASS_FLUID;
+            }
         }
 
-        public ItemStack getPickBlock()
+        public boolean isFluid() {
+            ensureClassification();
+            return (classification & CLASS_FLUID) != 0;
+        }
+
+        public boolean isChestEntry() {
+            ensureClassification();
+            return (classification & CLASS_CHEST) != 0;
+        }
+
+        public boolean isSaplingEntry() {
+            ensureClassification();
+            return (classification & CLASS_SAPLING) != 0;
+        }
+
+        public net.minecraft.item.ItemStack getPickBlock()
         {
+            if (!pickStackCached)
+            {
+                pickStackCached = true;
+                cachedPickStack = computePickBlock();
+            }
+            return cachedPickStack;
+        }
+
+        private net.minecraft.item.ItemStack computePickBlock()
+        {
+            // If dropItem is specified, use it
             if (dropItem != null && !dropItem.isEmpty())
             {
                 try
                 {
-                    String[] parsed = parseRegistryName(dropItem);
-                    Item item = GameRegistry.findItem(parsed[0], parsed[1]);
+                    net.minecraft.item.Item item = (net.minecraft.item.Item) net.minecraft.item.Item.itemRegistry.getObject(dropItem);
                     if (item != null)
                     {
-                        return new ItemStack(item, 1, 0);
+                        return applyNbtToStack(new net.minecraft.item.ItemStack(item, 1, 0));
                     }
                 }
                 catch (Exception ignored) {}
@@ -1224,14 +1402,48 @@ public final class BlockSetConfig
             Block block = resolveBlock();
             if (block != null)
             {
+                net.minecraft.item.Item blockItem = net.minecraft.item.Item.getItemFromBlock(block);
+                if (blockItem != null)
+                {
+                    try
+                    {
+                        return applyNbtToStack(new net.minecraft.item.ItemStack(blockItem, 1, meta));
+                    }
+                    catch (Exception ignored) {}
+                }
+            }
+
+            // GUI fallback: try the registry as a placeable item (wheat, carrots, reeds, etc.)
+            if (registry != null && !registry.isEmpty())
+            {
                 try
                 {
-                    return new ItemStack(block, 1, meta);
+                    net.minecraft.item.Item registryItem = (net.minecraft.item.Item) net.minecraft.item.Item.itemRegistry.getObject(registry);
+                    if (registryItem != null)
+                    {
+                        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(registryItem, 1, meta);
+                        if (nbtTags != null && !nbtTags.hasNoTags())
+                        {
+                            stack.setTagCompound((NBTTagCompound) nbtTags.copy());
+                        }
+                        return stack;
+                    }
                 }
                 catch (Exception ignored) {}
             }
 
             return null;
+        }
+
+        private net.minecraft.item.ItemStack applyNbtToStack(net.minecraft.item.ItemStack stack)
+        {
+            if (stack != null && stack.stackSize > 0 && nbtTags != null && !nbtTags.hasNoTags())
+            {
+                net.minecraft.item.ItemStack copy = stack.copy();
+                copy.setTagCompound((NBTTagCompound) nbtTags.copy());
+                return copy;
+            }
+            return stack;
         }
     }
 
@@ -1273,7 +1485,7 @@ public final class BlockSetConfig
             return new SetRequiredModsDefinition();
         }
 
-        return new SetRequiredModsDefinition(source.getType(), new ArrayList<String>(source.getMods()));
+        return new SetRequiredModsDefinition(source.getType(), new ArrayList<>(source.getMods()));
     }
 
     private static UnlockConditionGroup copyUnlockConditionGroup(UnlockConditionGroup source)
@@ -1285,7 +1497,7 @@ public final class BlockSetConfig
 
         UnlockConditionGroup copy = new UnlockConditionGroup();
         copy.mode = source.mode;
-        copy.conditions = new ArrayList<UnlockConditionDefinition>();
+        copy.conditions = new ArrayList<>();
         if (source.conditions != null)
         {
             for (UnlockConditionDefinition condition : source.conditions)
@@ -1307,7 +1519,7 @@ public final class BlockSetConfig
 
     private static List<BlockElementDefinition> copyBlockElements(List<BlockElementDefinition> source)
     {
-        List<BlockElementDefinition> copy = new ArrayList<BlockElementDefinition>();
+        List<BlockElementDefinition> copy = new ArrayList<>();
         if (source == null)
         {
             return copy;
@@ -1322,10 +1534,9 @@ public final class BlockSetConfig
             BlockElementDefinition elementCopy = new BlockElementDefinition();
             elementCopy.registry = element.registry;
             elementCopy.meta = element.meta;
-            elementCopy.metas = element.metas != null ? new ArrayList<Integer>(element.metas) : new ArrayList<Integer>();
+            elementCopy.metas = element.metas != null ? new ArrayList<>(element.metas) : new ArrayList<>();
             elementCopy.baseLevel = element.baseLevel;
             elementCopy.baseChance = element.baseChance;
-            elementCopy.currency = element.currency;
             elementCopy.dropItem = element.dropItem;
             elementCopy.nbtTags = copyNbtCompound(element.nbtTags);
             copy.add(elementCopy);
@@ -1335,7 +1546,7 @@ public final class BlockSetConfig
 
     private static List<MobElementDefinition> copyMobElements(List<MobElementDefinition> source)
     {
-        List<MobElementDefinition> copy = new ArrayList<MobElementDefinition>();
+        List<MobElementDefinition> copy = new ArrayList<>();
         if (source == null)
         {
             return copy;

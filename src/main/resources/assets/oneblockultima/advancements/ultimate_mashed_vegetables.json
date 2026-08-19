@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:ultimate_mashed_vegetables"
+    },
+    "title": {
+      "translate": "advancements.ultimate_mashed_vegetables.title"
+    },
+    "description": {
+      "translate": "advancements.ultimate_mashed_vegetables.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_ultimate_mashed_vegetables": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:ultimate_mashed_vegetables"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:super_mashed_vegetables"
+}

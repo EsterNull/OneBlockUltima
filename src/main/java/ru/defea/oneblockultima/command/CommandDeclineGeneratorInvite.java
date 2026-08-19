@@ -2,10 +2,11 @@ package ru.defea.oneblockultima.command;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatStyle;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.block.ModBlocks;
@@ -31,42 +32,43 @@ public class CommandDeclineGeneratorInvite extends CommandBase
     @Override
     public void processCommand(ICommandSender sender, String[] args)
     {
-        if (!((Entity)sender instanceof EntityPlayerMP))
+        if (!(sender instanceof EntityPlayerMP))
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.declineGeneratorInvite.only_player")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.only_player")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) (Entity)sender;
+        EntityPlayerMP player = (EntityPlayerMP) sender;
         World world = player.worldObj;
-        int genX = (int) player.posX;
-        int genY = (int) player.posY - 1;
-        int genZ = (int) player.posZ;
+        int gx = (int) Math.floor(player.posX);
+        int gy = (int) Math.floor(player.posY) - 1;
+        int gz = (int) Math.floor(player.posZ);
 
-        if (world.getBlock(genX, genY, genZ) != ModBlocks.ONE_BLOCK_GENERATOR)
+        if (world.getBlock(gx, gy, gz) != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.declineGeneratorInvite.not_near_generator")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.not_near_generator")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        TileEntity tileEntity = world.getTileEntity(genX, genY, genZ);
+        TileEntity tileEntity = world.getTileEntity(gx, gy, gz);
         if (!(tileEntity instanceof TileEntityOneBlockGenerator))
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.no_generator")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.no_generator")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
         if (!generator.declineInvite(player.getUniqueID()))
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.declineGeneratorInvite.no_invite")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.no_invite")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        sender.addChatMessage(new ChatComponentText("§a" + StatCollector.translateToLocal("command.declineGeneratorInvite.declined")));
+        sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.declineGeneratorInvite.declined")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN)));
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public List addTabCompletionOptions(ICommandSender sender, String[] args)
     {
         return new ArrayList();
@@ -79,7 +81,8 @@ public class CommandDeclineGeneratorInvite extends CommandBase
     }
 
     @Override
-    public boolean canCommandSenderUseCommand(ICommandSender sender) {
+    public boolean canCommandSenderUseCommand(ICommandSender sender)
+    {
         return true;
     }
 }

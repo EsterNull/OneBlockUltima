@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    "title": {
+      "translate": "advancements.compressed_mineral.title"
+    },
+    "description": {
+      "translate": "advancements.compressed_mineral.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_compressed_mineral": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:compressed_mineral"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:root"
+}

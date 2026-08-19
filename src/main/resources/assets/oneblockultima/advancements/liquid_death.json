@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:liquid_death"
+    },
+    "title": {
+      "translate": "advancements.liquid_death.title"
+    },
+    "description": {
+      "translate": "advancements.liquid_death.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_liquid_death": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:liquid_death"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:super_poison"
+}

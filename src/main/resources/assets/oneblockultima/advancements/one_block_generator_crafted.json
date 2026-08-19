@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:one_block_generator"
+    },
+    "title": {
+      "translate": "advancements.one_block_generator.craft.title"
+    },
+    "description": {
+      "translate": "advancements.one_block_generator.craft.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_generator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:one_block_generator"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:far_star"
+}

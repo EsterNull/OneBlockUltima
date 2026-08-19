@@ -6,6 +6,8 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatStyle;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
@@ -30,18 +32,18 @@ public class CommandSetOwner extends CommandBase
     {
         if (args.length != 4)
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.usage") + getCommandUsage(sender)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.usage") + getCommandUsage(sender)).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        int x = parseInt(sender, args[0]);
-        int y = parseInt(sender, args[1]);
-        int z = parseInt(sender, args[2]);
-        EntityPlayerMP player = MinecraftServer.getServer().getConfigurationManager().func_152612_a(args[3]);
+        int x = CommandBase.parseInt(sender, args[0]);
+        int y = CommandBase.parseInt(sender, args[1]);
+        int z = CommandBase.parseInt(sender, args[2]);
+        EntityPlayerMP player = MinecraftServer.getServer().getConfigurationManager().getPlayerByUsername(args[3]);
 
         if (player == null)
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.player_not_found")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.player_not_found")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
@@ -49,29 +51,36 @@ public class CommandSetOwner extends CommandBase
         if (tileEntity instanceof TileEntityOneBlockGenerator) {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
             generator.setOwnerId(player.getUniqueID());
-            sender.addChatMessage(new ChatComponentText("§a" + StatCollector.translateToLocal("command.setOwner.success")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.setOwner.success")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN)));
         }
         else
         {
-            sender.addChatMessage(new ChatComponentText("§c" + StatCollector.translateToLocal("command.no_generator")));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.no_generator")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
         }
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public List addTabCompletionOptions(ICommandSender sender, String[] args)
     {
-        if (args.length == 4)
+        if (args.length == 1)
         {
-            List playerList = MinecraftServer.getServer().getConfigurationManager().playerEntityList;
-            String[] playerNames = new String[playerList.size()];
-            for (int i = 0; i < playerList.size(); i++)
-            {
-                playerNames[i] = ((EntityPlayerMP) playerList.get(i)).getCommandSenderName();
-            }
-            return getListOfStringsMatchingLastWord(args, playerNames);
+            return getListOfStringsMatchingLastWord(args, "~");
+        }
+        else if (args.length == 2)
+        {
+            return getListOfStringsMatchingLastWord(args, "~");
+        }
+        else if (args.length == 3)
+        {
+            return getListOfStringsMatchingLastWord(args, "~");
+        }
+        else if (args.length == 4)
+        {
+            return getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames());
         }
 
-        return getListOfStringsMatchingLastWord(args, "~");
+        return super.addTabCompletionOptions(sender, args);
     }
 
     @Override

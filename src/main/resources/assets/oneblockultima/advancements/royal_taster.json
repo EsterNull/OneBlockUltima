@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:adv_icon_royal_taster"
+    },
+    "title": {
+      "translate": "advancements.royal_taster.title"
+    },
+    "description": {
+      "translate": "advancements.royal_taster.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "drank_super_poison": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "item": "oneblockultima:super_poison"
+        }
+      }
+    }
+  },
+  "parent": "oneblockultima:super_poison"
+}

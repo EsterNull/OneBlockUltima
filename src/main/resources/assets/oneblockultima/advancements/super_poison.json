@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:super_poison"
+    },
+    "title": {
+      "translate": "advancements.super_poison.title"
+    },
+    "description": {
+      "translate": "advancements.super_poison.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_super_poison": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:super_poison"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:natural_poison"
+}

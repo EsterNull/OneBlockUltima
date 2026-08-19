@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:dark_matter"
+    },
+    "title": {
+      "translate": "advancements.dark_matter.title"
+    },
+    "description": {
+      "translate": "advancements.dark_matter.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_dark_matter": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:dark_matter"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:graviton"
+}

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RRR",
+    "RTR",
+    "RRR"
+  ],
+  "key": {
+    "R": { "item": "oneblockultima:compressed_redstone_block", "data": 5 },
+    "T": { "item": "minecraft:tnt" }
+  },
+  "result": {
+    "item": "oneblockultima:energy_orb"
+  }
+}

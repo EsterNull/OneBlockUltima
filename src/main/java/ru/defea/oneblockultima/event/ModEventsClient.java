@@ -1,22 +1,20 @@
 package ru.defea.oneblockultima.event;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.network.FMLNetworkEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
-import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.StatCollector;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.WorldType;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import org.lwjgl.opengl.GL11;
-import ru.defea.oneblockultima.OneBlockUltima;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.network.FMLNetworkEvent;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
@@ -30,18 +28,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public final class ModEventsClient
+import static ru.defea.oneblockultima.Constants.*;
+
+public class ModEventsClient
 {
     public ModEventsClient()
     {
-    }
-
-    public static void register()
-    {
-        ModEventsClient instance = new ModEventsClient();
-        MinecraftForge.EVENT_BUS.register(instance);
-        FMLCommonHandler.instance().bus().register(instance);
-        OneBlockUltima.getLogger().info("[Events] ModEventsClient registered");
     }
 
     @SubscribeEvent
@@ -50,16 +42,12 @@ public final class ModEventsClient
         BlockSetConfig.reload();
     }
 
-    private static final Map<UUID, Float> displayedCurrencyMap = new HashMap<UUID, Float>();
+    private static final Map<UUID, Double> displayedCurrencyMap = new HashMap<>();
+    private static final Map<UUID, Double> animStepMap = new HashMap<>();
 
     @SubscribeEvent
-    public void onRenderGameOverlay(RenderGameOverlayEvent.Post event)
+    public void onRenderGameOverlay(RenderGameOverlayEvent.Text event)
     {
-        if (event.type != RenderGameOverlayEvent.ElementType.TEXT)
-        {
-            return;
-        }
-
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.currentScreen instanceof GuiOneBlock)
         {
@@ -77,7 +65,12 @@ public final class ModEventsClient
             return;
         }
 
-        EntityPlayer player = mc.thePlayer;
+        if (event.type != RenderGameOverlayEvent.ElementType.TEXT)
+        {
+            return;
+        }
+
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         if (player == null)
         {
             return;
@@ -89,10 +82,10 @@ public final class ModEventsClient
             return;
         }
 
-        int currency = getDisplayedCurrency(player);
+        double currency = getDisplayedCurrency(player);
 
-        String balanceValue = String.valueOf(currency);
-        int textWidth = mc.fontRenderer.getStringWidth(balanceValue);
+        String balanceValue = formatCurrency(currency);
+        int textWidth = mc.fontRendererObj.getStringWidth(balanceValue);
         int coinSize = 8;
         int spaceBetween = 2;
         int radius = 3;
@@ -105,78 +98,74 @@ public final class ModEventsClient
         int bgHeight = coinSize + vMargin * 2;
 
         ModSettings settings = ModSettings.get();
-        ModSettings.BalancePosition pos = settings.getBalancePosition();
-        int hOffset = settings.getHOffset();
-        int vOffset = settings.getVOffset();
+        boolean isShowBalance = settings.isShowBalance();
 
-        int hOffsetPx = screenWidth * hOffset / 100;
-        int vOffsetPx = screenHeight * vOffset / 100;
-
-        int bgX;
-        int bgY;
-
-        switch (pos)
+        if (isShowBalance)
         {
-            case TOP_LEFT:
-                bgX = hOffsetPx;
-                bgY = vOffsetPx;
-                break;
-            case TOP:
-                bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
-                bgY = vOffsetPx;
-                break;
-            case TOP_RIGHT:
-                bgX = screenWidth - bgWidth - hOffsetPx;
-                bgY = vOffsetPx;
-                break;
-            case LEFT:
-                bgX = hOffsetPx;
-                bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
-                break;
-            case RIGHT:
-                bgX = screenWidth - bgWidth - hOffsetPx;
-                bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
-                break;
-            case BOTTOM_LEFT:
-                bgX = hOffsetPx;
-                bgY = screenHeight - bgHeight - vOffsetPx;
-                break;
-            case BOTTOM:
-                bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
-                bgY = screenHeight - bgHeight - vOffsetPx;
-                break;
-            case BOTTOM_RIGHT:
-                bgX = screenWidth - bgWidth - hOffsetPx;
-                bgY = screenHeight - bgHeight - vOffsetPx;
-                break;
-            default:
-                bgX = screenWidth - bgWidth - hOffset;
-                bgY = vOffset;
-                break;
+            ModSettings.BalancePosition pos = settings.getBalancePosition();
+            int hOffset = settings.getHOffset();
+            int vOffset = settings.getVOffset();
+            int hOffsetPx = screenWidth * hOffset / 100;
+            int vOffsetPx = screenHeight * vOffset / 100;
+
+            int bgX;
+            int bgY;
+
+            switch (pos) {
+                case TOP_LEFT:
+                    bgX = hOffsetPx;
+                    bgY = vOffsetPx;
+                    break;
+                case TOP:
+                    bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
+                    bgY = vOffsetPx;
+                    break;
+                case TOP_RIGHT:
+                    bgX = screenWidth - bgWidth - hOffsetPx;
+                    bgY = vOffsetPx;
+                    break;
+                case LEFT:
+                    bgX = hOffsetPx;
+                    bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
+                    break;
+                case RIGHT:
+                    bgX = screenWidth - bgWidth - hOffsetPx;
+                    bgY = screenHeight / 2 - bgHeight / 2 + vOffsetPx;
+                    break;
+                case BOTTOM_LEFT:
+                    bgX = hOffsetPx;
+                    bgY = screenHeight - bgHeight - vOffsetPx;
+                    break;
+                case BOTTOM:
+                    bgX = screenWidth / 2 - bgWidth / 2 + hOffsetPx;
+                    bgY = screenHeight - bgHeight - vOffsetPx;
+                    break;
+                case BOTTOM_RIGHT:
+                    bgX = screenWidth - bgWidth - hOffsetPx;
+                    bgY = screenHeight - bgHeight - vOffsetPx;
+                    break;
+                default:
+                    bgX = screenWidth - bgWidth - hOffset;
+                    bgY = vOffset;
+                    break;
+            }
+
+            int x = bgX + hMargin;
+            int y = bgY + vMargin;
+
+            drawRoundedRect(bgX, bgY, bgWidth, bgHeight, 5, TRANSPARENT_DARK_GRAY_COLOR_2);
+
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            Minecraft.getMinecraft().getTextureManager().bindTexture(COIN_TEXTURE);
+            Gui.drawModalRectWithCustomSizedTexture(x, y, 0, 0, coinSize, coinSize, coinSize, coinSize);
+            GL11.glDisable(GL11.GL_BLEND);
+            Minecraft.getMinecraft().fontRendererObj.drawString(balanceValue, x + coinSize + spaceBetween, y, GOLD_COLOR);
         }
-
-        int x = bgX + hMargin;
-        int y = bgY + vMargin;
-
-        drawRoundedRect(bgX, bgY, bgWidth, bgHeight, 5, 0x99333333);
-
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png"));
-        float f = 1.0F / coinSize;
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(x, y + coinSize, 0, 0, coinSize * f);
-        tessellator.addVertexWithUV(x + coinSize, y + coinSize, 0, coinSize * f, coinSize * f);
-        tessellator.addVertexWithUV(x + coinSize, y, 0, coinSize * f, 0);
-        tessellator.addVertexWithUV(x, y, 0, 0, 0);
-        tessellator.draw();
-        GL11.glDisable(GL11.GL_BLEND);
-        Minecraft.getMinecraft().fontRenderer.drawString(balanceValue, x + coinSize + spaceBetween, y, 0xFFD700);
     }
 
-    public static int getDisplayedCurrency(EntityPlayer player)
+    public static double getDisplayedCurrency(EntityPlayer player)
     {
         if (player == null)
         {
@@ -185,46 +174,63 @@ public final class ModEventsClient
 
         UUID playerUUID = player.getUniqueID();
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
-        int targetCurrency = data == null ? 0 : data.getCurrency();
+        double targetCurrency = data == null ? 0 : data.getCurrency();
 
-        Integer lastCurrency = ModEvents.lastDisplayedCurrency.get(playerUUID);
+        Double lastCurrency = ModEvents.lastDisplayedCurrency.get(playerUUID);
         if (lastCurrency == null)
         {
-            displayedCurrencyMap.put(playerUUID, (float) targetCurrency);
+            displayedCurrencyMap.put(playerUUID, targetCurrency);
             ModEvents.lastDisplayedCurrency.put(playerUUID, targetCurrency);
             return targetCurrency;
         }
 
+        double currentDisplayed = displayedCurrencyMap.getOrDefault(playerUUID, targetCurrency);
+
         if (lastCurrency != targetCurrency)
         {
             ModEvents.lastDisplayedCurrency.put(playerUUID, targetCurrency);
+            double delta = Math.abs(targetCurrency - currentDisplayed);
+            long intPart = (long) Math.floor(delta);
+            double step = Math.max(1, Math.round(intPart / 20.0));
+            animStepMap.put(playerUUID, step);
         }
 
-        float currentDisplayed = displayedCurrencyMap.containsKey(playerUUID) ? displayedCurrencyMap.get(playerUUID) : (float) targetCurrency;
-        float newDisplayed = currentDisplayed + (targetCurrency - currentDisplayed) * 0.14f;
-        if (Math.abs(targetCurrency - newDisplayed) < 0.01f)
+        double diff = targetCurrency - currentDisplayed;
+        if (Math.abs(diff) < 0.001)
+        {
+            displayedCurrencyMap.put(playerUUID, targetCurrency);
+            animStepMap.remove(playerUUID);
+            return targetCurrency;
+        }
+
+        double step = animStepMap.getOrDefault(playerUUID, 1.0);
+        double newDisplayed;
+        if (Math.abs(diff) <= step)
         {
             newDisplayed = targetCurrency;
+            animStepMap.remove(playerUUID);
+        }
+        else
+        {
+            newDisplayed = currentDisplayed + Math.signum(diff) * step;
         }
 
         displayedCurrencyMap.put(playerUUID, newDisplayed);
-        return Math.round(newDisplayed);
+        return newDisplayed;
     }
 
-    public static void refreshOpenGui()
+    public static String formatCurrency(double value)
     {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc == null || mc.currentScreen == null)
+        if (Double.isNaN(value) || Double.isInfinite(value))
         {
-            return;
+            return "0";
         }
-
-        if (mc.currentScreen instanceof GuiOneBlock)
-        {
-            mc.currentScreen.initGui();
-        }
+        java.math.BigDecimal bd = java.math.BigDecimal.valueOf(value);
+        bd = bd.setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros();
+        return bd.toPlainString();
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void drawRoundedRect(int x, int y, int width, int height, int radius, int color)
     {
         Gui.drawRect(x + radius, y, x + width - radius, y + height, color);
@@ -259,17 +265,13 @@ public final class ModEventsClient
 
         GuiCreateWorld screen = (GuiCreateWorld) event.gui;
         WorldType worldType = getCreateWorldType(screen);
-        OneBlockUltima.getLogger().info("[GUI] onGuiInit: worldType={}, expected={}",
-                worldType != null ? worldType.getWorldTypeName() : "null",
-                OneBlockWorldType.ONE_BLOCK.getWorldTypeName());
         if (worldType != OneBlockWorldType.ONE_BLOCK)
         {
             return;
         }
-        OneBlockUltima.getLogger().info("[GUI] OneBlock world type detected, hiding buttons");
 
-        String bonusLabel = StatCollector.translateToLocal("createWorld.customize.bonusItems");
-        String structuresLabel = StatCollector.translateToLocal("createWorld.customize.mapFeatures");
+        String bonusLabel = I18n.format("createWorld.customize.bonusItems");
+        String structuresLabel = I18n.format("createWorld.customize.mapFeatures");
         for (Object obj : event.buttonList)
         {
             GuiButton button = (GuiButton) obj;
@@ -285,50 +287,30 @@ public final class ModEventsClient
         }
     }
 
-    private static Field createWorldTypeIdxField;
+    private static Field createWorldTypeField;
 
     private static WorldType getCreateWorldType(GuiCreateWorld screen)
     {
-        if (createWorldTypeIdxField == null)
+        if (createWorldTypeField == null)
         {
-            createWorldTypeIdxField = findFieldByNames(GuiCreateWorld.class, "field_146331_K", "worldType", "selectedWorldType");
-            if (createWorldTypeIdxField != null)
+            createWorldTypeField = findFieldByNames(GuiCreateWorld.class, "worldType", "field_146336_f", "field_146335_a");
+            if (createWorldTypeField != null)
             {
-                createWorldTypeIdxField.setAccessible(true);
+                createWorldTypeField.setAccessible(true);
             }
         }
 
-        if (createWorldTypeIdxField == null)
+        if (createWorldTypeField == null)
         {
             return null;
         }
 
         try
         {
-            int idx;
-            if (createWorldTypeIdxField.getType() == int.class)
+            Object value = createWorldTypeField.get(screen);
+            if (value instanceof WorldType)
             {
-                idx = createWorldTypeIdxField.getInt(screen);
-            }
-            else
-            {
-                Object value = createWorldTypeIdxField.get(screen);
-                if (value instanceof WorldType)
-                {
-                    return (WorldType) value;
-                }
-                if (value instanceof Number)
-                {
-                    idx = ((Number) value).intValue();
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            if (idx >= 0 && idx < WorldType.worldTypes.length)
-            {
-                return WorldType.worldTypes[idx];
+                return (WorldType) value;
             }
         }
         catch (IllegalAccessException ignored)
@@ -338,22 +320,32 @@ public final class ModEventsClient
         return null;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Field findFieldByNames(Class<?> clazz, String... names)
     {
         for (String name : names)
         {
             try
             {
-                Field field = clazz.getDeclaredField(name);
-                if (field != null)
-                {
-                    return field;
-                }
+                return clazz.getDeclaredField(name);
             }
             catch (NoSuchFieldException ignored)
             {
             }
         }
         return null;
+    }
+
+    @SubscribeEvent
+    public void onItemTooltip(ItemTooltipEvent event)
+    {
+        ItemStack stack = event.itemStack;
+        if (stack == null || stack.stackSize <= 0) return;
+
+        NBTTagCompound nbt = stack.getTagCompound();
+        if (nbt != null && nbt.hasKey(NBT_OBU_GENERATED) && nbt.getBoolean(NBT_OBU_GENERATED))
+        {
+            event.toolTip.add(net.minecraft.util.StatCollector.translateToLocal("gui.oneblockultima.tooltip.obu_generated"));
+        }
     }
 }

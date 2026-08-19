@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "level=0": { "model": "oneblockultima:compressed_netherrack" },
+    "0": { "model": "oneblockultima:compressed_netherrack" },
+    "level=1": { "model": "oneblockultima:compressed_netherrack" },
+    "1": { "model": "oneblockultima:compressed_netherrack" },
+    "level=2": { "model": "oneblockultima:compressed_netherrack" },
+    "2": { "model": "oneblockultima:compressed_netherrack" },
+    "level=3": { "model": "oneblockultima:compressed_netherrack" },
+    "3": { "model": "oneblockultima:compressed_netherrack" },
+    "level=4": { "model": "oneblockultima:compressed_netherrack" },
+    "4": { "model": "oneblockultima:compressed_netherrack" },
+    "level=5": { "model": "oneblockultima:compressed_netherrack" },
+    "5": { "model": "oneblockultima:compressed_netherrack" }
+  }
+}

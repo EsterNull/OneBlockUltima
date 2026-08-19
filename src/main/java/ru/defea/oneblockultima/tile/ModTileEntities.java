@@ -1,5 +1,6 @@
 package ru.defea.oneblockultima.tile;
 
+import net.minecraft.util.ResourceLocation;
 import cpw.mods.fml.common.registry.GameRegistry;
 import ru.defea.oneblockultima.OneBlockUltima;
 
@@ -13,7 +14,7 @@ public final class ModTileEntities
     {
         GameRegistry.registerTileEntity(
                 TileEntityOneBlockGenerator.class,
-                OneBlockUltima.MODID + "_one_block_generator"
+                new ResourceLocation(OneBlockUltima.MODID, "one_block_generator").toString()
         );
     }
 }

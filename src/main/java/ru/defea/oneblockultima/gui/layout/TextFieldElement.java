@@ -1,0 +1,166 @@
+package ru.defea.oneblockultima.gui.layout;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiTextField;
+
+import java.util.List;
+
+import static ru.defea.oneblockultima.Constants.WHITE_COLOR_2;
+
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class TextFieldElement extends ViewElement<TextFieldElement> {
+    private int width;
+    private GuiTextField textField;
+    private String text = "";
+    private boolean focused = false;
+    private boolean backgroundDrawing = true;
+    private boolean enabled = true;
+    private int textColor = WHITE_COLOR_2;
+    private int maxStringLength = Integer.MAX_VALUE;
+    private boolean fitToText = false;
+    private static final int FIT_TEXT_PADDING = 8;
+    private static final int MAX_FIT_WIDTH = 440;
+
+    public TextFieldElement(int width) {
+        this.width = width;
+    }
+
+    public TextFieldElement width(int width) {
+        this.width = width;
+        return this;
+    }
+
+    public TextFieldElement text(String text) {
+        this.text = text;
+        if (textField != null) textField.setText(text);
+        return this;
+    }
+
+    public TextFieldElement focused(boolean focused) {
+        this.focused = focused;
+        if (textField != null) textField.setFocused(focused);
+        return this;
+    }
+
+    public TextFieldElement maxLength(int max) {
+        this.maxStringLength = max;
+        if (textField != null) textField.setMaxStringLength(max);
+        return this;
+    }
+
+    public TextFieldElement fitToText() {
+        this.fitToText = true;
+        return this;
+    }
+
+    public TextFieldElement enableBackgroundDrawing(boolean draw) {
+        this.backgroundDrawing = draw;
+        if (textField != null) textField.setEnableBackgroundDrawing(draw);
+        return this;
+    }
+
+    public TextFieldElement enabled(boolean enabled) {
+        this.enabled = enabled;
+        if (textField != null) textField.setEnabled(enabled);
+        if (!enabled) textColor(WHITE_COLOR_2);
+        return this;
+    }
+
+    public TextFieldElement textColor(int color) {
+        this.textColor = color;
+        return this;
+    }
+
+    public TextFieldElement height(int height) {
+        return this;
+    }
+
+    public GuiTextField getTextField() {
+        return textField;
+    }
+
+    public String getText() {
+        return textField != null ? textField.getText() : text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+        if (textField != null) textField.setText(text);
+    }
+
+    public boolean isFocused() {
+        return textField != null && textField.isFocused();
+    }
+
+    @Override
+    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+        int id = factory.getTextFields().size();
+        int fieldWidth = width > 0 ? width : computedWidth;
+        if (fitToText) fieldWidth = fitWidth(fontRenderer, fieldWidth);
+        textField = new GuiTextField(fontRenderer, computedX, computedY, fieldWidth, getFieldHeight());
+        textField.setMaxStringLength(maxStringLength);
+        textField.setText(text);
+        textField.setFocused(focused);
+        textField.setMaxStringLength(maxStringLength);
+        textField.setEnableBackgroundDrawing(backgroundDrawing);
+        textField.setEnabled(enabled);
+        textField.setTextColor(textColor);
+        factory.addTextField(textField);
+    }
+
+    @Override
+    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+        if (textField != null) textField.drawTextBox();
+    }
+
+    @Override
+    public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        if (textField != null && enabled) {
+            textField.mouseClicked(mouseX, mouseY, mouseButton);
+            return textField.isFocused();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyTyped(char typedChar, int keyCode) {
+        if (textField != null && textField.isFocused() && enabled) {
+            return textField.textboxKeyTyped(typedChar, keyCode);
+        }
+        return false;
+    }
+
+    @Override
+    public void updateCursorCounter() {
+        if (textField != null) textField.updateCursorCounter();
+    }
+
+    @Override
+    public int getPreferredWidth() {
+        return width;
+    }
+
+    @Override
+    public int getPreferredWidth(FontRenderer fr) {
+        if (!fitToText) return getPreferredWidth();
+        return fitWidth(fr, getPreferredWidth());
+    }
+
+    private int fitWidth(FontRenderer fr, int baseWidth) {
+        if (fr == null || text.isEmpty()) return baseWidth;
+        return Math.max(baseWidth, Math.min(fr.getStringWidth(text) + FIT_TEXT_PADDING, MAX_FIT_WIDTH));
+    }
+
+    @Override
+    public int getPreferredHeight() {
+        return getFieldHeight();
+    }
+
+    private static int getFieldHeight() {
+        Minecraft mc = Minecraft.getMinecraft();
+        int fontHeight = mc.fontRendererObj != null ? mc.fontRendererObj.FONT_HEIGHT : 9;
+        return fontHeight + 4;
+    }
+}

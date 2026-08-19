@@ -1,6 +1,6 @@
 package ru.defea.oneblockultima;
 
-import ru.defea.oneblockultima.event.ModEvents;
+import net.minecraft.entity.player.EntityPlayer;
 
 public class CommonProxy
 {
@@ -10,6 +10,9 @@ public class CommonProxy
 
     public void init()
     {
-        ModEvents.register();
+    }
+
+    public void openGuideBookGui(EntityPlayer player)
+    {
     }
 }

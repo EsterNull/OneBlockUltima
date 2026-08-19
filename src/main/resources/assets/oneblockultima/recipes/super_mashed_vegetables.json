@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    },
+    {
+      "item": "oneblockultima:mashed_vegetables"
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:super_mashed_vegetables"
+  }
+}

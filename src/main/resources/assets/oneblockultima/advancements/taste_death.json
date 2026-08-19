@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:adv_icon_taste_death"
+    },
+    "title": {
+      "translate": "advancements.taste_death.title"
+    },
+    "description": {
+      "translate": "advancements.taste_death.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "drank_liquid_death": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "item": "oneblockultima:liquid_death"
+        }
+      }
+    }
+  },
+  "parent": "oneblockultima:liquid_death"
+}

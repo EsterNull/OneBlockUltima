@@ -5,41 +5,30 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import ru.defea.oneblockultima.OneBlockUltima;
 
-public class BlockCompressedBedrock extends Block
-{
+public class BlockCompressedBedrock extends BlockCompressedBase {
+    public static final int MAX_LEVEL = 4;
+
     public BlockCompressedBedrock()
     {
-        super(Material.rock);
-        init("compressed_bedrock_1x");
-    }
-
-    protected BlockCompressedBedrock(String name)
-    {
-        super(Material.rock);
-        init(name);
+        super(Material.rock, "compressed_bedrock", MAX_LEVEL);
+        this.setBlockUnbreakable();
+        this.setStepSound(Block.soundTypeStone);
+        this.setResistance(6000000.0F * 9F);
     }
 
     @Override
-    public boolean canHarvestBlock(EntityPlayer player, int meta)
-    {
+    public boolean canHarvestBlock(EntityPlayer player, int meta) {
         return false;
     }
 
     @Override
-    public float getExplosionResistance(Entity exploder)
-    {
+    public float getExplosionResistance(Entity exploder) {
         return Blocks.bedrock.getExplosionResistance(exploder) * 9.0F;
     }
 
-    private void init(String name)
-    {
-        this.setBlockUnbreakable();
-        this.setStepSound(Block.soundTypeStone);
-        this.setResistance(6000000.0F * 9F);
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setBlockName(name);
-        this.setBlockTextureName(OneBlockUltima.MODID + ":" + name);
+    @Override
+    public boolean isToolEffective(String tool, int meta) {
+        return false;
     }
 }

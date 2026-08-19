@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "level=0": { "model": "oneblockultima:compressed_lapis_block" },
+    "0": { "model": "oneblockultima:compressed_lapis_block" },
+    "level=1": { "model": "oneblockultima:compressed_lapis_block" },
+    "1": { "model": "oneblockultima:compressed_lapis_block" },
+    "level=2": { "model": "oneblockultima:compressed_lapis_block" },
+    "2": { "model": "oneblockultima:compressed_lapis_block" },
+    "level=3": { "model": "oneblockultima:compressed_lapis_block" },
+    "3": { "model": "oneblockultima:compressed_lapis_block" },
+    "level=4": { "model": "oneblockultima:compressed_lapis_block" },
+    "4": { "model": "oneblockultima:compressed_lapis_block" },
+    "level=5": { "model": "oneblockultima:compressed_lapis_block" },
+    "5": { "model": "oneblockultima:compressed_lapis_block" }
+  }
+}

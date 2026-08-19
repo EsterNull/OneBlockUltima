@@ -1,15 +1,20 @@
 package ru.defea.oneblockultima.network;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.client.Minecraft;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.config.BlockSetConfig;
 
 import java.nio.charset.StandardCharsets;
 
 public class PacketSyncBlockSetConfig implements IMessage
 {
-    String json;
+    private byte[] jsonBytes;
 
     public PacketSyncBlockSetConfig()
     {
@@ -17,33 +22,50 @@ public class PacketSyncBlockSetConfig implements IMessage
 
     public PacketSyncBlockSetConfig(String json)
     {
-        this.json = json;
+        this.jsonBytes = json.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     public void fromBytes(ByteBuf buf)
     {
         int length = buf.readInt();
-        byte[] bytes = new byte[length];
-        buf.readBytes(bytes);
-        json = new String(bytes, StandardCharsets.UTF_8);
+        jsonBytes = new byte[length];
+        buf.readBytes(jsonBytes);
     }
 
     @Override
     public void toBytes(ByteBuf buf)
     {
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        buf.writeInt(bytes.length);
-        buf.writeBytes(bytes);
+        buf.writeInt(jsonBytes.length);
+        buf.writeBytes(jsonBytes);
     }
 
-    public static void sendToPlayer(String json, EntityPlayer player)
+    public String getJson()
     {
-        if (!(player instanceof EntityPlayerMP))
+        return new String(jsonBytes, StandardCharsets.UTF_8);
+    }
+
+    public static class Handler implements IMessageHandler<PacketSyncBlockSetConfig, IMessage>
+    {
+        @Override
+        @SideOnly(Side.CLIENT)
+        public IMessage onMessage(PacketSyncBlockSetConfig message, MessageContext ctx)
         {
-            return;
+            OneBlockUltima.getLogger().info("[Sync] Received BlockSetConfig, size: " + (message.jsonBytes != null ? message.jsonBytes.length : 0) + " bytes");
+            Minecraft.getMinecraft().addScheduledTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    String json = message.getJson();
+                    if (json != null && !json.isEmpty())
+                    {
+                        BlockSetConfig.loadFromServerJson(json);
+                        OneBlockUltima.getLogger().info("[Sync] Applied server BlockSetConfig, sets count: " + BlockSetConfig.get().getSets().size());
+                    }
+                }
+            });
+            return null;
         }
-        PacketSyncBlockSetConfig packet = new PacketSyncBlockSetConfig(json);
-        ModMessages.sendToPlayer(packet, (EntityPlayerMP) player);
     }
 }
