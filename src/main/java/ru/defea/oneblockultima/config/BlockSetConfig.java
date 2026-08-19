@@ -816,6 +816,26 @@ public final class BlockSetConfig
             return max;
         }
 
+        /**
+         * Returns the level definition for generation/rendering, clamping levels that exceed the
+         * current maximum (e.g. a set was upgraded higher, then mod settings reduced the computed levels)
+         * to the highest available definition so nothing breaks.
+         */
+        public SetLevelDefinition getLevelClamped(int level)
+        {
+            ensureComputedLevels();
+            if (computedLevels == null || computedLevels.isEmpty())
+            {
+                return null;
+            }
+            int max = getMaxLevel();
+            if (level > max)
+            {
+                return computedLevels.get(max);
+            }
+            return computedLevels.get(level);
+        }
+
         public void ensureComputedLevels()
         {
             if (computedLevels != null) return;
@@ -896,78 +916,93 @@ public final class BlockSetConfig
             java.util.Map<String, Double> prevPercBlocks = new java.util.HashMap<>();
             java.util.Map<String, Double> prevPercMobs = new java.util.HashMap<>();
 
+            int maxBaseLevel = 0;
+            for (InternalElement e : elems) if (e.baseLevel > maxBaseLevel) maxBaseLevel = e.baseLevel;
+
+            int hardCap = Math.max(200, maxBaseLevel + 200);
+            SetLevelDefinition previous = null;
             int level = minLevel;
-            while (true)
+            while (level <= hardCap)
             {
                 java.util.List<InternalElement> availBlocks = new ArrayList<>();
                 java.util.List<InternalElement> availMobs = new ArrayList<>();
                 for (InternalElement e : blockElems) if (e.baseLevel <= level) availBlocks.add(e);
                 for (InternalElement e : mobElems) if (e.baseLevel <= level) availMobs.add(e);
 
-                if (availBlocks.isEmpty() && availMobs.isEmpty())
-                {
-                    level++;
-                    if (level > 1000) break;
-                    continue;
-                }
-
-                java.util.Map<String, Integer> proposedBlocks = computeLevelPercentages(availBlocks, prevPercBlocks, 100);
-                java.util.Map<String, Integer> proposedMobs = computeLevelPercentages(availMobs, prevPercMobs, Math.max(0, ModSettings.get().getMaxMobSpawnPercent()));
-
                 SetLevelDefinition lvlDef = new SetLevelDefinition();
                 lvlDef.level = level;
                 int baseOpenLevel = minLevel <= 0 ? 1 : minLevel;
                 lvlDef.upgradeCost = computeUpgradeCost(unlockCost, level, baseOpenLevel);
-                lvlDef.blocks = new java.util.ArrayList<>();
-                lvlDef.mobs = new java.util.ArrayList<>();
 
-                for (InternalElement e : availBlocks)
+                boolean changed;
+                if (availBlocks.isEmpty() && availMobs.isEmpty())
                 {
-                    String key = elementKey(e);
-                    int percent = proposedBlocks.getOrDefault(key, 0);
-                    BlockEntryDefinition b = new BlockEntryDefinition();
-                    b.registry = e.registry;
-                    b.meta = e.meta;
-                    b.chance = percent;
-                    b.dropItem = e.dropItem;
-                    Set<String> keys = e.nbtTags.getKeySet();
-                    for (String nbtKey : keys) {
-                        NBTBase tag = e.nbtTags.getTag(nbtKey);
-                        b.nbtTags.setTag(nbtKey, tag.copy());
+                    // No new elements at this level: carry over the previous level's content so the level stays usable
+                    if (previous != null)
+                    {
+                        lvlDef.blocks = new java.util.ArrayList<>(previous.blocks);
+                        lvlDef.mobs = new java.util.ArrayList<>(previous.mobs);
                     }
-                    lvlDef.blocks.add(b);
+                    changed = false;
                 }
-
-                for (InternalElement e : availMobs)
+                else
                 {
-                    String key = elementKey(e);
-                    int percent = proposedMobs.getOrDefault(key, 0);
-                    MobEntryDefinition m = new MobEntryDefinition();
-                    m.registry = e.registry;
-                    m.chance = percent;
-                    m.count = e.count;
-                    Set<String> keys = e.nbtTags.getKeySet();
-                    for (String nbtKey : keys) {
-                        NBTBase tag = e.nbtTags.getTag(nbtKey);
-                        m.nbtTags.setTag(nbtKey, tag.copy());
+                    java.util.Map<String, Integer> proposedBlocks = computeLevelPercentages(availBlocks, prevPercBlocks, 100);
+                    java.util.Map<String, Integer> proposedMobs = computeLevelPercentages(availMobs, prevPercMobs, Math.max(0, ModSettings.get().getMaxMobSpawnPercent()));
+
+                    lvlDef.blocks = new java.util.ArrayList<>();
+                    lvlDef.mobs = new java.util.ArrayList<>();
+
+                    for (InternalElement e : availBlocks)
+                    {
+                        String key = elementKey(e);
+                        int percent = proposedBlocks.getOrDefault(key, 0);
+                        BlockEntryDefinition b = new BlockEntryDefinition();
+                        b.registry = e.registry;
+                        b.meta = e.meta;
+                        b.chance = percent;
+                        b.dropItem = e.dropItem;
+                        Set<String> keys = e.nbtTags.getKeySet();
+                        for (String nbtKey : keys) {
+                            NBTBase tag = e.nbtTags.getTag(nbtKey);
+                            b.nbtTags.setTag(nbtKey, tag.copy());
+                        }
+                        lvlDef.blocks.add(b);
                     }
-                    lvlDef.mobs.add(m);
+
+                    for (InternalElement e : availMobs)
+                    {
+                        String key = elementKey(e);
+                        int percent = proposedMobs.getOrDefault(key, 0);
+                        MobEntryDefinition m = new MobEntryDefinition();
+                        m.registry = e.registry;
+                        m.chance = percent;
+                        m.count = e.count;
+                        Set<String> keys = e.nbtTags.getKeySet();
+                        for (String nbtKey : keys) {
+                            NBTBase tag = e.nbtTags.getTag(nbtKey);
+                            m.nbtTags.setTag(nbtKey, tag.copy());
+                        }
+                        lvlDef.mobs.add(m);
+                    }
+
+                    changed = hasSignificantChange(availBlocks, prevPercBlocks, proposedBlocks)
+                            || hasSignificantChange(availMobs, prevPercMobs, proposedMobs);
+
+                    for (String k : proposedBlocks.keySet()) prevPercBlocks.put(k, proposedBlocks.get(k).doubleValue());
+                    for (String k : proposedMobs.keySet()) prevPercMobs.put(k, proposedMobs.get(k).doubleValue());
+
+                    previous = lvlDef;
                 }
 
                 computedLevels.put(level, lvlDef);
 
-                boolean changed = hasSignificantChange(availBlocks, prevPercBlocks, proposedBlocks)
-                        || hasSignificantChange(availMobs, prevPercMobs, proposedMobs);
-
-                for (String k : proposedBlocks.keySet()) prevPercBlocks.put(k, proposedBlocks.get(k).doubleValue());
-                for (String k : proposedMobs.keySet()) prevPercMobs.put(k, proposedMobs.get(k).doubleValue());
-
                 level++;
-                if (!changed)
+                // Stop only once every element is included (level past the highest baseLevel) and percentages stabilized
+                if (!changed && level > maxBaseLevel)
                 {
                     break;
                 }
-                if (level > 200) break;
             }
         }
     }

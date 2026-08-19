@@ -156,7 +156,7 @@ public class TileEntityOneBlockGenerator extends TileEntity
             level = resolveGenerationLevel();
         }
 
-        BlockSetConfig.SetLevelDefinition levelDefinition = set.getLevel(level);
+        BlockSetConfig.SetLevelDefinition levelDefinition = set.getLevelClamped(level);
         if (levelDefinition == null)
         {
             OneBlockUltima.getLogger().info("[Generator] Level definition is null for level={}", level);
