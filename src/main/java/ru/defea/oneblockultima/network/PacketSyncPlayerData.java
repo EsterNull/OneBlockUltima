@@ -17,10 +17,6 @@ public class PacketSyncPlayerData implements IMessage
 {
     private NBTTagCompound data;
 
-    public PacketSyncPlayerData()
-    {
-    }
-
     public PacketSyncPlayerData(NBTTagCompound data)
     {
         this.data = data;
@@ -67,8 +63,20 @@ public class PacketSyncPlayerData implements IMessage
     public static class Handler implements IMessageHandler<PacketSyncPlayerData, IMessage>
     {
         @Override
-        @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketSyncPlayerData message, MessageContext ctx)
+        {
+            if (ctx.side.isClient())
+            {
+                ClientHandler.apply(message);
+            }
+            return null;
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static class ClientHandler
+    {
+        private static void apply(PacketSyncPlayerData message)
         {
             Minecraft.getMinecraft().addScheduledTask(() -> {
                 EntityPlayer player = Minecraft.getMinecraft().thePlayer;
@@ -99,7 +107,6 @@ public class PacketSyncPlayerData implements IMessage
                     }
                 }
             });
-            return null;
         }
     }
 }
