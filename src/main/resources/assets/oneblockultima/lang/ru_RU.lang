@@ -51,6 +51,49 @@ advancements.space_soup.description=Скрафтите космический с
 advancements.far_star.title=Загадать желание
 advancements.far_star.description=Скрафтите далёкую звезду
 
+achievement.root=Начало пути
+achievement.root.desc=Получите руководство OneBlock
+achievement.compressed_mineral=Открытие суперсплава
+achievement.compressed_mineral.desc=Скрафтите сжатый минерал
+achievement.graviton=Кварк подтвержден
+achievement.graviton.desc=Скрафтите гравитон
+achievement.dark_matter=Секрет вселенной
+achievement.dark_matter.desc=Скрафтите тёмную материю
+achievement.energy_orb=Апогей Теслы
+achievement.energy_orb.desc=Скрафтите энергетический шар
+achievement.higgs_boson=Частица Бога
+achievement.higgs_boson.desc=Скрафтите бозон Хиггса
+achievement.space_soup=Похлёбка тёщи
+achievement.space_soup.desc=Скрафтите космический суп
+achievement.far_star=Загадать желание
+achievement.far_star.desc=Скрафтите далёкую звезду
+achievement.one_block_generator_crafted=Всё из ничего
+achievement.one_block_generator_crafted.desc=Создайте генератор блоков
+achievement.mashed_vegetables=Вегетарианское пюре
+achievement.mashed_vegetables.desc=Скрафтите растительное пюре
+achievement.super_mashed_vegetables=Более... вегетарианское пюре
+achievement.super_mashed_vegetables.desc=Скрафтите супер растительное пюре
+achievement.ultimate_mashed_vegetables=Самое... вегетарианское пюре..?
+achievement.ultimate_mashed_vegetables.desc=Скрафтите ультимативное растительное пюре
+achievement.protein=Начало жизни
+achievement.protein.desc=Скрафтите протеин
+achievement.super_protein=Франкенштейн отдыхает
+achievement.super_protein.desc=Скрафтите супер протеин
+achievement.ultimate_protein=Хиральная чистота
+achievement.ultimate_protein.desc=Скрафтите ультимативный протеин
+achievement.natural_poison=Начинающий фармацевт
+achievement.natural_poison.desc=Скрафтите природный яд
+achievement.brian_fry=Брайан Фрай
+achievement.brian_fry.desc=Выпейте природный яд
+achievement.super_poison=Потомок Борджиа
+achievement.super_poison.desc=Скрафтите супер яд
+achievement.royal_taster=Королевский дегустатор
+achievement.royal_taster.desc=Выпейте супер яд
+achievement.liquid_death=Безумный учёный
+achievement.liquid_death.desc=Скрафтите жидкую смерть
+achievement.taste_death=Попробовать смерть на вкус
+achievement.taste_death.desc=Выпейте жидкую смерть
+
 item.adv_icon_brian_fry.name=Иконка достижения
 item.adv_icon_royal_taster.name=Иконка достижения
 item.adv_icon_taste_death.name=Иконка достижения
@@ -370,6 +413,9 @@ gui.oneblockultima.misc.max_generator_members=Максимум участник�
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Блок добыт из генератора
+block.color=Цвет: %s
+block.dyed=Покрашенный
+block.nbt_tags=NBT теги: %s
 
 # Guide book
 item.obu_guide_book.name=Руководство OneBlock

@@ -7,7 +7,7 @@ public class ItemUltimateProtein extends ItemFood {
     public ItemUltimateProtein() {
         super(10, 3F, true);
         setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("ultimate_protein");
+
         this.setUnlocalizedName("ultimate_protein");
     }
 }

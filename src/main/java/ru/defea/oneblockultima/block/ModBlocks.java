@@ -2,27 +2,18 @@ package ru.defea.oneblockultima.block;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.event.RegistryEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraftforge.oredict.OreDictionary;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.item.ItemBlockCompressed;
-import ru.defea.oneblockultima.util.BlockUtil;
 
 import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-@Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
 public final class ModBlocks
 {
     @SuppressWarnings("unused")
@@ -139,20 +130,20 @@ public final class ModBlocks
     public static final BlockCompressedNetherrack COMPRESSED_NETHERRACK = new BlockCompressedNetherrack();
 
     public static RegisterBlock[] modBlocks = {
-        new RegisterBlock(ONE_BLOCK_GENERATOR, true),
-        new RegisterBlock(FLUID_BARRIER),
-        new RegisterBlock(COMPRESSED_MINERAL_BLOCK, true, "normal"),
+            new RegisterBlock(ONE_BLOCK_GENERATOR, true),
+            new RegisterBlock(FLUID_BARRIER),
+            new RegisterBlock(COMPRESSED_MINERAL_BLOCK, true, "normal"),
 
-        new RegisterBlock(COMPRESSED_BEDROCK, true, "normal", 0, "compressed_bedrock", BlockCompressedBedrock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_REDSTONE_BLOCK, true, "normal", 0, "compressed_redstone_block", BlockCompressedRedstoneBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_GOLD_BLOCK, true, "normal", 0, "compressed_gold_block", BlockCompressedGoldBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_IRON_BLOCK, true, "normal", 0, "compressed_iron_block", BlockCompressedIronBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_DIAMOND_BLOCK, true, "normal", 0, "compressed_diamond_block", BlockCompressedDiamondBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_STONE_BLOCK, true, "normal", 0, "compressed_stone_block", BlockCompressedStoneBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_EMERALD_BLOCK, true, "normal", 0, "compressed_emerald_block", BlockCompressedEmeraldBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_LAPIS_BLOCK, true, "normal", 0, "compressed_lapis_block", BlockCompressedLapisBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_END_STONE, true, "normal", 0, "compressed_end_stone", BlockCompressedEndStone.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_NETHERRACK, true, "normal", 0, "compressed_netherrack", BlockCompressedNetherrack.MAX_LEVEL)
+            new RegisterBlock(COMPRESSED_BEDROCK, true, "normal", 0, "compressed_bedrock", BlockCompressedBedrock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_REDSTONE_BLOCK, true, "normal", 0, "compressed_redstone_block", BlockCompressedRedstoneBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_GOLD_BLOCK, true, "normal", 0, "compressed_gold_block", BlockCompressedGoldBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_IRON_BLOCK, true, "normal", 0, "compressed_iron_block", BlockCompressedIronBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_DIAMOND_BLOCK, true, "normal", 0, "compressed_diamond_block", BlockCompressedDiamondBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_STONE_BLOCK, true, "normal", 0, "compressed_stone_block", BlockCompressedStoneBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_EMERALD_BLOCK, true, "normal", 0, "compressed_emerald_block", BlockCompressedEmeraldBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_LAPIS_BLOCK, true, "normal", 0, "compressed_lapis_block", BlockCompressedLapisBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_END_STONE, true, "normal", 0, "compressed_end_stone", BlockCompressedEndStone.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_NETHERRACK, true, "normal", 0, "compressed_netherrack", BlockCompressedNetherrack.MAX_LEVEL)
     };
 
     public static final int CUSTOM_BREAKABLE_POOL_SIZE = 32;
@@ -177,42 +168,10 @@ public final class ModBlocks
         modBlocks = combined;
     }
 
-    public static void bindBreakablePool()
-    {
-        for (Block block : ForgeRegistries.BLOCKS)
-        {
-            if (block == null || block.getRegistryName() == null || BREAKABLE_BY_EMULATED.containsKey(block))
-            {
-                continue;
-            }
-            if (BlockUtil.isBreakable(block))
-            {
-                continue;
-            }
-            BlockCustomBreakable slot = null;
-            for (BlockCustomBreakable cb : CUSTOM_BREAKABLE_POOL)
-            {
-                if (cb.getEmulated() == null)
-                {
-                    slot = cb;
-                    break;
-                }
-            }
-            if (slot == null)
-            {
-                OneBlockUltima.getLogger().warn("[Breakable] Custom breakable pool exhausted, {} stays unbreakable", block.getRegistryName());
-                continue;
-            }
-            slot.setEmulated(block);
-            BREAKABLE_BY_EMULATED.put(block, slot);
-            OneBlockUltima.getLogger().info("[Breakable] Bound {} -> {}", block.getRegistryName(), slot.getRegistryName());
-        }
-    }
-
     @Nullable
     public static BlockCustomBreakable getBreakableFor(Block block)
     {
-        if (block == null || block == Blocks.AIR)
+        if (block == null || block == Blocks.air)
         {
             return null;
         }
@@ -251,7 +210,7 @@ public final class ModBlocks
     {
         for (int level = 1; level <= block.getMaxLevel(); level++)
         {
-            OreDictionary.registerOre("compressed" + level + "x" + capName, new ItemStack(block, 1, level - 1));
+            OreDictionary.registerOre("compressed" + level + "x" + capName, new net.minecraft.item.ItemStack(block, 1, level - 1));
         }
     }
 
@@ -259,34 +218,32 @@ public final class ModBlocks
     {
     }
 
-    @SubscribeEvent
-    public static void registerBlocks(RegistryEvent.Register<Block> event)
+    public static void registerBlocksAndItems()
     {
         for (RegisterBlock modBlock : modBlocks)
         {
-            event.getRegistry().register(modBlock.block);
-        }
-    }
-
-    @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event)
-    {
-        bindBreakablePool();
-        for (RegisterBlock modBlock : modBlocks)
-        {
-            if (modBlock.isItem) {
-                Item modItemBlock;
+            String name = modBlock.block.getUnlocalizedName();
+            if (name.startsWith("tile."))
+            {
+                name = name.substring("tile.".length());
+            }
+            if (modBlock.isItem)
+            {
                 if (modBlock.getSubBlockCount() > 1)
                 {
-                    modItemBlock = new ItemBlockCompressed(modBlock.block, modBlock.getSubBlockName(), modBlock.getSubBlockCount());
+                    GameRegistry.registerBlock(modBlock.block, null, name);
+                    GameRegistry.registerItem(
+                            new ItemBlockCompressed(modBlock.block, modBlock.getSubBlockName(), modBlock.getSubBlockCount()),
+                            name);
                 }
                 else
                 {
-                    modItemBlock = new ItemBlock(modBlock.block);
+                    GameRegistry.registerBlock(modBlock.block, name);
                 }
-                modItemBlock.setRegistryName(Objects.requireNonNull(modBlock.block.getRegistryName()));
-
-                event.getRegistry().register(modItemBlock);
+            }
+            else
+            {
+                GameRegistry.registerBlock(modBlock.block, null, name);
             }
         }
     }

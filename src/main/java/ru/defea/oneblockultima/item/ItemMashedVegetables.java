@@ -7,7 +7,7 @@ public class ItemMashedVegetables extends ItemFood {
     public ItemMashedVegetables() {
         super(2, 0.3F, false);
         setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("mashed_vegetables");
+
         this.setUnlocalizedName("mashed_vegetables");
     }
 }

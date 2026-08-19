@@ -48,8 +48,8 @@ public class InlineClickableElement extends ViewElement<InlineClickableElement> 
         int bg = hovered ? hoverColor : bgColor;
         Gui.drawRect(computedX, computedY, computedX + computedWidth, computedY + computedHeight, bg);
         if (text != null && !text.isEmpty()) {
-            float tx = computedX + (computedWidth - fr.getStringWidth(text)) / 2.0f;
-            float ty = computedY + (computedHeight - 8) / 2.0f;
+            int tx = computedX + (computedWidth - fr.getStringWidth(text)) / 2;
+            int ty = computedY + (computedHeight - 8) / 2;
             fr.drawStringWithShadow(text, tx, ty, textColor);
         }
     }

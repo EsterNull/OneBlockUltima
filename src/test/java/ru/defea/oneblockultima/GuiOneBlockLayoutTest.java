@@ -82,17 +82,16 @@ public class GuiOneBlockLayoutTest {
         private int clicks;
         private boolean fakeFocused;
 
-        FakeTextField(int id, int x, int y) {
+        FakeTextField(int x, int y) {
             //noinspection DataFlowIssue
-            super(id, null, x, y, 120, 20);
+            super(null, x, y, 120, 20);
         }
 
         @Override
-        public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
             clicks++;
-            fakeFocused = mouseX >= this.x && mouseX < this.x + this.width
-                    && mouseY >= this.y && mouseY < this.y + this.height;
-            return fakeFocused;
+            fakeFocused = mouseX >= this.xPosition && mouseX < this.xPosition + this.width
+                    && mouseY >= this.yPosition && mouseY < this.yPosition + this.height;
         }
 
         @Override
@@ -415,8 +414,8 @@ public class GuiOneBlockLayoutTest {
     public void clickingTextFieldUnfocusesOtherTextFields() {
         ViewFactory factory = createFactory();
 
-        FakeTextField first = new FakeTextField(0, GUI_LEFT + 100, GUI_TOP + 100);
-        FakeTextField second = new FakeTextField(1, GUI_LEFT + 300, GUI_TOP + 100);
+        FakeTextField first = new FakeTextField(GUI_LEFT + 100, GUI_TOP + 100);
+        FakeTextField second = new FakeTextField(GUI_LEFT + 300, GUI_TOP + 100);
         factory.addTextField(first);
         factory.addTextField(second);
         factory.add(new ClickConsumingStub());

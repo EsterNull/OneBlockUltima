@@ -3,11 +3,12 @@ package ru.defea.oneblockultima.gui.containers;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.inventory.Slot;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatStyle;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
@@ -23,32 +24,41 @@ import static ru.defea.oneblockultima.Constants.PLAYER_INTERACT_RANGE_SQ;
 
 public class ContainerOneBlock extends Container
 {
+    private static final int OFFSCREEN_SLOT_X = -32000;
+    private static final int OFFSCREEN_SLOT_Y = -32000;
+
     private final World world;
-    private final BlockPos generatorPos;
+    private final int generatorX;
+    private final int generatorY;
+    private final int generatorZ;
     private final EntityPlayer player;
 
-    public ContainerOneBlock(EntityPlayer player, World world, BlockPos generatorPos)
+    public ContainerOneBlock(EntityPlayer player, World world, int generatorX, int generatorY, int generatorZ)
     {
         this.world = world;
-        this.generatorPos = generatorPos;
+        this.generatorX = generatorX;
+        this.generatorY = generatorY;
+        this.generatorZ = generatorZ;
         this.player = player;
+
+        addPlayerInventorySlots(player.inventory);
 
         if (!world.isRemote && player instanceof EntityPlayerMP)
         {
             TileEntityOneBlockGenerator generator = getGenerator();
             if (generator != null)
             {
-                ModEvents.ensureGeneratorAccess(world, generatorPos, player, generator);
+                ModEvents.ensureGeneratorAccess(world, generatorX, generatorY, generatorZ, player, generator);
             }
 
             PacketSyncPlayerData.sendToPlayer(player);
 
             if (generator != null)
             {
-                net.minecraft.network.play.server.SPacketUpdateTileEntity packet = generator.getUpdatePacket();
+                net.minecraft.network.Packet packet = generator.getDescriptionPacket();
                 if (packet != null)
                 {
-                    ((EntityPlayerMP) player).connection.sendPacket(packet);
+                    ((EntityPlayerMP) player).playerNetServerHandler.sendPacket(packet);
                 }
             }
         }
@@ -57,14 +67,26 @@ public class ContainerOneBlock extends Container
     @Override
     public boolean canInteractWith(EntityPlayer playerIn)
     {
-        return playerIn.getDistanceSq(generatorPos.getX() + BLOCK_CENTER_OFFSET, generatorPos.getY() + BLOCK_CENTER_OFFSET, generatorPos.getZ() + BLOCK_CENTER_OFFSET) <= PLAYER_INTERACT_RANGE_SQ;
+        return playerIn.getDistanceSq(generatorX + BLOCK_CENTER_OFFSET, generatorY + BLOCK_CENTER_OFFSET, generatorZ + BLOCK_CENTER_OFFSET) <= PLAYER_INTERACT_RANGE_SQ;
+    }
+
+    private void addPlayerInventorySlots(InventoryPlayer playerInv)
+    {
+        for (int i = 0; i < 9; ++i)
+        {
+            this.addSlotToContainer(new Slot(playerInv, i, OFFSCREEN_SLOT_X, OFFSCREEN_SLOT_Y));
+        }
+        for (int i = 9; i < 36; ++i)
+        {
+            this.addSlotToContainer(new Slot(playerInv, i, OFFSCREEN_SLOT_X, OFFSCREEN_SLOT_Y));
+        }
     }
 
     public void selectSet(String setId)
     {
         if (world.isRemote)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.SELECT_SET, setId));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.SELECT_SET, setId));
             return; // Возвращаем true, чтобы клиент не показывал ошибку
         }
 
@@ -76,7 +98,7 @@ public class ContainerOneBlock extends Container
         if (world.isRemote)
         {
             applyLocalBalancePreview(setId);
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.UPGRADE_SET, setId));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.UPGRADE_SET, setId));
             return; // Возвращаем true, чтобы клиент не показывал ошибку
         }
 
@@ -103,7 +125,11 @@ public class ContainerOneBlock extends Container
         }
 
         int currentLevel = generator.getSetLevel(setId);
-        int cost = currentLevel <= 0 ? set.unlockCost : set.getLevel(currentLevel + 1) != null ? set.getLevel(currentLevel + 1).upgradeCost : 0;
+        if (currentLevel > 0 && currentLevel >= set.getMaxLevel())
+        {
+            return;
+        }
+        int cost = currentLevel <= 0 ? set.unlockCost : set.getLevel(currentLevel + 1).upgradeCost;
         if (cost <= 0)
         {
             return;
@@ -123,7 +149,7 @@ public class ContainerOneBlock extends Container
     {
         if (world.isRemote)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.TOGGLE_FLUIDS, ""));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.TOGGLE_FLUIDS, ""));
             return;
         }
 
@@ -134,7 +160,7 @@ public class ContainerOneBlock extends Container
     {
         if (world.isRemote)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.TOGGLE_MOBS, ""));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.TOGGLE_MOBS, ""));
             return;
         }
 
@@ -145,7 +171,7 @@ public class ContainerOneBlock extends Container
     {
         if (world.isRemote)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.TOGGLE_CHESTS, ""));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.TOGGLE_CHESTS, ""));
             return;
         }
 
@@ -156,7 +182,7 @@ public class ContainerOneBlock extends Container
     {
         if (world.isRemote)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.TOGGLE_SAPLINGS, ""));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.TOGGLE_SAPLINGS, ""));
             return;
         }
 
@@ -206,10 +232,7 @@ public class ContainerOneBlock extends Container
 
         OneBlockUltima.getLogger().info("[OneBlock] Generator selectedSetId is now: " + generator.getSelectedSetId());
 
-        if (world.isAirBlock(generator.getPos().up()))
-        {
-            generator.tryGenerateBlock();
-        }
+        generator.tryRegenerateSlotBlock();
         detectAndSendChanges();
 
         if (player instanceof EntityPlayerMP)
@@ -217,10 +240,10 @@ public class ContainerOneBlock extends Container
             EntityPlayerMP playerMP = (EntityPlayerMP) player;
 
             // Send the tile update
-            net.minecraft.network.play.server.SPacketUpdateTileEntity packet = generator.getUpdatePacket();
+            net.minecraft.network.Packet packet = generator.getDescriptionPacket();
             if (packet != null)
             {
-                playerMP.connection.sendPacket(packet);
+                playerMP.playerNetServerHandler.sendPacket(packet);
             }
 
             // Synchronize the player data
@@ -268,7 +291,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlock_requirements")).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.unlock_requirements")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -283,7 +306,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -292,7 +315,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlock_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.unlock_fail")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -306,7 +329,7 @@ public class ContainerOneBlock extends Container
                 data.addCurrency(cost);
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlock_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.unlock_fail")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -322,20 +345,19 @@ public class ContainerOneBlock extends Container
             OneBlockUltima.getLogger().info("[OneBlock] Set unlocked and selected: " + setId);
             if (player instanceof EntityPlayerMP)
             {
-                player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.unlocked")).setStyle(new Style().setColor(TextFormatting.GREEN)));
+                player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.unlocked")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN)));
             }
         }
         else
         {
             // Attempt to upgrade the set
-            BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
-            if (nextLevel == null)
+            if (currentLevel >= set.getMaxLevel())
             {
                 OneBlockUltima.getLogger().info("[OneBlock] Max level reached!");
                 return false;
             }
 
-            int cost = nextLevel.upgradeCost;
+            int cost = set.getLevel(currentLevel + 1).upgradeCost;
             assert data != null;
             double currency = data.getCurrency();
 
@@ -345,7 +367,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.need") + ": " + cost + ", " + I18n.format("gui.oneblockultima.msg.have") + ": " + currency).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -354,7 +376,7 @@ public class ContainerOneBlock extends Container
             {
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.upgrade_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.upgrade_fail")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -368,7 +390,7 @@ public class ContainerOneBlock extends Container
                 data.addCurrency(cost);
                 if (player instanceof EntityPlayerMP)
                 {
-                    player.sendMessage(new TextComponentString(I18n.format("gui.oneblockultima.msg.upgrade_fail")).setStyle(new Style().setColor(TextFormatting.RED)));
+                    player.addChatComponentMessage(new ChatComponentText(I18n.format("gui.oneblockultima.msg.upgrade_fail")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
                 }
                 return false;
             }
@@ -384,19 +406,21 @@ public class ContainerOneBlock extends Container
             OneBlockUltima.getLogger().info("[OneBlock] Set upgraded to level " + (currentLevel + 1) + " and selected: " + setId);
         }
 
+        generator.tryRegenerateSlotBlock();
+
         detectAndSendChanges();
 
         if (player instanceof EntityPlayerMP)
         {
             EntityPlayerMP playerMP = (EntityPlayerMP) player;
 
-            ModEvents.ensureGeneratorAccess(world, generatorPos, player, generator);
+            ModEvents.ensureGeneratorAccess(world, generatorX, generatorY, generatorZ, player, generator);
 
             // Send the tile update
-            net.minecraft.network.play.server.SPacketUpdateTileEntity packet = generator.getUpdatePacket();
+            net.minecraft.network.Packet packet = generator.getDescriptionPacket();
             if (packet != null)
             {
-                playerMP.connection.sendPacket(packet);
+                playerMP.playerNetServerHandler.sendPacket(packet);
             }
 
             // Synchronize the player data
@@ -415,10 +439,7 @@ public class ContainerOneBlock extends Container
         }
 
         generator.setDisableFluidGeneration(!generator.isDisableFluidGeneration());
-        if (world.isAirBlock(generator.getPos().up()))
-        {
-            generator.tryGenerateBlock();
-        }
+        generator.tryRegenerateSlotBlock();
         updateTileEntity(generator);
     }
 
@@ -431,10 +452,7 @@ public class ContainerOneBlock extends Container
         }
 
         generator.setDisableMobGeneration(!generator.isDisableMobGeneration());
-        if (world.isAirBlock(generator.getPos().up()))
-        {
-            generator.tryGenerateBlock();
-        }
+        generator.tryRegenerateSlotBlock();
         updateTileEntity(generator);
     }
 
@@ -447,10 +465,7 @@ public class ContainerOneBlock extends Container
         }
 
         generator.setDisableChestGeneration(!generator.isDisableChestGeneration());
-        if (world.isAirBlock(generator.getPos().up()))
-        {
-            generator.tryGenerateBlock();
-        }
+        generator.tryRegenerateSlotBlock();
         updateTileEntity(generator);
     }
 
@@ -463,10 +478,7 @@ public class ContainerOneBlock extends Container
         }
 
         generator.setDisableSaplingGeneration(!generator.isDisableSaplingGeneration());
-        if (world.isAirBlock(generator.getPos().up()))
-        {
-            generator.tryGenerateBlock();
-        }
+        generator.tryRegenerateSlotBlock();
         updateTileEntity(generator);
     }
 
@@ -474,26 +486,36 @@ public class ContainerOneBlock extends Container
         if (player instanceof EntityPlayerMP)
         {
             EntityPlayerMP playerMP = (EntityPlayerMP) player;
-            net.minecraft.network.play.server.SPacketUpdateTileEntity packet = generator.getUpdatePacket();
+            net.minecraft.network.Packet packet = generator.getDescriptionPacket();
             if (packet != null)
             {
-                playerMP.connection.sendPacket(packet);
+                playerMP.playerNetServerHandler.sendPacket(packet);
             }
         }
     }
 
     public TileEntityOneBlockGenerator getGenerator()
     {
-        if (world.getTileEntity(generatorPos) instanceof TileEntityOneBlockGenerator)
+        if (world.getTileEntity(generatorX, generatorY, generatorZ) instanceof TileEntityOneBlockGenerator)
         {
-            return (TileEntityOneBlockGenerator) world.getTileEntity(generatorPos);
+            return (TileEntityOneBlockGenerator) world.getTileEntity(generatorX, generatorY, generatorZ);
         }
         return null;
     }
 
-    public BlockPos getGeneratorPos()
+    public int getGeneratorX()
     {
-        return generatorPos;
+        return generatorX;
+    }
+
+    public int getGeneratorY()
+    {
+        return generatorY;
+    }
+
+    public int getGeneratorZ()
+    {
+        return generatorZ;
     }
 
     public EntityPlayer getPlayer()

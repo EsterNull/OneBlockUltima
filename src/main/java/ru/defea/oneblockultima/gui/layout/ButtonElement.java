@@ -179,20 +179,20 @@ public class ButtonElement<T extends ButtonElement<T>> extends ViewElement<T> {
         int btnHeight = height > 0 ? height : computedHeight;
         guiButton = new GuiButton(id, computedX, computedY, btnWidth, btnHeight, text) {
             @Override
-            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY) {
                 if (this.visible) {
-                    this.hovered = mouseX >= this.x && mouseY >= this.y &&
-                            mouseX < this.x + this.width && mouseY < this.y + this.height;
+                    this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
+                            mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
 
-                    drawRect(this.x, this.y, this.x + this.width, this.y + this.height, widgetFillColor(hovered));
-                    drawRect(this.x, this.y, this.x + this.width, this.y + borderSize, borderColor);
-                    drawRect(this.x, this.y + this.height - borderSize, this.x + this.width, this.y + this.height, borderColor);
-                    drawRect(this.x, this.y, this.x + borderSize, this.y + this.height, borderColor);
-                    drawRect(this.x + this.width - borderSize, this.y, this.x + this.width, this.y + this.height, borderColor);
+                    drawRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, widgetFillColor(hovered));
+                    drawRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + borderSize, borderColor);
+                    drawRect(this.xPosition, this.yPosition + this.height - borderSize, this.xPosition + this.width, this.yPosition + this.height, borderColor);
+                    drawRect(this.xPosition, this.yPosition, this.xPosition + borderSize, this.yPosition + this.height, borderColor);
+                    drawRect(this.xPosition + this.width - borderSize, this.yPosition, this.xPosition + this.width, this.yPosition + this.height, borderColor);
 
-                    this.drawCenteredString(fontRenderer, this.displayString,
-                            this.x + this.width / 2,
-                            this.y + (this.height - fontRenderer.FONT_HEIGHT) / 2,
+                    this.drawCenteredString(mc.fontRendererObj, this.displayString,
+                            this.xPosition + this.width / 2,
+                            this.yPosition + (this.height - mc.fontRendererObj.FONT_HEIGHT) / 2,
                             widgetTextColor(hovered));
                 }
             }

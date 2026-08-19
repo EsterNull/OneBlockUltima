@@ -51,6 +51,49 @@ advancements.space_soup.description=Craft space soup
 advancements.far_star.title=Make a Wish
 advancements.far_star.description=Craft far star
 
+achievement.root=The Beginning of the Path
+achievement.root.desc=Obtain the OneBlock guide book
+achievement.compressed_mineral=Superalloy Discovery
+achievement.compressed_mineral.desc=Craft compressed mineral
+achievement.graviton=Quark Confirmed
+achievement.graviton.desc=Craft graviton
+achievement.dark_matter=Secret of the Universe
+achievement.dark_matter.desc=Craft dark matter
+achievement.energy_orb=Tesla's Apogee
+achievement.energy_orb.desc=Craft energy orb
+achievement.higgs_boson=God Particle
+achievement.higgs_boson.desc=Craft Higgs boson
+achievement.space_soup=Mother-in-Law's Stew
+achievement.space_soup.desc=Craft space soup
+achievement.far_star=Make a Wish
+achievement.far_star.desc=Craft far star
+achievement.one_block_generator_crafted=All out of nothing
+achievement.one_block_generator_crafted.desc=Create block generator
+achievement.mashed_vegetables=Vegetarian Mash
+achievement.mashed_vegetables.desc=Craft mashed vegetables
+achievement.super_mashed_vegetables=More... vegetarian mash
+achievement.super_mashed_vegetables.desc=Craft super mashed vegetables
+achievement.ultimate_mashed_vegetables=The most... vegetarian mash..?
+achievement.ultimate_mashed_vegetables.desc=Craft ultimate mashed vegetables
+achievement.protein=The Beginning of Life
+achievement.protein.desc=Craft protein
+achievement.super_protein=Frankenstein Rests
+achievement.super_protein.desc=Craft super protein
+achievement.ultimate_protein=Chiral Purity
+achievement.ultimate_protein.desc=Craft ultimate protein
+achievement.natural_poison=Novice Pharmacist
+achievement.natural_poison.desc=Craft natural poison
+achievement.brian_fry=Brian Fry
+achievement.brian_fry.desc=Drink natural poison
+achievement.super_poison=Heir of the Borgias
+achievement.super_poison.desc=Craft super poison
+achievement.royal_taster=Royal Taster
+achievement.royal_taster.desc=Drink super poison
+achievement.liquid_death=Mad Scientist
+achievement.liquid_death.desc=Craft liquid death
+achievement.taste_death=Taste Death
+achievement.taste_death.desc=Drink liquid death
+
 item.adv_icon_brian_fry.name=Achievement Icon
 item.adv_icon_royal_taster.name=Achievement Icon
 item.adv_icon_taste_death.name=Achievement Icon
@@ -370,6 +413,9 @@ gui.oneblockultima.misc.max_generator_members=Max generator members (0 - no limi
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator
+block.color=Color: %s
+block.dyed=Dyed
+block.nbt_tags=NBT tags: %s
 
 # Guide book
 item.obu_guide_book.name=OneBlock Guidebook

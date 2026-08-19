@@ -14,7 +14,8 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
             return JsonNull.INSTANCE;
         }
         JsonObject obj = new JsonObject();
-        for (String key : src.getKeySet()) {
+        for (Object keyObj : src.getKeySet()) {
+            String key = keyObj.toString();
             NBTBase tag = src.getTag(key);
             obj.add(key, serializeTag(tag, context));
         }
@@ -41,8 +42,9 @@ public class NBTTagCompoundAdapter implements JsonSerializer<NBTTagCompound>, Js
         } else if (tag instanceof NBTTagList) {
             NBTTagList list = (NBTTagList) tag;
             JsonArray array = new JsonArray();
-            for (int i = 0; i < list.tagCount(); i++) {
-                array.add(serializeTag(list.get(i), context));
+            NBTTagList copy = (NBTTagList) list.copy();
+            while (copy.tagCount() > 0) {
+                array.add(serializeTag(copy.removeTag(0), context));
             }
             return array;
         } else if (tag instanceof NBTTagIntArray) {

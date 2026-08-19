@@ -1,19 +1,16 @@
 package ru.defea.oneblockultima.gui;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
 import org.lwjgl.input.Keyboard;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.gui.containers.ContainerBlockPrices;
 import ru.defea.oneblockultima.gui.layout.*;
+import ru.defea.oneblockultima.util.RenderUtil;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,6 +78,7 @@ public class GuiBlockPrices extends GuiScreen
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void buildView()
     {
         buttonList.clear();
@@ -120,7 +118,7 @@ public class GuiBlockPrices extends GuiScreen
         } else {
             factory.panel(TRANSPARENT_DARK_GRAY_COLOR_1, DARK_GRAY_COLOR_1);
         }
-        factory.build(buttonList, fontRenderer);
+        factory.build(buttonList, fontRendererObj);
         statusBarActive = statusBar != null && statusBar.isActive();
     }
 
@@ -148,14 +146,8 @@ public class GuiBlockPrices extends GuiScreen
                     net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack(
                         ContainerBlockPrices.parseRegistryFromKey(entry.getKey()),
                         ContainerBlockPrices.parseMetaFromKey(entry.getKey()));
-                    if (!stack.isEmpty()) {
-                        GlStateManager.enableDepth();
-                        RenderHelper.enableGUIStandardItemLighting();
-                        GlStateManager.enableRescaleNormal();
-                        Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(stack, x + 4, y + 4);
-                        RenderHelper.disableStandardItemLighting();
-                        GlStateManager.disableRescaleNormal();
-                        GlStateManager.disableDepth();
+                    if (stack != null && stack.stackSize > 0) {
+                        RenderUtil.renderItemIntoGUI(fontRendererObj, stack, x + 4, y + 4);
                     }
 
                     String name = container.getBlockDisplayName(
@@ -195,8 +187,8 @@ public class GuiBlockPrices extends GuiScreen
                 public boolean mouseClicked(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton) {
                     String editText = I18n.format("gui.oneblockultima.config.edit");
                     String delText = I18n.format("gui.oneblockultima.config.remove");
-                    int editW = fontRenderer.getStringWidth(editText) + 8;
-                    int delW = fontRenderer.getStringWidth(delText) + 8;
+                    int editW = fontRendererObj.getStringWidth(editText) + 8;
+                    int delW = fontRendererObj.getStringWidth(delText) + 8;
                     int btnH = 14;
                     int btnGap = 3;
                     int usableRight = entryWidth - 10;
@@ -279,14 +271,8 @@ public class GuiBlockPrices extends GuiScreen
                 public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
                     if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
 
-                    if (!result.stack.isEmpty()) {
-                        GlStateManager.enableDepth();
-                        RenderHelper.enableGUIStandardItemLighting();
-                        GlStateManager.enableRescaleNormal();
-                        Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(result.stack, x + 2, y + 2);
-                        RenderHelper.disableStandardItemLighting();
-                        GlStateManager.disableRescaleNormal();
-                        GlStateManager.disableDepth();
+                    if (result.stack != null && result.stack.stackSize > 0) {
+                        RenderUtil.renderItemIntoGUI(fontRendererObj, result.stack, x + 2, y + 2);
                     }
 
                     String displayName = result.name != null && !result.name.isEmpty() ? result.name : result.registry;
@@ -324,7 +310,7 @@ public class GuiBlockPrices extends GuiScreen
         view.title("gui.oneblockultima.config.edit_title");
 
         net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack(container.getEditingRegistry(), container.getEditingMeta());
-        if (!stack.isEmpty())
+        if (stack != null && stack.stackSize > 0)
         {
             RowElement infoRow = view.row(Alignment.CENTER).gap(6);
             infoRow.add(new ItemStackElement(stack).size(24));
@@ -449,7 +435,7 @@ public class GuiBlockPrices extends GuiScreen
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
     {
         inClickDispatch = true;
         try
@@ -499,7 +485,7 @@ public class GuiBlockPrices extends GuiScreen
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    protected void keyTyped(char typedChar, int keyCode)
     {
         if (keyCode == Keyboard.KEY_ESCAPE)
         {
@@ -533,7 +519,7 @@ public class GuiBlockPrices extends GuiScreen
     }
 
     @Override
-    public void handleMouseInput() throws IOException
+    public void handleMouseInput()
     {
         super.handleMouseInput();
         int dWheel = org.lwjgl.input.Mouse.getEventDWheel();
@@ -558,6 +544,7 @@ public class GuiBlockPrices extends GuiScreen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void updateScreen()
     {
         super.updateScreen();
@@ -574,7 +561,7 @@ public class GuiBlockPrices extends GuiScreen
             if (factory != null)
             {
                 buttonList.clear();
-                factory.build(buttonList, fontRenderer);
+                factory.build(buttonList, fontRendererObj);
             }
             return;
         }
@@ -589,7 +576,7 @@ public class GuiBlockPrices extends GuiScreen
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        factory.draw(fontRendererObj, mouseX, mouseY, partialTicks);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 

@@ -1,49 +1,35 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.MapColor;
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
-
-import javax.annotation.Nonnull;
 
 public class BlockCompressedRedstoneBlock extends BlockCompressedBase {
     public static final int MAX_LEVEL = 6;
-    private static final PropertyInteger LEVEL = PropertyInteger.create("level", 0, MAX_LEVEL - 1);
 
     public BlockCompressedRedstoneBlock()
     {
-        super(Material.IRON, MapColor.TNT, "compressed_redstone_block");
-        this.setSoundType(SoundType.METAL);
+        super(Material.iron, "compressed_redstone_block", MAX_LEVEL);
+        this.setStepSound(Block.soundTypeMetal);
         this.setHardness(3.0F * 9.0F);
         this.setResistance(3.0F * 9.0F);
     }
 
     @Override
-    protected PropertyInteger getLevelProperty()
-    {
-        return LEVEL;
+    public float getExplosionResistance(Entity exploder) {
+        return Blocks.redstone_block.getExplosionResistance(exploder) * 9.0F;
     }
 
     @Override
-    public float getExplosionResistance(@Nonnull Entity exploder) {
-        return Blocks.REDSTONE_BLOCK.getExplosionResistance(exploder) * 9.0F;
-    }
-
-    @Override
-    public boolean canProvidePower(@Nonnull IBlockState state)
+    public boolean canProvidePower()
     {
         return true;
     }
 
     @Override
-    public int getWeakPower(@Nonnull IBlockState blockState, @Nonnull IBlockAccess blockAccess, @Nonnull BlockPos pos, @Nonnull EnumFacing side)
+    public int isProvidingWeakPower(IBlockAccess blockAccess, int x, int y, int z, int side)
     {
         return 15;
     }

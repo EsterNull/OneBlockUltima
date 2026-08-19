@@ -2,7 +2,8 @@ package ru.defea.oneblockultima.world;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.world.WorldSavedData;
+import net.minecraft.world.storage.MapStorage;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 public class SpawnConfigData extends WorldSavedData
@@ -24,7 +25,8 @@ public class SpawnConfigData extends WorldSavedData
 
     public static SpawnConfigData get(World world)
     {
-        SpawnConfigData data = (SpawnConfigData) world.getPerWorldStorage().getOrLoadData(
+        MapStorage storage = world.mapStorage;
+        SpawnConfigData data = (SpawnConfigData) storage.loadData(
                 SpawnConfigData.class,
                 DATA_NAME
         );
@@ -32,7 +34,7 @@ public class SpawnConfigData extends WorldSavedData
         if (data == null)
         {
             data = new SpawnConfigData();
-            world.getPerWorldStorage().setData(DATA_NAME, data);
+            storage.setData(DATA_NAME, data);
         }
 
         return data;
@@ -46,10 +48,9 @@ public class SpawnConfigData extends WorldSavedData
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound)
+    public void writeToNBT(NBTTagCompound compound)
     {
         compound.setBoolean("spawnInitialized", spawnInitialized);
         compound.setBoolean("spawnTeleportDone", spawnTeleportDone);
-        return compound;
     }
 }

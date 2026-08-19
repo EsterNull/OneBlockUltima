@@ -1,17 +1,12 @@
 package ru.defea.oneblockultima.gui;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import org.lwjgl.input.Keyboard;
@@ -19,9 +14,11 @@ import org.lwjgl.input.Mouse;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
 import ru.defea.oneblockultima.gui.layout.*;
+import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.util.ModelUtil;
+import ru.defea.oneblockultima.util.MobIdUtil;
+import ru.defea.oneblockultima.util.RenderUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -114,6 +111,7 @@ public class GuiSetsConfig extends GuiScreen
     private String pendingAddEntrySearchText = "";
 
     private final java.util.Map<String, Entity> mobEntityCache = new java.util.HashMap<>();
+    private final java.util.Set<String> loggedResolveFailures = new java.util.HashSet<>();
 
     public GuiSetsConfig(GuiScreen parent)
     {
@@ -127,6 +125,7 @@ public class GuiSetsConfig extends GuiScreen
         Keyboard.enableRepeatEvents(true);
         buttonList.clear();
         mobEntityCache.clear();
+        loggedResolveFailures.clear();
         buildView();
     }
 
@@ -152,12 +151,25 @@ public class GuiSetsConfig extends GuiScreen
         try
         {
             World renderWorld = ModelUtil.getWorldOrCreateDummy();
-            Entity entity = renderWorld != null ? EntityList.createEntityByIDFromName(new ResourceLocation(registry), renderWorld) : null;
+            String failReason = null;
+            Entity entity = null;
+            if (renderWorld == null)
+            {
+                failReason = "dummy world is null";
+            }
+            else
+            {
+                entity = MobIdUtil.createEntity(registry, renderWorld);
+                if (entity == null)
+                {
+                    failReason = "createEntity returned null";
+                }
+            }
             if (entity != null)
             {
-                if (entity.world == null)
+                if (entity.worldObj == null)
                 {
-                    entity.world = renderWorld;
+                    entity.worldObj = renderWorld;
                 }
                 if (nbtTags != null && !nbtTags.hasNoTags())
                 {
@@ -165,14 +177,23 @@ public class GuiSetsConfig extends GuiScreen
                 }
                 mobEntityCache.put(cacheKey, entity);
             }
+            else if (loggedResolveFailures.add(cacheKey))
+            {
+                OneBlockUltima.getRawLogger().warn("[GuiSetsConfig] Could not resolve mob {}: {}", registry, failReason);
+            }
             return entity;
         }
-        catch (Exception ignored)
+        catch (Exception e)
         {
+            if (loggedResolveFailures.add(cacheKey))
+            {
+                OneBlockUltima.getRawLogger().error("[GuiSetsConfig] Failed to resolve mob {}: {}", registry, e.toString());
+            }
             return null;
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void buildView()
     {
         saveScrollOffsets();
@@ -212,7 +233,7 @@ public class GuiSetsConfig extends GuiScreen
         int view = container.getCurrentView();
         switcher.replaceView(view, new ViewFactoryElement(factory));
         switcher.setView(view);
-        rootFactory.build(buttonList, fontRenderer);
+        rootFactory.build(buttonList, fontRendererObj);
     }
 
     private void saveScrollOffsets()
@@ -231,12 +252,12 @@ public class GuiSetsConfig extends GuiScreen
     {
         drawDefaultBackground();
 
-        if (factory != null) rootFactory.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        if (factory != null) rootFactory.draw(fontRendererObj, mouseX, mouseY, partialTicks);
 
         if (suppressMouseUntilRelease && Mouse.isButtonDown(0))
         {
-            for (GuiButton button : buttonList)
-                button.drawButton(mc, mouseX, mouseY, partialTicks);
+            for (Object obj : buttonList)
+                ((GuiButton) obj).drawButton(mc, mouseX, mouseY);
         }
         else
         {
@@ -248,20 +269,22 @@ public class GuiSetsConfig extends GuiScreen
         if (status != null && !status.isEmpty() && container.getStatusTimer() > 0)
         {
             int color = status.contains("error") || status.contains("failed") ? REDDISH_COLOR : GRAY_COLOR_5;
-            drawString(fontRenderer, status, width - fontRenderer.getStringWidth(status) - 10, 10, color);
+            drawString(fontRendererObj, status, width - fontRendererObj.getStringWidth(status) - 10, 10, color);
         }
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    @SuppressWarnings("unchecked")
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
     {
         if (suppressNextMouseClick) { suppressNextMouseClick = false; return; }
         if (suppressMouseUntilRelease) { suppressMouseUntilRelease = false; return; }
 
         if (mouseButton == 0)
         {
-            for (GuiButton button : new ArrayList<>(buttonList))
+            for (Object obj : buttonList.toArray())
             {
+                GuiButton button = (GuiButton) obj;
                 if (button.mousePressed(mc, mouseX, mouseY))
                 {
                     button.playPressSound(mc.getSoundHandler());
@@ -290,7 +313,7 @@ public class GuiSetsConfig extends GuiScreen
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    protected void keyTyped(char typedChar, int keyCode)
     {
         if (keyCode == Keyboard.KEY_ESCAPE)
         {
@@ -355,7 +378,7 @@ public class GuiSetsConfig extends GuiScreen
     }
 
     @Override
-    public void handleMouseInput() throws IOException
+    public void handleMouseInput()
     {
         super.handleMouseInput();
         int dWheel = Mouse.getEventDWheel();
@@ -662,8 +685,8 @@ public class GuiSetsConfig extends GuiScreen
                 public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
                     String editLabel = I18n.format("gui.oneblockultima.config.edit");
                     String delLabel = I18n.format("gui.oneblockultima.config.delete_set");
-                    int editW = fontRenderer.getStringWidth(editLabel) + 8;
-                    int delW = fontRenderer.getStringWidth(delLabel) + 8;
+                    int editW = fontRendererObj.getStringWidth(editLabel) + 8;
+                    int delW = fontRendererObj.getStringWidth(delLabel) + 8;
                     int right = entryWidth - 4;
                     int btnY = (entryHeight - 14) / 2;
 
@@ -785,15 +808,9 @@ public class GuiSetsConfig extends GuiScreen
                         final int fontHeight = fr.FONT_HEIGHT;
                         final int badgeTextPadding = 2;
 
-                        if (!stack.isEmpty())
+                        if (stack != null && stack.stackSize > 0)
                         {
-                            GlStateManager.enableDepth();
-                            RenderHelper.enableGUIStandardItemLighting();
-                            GlStateManager.enableRescaleNormal();
-                            Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(stack, x + cellPadding, y + cellPadding);
-                            RenderHelper.disableStandardItemLighting();
-                            GlStateManager.disableRescaleNormal();
-                            GlStateManager.disableDepth();
+                            RenderUtil.renderItemIntoGUI(fr, stack, x + cellPadding, y + cellPadding);
                         }
                         else
                         {
@@ -988,14 +1005,8 @@ public class GuiSetsConfig extends GuiScreen
                     if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
 
                     int iconSize = Math.min(16, height - 4);
-                    if (!result.isMob && !result.stack.isEmpty()) {
-                        GlStateManager.enableDepth();
-                        RenderHelper.enableGUIStandardItemLighting();
-                        GlStateManager.enableRescaleNormal();
-                        Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(result.stack, x + 2, y + 2);
-                        RenderHelper.disableStandardItemLighting();
-                        GlStateManager.disableRescaleNormal();
-                        GlStateManager.disableDepth();
+                    if (!result.isMob && result.stack != null && result.stack.stackSize > 0) {
+                        RenderUtil.renderItemIntoGUI(fr, result.stack, x + 2, y + 2);
                     } else if (result.isFluid && result.fluid != null) {
                         FluidElement fluidIcon = new FluidElement(result.fluid).size(iconSize);
                         fluidIcon.setComputedPosition(x + 2, y + 2);
@@ -1136,7 +1147,7 @@ public class GuiSetsConfig extends GuiScreen
                 meta = entry.meta;
             }
             ItemStack stack = container.getItemStackFromEntry(entry, meta);
-            if (!stack.isEmpty())
+            if (stack != null && stack.stackSize > 0)
             {
                 return new ItemStackElement(stack).size(previewSize);
             }
@@ -1333,7 +1344,7 @@ public class GuiSetsConfig extends GuiScreen
         };
         int formLabelWidth = 0;
         for (String s : labels) {
-            formLabelWidth = Math.max(formLabelWidth, fontRenderer.getStringWidth(s));
+            formLabelWidth = Math.max(formLabelWidth, fontRendererObj.getStringWidth(s));
         }
 
         if (showKeyField)

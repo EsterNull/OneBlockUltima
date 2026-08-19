@@ -2,8 +2,8 @@ package ru.defea.oneblockultima;
 
 import net.minecraft.init.Bootstrap;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.relauncher.Side;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class ModEventsWorldTickTest
         World world = TestDummyWorld.newWorld(false, OneBlockWorldType.ONE_BLOCK);
         TileEntityOneBlockGenerator generator = generatorWithWorldAndInvite(world, 1);
 
-        ModEvents.onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
+        new ModEvents().onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
 
         assertTrue("the single-tick invite must expire during the END world tick",
                 generator.getPendingInvites().isEmpty());
@@ -63,7 +63,7 @@ public class ModEventsWorldTickTest
         stale.addPendingInvite(INVITEE, OWNER, 100);
         TileEntityOneBlockGenerator.getActiveGenerators().add(stale);
 
-        ModEvents.onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
+        new ModEvents().onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
 
         assertTrue(TileEntityOneBlockGenerator.getActiveGenerators().contains(valid));
         assertFalse("a generator whose world is null (or another world) must be removed",
@@ -76,7 +76,7 @@ public class ModEventsWorldTickTest
         World world = TestDummyWorld.newWorld(true, OneBlockWorldType.ONE_BLOCK);
         TileEntityOneBlockGenerator generator = generatorWithWorldAndInvite(world, 1);
 
-        ModEvents.onWorldTick(new TickEvent.WorldTickEvent(Side.CLIENT, TickEvent.Phase.END, world));
+        new ModEvents().onWorldTick(new TickEvent.WorldTickEvent(Side.CLIENT, TickEvent.Phase.END, world));
 
         assertEquals("client-side worlds must be skipped entirely", 1, generator.getPendingInvites().size());
         assertTrue("a generator in a remote world is not added to the active set",
@@ -89,7 +89,7 @@ public class ModEventsWorldTickTest
         World world = TestDummyWorld.newWorld(false);
         TileEntityOneBlockGenerator generator = generatorWithWorldAndInvite(world, 1);
 
-        ModEvents.onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
+        new ModEvents().onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
 
         assertEquals("worlds with a terrain type other than OneBlock must be skipped", 1, generator.getPendingInvites().size());
     }
@@ -100,7 +100,7 @@ public class ModEventsWorldTickTest
         World world = TestDummyWorld.newWorld(false, OneBlockWorldType.ONE_BLOCK);
         TileEntityOneBlockGenerator generator = generatorWithWorldAndInvite(world, 1);
 
-        ModEvents.onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.START, world));
+        new ModEvents().onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.START, world));
 
         assertEquals("only END-phase ticks may process generators", 1, generator.getPendingInvites().size());
     }
@@ -111,7 +111,7 @@ public class ModEventsWorldTickTest
         TestDummyWorld.setWorld(generator, world);
         generator.setOwnerId(OWNER);
         generator.addPendingInvite(INVITEE, OWNER, inviteTicks);
-        generator.onLoad();
+        generator.validate();
         return generator;
     }
 }

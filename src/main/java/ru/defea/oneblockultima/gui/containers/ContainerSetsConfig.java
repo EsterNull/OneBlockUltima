@@ -6,7 +6,6 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
@@ -21,19 +20,19 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagLong;
 import net.minecraft.nbt.NBTTagShort;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
 import static net.minecraftforge.common.util.Constants.NBT.*;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.ModContainer;
+import cpw.mods.fml.common.registry.GameRegistry;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.util.MobIdUtil;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -89,14 +88,14 @@ public class ContainerSetsConfig
         public SearchResult(String registry, String name, String modId, Class<?> entityClass)
         {
             this.registry = registry; this.name = name; this.modId = modId;
-            this.stack = ItemStack.EMPTY; this.isMob = true; this.isFluid = false;
+            this.stack = null; this.isMob = true; this.isFluid = false;
             this.entityClass = entityClass; this.fluid = null;
         }
 
         public SearchResult(String registry, String name, String modId, Fluid fluid)
         {
             this.registry = registry; this.name = name; this.modId = modId;
-            this.stack = ItemStack.EMPTY; this.isMob = false; this.isFluid = true;
+            this.stack = null; this.isMob = false; this.isFluid = true;
             this.entityClass = null; this.fluid = fluid;
         }
     }
@@ -291,16 +290,22 @@ public class ContainerSetsConfig
         return entries;
     }
 
-    public Set<String> getExistingMobRegistries()
+    public Set<String> getExistingMobKeys()
     {
         Set<String> result = new HashSet<>();
         if (editingSet != null && editingSet.mobs != null)
         {
             for (BlockSetConfig.MobElementDefinition mob : editingSet.mobs)
                 if (mob != null && mob.registry != null && !mob.registry.isEmpty())
-                    result.add(mob.registry);
+                    result.add(mobKey(mob.registry, mob.nbtTags));
         }
         return result;
+    }
+
+    private static String mobKey(String registry, NBTTagCompound nbt)
+    {
+        String nbtString = (nbt == null || nbt.hasNoTags()) ? "" : nbt.toString();
+        return registry + "#" + nbtString;
     }
 
     public Set<String> getExistingBlockKeys()
@@ -476,11 +481,11 @@ public class ContainerSetsConfig
         {
             BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
             entry.registry = result.registry;
-            entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+            entry.meta = result.stack != null && result.stack.getItem() != null ? result.stack.getMetadata() : 0;
             entry.baseLevel = baseLevel;
             entry.baseChance = baseChance;
             entry.nbtTags = result.stack != null && result.stack.getTagCompound() != null
-                    ? result.stack.getTagCompound().copy()
+                    ? (NBTTagCompound) result.stack.getTagCompound().copy()
                     : new NBTTagCompound();
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             editingSet.blocks.add(entry);
@@ -512,11 +517,11 @@ public class ContainerSetsConfig
         {
             BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
             entry.registry = result.registry;
-            entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+            entry.meta = result.stack != null ? result.stack.getMetadata() : 0;
             entry.baseLevel = 1;
             entry.baseChance = 1;
             entry.nbtTags = result.stack != null && result.stack.getTagCompound() != null
-                    ? result.stack.getTagCompound().copy()
+                    ? (NBTTagCompound) result.stack.getTagCompound().copy()
                     : new NBTTagCompound();
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             editingSet.blocks.add(entry);
@@ -634,7 +639,7 @@ public class ContainerSetsConfig
     public NBTTagCompound getEditingEntryNbt()
     {
         NBTTagCompound tags = getEditingEntryNbtOrNull();
-        return tags != null ? tags.copy() : new NBTTagCompound();
+        return tags != null ? (NBTTagCompound) tags.copy() : new NBTTagCompound();
     }
 
     // ======== Structured NBT editor ========
@@ -704,6 +709,28 @@ public class ContainerSetsConfig
         }
     }
 
+    private static NBTBase getListElement(NBTTagList list, int index)
+    {
+        if (list == null || index < 0 || index >= list.tagCount()) return null;
+        try
+        {
+            Field field = NBTTagList.class.getDeclaredField("tagList");
+            field.setAccessible(true);
+            List<?> raw = (List<?>) field.get(list);
+            if (index < raw.size()) return (NBTBase) raw.get(index);
+        }
+        catch (Exception ignored) {}
+        switch (list.getTagType())
+        {
+            case TAG_COMPOUND: return list.getCompoundTagAt(index);
+            case TAG_STRING: return new NBTTagString(list.getStringTagAt(index));
+            case TAG_INT_ARRAY: return new NBTTagIntArray(list.getIntArrayAt(index));
+            case TAG_DOUBLE: return new NBTTagDouble(list.getDoubleAt(index));
+            case TAG_FLOAT: return new NBTTagFloat(list.getFloatAt(index));
+            default: return null;
+        }
+    }
+
     public List<NbtTagEntry> getNbtTags()
     {
         List<NbtTagEntry> result = new ArrayList<>();
@@ -711,9 +738,9 @@ public class ContainerSetsConfig
         if (node instanceof NBTTagCompound)
         {
             NBTTagCompound compound = (NBTTagCompound) node;
-            for (String key : compound.getKeySet())
+            for (Object keyObj : compound.getKeySet())
             {
-                result.add(new NbtTagEntry(key, -1, compound.getTag(key)));
+                result.add(new NbtTagEntry(String.valueOf(keyObj), -1, compound.getTag(String.valueOf(keyObj))));
             }
         }
         else if (node instanceof NBTTagList)
@@ -721,7 +748,7 @@ public class ContainerSetsConfig
             NBTTagList list = (NBTTagList) node;
             for (int i = 0; i < list.tagCount(); i++)
             {
-                result.add(new NbtTagEntry("[" + i + "]", i, list.get(i)));
+                result.add(new NbtTagEntry("[" + i + "]", i, getListElement(list, i)));
             }
         }
         else if (node instanceof NBTTagByteArray)
@@ -793,7 +820,7 @@ public class ContainerSetsConfig
         if (!(node instanceof NBTTagList)) return;
         NBTTagList list = (NBTTagList) node;
         if (index < 0 || index >= list.tagCount()) return;
-        NBTBase target = list.get(index);
+        NBTBase target = getListElement(list, index);
         if (!isContainer(target)) return;
         nbtEditorPath.add(new NbtEditorSegment(index));
     }
@@ -910,12 +937,13 @@ public class ContainerSetsConfig
         {
             NBTTagList list = (NBTTagList) node;
             if (index < 0 || index >= list.tagCount()) return;
-            if (isContainer(list.get(index))) return;
+            NBTBase target = getListElement(list, index);
+            if (target == null || isContainer(target)) return;
             nbtEditorEditingIndex = index;
             nbtEditorEditingKey = null;
-            nbtEditorAddType = list.get(index).getId();
+            nbtEditorAddType = target.getId();
             nbtEditorKeyText = "";
-            nbtEditorValueText = formatNbtValue(list.get(index));
+            nbtEditorValueText = formatNbtValue(target);
         }
         else if (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray)
         {
@@ -960,7 +988,7 @@ public class ContainerSetsConfig
         else if (nbtEditorEditingIndex >= 0 && node instanceof NBTTagList)
         {
             NBTTagList list = (NBTTagList) node;
-            if (nbtEditorEditingIndex < list.tagCount()) target = list.get(nbtEditorEditingIndex);
+            if (nbtEditorEditingIndex < list.tagCount()) target = getListElement(list, nbtEditorEditingIndex);
         }
         else if (nbtEditorEditingIndex >= 0 && (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray))
         {
@@ -983,7 +1011,7 @@ public class ContainerSetsConfig
                 if (nbtEditorEditingIndex >= 0)
                 {
                     if (nbtEditorEditingIndex >= list.tagCount()) return false;
-                    list.set(nbtEditorEditingIndex, value);
+                    list.setTag(nbtEditorEditingIndex, value);
                 }
                 else if (list.tagCount() == 0)
                 {
@@ -1124,7 +1152,8 @@ public class ContainerSetsConfig
                 if (!(node instanceof NBTTagList)) return null;
                 NBTTagList list = (NBTTagList) node;
                 if (seg.index < 0 || seg.index >= list.tagCount()) return null;
-                node = list.get(seg.index);
+                node = getListElement(list, seg.index);
+                if (node == null) return null;
             }
             else
             {
@@ -1150,7 +1179,7 @@ public class ContainerSetsConfig
         }
         if (parent instanceof NBTTagList)
         {
-            ((NBTTagList) parent).set(last.index, newNode);
+            ((NBTTagList) parent).setTag(last.index, newNode);
             return true;
         }
         return false;
@@ -1245,7 +1274,8 @@ public class ContainerSetsConfig
                 if (!(node instanceof NBTTagList)) return null;
                 NBTTagList list = (NBTTagList) node;
                 if (seg.index < 0 || seg.index >= list.tagCount()) return null;
-                node = list.get(seg.index);
+                node = getListElement(list, seg.index);
+                if (node == null) return null;
             }
             else
             {
@@ -1413,7 +1443,7 @@ public class ContainerSetsConfig
                     split.metas.add(selectedBlockMeta);
                     split.baseLevel = newLevel;
                     split.baseChance = newChance;
-                    split.nbtTags = entry.nbtTags.copy();
+                    split.nbtTags = (NBTTagCompound) entry.nbtTags.copy();
                     split.dropItem = entry.dropItem;
                     editingSet.blocks.add(editingCurrencyIndex + 1, split);
                 }
@@ -1589,13 +1619,16 @@ public class ContainerSetsConfig
         if (currentSearchType == SearchType.BLOCKS)
         {
             Set<String> existingBlocks = getExistingBlockKeys();
-            for (Block block : ForgeRegistries.BLOCKS)
+            for (Object keyObj : Block.blockRegistry.getKeys())
             {
-                ResourceLocation reg = block.getRegistryName();
-                if (reg == null) continue;
-                String registry = reg.toString();
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
+                Block block = (Block) Block.blockRegistry.getObject(keyObj);
+                if (block == null) continue;
+
+                String registry = getRegistryName(block);
+                if (registry == null) continue;
+                int colon = registry.indexOf(':');
+                String registryId = colon >= 0 ? registry.substring(colon + 1) : registry;
+                String modId = colon >= 0 ? registry.substring(0, colon) : "";
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
 
@@ -1610,13 +1643,13 @@ public class ContainerSetsConfig
                 }
 
                 Item item = Item.getItemFromBlock(block);
-                if (item == Items.AIR) continue;
-                NonNullList<ItemStack> subItems = NonNullList.create();
-                item.getSubItems(CreativeTabs.SEARCH, subItems);
+                if (item == null) continue;
+                List<ItemStack> subItems = new ArrayList<>();
+                item.getSubItems(item, CreativeTabs.tabAllSearch, subItems);
                 if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
                 for (ItemStack subStack : subItems)
                 {
-                    if (subStack.isEmpty() || subStack.getItem() != item) continue;
+                    if (subStack == null || subStack.getItem() != item) continue;
                     String name = "";
                     try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
                     if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
@@ -1625,50 +1658,66 @@ public class ContainerSetsConfig
                 }
             }
 
-            for (Item item : ForgeRegistries.ITEMS)
+            for (Object keyObj : Item.itemRegistry.getKeys())
             {
-                ResourceLocation reg = item.getRegistryName();
-                if (reg == null) continue;
+                Item item = (Item) Item.itemRegistry.getObject(keyObj);
+                if (item == null) continue;
                 if (item instanceof net.minecraft.item.ItemBlock) continue;
-                if (item == Items.AIR) continue;
-                String registry = reg.toString();
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
+                if (item instanceof ru.defea.oneblockultima.item.ItemAdvancementIcon) continue;
+
+                String registry = getRegistryName(item);
+                if (registry == null || "minecraft:air".equals(registry)) continue;
+                int colon = registry.indexOf(':');
+                String registryId = colon >= 0 ? registry.substring(colon + 1) : registry;
+                String modId = colon >= 0 ? registry.substring(0, colon) : "";
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-                String name = "";
-                try { name = new ItemStack(item, 1).getDisplayName(); } catch (Exception ignored) {}
-                if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
-                if (existingBlocks.contains(registry + "@0")) continue;
-                searchResults.add(new SearchResult(registry, name, modId, new ItemStack(item, 1)));
+
+                // Enumerate every metadata variant (same as the economy search) so
+                // damage-based items such as the AE2 presses are found by their
+                // own localized names and added with the correct metadata.
+                List<ItemStack> subItems = new ArrayList<>();
+                item.getSubItems(item, CreativeTabs.tabAllSearch, subItems);
+                if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
+                for (ItemStack subStack : subItems)
+                {
+                    if (subStack == null || subStack.getItem() != item) continue;
+                    String name = "";
+                    try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
+                    if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
+                    if (existingBlocks.contains(registry + "@" + subStack.getMetadata())) continue;
+                    searchResults.add(new SearchResult(registry, name, modId, subStack.copy()));
+                }
             }
         }
 
         if (currentSearchType == SearchType.MOBS)
         {
-            Set<String> existingMobs = getExistingMobRegistries();
-            Set<ResourceLocation> entityNames = EntityList.getEntityNameList();
-            for (ResourceLocation reg : entityNames) {
-                String registry = reg.toString();
-                if (existingMobs.contains(registry)) continue;
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
+            Set<String> existingMobs = getExistingMobKeys();
+            Set<String> entityNames = new HashSet<>();
+            for (Object nameObj : EntityList.stringToClassMapping.keySet())
+                entityNames.add(String.valueOf(nameObj));
+            for (String entityName : entityNames)
+            {
+                String registry = MobIdUtil.toNamespacedRegistry(entityName);
+                if (existingMobs.contains(mobKey(entityName, null))) continue;
+                if (existingMobs.contains(mobKey(registry, null))) continue;
+                String registryId = registry;
+                String modId = "minecraft";
+                int colon = registry.indexOf(':');
+                if (colon >= 0)
+                {
+                    modId = registry.substring(0, colon);
+                    registryId = registry.substring(colon + 1);
+                }
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-                String name = registry;
-                try {
-                    String entityName = EntityList.getTranslationName(reg);
-                    if (entityName != null && !entityName.isEmpty()) {
-                        String translationKey = "entity." + entityName + ".name";
-                        String localized = I18n.format(translationKey);
-                        if (!localized.equals(translationKey)) name = localized;
-                    }
-                } catch (Exception ignored) {
-                }
+                String name = MobIdUtil.getLocalizedName(registry);
+                if (name == null || name.isEmpty()) name = registry;
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
-                Class<?> entityClass = EntityList.getClass(reg);
-                if (entityClass != null && EntityLivingBase.class.isAssignableFrom(entityClass))
-                    searchResults.add(new SearchResult(registry, name, modId, entityClass));
+                Object classObj = EntityList.stringToClassMapping.get(entityName);
+                if (classObj instanceof Class && EntityLivingBase.class.isAssignableFrom((Class<?>) classObj))
+                    searchResults.add(new SearchResult(registry, name, modId, (Class<?>) classObj));
             }
         }
 
@@ -1709,34 +1758,27 @@ public class ContainerSetsConfig
 
     public ItemStack getItemStackFromEntry(BlockSetConfig.BlockElementDefinition entry, int meta)
     {
-        ItemStack stack = ItemStack.EMPTY;
+        ItemStack stack = null;
         try
         {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(entry.registry));
+            Block block = (Block) Block.blockRegistry.getObject(entry.registry);
             if (block != null)
             {
                 Fluid fluid = getFluidForRegistry(entry.registry);
-                if (fluid != null) return ItemStack.EMPTY;
-                //noinspection deprecation
-                net.minecraft.block.state.IBlockState state = block.getStateFromMeta(meta);
-                //noinspection DataFlowIssue
-                stack = block.getPickBlock(state, null, null, null, null);
-                if (stack.isEmpty())
-                {
-                    Item item = Item.getItemFromBlock(block);
-                    if (item != Items.AIR) stack = new ItemStack(item, 1, meta);
-                }
+                if (fluid != null) return null;
+                Item item = Item.getItemFromBlock(block);
+                if (item != null) stack = new ItemStack(item, 1, meta);
             }
-            if (stack.isEmpty())
+            if (stack == null)
             {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.registry));
-                if (item != null && item != Items.AIR) stack = new ItemStack(item, 1, meta);
+                Item item = (Item) Item.itemRegistry.getObject(entry.registry);
+                if (item != null) stack = new ItemStack(item, 1, meta);
             }
         } catch (Exception ignored) {}
-        if (!stack.isEmpty() && entry.nbtTags != null && !entry.nbtTags.hasNoTags())
+        if (stack != null && entry.nbtTags != null && !entry.nbtTags.hasNoTags())
         {
             stack = stack.copy();
-            stack.setTagCompound(entry.nbtTags.copy());
+            stack.setTagCompound((NBTTagCompound) entry.nbtTags.copy());
         }
         return stack;
     }
@@ -1745,11 +1787,29 @@ public class ContainerSetsConfig
     {
         try
         {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
+            Block block = (Block) Block.blockRegistry.getObject(registry);
             if (block == null) return null;
             if (block instanceof IFluidBlock) return ((IFluidBlock) block).getFluid();
             return FluidRegistry.lookupFluidForBlock(block);
         } catch (Exception ignored) { return null; }
+    }
+
+    private static String getRegistryName(Block block)
+    {
+        if (block == null) return null;
+        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(block);
+        if (id != null) return id.modId + ":" + id.name;
+        Object name = Block.blockRegistry.getNameForObject(block);
+        return name != null ? String.valueOf(name) : null;
+    }
+
+    private static String getRegistryName(Item item)
+    {
+        if (item == null) return null;
+        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(item);
+        if (id != null) return id.modId + ":" + id.name;
+        Object name = Item.itemRegistry.getNameForObject(item);
+        return name != null ? String.valueOf(name) : null;
     }
 
     public static String getLocalizedSetName(BlockSetConfig.BlockSetDefinition set)
@@ -1771,7 +1831,7 @@ public class ContainerSetsConfig
     {
         try
         {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(entry.registry));
+            Block block = (Block) Block.blockRegistry.getObject(entry.registry);
             if (block != null)
             {
                 if (block instanceof IFluidBlock || FluidRegistry.lookupFluidForBlock(block) != null)
@@ -1780,7 +1840,7 @@ public class ContainerSetsConfig
                     if (fluid != null) return fluid.getLocalizedName(new FluidStack(fluid, 1000));
                 }
                 ItemStack stack = getItemStackFromEntry(entry, meta);
-                if (!stack.isEmpty()) return stack.getDisplayName();
+                if (stack != null) return stack.getDisplayName();
             }
         } catch (Exception ignored) {}
         return entry.registry + ":" + meta;
@@ -1788,18 +1848,7 @@ public class ContainerSetsConfig
 
     public String getLocalizedNameForMob(BlockSetConfig.MobElementDefinition entry)
     {
-        try
-        {
-            ResourceLocation reg = new ResourceLocation(entry.registry);
-            String entityName = EntityList.getTranslationName(reg);
-            if (entityName != null && !entityName.isEmpty())
-            {
-                String key = "entity." + entityName + ".name";
-                String loc = I18n.format(key);
-                if (!loc.equals(key)) return loc;
-            }
-        } catch (Exception ignored) {}
-        return entry.registry;
+        return MobIdUtil.getLocalizedName(entry.registry);
     }
 
     public String getRequiredModsButtonLabel()

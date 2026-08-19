@@ -1,35 +1,28 @@
 package ru.defea.oneblockultima.util;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockCrops;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.tileentity.TileEntityChest;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
+import net.minecraft.util.WeightedRandomChestContent;
 import net.minecraft.world.World;
-import net.minecraft.world.storage.loot.LootContext;
-import net.minecraft.world.storage.loot.LootTable;
-import net.minecraft.world.storage.loot.LootTableManager;
+import net.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import cpw.mods.fml.common.registry.GameRegistry;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.BlockCustomBreakable;
 import ru.defea.oneblockultima.block.ModBlocks;
@@ -39,9 +32,6 @@ import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-
-import static net.minecraft.item.ItemStack.DECIMALFORMAT;
 
 public final class BlockUtil
 {
@@ -49,14 +39,54 @@ public final class BlockUtil
     {
     }
 
-    public static IBlockState getReplacementStateForGeneratorPlacement(IBlockState state, IBlockState belowState)
+    public static String getRegistryString(Block block)
     {
-        if (state == null || belowState == null || belowState.getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
+        if (block == null)
         {
-            return state;
+            return "null";
+        }
+        try
+        {
+            GameRegistry.UniqueIdentifier uid = GameRegistry.findUniqueIdentifierFor(block);
+            if (uid != null)
+            {
+                return uid.modId + ":" + uid.name;
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+        return block.getUnlocalizedName();
+    }
+
+    public static String getRegistryString(Item item)
+    {
+        if (item == null)
+        {
+            return "null";
+        }
+        try
+        {
+            GameRegistry.UniqueIdentifier uid = GameRegistry.findUniqueIdentifierFor(item);
+            if (uid != null)
+            {
+                return uid.modId + ":" + uid.name;
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+        return item.getUnlocalizedName();
+    }
+
+    public static Block getReplacementBlockForGeneratorPlacement(Block block, World world, int x, int y, int z)
+    {
+        if (block == null || world == null || world.getBlock(x, y - 1, z) != ModBlocks.ONE_BLOCK_GENERATOR)
+        {
+            return block;
         }
 
-        return toBreakableIfUnbreakable(state);
+        return toBreakableIfUnbreakable(block);
     }
 
     /**
@@ -64,34 +94,20 @@ public final class BlockUtil
      * so it can be mined like obsidian. All other blocks are returned unchanged.
      */
     @Nullable
-    public static IBlockState toBreakableIfUnbreakable(IBlockState state)
+    public static Block toBreakableIfUnbreakable(Block block)
     {
-        if (state == null || isBreakable(state.getBlock()))
+        if (block == null || isBreakable(block))
         {
-            return state;
+            return block;
         }
 
-        BlockCustomBreakable substitute = ModBlocks.getBreakableFor(state.getBlock());
-        if (substitute == null)
-        {
-            return state;
-        }
-
-        int meta;
-        try
-        {
-            meta = state.getBlock().getMetaFromState(state) & 15;
-        }
-        catch (Exception ex)
-        {
-            meta = 0;
-        }
-        return substitute.getDefaultState().withProperty(BlockCustomBreakable.ORIGINAL_META, meta);
+        BlockCustomBreakable substitute = ModBlocks.getBreakableFor(block);
+        return substitute == null ? block : substitute;
     }
 
     public static boolean isBreakable(Block block)
     {
-        if (block == null || block == Blocks.AIR || block instanceof BlockCustomBreakable)
+        if (block == null || block == Blocks.air || block instanceof BlockCustomBreakable)
         {
             return true;
         }
@@ -101,8 +117,7 @@ public final class BlockUtil
         }
         try
         {
-            //noinspection DataFlowIssue
-            return !(block.getDefaultState().getBlockHardness(null, null) < 0.0F);
+            return block.getBlockHardness(null, 0, 0, 0) >= 0.0F;
         }
         catch (Exception ex)
         {
@@ -111,96 +126,34 @@ public final class BlockUtil
     }
 
     /**
-     * Places a block with NBT tags applied atomically.
-     * Tags are applied BEFORE placing the block for BlockContainer blocks.
+     * Places a block with NBT tags applied. Tags are applied AFTER the block is placed,
+     * by writing them into the block's TileEntity when present.
      */
-    public static void placeBlockWithNBT(World world, BlockPos pos, IBlockState state, @javax.annotation.Nullable NBTTagCompound nbtTags)
+    public static void placeBlockWithNBT(World world, int x, int y, int z, Block block, int meta, @Nullable NBTTagCompound nbtTags)
     {
-        if (world == null || pos == null || state == null)
+        if (world == null || block == null)
         {
             return;
         }
 
-        // Handle liquids
-        if (state.getMaterial().isLiquid())
+        if (block.getMaterial().isLiquid())
         {
-            state = normalizeLiquidState(state);
-        }
-
-        state = getReplacementStateForGeneratorPlacement(state, world.getBlockState(pos.down()));
-        Block block = state.getBlock();
-        
-        // For BlockContainer blocks with NBT tags - create the TileEntity BEFORE placing
-        TileEntity preCreatedTileEntity = null;
-        if (nbtTags != null && !nbtTags.hasNoTags() && block instanceof net.minecraft.block.BlockContainer)
-        {
-            try
+            block = normalizeLiquidBlock(block);
+            if (block == null)
             {
-                // Create a TileEntity with full NBT data BEFORE placing the block
-                TileEntity tileEntity = ((net.minecraft.block.BlockContainer) block).createNewTileEntity(world, block.getMetaFromState(state));
-                
-                if (tileEntity != null)
-                {
-                    for (String key : nbtTags.getKeySet())
-                    {
-                        NBTBase tag = nbtTags.getTag(key);
-                        tileEntity.getTileData().setTag(key, tag.copy());
-                    }
-
-                    tileEntity.setPos(pos);
-                    world.setTileEntity(pos, tileEntity);
-
-                    if (tileEntity instanceof IInventory) {
-                        IInventory inv = (IInventory) tileEntity;
-                        NBTTagCompound nbt = tileEntity.getTileData();
-                        String lootTableKey = "LootTable";
-
-                        if (nbt.hasKey(lootTableKey, Constants.NBT.TAG_STRING)) {
-                            String lootTableId = nbt.getString(lootTableKey);
-                            ResourceLocation loc = new ResourceLocation(lootTableId);
-
-                            LootTableManager manager = world.getLootTableManager();
-                            LootTable table = manager.getLootTableFromLocation(loc);
-
-                            LootContext.Builder contextBuilder = new LootContext.Builder((net.minecraft.world.WorldServer) world);
-                            LootContext context = contextBuilder.build();
-
-                            table.fillInventory(inv, world.rand, context);
-                            nbt.removeTag(lootTableKey);
-                            preCreatedTileEntity = tileEntity;
-                            tileEntity.markDirty();
-                        }
-                    }
-
-                    OneBlockUltima.getLogger().info("[Generator] Pre-configured TileEntity at {} with NBT tags", pos);
-                }
-                else
-                {
-                    OneBlockUltima.getLogger().warn("[Generator] createNewTileEntity returned null for block {}", block.getRegistryName());
-                }
-            }
-            catch (Exception e)
-            {
-                OneBlockUltima.getLogger().error("[Generator] Failed to pre-configure TileEntity for block at {}", pos, e);
+                return;
             }
         }
-        
+
+        block = getReplacementBlockForGeneratorPlacement(block, world, x, y, z);
+
         // Place the block
-        world.setBlockState(pos, state, 3);
-        if (preCreatedTileEntity != null)
-        {
-            // Remove the old TileEntity if present
-            world.removeTileEntity(pos);
-            // Set ours
-            world.setTileEntity(pos, preCreatedTileEntity);
-            preCreatedTileEntity.setPos(pos);
-            preCreatedTileEntity.markDirty();
-        }
+        world.setBlock(x, y, z, block, meta, 3);
 
-        // If NBT tags exist but the block is not a BlockContainer, try applying them after placement
-        if (nbtTags != null && !nbtTags.hasNoTags() && !(block instanceof net.minecraft.block.BlockContainer))
+        // If NBT tags exist, apply them after placement
+        if (nbtTags != null && !nbtTags.hasNoTags())
         {
-            applyNbtToBlock(world, pos, nbtTags);
+            applyNbtToBlock(world, x, y, z, nbtTags);
         }
     }
 
@@ -217,11 +170,11 @@ public final class BlockUtil
 
             if (nbttagcompound.hasKey("LocName", Constants.NBT.TAG_STRING))
             {
-                return net.minecraft.util.text.translation.I18n.translateToLocal(nbttagcompound.getString("LocName"));
+                return StatCollector.translateToLocal(nbttagcompound.getString("LocName"));
             }
         }
 
-        return net.minecraft.util.text.translation.I18n.translateToLocal(net.minecraft.util.text.translation.I18n.translateToLocal(block.getUnlocalizedName()) + ".name").trim();
+        return StatCollector.translateToLocal(StatCollector.translateToLocal(block.getUnlocalizedName()) + ".name").trim();
     }
 
     public static List<String> getTooltip(BlockSetConfig.BlockEntryDefinition hoveredEntry, boolean isAdvanced) {
@@ -269,7 +222,7 @@ public final class BlockUtil
 
         try {
             assert nbtTagCompound != null;
-            if (nbtTagCompound.hasKey("HideFlags", Constants.NBT.TAG_ANY_NUMERIC)) {
+            if (nbtTagCompound.hasKey("HideFlags")) {
                 i1 = nbtTagCompound.getInteger("HideFlags");
             }
         } catch (Exception ignored) {}
@@ -282,7 +235,7 @@ public final class BlockUtil
                     NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(j);
                     int k = nbttagcompound.getShort("id");
                     int l = nbttagcompound.getShort("lvl");
-                    Enchantment enchantment = Enchantment.getEnchantmentByID(k);
+                    Enchantment enchantment = (k >= 0 && k < Enchantment.enchantmentsList.length) ? Enchantment.enchantmentsList[k] : null;
 
                     if (enchantment != null) {
                         tooltip.add(enchantment.getTranslatedName(l));
@@ -300,11 +253,11 @@ public final class BlockUtil
             {
                 if (isAdvanced)
                 {
-                    tooltip.add(net.minecraft.util.text.translation.I18n.translateToLocalFormatted("block.color", String.format("#%06X", nbttagcompound1.getInteger("color"))));
+                    tooltip.add(StatCollector.translateToLocalFormatted("block.color", String.format("#%06X", nbttagcompound1.getInteger("color"))));
                 }
                 else
                 {
-                    tooltip.add(TextFormatting.ITALIC + net.minecraft.util.text.translation.I18n.translateToLocal("block.dyed"));
+                    tooltip.add(EnumChatFormatting.ITALIC + StatCollector.translateToLocal("block.dyed"));
                 }
             }
 
@@ -312,49 +265,11 @@ public final class BlockUtil
             {
                 NBTTagList nbttaglist3 = nbttagcompound1.getTagList("Lore", 8);
 
-                if (!nbttaglist3.hasNoTags())
+                if (nbttaglist3.tagCount() > 0)
                 {
                     for (int l1 = 0; l1 < nbttaglist3.tagCount(); ++l1)
                     {
-                        tooltip.add(TextFormatting.DARK_PURPLE + "" + TextFormatting.ITALIC + nbttaglist3.getStringTagAt(l1));
-                    }
-                }
-            }
-        }
-
-        for (EntityEquipmentSlot entityequipmentslot : EntityEquipmentSlot.values())
-        {
-            Multimap<String, AttributeModifier> multimap = getAttributeModifiers(entityequipmentslot, nbtTagCompound);
-
-            if (!multimap.isEmpty() && (i1 & 2) == 0)
-            {
-                tooltip.add("");
-                tooltip.add(net.minecraft.util.text.translation.I18n.translateToLocal("block.modifiers." + entityequipmentslot.getName()));
-
-                for (Map.Entry<String, AttributeModifier> entry : multimap.entries())
-                {
-                    AttributeModifier attributemodifier = entry.getValue();
-                    double d0 = attributemodifier.getAmount();
-
-                    double d1;
-
-                    if (attributemodifier.getOperation() != 1 && attributemodifier.getOperation() != 2)
-                    {
-                        d1 = d0;
-                    }
-                    else
-                    {
-                        d1 = d0 * 100.0D;
-                    }
-
-                    if (d0 > 0.0D)
-                    {
-                        tooltip.add(TextFormatting.BLUE + " " + net.minecraft.util.text.translation.I18n.translateToLocalFormatted("attribute.modifier.plus." + attributemodifier.getOperation(), DECIMALFORMAT.format(d1), net.minecraft.util.text.translation.I18n.translateToLocal("attribute.name." + entry.getKey())));
-                    }
-                    else if (d0 < 0.0D)
-                    {
-                        d1 = d1 * -1.0D;
-                        tooltip.add(TextFormatting.RED + " " + net.minecraft.util.text.translation.I18n.translateToLocalFormatted("attribute.modifier.take." + attributemodifier.getOperation(), DECIMALFORMAT.format(d1), net.minecraft.util.text.translation.I18n.translateToLocal("attribute.name." + entry.getKey())));
+                        tooltip.add(EnumChatFormatting.DARK_PURPLE + "" + EnumChatFormatting.ITALIC + nbttaglist3.getStringTagAt(l1));
                     }
                 }
             }
@@ -362,66 +277,35 @@ public final class BlockUtil
 
         if (isAdvanced)
         {
-
-            tooltip.add(TextFormatting.DARK_GRAY + Block.REGISTRY.getNameForObject(resolvedBlock).toString());
+            tooltip.add(EnumChatFormatting.DARK_GRAY + getRegistryString(resolvedBlock));
 
             if (hasDisplayName)
             {
-                tooltip.add(TextFormatting.DARK_GRAY + net.minecraft.util.text.translation.I18n.translateToLocalFormatted("block.nbt_tags", nbtTagCompound.getKeySet().size()));
+                tooltip.add(EnumChatFormatting.DARK_GRAY + StatCollector.translateToLocalFormatted("block.nbt_tags", nbtTagCompound.getKeySet().size()));
             }
         }
 
         return tooltip;
     }
 
-    public static Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot equipmentSlot, NBTTagCompound nbtTagCompound)
-    {
-        Multimap<String, AttributeModifier> multimap;
-        boolean hasTagCompound = nbtTagCompound != null;
-
-        if (hasTagCompound && nbtTagCompound.hasKey("AttributeModifiers", Constants.NBT.TAG_LIST))
-        {
-            multimap = HashMultimap.create();
-            NBTTagList nbttaglist = nbtTagCompound.getTagList("AttributeModifiers", Constants.NBT.TAG_LIST);
-
-            for (int i = 0; i < nbttaglist.tagCount(); ++i)
-            {
-                NBTTagCompound nbttagcompound = nbttaglist.getCompoundTagAt(i);
-                AttributeModifier attributemodifier = SharedMonsterAttributes.readAttributeModifierFromNBT(nbttagcompound);
-
-                if (attributemodifier != null && (!nbttagcompound.hasKey("Slot", Constants.NBT.TAG_STRING) || nbttagcompound.getString("Slot").equals(equipmentSlot.getName())) && attributemodifier.getID().getLeastSignificantBits() != 0L && attributemodifier.getID().getMostSignificantBits() != 0L)
-                {
-                    multimap.put(nbttagcompound.getString("AttributeName"), attributemodifier);
-                }
-            }
-        }
-        else
-        {
-            multimap = HashMultimap.create();
-        }
-
-        return multimap;
-    }
-
     /**
      * Normalizes liquids (water and lava) to their still states
      */
-    private static IBlockState normalizeLiquidState(IBlockState state)
+    private static Block normalizeLiquidBlock(Block block)
     {
-        if (!state.getMaterial().isLiquid())
+        if (block == null || !block.getMaterial().isLiquid())
         {
-            return state;
+            return block;
         }
 
-        Block block = state.getBlock();
-        if (block == Blocks.FLOWING_WATER)
+        if (block == Blocks.flowing_water)
         {
-            return Blocks.WATER.getDefaultState();
+            return Blocks.water;
         }
 
-        if (block == Blocks.FLOWING_LAVA)
+        if (block == Blocks.flowing_lava)
         {
-            return Blocks.LAVA.getDefaultState();
+            return Blocks.lava;
         }
 
         if (block instanceof IFluidBlock)
@@ -432,7 +316,7 @@ public final class BlockUtil
                 Block stillBlock = fluid.getBlock();
                 if (stillBlock != null && stillBlock != block)
                 {
-                    return stillBlock.getDefaultState();
+                    return stillBlock;
                 }
             }
         }
@@ -443,26 +327,26 @@ public final class BlockUtil
             Block stillBlock = fluid.getBlock();
             if (stillBlock != null && stillBlock != block)
             {
-                return stillBlock.getDefaultState();
+                return stillBlock;
             }
         }
 
-        return state;
+        return block;
     }
 
     /**
      * Universal application of NBT tags to the block at the given position
      */
-    public static void applyNbtToBlock(World world, BlockPos pos, NBTTagCompound nbtTags)
+    public static void applyNbtToBlock(World world, int x, int y, int z, NBTTagCompound nbtTags)
     {
-        if (world == null || pos == null || nbtTags == null || nbtTags.hasNoTags())
+        if (world == null || nbtTags == null || nbtTags.hasNoTags())
         {
             return;
         }
 
         try
         {
-            TileEntity tileEntity = world.getTileEntity(pos);
+            TileEntity tileEntity = world.getTileEntity(x, y, z);
             if (tileEntity != null)
             {
                 // Read the current TileEntity state
@@ -470,8 +354,9 @@ public final class BlockUtil
                 tileEntity.writeToNBT(tileNbt);
 
                 // Add all tags from nbtTags into tileNbt (overwrite if already present)
-                for (String key : nbtTags.getKeySet())
+                for (Object keyObj : nbtTags.getKeySet())
                 {
+                    String key = keyObj.toString();
                     NBTBase tag = nbtTags.getTag(key);
                     // noinspection ConstantConditions
                     if (tag != null)
@@ -484,50 +369,166 @@ public final class BlockUtil
                 tileEntity.readFromNBT(tileNbt);
                 tileEntity.markDirty();
 
-                // Update the block
-                IBlockState state = world.getBlockState(pos);
-                world.notifyBlockUpdate(pos, state, state, 3);
+                // 1.7.10 chests ignore the 1.12-style LootTable tag, so generate
+                // the contents manually through Forge's ChestGenHooks.
+                if (tileEntity instanceof TileEntityChest && nbtTags.hasKey("LootTable"))
+                {
+                    fillChestLoot(world, (TileEntityChest) tileEntity, nbtTags.getString("LootTable"));
+                }
 
-                OneBlockUltima.getLogger().info("[Generator] Applied NBT tags to TileEntity at {}: {}", pos, nbtTags);
+                // Update the block
+                world.markBlockForUpdate(x, y, z);
+
+                OneBlockUltima.getLogger().info("[Generator] Applied NBT tags to TileEntity at ({}, {}, {}): {}", x, y, z, nbtTags);
             }
             else
             {
-                OneBlockUltima.getLogger().debug("[Generator] No TileEntity found at {} for NBT application", pos);
+                OneBlockUltima.getLogger().debug("[Generator] No TileEntity found at ({}, {}, {}) for NBT application", x, y, z);
             }
         }
         catch (Exception e)
         {
-            OneBlockUltima.getLogger().error("[Generator] Failed to apply NBT tags to block at {}", pos, e);
+            OneBlockUltima.getLogger().error("[Generator] Failed to apply NBT tags to block at ({}, {}, {})", x, y, z, e);
         }
     }
 
-    public static boolean isFullBlock(net.minecraft.block.Block block, int meta)
+    /**
+     * Maps a 1.12-style loot table path ("minecraft:chests/simple_dungeon") to
+     * the category key Forge's {@link ChestGenHooks} knows in 1.7.10. Unknown
+     * tables (woodland_mansion, end_city_treasure, nether_bridge) fall back to
+     * the dungeon chest loot.
+     */
+    private static String mapLootTableToCategory(String lootTable)
+    {
+        if (lootTable == null)
+        {
+            return ChestGenHooks.DUNGEON_CHEST;
+        }
+        String key = lootTable.trim().toLowerCase(Locale.ROOT);
+        if (key.endsWith("desert_pyramid"))
+        {
+            return ChestGenHooks.PYRAMID_DESERT_CHEST;
+        }
+        if (key.endsWith("village_blacksmith"))
+        {
+            return ChestGenHooks.VILLAGE_BLACKSMITH;
+        }
+        if (key.endsWith("jungle_temple"))
+        {
+            return ChestGenHooks.PYRAMID_JUNGLE_CHEST;
+        }
+        if (key.endsWith("abandoned_mineshaft"))
+        {
+            return ChestGenHooks.MINESHAFT_CORRIDOR;
+        }
+        if (key.endsWith("stronghold_corridor"))
+        {
+            return ChestGenHooks.STRONGHOLD_CORRIDOR;
+        }
+        if (key.endsWith("stronghold_crossing"))
+        {
+            return ChestGenHooks.STRONGHOLD_CROSSING;
+        }
+        if (key.endsWith("stronghold_library"))
+        {
+            return ChestGenHooks.STRONGHOLD_LIBRARY;
+        }
+        // simple_dungeon and everything without a 1.7.10 equivalent
+        return ChestGenHooks.DUNGEON_CHEST;
+    }
+
+    /**
+     * Fills a chest with loot generated by {@link ChestGenHooks}, merging into
+     * any existing stacks and placing the rest into random empty slots.
+     */
+    private static void fillChestLoot(World world, TileEntityChest chest, String lootTable)
     {
         try
         {
-            net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
-            if (item == Items.AIR)
+            String category = mapLootTableToCategory(lootTable);
+            WeightedRandomChestContent[] weightedContents = ChestGenHooks.getItems(category, world.rand);
+            if (weightedContents == null || weightedContents.length == 0)
+            {
+                return;
+            }
+
+            int size = chest.getSizeInventory();
+            if (size <= 0)
+            {
+                return;
+            }
+
+            for (WeightedRandomChestContent content : weightedContents)
+            {
+                if (content == null || content.theItemId == null)
+                {
+                    continue;
+                }
+
+                ItemStack[] generated = ChestGenHooks.generateStacks(world.rand, content.theItemId,
+                        content.theMinimumChanceToGenerateItem, content.theMaximumChanceToGenerateItem);
+
+                for (ItemStack stack : generated)
+                {
+                    if (stack == null || stack.stackSize <= 0)
+                    {
+                        continue;
+                    }
+
+                    int remaining = stack.stackSize;
+
+                    // Merge into existing stacks of the same item first
+                    for (int i = 0; i < size && remaining > 0; i++)
+                    {
+                        ItemStack existing = chest.getStackInSlot(i);
+                        if (existing != null && existing.isItemEqual(stack)
+                                && ItemStack.areItemStackTagsEqual(existing, stack)
+                                && existing.stackSize < existing.getMaxStackSize())
+                        {
+                            int move = Math.min(existing.getMaxStackSize() - existing.stackSize, remaining);
+                            existing.stackSize += move;
+                            chest.setInventorySlotContents(i, existing);
+                            remaining -= move;
+                        }
+                    }
+
+                    // Place the rest into random empty slots (bounded to avoid endless loops)
+                    int tries = size * 3;
+                    while (remaining > 0 && tries-- > 0)
+                    {
+                        int slot = world.rand.nextInt(size);
+                        if (chest.getStackInSlot(slot) == null)
+                        {
+                            ItemStack placed = stack.copy();
+                            placed.stackSize = Math.min(remaining, stack.getMaxStackSize());
+                            chest.setInventorySlotContents(slot, placed);
+                            remaining -= placed.stackSize;
+                        }
+                    }
+                }
+            }
+
+            chest.markDirty();
+            world.markBlockForUpdate(chest.xCoord, chest.yCoord, chest.zCoord);
+            OneBlockUltima.getLogger().info("[Generator] Filled chest at ({}, {}, {}) with loot from {}", chest.xCoord, chest.yCoord, chest.zCoord, lootTable);
+        }
+        catch (Exception e)
+        {
+            OneBlockUltima.getLogger().warn("[Generator] Failed to fill chest loot for {}: {}", lootTable, e);
+        }
+    }
+
+    public static boolean isFullBlock(Block block, @SuppressWarnings("unused") int meta)
+    {
+        try
+        {
+            Item item = Item.getItemFromBlock(block);
+            if (item == null || block == null || block == Blocks.air)
             {
                 return false;
             }
 
-            net.minecraft.block.state.IBlockState state = null;
-            try
-            {
-                state = block.getStateFromMeta(meta);
-            }
-            catch (Exception ex)
-            {
-                try
-                {
-                    state = block.getDefaultState();
-                }
-                catch (Exception ignored) {}
-            }
-
-            if (state == null) return false;
-
-            return block.isFullBlock(state) && block.isFullCube(state);
+            return block.isFullBlock() && block.isOpaqueCube();
         }
         catch (Exception e)
         {
@@ -545,8 +546,9 @@ public final class BlockUtil
             return;
         }
 
-        for (String key : source.getKeySet())
+        for (Object keyObj : source.getKeySet())
         {
+            String key = keyObj.toString();
             NBTBase sourceTag = source.getTag(key);
             // noinspection ConstantConditions
             if (sourceTag == null)
@@ -570,88 +572,160 @@ public final class BlockUtil
         }
     }
 
-    public static boolean canReplaceForGeneration(World world, BlockPos pos)
+    /**
+     * Translates 1.12.2-style entity NBT used by the shared config into the tag
+     * names that 1.7.10 mobs actually read. 1.7.10 {@code EntityLiving} restores
+     * equipment from a 5-slot "Equipment" list with numeric item ids; the config
+     * stores "HandItems"/"ArmorItems" (1.12.2 layout) with namespaced string ids.
+     * Returns the same instance when no translation is needed.
+     */
+    private static NBTTagCompound translateLegacyEntityNbtFor17(NBTTagCompound source)
     {
-        IBlockState state = world.getBlockState(pos);
-        if (state.getMaterial().isReplaceable())
+        if (source == null || source.hasNoTags())
+        {
+            return source;
+        }
+        if (!source.hasKey("HandItems", Constants.NBT.TAG_LIST) && !source.hasKey("ArmorItems", Constants.NBT.TAG_LIST))
+        {
+            return source;
+        }
+
+        NBTTagCompound result = (NBTTagCompound) source.copy();
+
+        NBTTagList equipment = new NBTTagList();
+        for (int i = 0; i < 5; i++)
+        {
+            equipment.appendTag(new NBTTagCompound());
+        }
+
+        if (result.hasKey("HandItems", Constants.NBT.TAG_LIST))
+        {
+            NBTTagList hand = result.getTagList("HandItems", Constants.NBT.TAG_COMPOUND);
+            if (hand.tagCount() > 0)
+            {
+                equipment.setTag(0, translateLegacyItemStackNbtFor17(hand.getCompoundTagAt(0)));
+            }
+            result.removeTag("HandItems");
+        }
+
+        if (result.hasKey("ArmorItems", Constants.NBT.TAG_LIST))
+        {
+            NBTTagList armor = result.getTagList("ArmorItems", Constants.NBT.TAG_COMPOUND);
+            for (int i = 0; i < Math.min(4, armor.tagCount()); i++)
+            {
+                // 1.12.2 armor order (boots, legs, chest, helm) -> 1.7.10 slots 1..4
+                equipment.setTag(1 + i, translateLegacyItemStackNbtFor17(armor.getCompoundTagAt(i)));
+            }
+            result.removeTag("ArmorItems");
+        }
+
+        result.setTag("Equipment", equipment);
+        return result;
+    }
+
+    /**
+     * Converts a namespaced string item id ("minecraft:bow") into the numeric id
+     * that 1.7.10 {@code ItemStack.readFromNBT} expects. Returns a copy.
+     */
+    private static NBTTagCompound translateLegacyItemStackNbtFor17(NBTTagCompound stackNbt)
+    {
+        NBTTagCompound copy = (NBTTagCompound) stackNbt.copy();
+        NBTBase idTag = copy.getTag("id");
+        if (idTag instanceof NBTTagString)
+        {
+            String id = ((NBTTagString) idTag).getString();
+            Item item = lookupItemById(id);
+            if (item == null && id.indexOf(':') >= 0)
+            {
+                item = lookupItemById(id.substring(id.indexOf(':') + 1));
+            }
+            if (item != null)
+            {
+                copy.setShort("id", (short) Item.getIdFromItem(item));
+            }
+        }
+        return copy;
+    }
+
+    private static Item lookupItemById(String id)
+    {
+        if (id == null || id.isEmpty())
+        {
+            return null;
+        }
+        try
+        {
+            Object value = Item.itemRegistry.getObject(id);
+            if (value instanceof Item)
+            {
+                return (Item) value;
+            }
+        }
+        catch (Exception ignored)
+        {
+        }
+        return null;
+    }
+
+    public static boolean canReplaceForGeneration(World world, int x, int y, int z)
+    {
+        Block block = world.getBlock(x, y, z);
+        if (block == null || block.getMaterial().isReplaceable() || block.getMaterial().isLiquid())
         {
             return true;
         }
 
-        return GeneratedBlockRegistry.get(world).isGenerated(pos);
+        return GeneratedBlockRegistry.get(world).isGenerated(x, y, z);
     }
 
-    public static IBlockState toState(BlockSetConfig.BlockEntryDefinition entry)
+    @Nullable
+    public static Block resolveBlock(BlockSetConfig.BlockEntryDefinition entry)
     {
+        if (entry == null)
+        {
+            return null;
+        }
+
         Block block = entry.resolveBlock();
-        if (block == null || block == Blocks.AIR)
+        if (block == null || block == Blocks.air)
         {
             // Special handling for Forestry
             if (entry.registry != null && entry.registry.toLowerCase().contains("forestry")) {
                 // Try to find the block via ItemBlock
                 try {
-                    Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.registry));
+                    Item item = (Item) Item.itemRegistry.getObject(entry.registry);
                     if (item instanceof ItemBlock) {
-                        Block forestryBlock = ((ItemBlock) item).getBlock();
+                        Block forestryBlock = ((ItemBlock) item).blockInstance;
                         // noinspection ConstantConditions
-                        if (forestryBlock != null && forestryBlock != Blocks.AIR) {
-                            OneBlockUltima.getLogger().info("[BlockUtil] Found Forestry block via ItemBlock: {}", forestryBlock.getRegistryName());
+                        if (forestryBlock != null && forestryBlock != Blocks.air) {
+                            OneBlockUltima.getLogger().info("[BlockUtil] Found Forestry block via ItemBlock: {}", getRegistryString(forestryBlock));
                             block = forestryBlock;
                         }
                     }
                 } catch (Exception ignored) {}
             }
 
-            if (block == null || block == Blocks.AIR) {
+            if (block == null || block == Blocks.air) {
                 block = resolveSpecialPlantBlock(entry.registry);
             }
 
-            if (block == null || block == Blocks.AIR)
+            if (block == null || block == Blocks.air)
             {
                 OneBlockUltima.getLogger().warn("[BlockUtil] Could not resolve block for registry: {}", entry.registry);
                 return null;
             }
         }
 
-        try
+        return block;
+    }
+
+    public static int resolveMeta(BlockSetConfig.BlockEntryDefinition entry, Block block)
+    {
+        if (block instanceof BlockCrops)
         {
-            IBlockState state;
-
-            // For Forestry saplings always use the default state (meta is ignored)
-            if (entry.registry != null && entry.registry.toLowerCase().contains("forestry") &&
-                    entry.registry.toLowerCase().contains("sapling"))
-            {
-                state = block.getDefaultState();
-                OneBlockUltima.getLogger().info("[BlockUtil] Using default state for Forestry sapling: {}", state);
-            }
-            else
-            {
-                state = block.getStateFromMeta(entry.meta);
-            }
-
-            if (state.getBlock() == Blocks.AIR)
-            {
-                state = block.getDefaultState();
-            }
-            if (state.getBlock() == Blocks.AIR)
-            {
-                return null;
-            }
-
-            if (block instanceof BlockCrops && state.getBlock() == block)
-            {
-                return block.getDefaultState();
-            }
-
-            OneBlockUltima.getLogger().debug("[BlockUtil] Resolved block: {} -> {} with meta: {}", entry.registry, block.getRegistryName(), entry.meta);
-            return state;
+            return 0;
         }
-        catch (Exception ex)
-        {
-            OneBlockUltima.getLogger().debug("[BlockUtil] Exception getting state from meta for {}, using default state", entry.registry, ex);
-            IBlockState defaultState = block.getDefaultState();
-            return defaultState.getBlock() == Blocks.AIR ? null : defaultState;
-        }
+        return entry.meta & 15;
     }
 
     private static Block resolveSpecialPlantBlock(String registry)
@@ -665,29 +739,24 @@ public final class BlockUtil
         switch (normalized) {
             case "minecraft:carrot":
             case "carrot":
-                return ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:carrots"));
+                return (Block) Block.blockRegistry.getObject("minecraft:carrots");
             case "minecraft:potato":
             case "potato":
-                return ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:potatoes"));
+                return (Block) Block.blockRegistry.getObject("minecraft:potatoes");
             case "minecraft:wheat_seeds":
             case "wheat_seeds":
             case "minecraft:wheat":
             case "wheat":
-                return ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:wheat"));
-            case "minecraft:beetroot_seeds":
-            case "beetroot_seeds":
-            case "minecraft:beetroot":
-            case "beetroot":
-                return ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:beetroots"));
+                return (Block) Block.blockRegistry.getObject("minecraft:wheat");
             case "minecraft:reeds":
             case "reeds":
             case "minecraft:sugar_cane":
             case "sugar_cane":
-                Block reeds = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:reeds"));
+                Block reeds = (Block) Block.blockRegistry.getObject("minecraft:reeds");
                 if (reeds != null) {
                     return reeds;
                 }
-                return ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:sugar_cane"));
+                return (Block) Block.blockRegistry.getObject("minecraft:sugar_cane");
         }
 
         if (normalized.contains("forestry") && normalized.contains("sapling"))
@@ -696,11 +765,11 @@ public final class BlockUtil
 
             // The most reliable way - via ItemBlock
             try {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(registry));
+                Item item = (Item) Item.itemRegistry.getObject(registry);
                 if (item instanceof ItemBlock) {
-                    Block block = ((ItemBlock) item).getBlock();
-                    if (block != Blocks.AIR) {
-                        OneBlockUltima.getLogger().info("[BlockUtil] Found Forestry sapling block via ItemBlock: {}", block.getRegistryName());
+                    Block block = ((ItemBlock) item).blockInstance;
+                    if (block != Blocks.air) {
+                        OneBlockUltima.getLogger().info("[BlockUtil] Found Forestry sapling block via ItemBlock: {}", getRegistryString(block));
                         return block;
                     }
                 }
@@ -708,9 +777,9 @@ public final class BlockUtil
 
             // If ItemBlock lookup failed, try direct lookup
             try {
-                Block b = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("forestry:sapling"));
-                if (b != null && b != Blocks.AIR) {
-                    OneBlockUltima.getLogger().info("[BlockUtil] Found Forestry sapling block via direct lookup: {}", b.getRegistryName());
+                Block b = (Block) Block.blockRegistry.getObject("forestry:sapling");
+                if (b != null && b != Blocks.air) {
+                    OneBlockUltima.getLogger().info("[BlockUtil] Found Forestry sapling block via direct lookup: {}", getRegistryString(b));
                     return b;
                 }
             } catch (Exception ignored) {}
@@ -736,17 +805,18 @@ public final class BlockUtil
             NBTTagCompound entityNbt = new NBTTagCompound();
             entity.writeToNBT(entityNbt);
 
-            // Merge tags recursively
-            mergeNbtTags(entityNbt, nbtTags);
+            // Translate 1.12.2-style tags (HandItems/ArmorItems, string item ids)
+            // to the tag names 1.7.10 actually reads (Equipment with numeric ids)
+            mergeNbtTags(entityNbt, translateLegacyEntityNbtFor17(nbtTags));
 
             // Apply the updated tags
             entity.readFromNBT(entityNbt);
 
-            OneBlockUltima.getLogger().info("[Mob Spawn] Applied NBT tags to entity: {}", entity.getName());
+            OneBlockUltima.getLogger().info("[Mob Spawn] Applied NBT tags to entity: {}", entity.getCommandSenderName());
         }
         catch (Exception e)
         {
-            OneBlockUltima.getLogger().error("[Mob Spawn] Failed to apply NBT tags to entity: {}", entity.getName(), e);
+            OneBlockUltima.getLogger().error("[Mob Spawn] Failed to apply NBT tags to entity: {}", entity.getCommandSenderName(), e);
         }
     }
 }

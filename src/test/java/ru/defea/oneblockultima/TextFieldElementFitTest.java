@@ -49,7 +49,7 @@ public class TextFieldElementFitTest {
     public static void setUp() throws Exception {
         Bootstrap.register();
         Minecraft mc = (Minecraft) unsafe().allocateInstance(Minecraft.class);
-        Field f = Minecraft.class.getDeclaredField("instance");
+        Field f = Minecraft.class.getDeclaredField("theMinecraft");
         f.setAccessible(true);
         f.set(null, mc);
     }

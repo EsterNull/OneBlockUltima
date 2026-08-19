@@ -11,7 +11,7 @@
   "logoFile": "oneblock_logo.png",
   "useDependencyInformation": true,
   "dependencies": [
-    "required-after:forge@[14.23.5.2859,)"
+    "required-after:forge@[10.13.4.1614,)"
   ]
 }
 ]

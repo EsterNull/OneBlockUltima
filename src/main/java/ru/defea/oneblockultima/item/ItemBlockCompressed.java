@@ -2,11 +2,11 @@ package ru.defea.oneblockultima.item;
 
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
 
-import javax.annotation.Nonnull;
+import java.util.List;
 
 public class ItemBlockCompressed extends ItemBlock {
     private final String baseName;
@@ -27,16 +27,16 @@ public class ItemBlockCompressed extends ItemBlock {
     }
 
     @Override
-    @Nonnull
     public String getUnlocalizedName(ItemStack stack)
     {
         return "tile." + this.baseName + "." + stack.getMetadata();
     }
 
     @Override
-    public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void getSubItems(Item item, CreativeTabs tab, List items)
     {
-        if (tab == CreativeTabs.SEARCH || this.isInCreativeTab(tab))
+        if (tab == CreativeTabs.tabAllSearch || this.getCreativeTab() == tab)
         {
             for (int meta = 0; meta < this.maxLevel; meta++)
             {

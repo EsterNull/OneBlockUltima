@@ -1,22 +1,17 @@
 package ru.defea.oneblockultima.guide;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import net.minecraft.client.Minecraft;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.item.crafting.ShapedRecipes;
+import net.minecraft.item.crafting.ShapelessRecipes;
+import net.minecraftforge.oredict.OreDictionary;
+import net.minecraftforge.oredict.ShapedOreRecipe;
+import net.minecraftforge.oredict.ShapelessOreRecipe;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public final class GuideBookContent
@@ -81,22 +76,14 @@ public final class GuideBookContent
         Set<String> seen = new HashSet<>();
         try
         {
-            for (ResourceLocation key : ForgeRegistries.RECIPES.getKeys())
+            for (Object obj : CraftingManager.getInstance().getRecipeList())
             {
-                if (!OneBlockUltima.MODID.equals(key.getResourceDomain()))
+                if (!(obj instanceof IRecipe))
                 {
                     continue;
                 }
-                if (!ForgeRegistries.RECIPES.containsKey(key))
-                {
-                    continue;
-                }
-                Recipe recipe = parseRecipe(key);
-                if (recipe == null)
-                {
-                    recipe = parseRecipeFromIRecipe(key);
-                }
-                if (recipe != null && !recipe.result.isEmpty())
+                Recipe recipe = parseRecipeFromIRecipe((IRecipe) obj);
+                if (recipe != null && recipe.result != null && involvesModItem(recipe))
                 {
                     String ingredientKey = ingredientKey(recipe.grid);
                     if (seen.add(ingredientKey))
@@ -113,14 +100,40 @@ public final class GuideBookContent
         return recipes;
     }
 
+    private static boolean involvesModItem(Recipe recipe)
+    {
+        if (isModItem(recipe.result.getItem()))
+        {
+            return true;
+        }
+        for (ItemStack stack : recipe.grid)
+        {
+            if (stack != null && isModItem(stack.getItem()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isModItem(Item item)
+    {
+        if (item == null)
+        {
+            return false;
+        }
+        String name = Item.itemRegistry.getNameForObject(item);
+        return name != null && name.startsWith(OneBlockUltima.MODID + ":");
+    }
+
     private static String ingredientKey(ItemStack[] grid)
     {
         List<String> parts = new ArrayList<>();
         for (ItemStack stack : grid)
         {
-            if (stack != null && !stack.isEmpty())
+            if (stack != null)
             {
-                ResourceLocation name = stack.getItem().getRegistryName();
+                String name = Item.itemRegistry.getNameForObject(stack.getItem());
                 parts.add(name == null ? "?" : name + "@" + stack.getMetadata());
             }
         }
@@ -141,141 +154,32 @@ public final class GuideBookContent
         return result;
     }
 
-    private static Recipe parseRecipe(ResourceLocation key)
+    private static Recipe parseRecipeFromIRecipe(IRecipe recipe)
     {
         try
         {
-            ResourceLocation jsonLocation = new ResourceLocation(
-                    key.getResourceDomain(),
-                    "recipes/" + key.getResourcePath() + ".json"
-            );
-            JsonObject root = readJson(jsonLocation);
-            if (root == null)
-            {
-                return null;
-            }
-
-            String type = root.has("type") ? root.get("type").getAsString() : "";
-            boolean shaped = type != null && type.contains("crafting_shaped");
-
-            JsonObject resultObj = root.getAsJsonObject("result");
-            ItemStack result = resolveItem(resultObj);
-            if (result.isEmpty())
-            {
-                return null;
-            }
-            if (resultObj.has("count"))
-            {
-                result.setCount(Math.max(1, resultObj.get("count").getAsInt()));
-            }
-
-            ItemStack[] grid = new ItemStack[9];
-            Arrays.fill(grid, ItemStack.EMPTY);
-
-            if (shaped)
-            {
-                JsonArray pattern = root.getAsJsonArray("pattern");
-                List<String> rows = new ArrayList<>();
-                for (JsonElement element : pattern)
-                {
-                    rows.add(element.getAsString());
-                }
-                JsonObject keyObj = root.getAsJsonObject("key");
-                int gridW = rows.isEmpty() ? 0 : rows.get(0).length();
-                int gridH = rows.size();
-                int startRow = (3 - gridH) / 2;
-                int startCol = (3 - gridW) / 2;
-                for (int r = 0; r < gridH; r++)
-                {
-                    String row = rows.get(r);
-                    for (int c = 0; c < row.length(); c++)
-                    {
-                        char symbol = row.charAt(c);
-                        if (symbol == ' ')
-                        {
-                            continue;
-                        }
-                        JsonElement keyEntry = keyObj.get(String.valueOf(symbol));
-                        if (keyEntry == null || !keyEntry.isJsonObject())
-                        {
-                            continue;
-                        }
-                        int gr = startRow + r;
-                        int gc = startCol + c;
-                        if (gr < 0 || gr > 2 || gc < 0 || gc > 2)
-                        {
-                            continue;
-                        }
-                        grid[gr * 3 + gc] = resolveItem(keyEntry.getAsJsonObject());
-                    }
-                }
-            }
-            else
-            {
-                JsonArray ingredients = root.getAsJsonArray("ingredients");
-                int index = 0;
-                for (JsonElement element : ingredients)
-                {
-                    if (index >= 9)
-                    {
-                        break;
-                    }
-                    if (element.isJsonObject())
-                    {
-                        grid[index] = resolveItem(element.getAsJsonObject());
-                    }
-                    index++;
-                }
-            }
-
-            return new Recipe(key.getResourcePath(), result, grid, shaped);
-        }
-        catch (Exception ignored)
-        {
-            return null;
-        }
-    }
-
-    private static Recipe parseRecipeFromIRecipe(ResourceLocation key)
-    {
-        try
-        {
-            IRecipe recipe = ForgeRegistries.RECIPES.getValue(key);
-            if (recipe == null)
-            {
-                return null;
-            }
             ItemStack result = recipe.getRecipeOutput();
-            if (result == null || result.isEmpty())
+            if (result == null)
             {
                 return null;
             }
             ItemStack[] grid = new ItemStack[9];
-            Arrays.fill(grid, ItemStack.EMPTY);
             int index = 0;
-            for (Ingredient ingredient : recipe.getIngredients())
+            for (Object input : getRecipeInputs(recipe))
             {
                 if (index >= 9)
                 {
                     break;
                 }
-                if (ingredient == null || ingredient == Ingredient.EMPTY)
+                ItemStack display = resolveInput(input);
+                if (display == null)
                 {
                     continue;
-                }
-                ItemStack display = ItemStack.EMPTY;
-                for (ItemStack stack : ingredient.getMatchingStacks())
-                {
-                    if (stack != null && !stack.isEmpty())
-                    {
-                        display = stack.copy();
-                        break;
-                    }
                 }
                 grid[index] = display;
                 index++;
             }
-            return new Recipe(key.getResourcePath(), result, grid, false);
+            return new Recipe("", result, grid, false);
         }
         catch (Exception ignored)
         {
@@ -283,59 +187,76 @@ public final class GuideBookContent
         }
     }
 
-    private static ItemStack resolveItem(JsonObject entry)
+    private static List<Object> getRecipeInputs(IRecipe recipe)
     {
-        if (entry == null)
+        List<Object> inputs = new ArrayList<>();
+        if (recipe instanceof ShapedRecipes)
         {
-            return ItemStack.EMPTY;
-        }
-        String type = entry.has("type") ? entry.get("type").getAsString() : "";
-        if ("forge:ore_dict".equals(type))
-        {
-            if (!entry.has("ore"))
+            ItemStack[] items = ((ShapedRecipes) recipe).recipeItems;
+            if (items != null)
             {
-                return ItemStack.EMPTY;
+                Collections.addAll(inputs, items);
             }
-            List<ItemStack> ores = net.minecraftforge.oredict.OreDictionary.getOres(entry.get("ore").getAsString());
-            for (ItemStack ore : ores)
+        }
+        else if (recipe instanceof ShapelessRecipes)
+        {
+            List list = ((ShapelessRecipes) recipe).recipeItems;
+            if (list != null)
             {
-                if (ore != null && !ore.isEmpty())
+                inputs.addAll(list);
+            }
+        }
+        else if (recipe instanceof ShapedOreRecipe)
+        {
+            Object[] array = ((ShapedOreRecipe) recipe).getInput();
+            if (array != null)
+            {
+                Collections.addAll(inputs, array);
+            }
+        }
+        else if (recipe instanceof ShapelessOreRecipe)
+        {
+            ArrayList<Object> list = ((ShapelessOreRecipe) recipe).getInput();
+            if (list != null)
+            {
+                inputs.addAll(list);
+            }
+        }
+        return inputs;
+    }
+
+    private static ItemStack resolveInput(Object input)
+    {
+        if (input == null)
+        {
+            return null;
+        }
+        if (input instanceof ItemStack)
+        {
+            return ((ItemStack) input).copy();
+        }
+        if (input instanceof List)
+        {
+            for (Object o : (List<?>) input)
+            {
+                if (o instanceof ItemStack)
+                {
+                    return ((ItemStack) o).copy();
+                }
+            }
+            return null;
+        }
+        if (input instanceof String)
+        {
+            for (ItemStack ore : OreDictionary.getOres((String) input))
+            {
+                if (ore != null)
                 {
                     return ore.copy();
                 }
             }
-            return ItemStack.EMPTY;
-        }
-        if (!entry.has("item"))
-        {
-            return ItemStack.EMPTY;
-        }
-        String name = entry.get("item").getAsString();
-        int meta = entry.has("data") ? entry.get("data").getAsInt() : 0;
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(name));
-        if (item == null)
-        {
-            return ItemStack.EMPTY;
-        }
-        return new ItemStack(item, 1, meta);
-    }
-
-    private static JsonObject readJson(ResourceLocation location)
-    {
-        try
-        {
-            net.minecraft.client.resources.IResource resource =
-                    Minecraft.getMinecraft().getResourceManager().getResource(location);
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)))
-            {
-                JsonElement element = new JsonParser().parse(reader);
-                return element != null && element.isJsonObject() ? element.getAsJsonObject() : null;
-            }
-        }
-        catch (Exception ignored)
-        {
             return null;
         }
+        return null;
     }
 }

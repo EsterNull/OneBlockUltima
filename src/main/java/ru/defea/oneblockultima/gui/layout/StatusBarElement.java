@@ -45,7 +45,7 @@ public class StatusBarElement extends ViewElement<StatusBarElement> {
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
         if (!isActive()) return;
         fr.drawStringWithShadow(text,
-            computedX + (computedWidth - fr.getStringWidth(text)) / 2.0f,
+            computedX + (computedWidth - fr.getStringWidth(text)) / 2,
             computedY, textColor);
     }
 

@@ -3,11 +3,11 @@ package ru.defea.oneblockultima.update;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
+import net.minecraft.event.ClickEvent;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.ChatStyle;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.ModContainer;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.io.BufferedReader;
@@ -131,21 +131,21 @@ public class UpdateChecker
             currentVersion = "???";
         }
 
-        player.sendMessage(new TextComponentTranslation(
+        player.addChatMessage(new ChatComponentTranslation(
                 "oneblockultima.update.available",
                 cachedRecommendedVersion,
                 currentVersion));
 
         if (cachedReleaseUrl != null)
         {
-            TextComponentTranslation linkMessage = new TextComponentTranslation(
+            ChatComponentTranslation linkMessage = new ChatComponentTranslation(
                     "oneblockultima.update.link",
                     cachedRecommendedVersion);
 
-            linkMessage.setStyle(new Style()
-                    .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, cachedReleaseUrl)));
+            linkMessage.setChatStyle(new ChatStyle()
+                    .setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, cachedReleaseUrl)));
 
-            player.sendMessage(linkMessage);
+            player.addChatMessage(linkMessage);
         }
     }
 

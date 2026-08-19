@@ -6,7 +6,7 @@ import ru.defea.oneblockultima.OneBlockUltima;
 public class ItemEnergyOrb extends Item {
     public ItemEnergyOrb() {
         setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("energy_orb");
+
         this.setUnlocalizedName("energy_orb");
     }
 }

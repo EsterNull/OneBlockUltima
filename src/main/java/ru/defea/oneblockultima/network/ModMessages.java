@@ -1,9 +1,10 @@
 package ru.defea.oneblockultima.network;
 
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.entity.player.EntityPlayerMP;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import cpw.mods.fml.relauncher.Side;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 public final class ModMessages
@@ -27,8 +28,18 @@ public final class ModMessages
         network.sendToServer(message);
     }
 
-    public static void sendToPlayer(IMessage message, net.minecraft.entity.player.EntityPlayerMP player)
+    public static void sendToPlayer(IMessage message, EntityPlayerMP player)
     {
         network.sendTo(message, player);
+    }
+
+    public static void sendToAll(IMessage message)
+    {
+        network.sendToAll(message);
+    }
+
+    public static void sendToAllAround(IMessage message, cpw.mods.fml.common.network.NetworkRegistry.TargetPoint point)
+    {
+        network.sendToAllAround(message, point);
     }
 }

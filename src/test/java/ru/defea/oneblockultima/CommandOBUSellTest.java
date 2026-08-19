@@ -21,18 +21,18 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedReturnsFalseForEmpty() {
-        assertFalse(CommandOBUSell.isObuGenerated(ItemStack.EMPTY));
+        assertFalse(CommandOBUSell.isObuGenerated(null));
     }
 
     @Test
     public void isObuGeneratedReturnsFalseForItemWithNoNbt() {
-        ItemStack stack = new ItemStack(Items.DIAMOND);
+        ItemStack stack = new ItemStack(Items.diamond);
         assertFalse(CommandOBUSell.isObuGenerated(stack));
     }
 
     @Test
     public void isObuGeneratedReturnsFalseForItemWithUnrelatedNbt() {
-        ItemStack stack = new ItemStack(Items.DIAMOND);
+        ItemStack stack = new ItemStack(Items.diamond);
         stack.setTagCompound(new NBTTagCompound());
         stack.getTagCompound().setBoolean("someOtherTag", true);
         assertFalse(CommandOBUSell.isObuGenerated(stack));
@@ -40,7 +40,7 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedReturnsFalseWhenKeyExistsButFalse() {
-        ItemStack stack = new ItemStack(Items.DIAMOND);
+        ItemStack stack = new ItemStack(Items.diamond);
         stack.setTagCompound(new NBTTagCompound());
         stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, false);
         assertFalse(CommandOBUSell.isObuGenerated(stack));
@@ -48,7 +48,7 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedReturnsTrueWhenTagIsTrue() {
-        ItemStack stack = new ItemStack(Items.DIAMOND);
+        ItemStack stack = new ItemStack(Items.diamond);
         stack.setTagCompound(new NBTTagCompound());
         stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
         assertTrue(CommandOBUSell.isObuGenerated(stack));
@@ -56,7 +56,7 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedReturnsTrueForBlockItemWithTag() {
-        net.minecraft.item.ItemStack stack = new ItemStack(net.minecraft.init.Blocks.STONE);
+        net.minecraft.item.ItemStack stack = new ItemStack(net.minecraft.init.Blocks.stone);
         stack.setTagCompound(new NBTTagCompound());
         stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
         assertTrue(CommandOBUSell.isObuGenerated(stack));
@@ -64,7 +64,7 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedReturnsTrueForDirtWithTag() {
-        net.minecraft.item.ItemStack stack = new ItemStack(net.minecraft.init.Blocks.DIRT);
+        net.minecraft.item.ItemStack stack = new ItemStack(net.minecraft.init.Blocks.dirt);
         stack.setTagCompound(new NBTTagCompound());
         stack.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
         assertTrue(CommandOBUSell.isObuGenerated(stack));
@@ -72,14 +72,14 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedReturnsFalseForEmptyNbtCompound() {
-        ItemStack stack = new ItemStack(Items.DIAMOND);
+        ItemStack stack = new ItemStack(Items.diamond);
         stack.setTagCompound(new NBTTagCompound());
         assertFalse(CommandOBUSell.isObuGenerated(stack));
     }
 
     @Test
     public void isObuGeneratedReturnsTrueWithAdditionalTags() {
-        ItemStack stack = new ItemStack(Items.DIAMOND);
+        ItemStack stack = new ItemStack(Items.diamond);
         NBTTagCompound nbt = new NBTTagCompound();
         nbt.setBoolean(NBT_OBU_GENERATED, true);
         nbt.setString("customName", "My Diamond");
@@ -90,11 +90,11 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedMultipleStacksSameNbt() {
-        ItemStack stack1 = new ItemStack(Items.DIAMOND, 5);
+        ItemStack stack1 = new ItemStack(Items.diamond, 5);
         stack1.setTagCompound(new NBTTagCompound());
         stack1.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
-        ItemStack stack2 = new ItemStack(Items.DIAMOND, 1);
+        ItemStack stack2 = new ItemStack(Items.diamond, 1);
         stack2.setTagCompound(new NBTTagCompound());
         stack2.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
@@ -104,7 +104,7 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedCopiedStackPreservesTag() {
-        ItemStack original = new ItemStack(Items.DIAMOND);
+        ItemStack original = new ItemStack(Items.diamond);
         original.setTagCompound(new NBTTagCompound());
         original.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 
@@ -114,7 +114,7 @@ public class CommandOBUSellTest {
 
     @Test
     public void isObuGeneratedModifiedCopyDoesNotAffectOriginal() {
-        ItemStack original = new ItemStack(Items.DIAMOND);
+        ItemStack original = new ItemStack(Items.diamond);
         original.setTagCompound(new NBTTagCompound());
         original.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
 

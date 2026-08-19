@@ -99,7 +99,7 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
         int id = factory.getTextFields().size();
         int fieldWidth = width > 0 ? width : computedWidth;
         if (fitToText) fieldWidth = fitWidth(fontRenderer, fieldWidth);
-        textField = new GuiTextField(id, fontRenderer, computedX, computedY, fieldWidth, getFieldHeight());
+        textField = new GuiTextField(fontRenderer, computedX, computedY, fieldWidth, getFieldHeight());
         textField.setMaxStringLength(maxStringLength);
         textField.setText(text);
         textField.setFocused(focused);
@@ -160,7 +160,7 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
 
     private static int getFieldHeight() {
         Minecraft mc = Minecraft.getMinecraft();
-        int fontHeight = mc.fontRenderer != null ? mc.fontRenderer.FONT_HEIGHT : 9;
+        int fontHeight = mc.fontRendererObj != null ? mc.fontRendererObj.FONT_HEIGHT : 9;
         return fontHeight + 4;
     }
 }

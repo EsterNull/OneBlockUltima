@@ -7,17 +7,15 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityList;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import cpw.mods.fml.common.Loader;
 import ru.defea.oneblockultima.util.NBTTagCompoundAdapter;
+import ru.defea.oneblockultima.util.MobIdUtil;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
@@ -457,9 +455,15 @@ public final class BlockSetConfig
 
         try
         {
-            ResourceLocation loc = new ResourceLocation(registry);
-            String domain = loc.getResourceDomain();
-            if (MINECRAFT_DOMAIN.equals(domain))
+            // NOTE: ResourceLocation lowercases the domain in 1.7.10, while
+            // Loader.isModLoaded is case-sensitive against the registered modid
+            // (e.g. "Botania", "Forestry"). Extract the domain preserving case.
+            String domain = getRegistryDomainPreservingCase(registry);
+            if (domain == null || domain.isEmpty())
+            {
+                return true;
+            }
+            if (MINECRAFT_DOMAIN.equalsIgnoreCase(domain))
             {
                 return false;
             }
@@ -467,12 +471,86 @@ public final class BlockSetConfig
             {
                 return true;
             }
-            return !Loader.isModLoaded(domain);
+            return !isModLoadedIgnoreCase(domain);
         }
         catch (Exception e)
         {
             return true;
         }
+    }
+
+    private static String getRegistryDomainPreservingCase(String registry)
+    {
+        int idx = registry.indexOf(':');
+        if (idx < 0)
+        {
+            return null;
+        }
+        String domain = registry.substring(0, idx);
+        return domain.isEmpty() ? null : domain;
+    }
+
+    private static boolean isModLoadedIgnoreCase(String modid)
+    {
+        if (modid == null || modid.isEmpty())
+        {
+            return false;
+        }
+        if (Loader.isModLoaded(modid))
+        {
+            return true;
+        }
+        for (Object keyObj : Loader.instance().getIndexedModList().keySet())
+        {
+            String key = keyObj == null ? null : keyObj.toString();
+            if (key != null && key.equalsIgnoreCase(modid))
+            {
+                return Loader.isModLoaded(key);
+            }
+        }
+        return false;
+    }
+
+    public static Block resolveBlockKey(String registry)
+    {
+        if (registry == null || registry.isEmpty())
+        {
+            return null;
+        }
+        Block block = (Block) Block.blockRegistry.getObject(registry);
+        if (block != null)
+        {
+            return block;
+        }
+        for (Object keyObj : Block.blockRegistry.getKeys())
+        {
+            if (keyObj != null && keyObj.toString().equalsIgnoreCase(registry))
+            {
+                return (Block) Block.blockRegistry.getObject(keyObj);
+            }
+        }
+        return null;
+    }
+
+    public static Item resolveItemKey(String registry)
+    {
+        if (registry == null || registry.isEmpty())
+        {
+            return null;
+        }
+        Item item = (Item) Item.itemRegistry.getObject(registry);
+        if (item != null)
+        {
+            return item;
+        }
+        for (Object keyObj : Item.itemRegistry.getKeys())
+        {
+            if (keyObj != null && keyObj.toString().equalsIgnoreCase(registry))
+            {
+                return (Item) Item.itemRegistry.getObject(keyObj);
+            }
+        }
+        return null;
     }
 
     public static boolean isBlockAvailable(String registry)
@@ -482,7 +560,7 @@ public final class BlockSetConfig
             return false;
         }
 
-        return ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry)) != null;
+        return resolveBlockKey(registry) != null || resolveItemKey(registry) != null;
     }
 
     public static boolean isMobAvailable(String registry)
@@ -492,7 +570,7 @@ public final class BlockSetConfig
             return false;
         }
 
-        return EntityList.getClass(new ResourceLocation(registry)) != null;
+        return MobIdUtil.resolveKey(registry) != null;
     }
 
     public SettingsDefinition getSettings()
@@ -616,7 +694,7 @@ public final class BlockSetConfig
         {
             try
             {
-                return Loader.isModLoaded(modId);
+                return isModLoadedIgnoreCase(modId);
             }
             catch (Exception e)
             {
@@ -805,6 +883,20 @@ public final class BlockSetConfig
         {
             // Ensure computedLevels built
             ensureComputedLevels();
+            if (computedLevels == null || computedLevels.isEmpty())
+            {
+                return null;
+            }
+            int min = Integer.MAX_VALUE;
+            int max = 0;
+            for (Integer lvl : computedLevels.keySet())
+            {
+                if (lvl < min) min = lvl;
+                if (lvl > max) max = lvl;
+            }
+            if (level <= 0) level = 1;
+            if (level < min) level = min;
+            if (level > max) level = max;
             return computedLevels.get(level);
         }
 
@@ -816,13 +908,14 @@ public final class BlockSetConfig
             return max;
         }
 
+        @SuppressWarnings("unchecked")
         public void ensureComputedLevels()
         {
             if (computedLevels != null) return;
 
-            OneBlockUltima.getLogger().info("[Config] ensureComputedLevels called for set: {}", id);
-            OneBlockUltima.getLogger().info("[Config] blocks size: {}", blocks.size());
-            OneBlockUltima.getLogger().info("[Config] mobs size: {}", mobs.size());
+            OneBlockUltima.getRawLogger().info("[Config] ensureComputedLevels called for set: {}", id);
+            OneBlockUltima.getRawLogger().info("[Config] blocks size: {}", blocks.size());
+            OneBlockUltima.getRawLogger().info("[Config] mobs size: {}", mobs.size());
 
             computedLevels = new java.util.HashMap<>();
 
@@ -874,10 +967,26 @@ public final class BlockSetConfig
                 }
                 elems.add(ie);
             }
+            if (elems.isEmpty())
+            {
+                return;
+            }
+
+            OneBlockUltima.getRawLogger().info("[Config] set {} resolved elements (blocks+mobs): {}", id, elems.size());
+
             // determine minimal baseLevel and iterate
             int minLevel = Integer.MAX_VALUE;
-            for (InternalElement e : elems) if (e.baseLevel < minLevel) minLevel = e.baseLevel;
-            if (minLevel == Integer.MAX_VALUE) minLevel = 1;
+            int maxBaseLevel = 0;
+            for (InternalElement e : elems)
+            {
+                if (e.baseLevel < minLevel) minLevel = e.baseLevel;
+                if (e.baseLevel > maxBaseLevel) maxBaseLevel = e.baseLevel;
+            }
+            if (minLevel == Integer.MAX_VALUE)
+            {
+                minLevel = 1;
+                maxBaseLevel = 1;
+            }
 
             java.util.List<InternalElement> blockElems = new ArrayList<>();
             java.util.List<InternalElement> mobElems = new ArrayList<>();
@@ -963,11 +1072,11 @@ public final class BlockSetConfig
                 for (String k : proposedMobs.keySet()) prevPercMobs.put(k, proposedMobs.get(k).doubleValue());
 
                 level++;
-                if (!changed)
+                if (!changed && level > maxBaseLevel)
                 {
                     break;
                 }
-                if (level > 200) break;
+                if (level > 200 && level > maxBaseLevel) break;
             }
         }
     }
@@ -1215,7 +1324,7 @@ public final class BlockSetConfig
                 }
                 else
                 {
-                    resolvedBlockCache = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
+                    resolvedBlockCache = resolveBlockKey(registry);
                 }
             }
             return resolvedBlockCache;
@@ -1241,7 +1350,9 @@ public final class BlockSetConfig
                 }
             }
             Block block = resolveBlock();
-            if (block instanceof IFluidBlock || (block != null && FluidRegistry.lookupFluidForBlock(block) != null))
+            if (block != null && (block instanceof IFluidBlock
+                    || FluidRegistry.lookupFluidForBlock(block) != null
+                    || block.getMaterial().isLiquid()))
             {
                 classification |= CLASS_FLUID;
             }
@@ -1279,10 +1390,10 @@ public final class BlockSetConfig
             {
                 try
                 {
-                    net.minecraft.item.Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(dropItem));
-                    if (item != null && item != net.minecraft.init.Items.AIR)
+                    net.minecraft.item.Item item = (net.minecraft.item.Item) net.minecraft.item.Item.itemRegistry.getObject(dropItem);
+                    if (item != null)
                     {
-                        return new net.minecraft.item.ItemStack(item, 1, 0);
+                        return applyNbtToStack(new net.minecraft.item.ItemStack(item, 1, 0));
                     }
                 }
                 catch (Exception ignored) {}
@@ -1291,21 +1402,8 @@ public final class BlockSetConfig
             Block block = resolveBlock();
             if (block != null)
             {
-                try
-                {
-                    //noinspection deprecation
-                    IBlockState state = block.getStateFromMeta(meta);
-                    //noinspection DataFlowIssue
-                    net.minecraft.item.ItemStack pickStack = block.getPickBlock(state, null, null, null, null);
-                    if (!pickStack.isEmpty())
-                    {
-                        return applyNbtToStack(pickStack);
-                    }
-                }
-                catch (Exception ignored) {}
-
                 net.minecraft.item.Item blockItem = net.minecraft.item.Item.getItemFromBlock(block);
-                if (blockItem != net.minecraft.init.Items.AIR)
+                if (blockItem != null)
                 {
                     try
                     {
@@ -1320,13 +1418,13 @@ public final class BlockSetConfig
             {
                 try
                 {
-                    net.minecraft.item.Item registryItem = ForgeRegistries.ITEMS.getValue(new ResourceLocation(registry));
-                    if (registryItem != null && registryItem != net.minecraft.init.Items.AIR)
+                    net.minecraft.item.Item registryItem = (net.minecraft.item.Item) net.minecraft.item.Item.itemRegistry.getObject(registry);
+                    if (registryItem != null)
                     {
                         net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(registryItem, 1, meta);
                         if (nbtTags != null && !nbtTags.hasNoTags())
                         {
-                            stack.setTagCompound(nbtTags.copy());
+                            stack.setTagCompound((NBTTagCompound) nbtTags.copy());
                         }
                         return stack;
                     }
@@ -1334,15 +1432,15 @@ public final class BlockSetConfig
                 catch (Exception ignored) {}
             }
 
-            return net.minecraft.item.ItemStack.EMPTY;
+            return null;
         }
 
         private net.minecraft.item.ItemStack applyNbtToStack(net.minecraft.item.ItemStack stack)
         {
-            if (stack != null && !stack.isEmpty() && nbtTags != null && !nbtTags.hasNoTags())
+            if (stack != null && stack.stackSize > 0 && nbtTags != null && !nbtTags.hasNoTags())
             {
                 net.minecraft.item.ItemStack copy = stack.copy();
-                copy.setTagCompound(nbtTags.copy());
+                copy.setTagCompound((NBTTagCompound) nbtTags.copy());
                 return copy;
             }
             return stack;
@@ -1477,6 +1575,6 @@ public final class BlockSetConfig
         {
             return new NBTTagCompound();
         }
-        return source.copy();
+        return (NBTTagCompound) source.copy();
     }
 }

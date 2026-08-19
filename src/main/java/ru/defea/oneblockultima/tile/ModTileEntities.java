@@ -1,7 +1,7 @@
 package ru.defea.oneblockultima.tile;
 
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import cpw.mods.fml.common.registry.GameRegistry;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 public final class ModTileEntities

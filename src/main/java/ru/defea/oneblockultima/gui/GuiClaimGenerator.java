@@ -3,7 +3,6 @@ package ru.defea.oneblockultima.gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.math.BlockPos;
 import org.lwjgl.input.Keyboard;
 import ru.defea.oneblockultima.gui.layout.Alignment;
 import ru.defea.oneblockultima.gui.layout.LabelElement;
@@ -20,12 +19,16 @@ public class GuiClaimGenerator extends GuiScreen
 {
     private static final int BUTTON_CLAIM = 0;
 
-    private final BlockPos generatorPos;
+    private final int generatorX;
+    private final int generatorY;
+    private final int generatorZ;
     private ViewFactory factory;
 
-    public GuiClaimGenerator(BlockPos generatorPos)
+    public GuiClaimGenerator(int generatorX, int generatorY, int generatorZ)
     {
-        this.generatorPos = generatorPos;
+        this.generatorX = generatorX;
+        this.generatorY = generatorY;
+        this.generatorZ = generatorZ;
     }
 
     @Override
@@ -36,6 +39,7 @@ public class GuiClaimGenerator extends GuiScreen
         buildView();
     }
 
+    @SuppressWarnings("unchecked")
     private void buildView()
     {
         factory = new ViewFactory(width, height)
@@ -49,7 +53,7 @@ public class GuiClaimGenerator extends GuiScreen
         factory.add(new SpacerElement(12));
         factory.button(BUTTON_CLAIM, I18n.format("gui.oneblockultima.claim_owner"));
 
-        factory.build(buttonList, fontRenderer);
+        factory.build(buttonList, fontRendererObj);
     }
 
     @Override
@@ -59,8 +63,8 @@ public class GuiClaimGenerator extends GuiScreen
 
         if (button.id == BUTTON_CLAIM)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(generatorPos, PacketOneBlockAction.Action.CLAIM_OWNER, ""));
-            mc.player.closeScreen();
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.CLAIM_OWNER, ""));
+            mc.thePlayer.closeScreen();
         }
     }
 
@@ -68,7 +72,7 @@ public class GuiClaimGenerator extends GuiScreen
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        factory.draw(fontRendererObj, mouseX, mouseY, partialTicks);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 

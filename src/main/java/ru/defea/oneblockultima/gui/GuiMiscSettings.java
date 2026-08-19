@@ -8,8 +8,6 @@ import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
 
-import java.io.IOException;
-
 public class GuiMiscSettings extends GuiScreen {
     private static final int BUTTON_BACK = 0;
     private static final int BUTTON_SAVE = 1;
@@ -70,6 +68,7 @@ public class GuiMiscSettings extends GuiScreen {
         buildView();
     }
 
+    @SuppressWarnings("unchecked")
     private void buildView()
     {
         factory = new ViewFactory(width, height)
@@ -139,7 +138,7 @@ public class GuiMiscSettings extends GuiScreen {
         btnRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
         btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
 
-        factory.build(buttonList, fontRenderer);
+        factory.build(buttonList, fontRendererObj);
     }
 
     @Override
@@ -186,7 +185,7 @@ public class GuiMiscSettings extends GuiScreen {
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    protected void keyTyped(char typedChar, int keyCode)
     {
         if (keyCode == Keyboard.KEY_ESCAPE)
         {
@@ -197,7 +196,7 @@ public class GuiMiscSettings extends GuiScreen {
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
     {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (factory != null) factory.mouseClicked(mouseX, mouseY, mouseButton);
@@ -214,7 +213,7 @@ public class GuiMiscSettings extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        if (factory != null) factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        if (factory != null) factory.draw(fontRendererObj, mouseX, mouseY, partialTicks);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 }

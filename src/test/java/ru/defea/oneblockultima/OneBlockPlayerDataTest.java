@@ -178,6 +178,59 @@ public class OneBlockPlayerDataTest {
     }
 
     @Test
+    public void setCurrencyClampsAboveMax() {
+        OneBlockPlayerData data = newData();
+        data.setCurrency(OneBlockPlayerData.MAX_CURRENCY * 10);
+        assertEquals(OneBlockPlayerData.MAX_CURRENCY, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void setCurrencyClampsTheReportedCorruptValue() {
+        OneBlockPlayerData data = newData();
+        data.setCurrency(92233720368547760.0);
+        assertTrue("corrupt balance must be clamped below the long-overflow display threshold",
+                data.getCurrency() <= OneBlockPlayerData.MAX_CURRENCY);
+    }
+
+    @Test
+    public void setCurrencyIgnoresNaN() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(100);
+        data.setCurrency(Double.NaN);
+        assertEquals(0, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void addCurrencyClampsToMax() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(1e300);
+        assertEquals(OneBlockPlayerData.MAX_CURRENCY, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void addCurrencyClampsSumAboveMax() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(OneBlockPlayerData.MAX_CURRENCY - 5);
+        data.addCurrency(10);
+        assertEquals(OneBlockPlayerData.MAX_CURRENCY, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void addCurrencyIgnoresNaN() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(Double.NaN);
+        assertEquals(0, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void spendCurrencyFailsOnNaN() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(100);
+        assertFalse(data.spendCurrency(Double.NaN));
+        assertEquals(100, data.getCurrency(), DELTA);
+    }
+
+    @Test
     public void setBrokenBlocksBySetClampsNegative() {
         OneBlockPlayerData data = newData();
         Map<String, Integer> blocks = new HashMap<>();

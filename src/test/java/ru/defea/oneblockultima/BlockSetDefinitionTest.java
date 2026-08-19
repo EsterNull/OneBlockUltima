@@ -426,8 +426,8 @@ public class BlockSetDefinitionTest {
         entry.registry = "minecraft:stone";
         entry.dropItem = "minecraft:diamond";
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertFalse(stack.isEmpty());
-        assertEquals(net.minecraft.init.Items.DIAMOND, stack.getItem());
+        assertFalse(stack == null || stack.stackSize <= 0);
+        assertEquals(net.minecraft.init.Items.diamond, stack.getItem());
     }
 
     @Test
@@ -437,7 +437,7 @@ public class BlockSetDefinitionTest {
         entry.dropItem = null;
         entry.meta = 0;
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertFalse(stack.isEmpty());
+        assertFalse(stack == null || stack.stackSize <= 0);
     }
 
     @Test
@@ -447,7 +447,7 @@ public class BlockSetDefinitionTest {
         entry.dropItem = "nonexistent:item";
         entry.meta = 0;
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertFalse(stack.isEmpty());
+        assertFalse(stack == null || stack.stackSize <= 0);
     }
 
     @Test
@@ -456,7 +456,7 @@ public class BlockSetDefinitionTest {
         entry.registry = null;
         entry.dropItem = null;
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertTrue(stack.isEmpty());
+        assertTrue(stack == null || stack.stackSize <= 0);
     }
 
     @Test
@@ -466,7 +466,7 @@ public class BlockSetDefinitionTest {
         entry.dropItem = "minecraft:gold_ingot";
         entry.meta = 0;
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertEquals(net.minecraft.init.Items.GOLD_INGOT, stack.getItem());
+        assertEquals(net.minecraft.init.Items.gold_ingot, stack.getItem());
     }
 
     @Test
@@ -476,7 +476,7 @@ public class BlockSetDefinitionTest {
         entry.meta = 0;
         entry.nbtTags.setString("CustomColor", "blue");
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertFalse(stack.isEmpty());
+        assertFalse(stack == null || stack.stackSize <= 0);
         assertTrue(stack.hasTagCompound());
         assert stack.getTagCompound() != null;
         assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
@@ -488,7 +488,7 @@ public class BlockSetDefinitionTest {
         entry.registry = "minecraft:stone";
         entry.meta = 0;
         net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertFalse(stack.isEmpty());
+        assertFalse(stack == null || stack.stackSize <= 0);
         assertFalse(stack.hasTagCompound());
     }
 
@@ -955,5 +955,80 @@ public class BlockSetDefinitionTest {
         set.ensureComputedLevels();
         SetLevelDefinition second = set.getLevel(1);
         assertSame("second call should return same object (cached)", first, second);
+    }
+
+    @Test
+    public void ensureComputedLevelsMaxLevelReachesHighestElementLevel() {
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "gap_level_test";
+
+        BlockElementDefinition stone = new BlockElementDefinition();
+        stone.registry = "minecraft:stone";
+        stone.baseLevel = 1;
+        stone.baseChance = 100;
+        set.blocks.add(stone);
+
+        BlockElementDefinition dirt = new BlockElementDefinition();
+        dirt.registry = "minecraft:dirt";
+        dirt.baseLevel = 50;
+        dirt.baseChance = 100;
+        set.blocks.add(dirt);
+
+        set.ensureComputedLevels();
+
+        int max = set.getMaxLevel();
+        assertTrue("max level must not be below highest element level, but was " + max, max >= 50);
+
+        SetLevelDefinition lvl50 = set.getLevel(50);
+        assertNotNull("level 50 should be available", lvl50);
+        boolean foundDirt = false;
+        for (BlockEntryDefinition entry : lvl50.blocks) {
+            if ("minecraft:dirt".equals(entry.registry)) foundDirt = true;
+        }
+        assertTrue("level 50 should contain the dirt block", foundDirt);
+    }
+
+    @Test
+    public void getLevelClampsAboveMaxLevel() {
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "clamp_high_test";
+
+        BlockElementDefinition block = new BlockElementDefinition();
+        block.registry = "minecraft:stone";
+        block.baseLevel = 1;
+        block.baseChance = 100;
+        set.blocks.add(block);
+
+        set.ensureComputedLevels();
+
+        SetLevelDefinition top = set.getLevel(set.getMaxLevel());
+        SetLevelDefinition clamped = set.getLevel(9999);
+        assertNotNull("getLevel(9999) must not be null", clamped);
+        assertSame("level above max should clamp to max level", top, clamped);
+    }
+
+    @Test
+    public void getLevelClampsBelowMinLevel() {
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "clamp_low_test";
+
+        BlockElementDefinition block = new BlockElementDefinition();
+        block.registry = "minecraft:stone";
+        block.baseLevel = 5;
+        block.baseChance = 100;
+        set.blocks.add(block);
+
+        set.ensureComputedLevels();
+
+        SetLevelDefinition first = set.getLevel(5);
+        assertNotNull(first);
+
+        SetLevelDefinition clamped = set.getLevel(1);
+        assertNotNull("getLevel(1) must not be null", clamped);
+        assertSame("level below min should clamp to min level", first, clamped);
+
+        SetLevelDefinition zero = set.getLevel(0);
+        assertNotNull("getLevel(0) must not be null", zero);
+        assertSame("level 0 should clamp to min level", first, zero);
     }
 }

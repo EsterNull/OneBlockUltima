@@ -6,7 +6,7 @@ import ru.defea.oneblockultima.OneBlockUltima;
 public class ItemGraviton extends Item {
     public ItemGraviton() {
         setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("graviton");
+
         this.setUnlocalizedName("graviton");
     }
 }

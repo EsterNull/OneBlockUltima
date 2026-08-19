@@ -4,12 +4,12 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 
@@ -71,7 +71,7 @@ public class PacketSyncPlayerData implements IMessage
         public IMessage onMessage(PacketSyncPlayerData message, MessageContext ctx)
         {
             Minecraft.getMinecraft().addScheduledTask(() -> {
-                EntityPlayer player = Minecraft.getMinecraft().player;
+                EntityPlayer player = Minecraft.getMinecraft().thePlayer;
                 if (player == null)
                 {
                     return;
@@ -85,14 +85,16 @@ public class PacketSyncPlayerData implements IMessage
                     playerData.setBrokenBlocksTotal(message.data.getInteger("brokenBlocksTotal"));
                     playerData.getSetLevels().clear();
                     NBTTagCompound levels = message.data.getCompoundTag("setLevels");
-                    for (String key : levels.getKeySet())
+                    for (Object keyObj : levels.getKeySet())
                     {
+                        String key = keyObj.toString();
                         playerData.getSetLevels().put(key, levels.getInteger(key));
                     }
                     playerData.getBrokenBlocksBySet().clear();
                     NBTTagCompound brokenBlocksBySet = message.data.getCompoundTag("brokenBlocksBySet");
-                    for (String key : brokenBlocksBySet.getKeySet())
+                    for (Object keyObj : brokenBlocksBySet.getKeySet())
                     {
+                        String key = keyObj.toString();
                         playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInteger(key));
                     }
                 }

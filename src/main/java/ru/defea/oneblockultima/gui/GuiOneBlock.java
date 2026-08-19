@@ -4,26 +4,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.OneBlockUltima;
@@ -48,10 +42,12 @@ import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.gui.layout.ViewSwitcherElement;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.util.BlockUtil;
+import ru.defea.oneblockultima.util.MobIdUtil;
+import ru.defea.oneblockultima.util.ModelUtil;
+import ru.defea.oneblockultima.util.RenderUtil;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.*;
@@ -134,12 +130,12 @@ public class GuiOneBlock extends GuiContainer
     private boolean donateJustCopied = false;
 
     private BlockSetConfig.BlockEntryDefinition hoveredEntryLeft = null;
-    private ItemStack hoveredStackLeft = ItemStack.EMPTY;
+    private ItemStack hoveredStackLeft = null;
     private BlockSetConfig.MobEntryDefinition hoveredMobEntryLeft = null;
     private String hoveredMobNameLeft = null;
 
     private BlockSetConfig.BlockEntryDefinition hoveredEntryRight = null;
-    private ItemStack hoveredStackRight = ItemStack.EMPTY;
+    private ItemStack hoveredStackRight = null;
     private BlockSetConfig.MobEntryDefinition hoveredMobEntryRight = null;
     private String hoveredMobNameRight = null;
 
@@ -150,7 +146,7 @@ public class GuiOneBlock extends GuiContainer
     private String clientActiveSetId = null;
 
     private final List<BlockSetConfig.BlockEntryDefinition> backgroundBlocks = new ArrayList<>();
-    private final Map<BlockSetConfig.BlockEntryDefinition, TextureAtlasSprite> backgroundSpriteCache = new HashMap<>();
+    private final Map<BlockSetConfig.BlockEntryDefinition, IIcon> backgroundSpriteCache = new HashMap<>();
     private final Map<BlockSetConfig.MobEntryDefinition, Entity> mobEntityCache = new HashMap<>();
 
     private ViewFactory factory;
@@ -160,9 +156,9 @@ public class GuiOneBlock extends GuiContainer
     private CustomDrawCallbackElement infoElement;
     private CustomDrawCallbackElement panelsElement;
 
-    public GuiOneBlock(EntityPlayer player, World world, BlockPos generatorPos)
+    public GuiOneBlock(EntityPlayer player, World world, int generatorX, int generatorY, int generatorZ)
     {
-        super(new ContainerOneBlock(player, world, generatorPos));
+        super(new ContainerOneBlock(player, world, generatorX, generatorY, generatorZ));
         this.container = (ContainerOneBlock) this.inventorySlots;
         this.xSize = 360;
         this.ySize = 280;
@@ -170,7 +166,7 @@ public class GuiOneBlock extends GuiContainer
 
     private int getRowInterval()
     {
-        return fontRenderer.FONT_HEIGHT + 4;
+        return fontRendererObj.FONT_HEIGHT + 4;
     }
 
     private int getContentAreaWidth()
@@ -188,12 +184,12 @@ public class GuiOneBlock extends GuiContainer
     {
         if (visibleSets.isEmpty())
         {
-            return fontRenderer.FONT_HEIGHT * 2 + 16;
+            return fontRendererObj.FONT_HEIGHT * 2 + 16;
         }
         BlockSetConfig.BlockSetDefinition set = getBlockSetDefinition();
         if (set == null)
         {
-            return fontRenderer.FONT_HEIGHT * 2 + 16;
+            return fontRendererObj.FONT_HEIGHT * 2 + 16;
         }
 
         TileEntityOneBlockGenerator generator = container.getGenerator();
@@ -210,7 +206,7 @@ public class GuiOneBlock extends GuiContainer
         }
 
         int infoInternalWidth = Math.max(80, getContentAreaWidth() - 16);
-        int lines = fontRenderer.listFormattedStringToWidth(setTitle, infoInternalWidth).size();
+        int lines = fontRendererObj.listFormattedStringToWidth(setTitle, infoInternalWidth).size();
 
         String statusText;
         if (currentLevel <= 0)
@@ -219,17 +215,17 @@ public class GuiOneBlock extends GuiContainer
         }
         else
         {
-            BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
-            statusText = nextLevel != null
-                    ? I18n.format("gui.oneblockultima.upgrade_cost") + ": " + nextLevel.upgradeCost
+            boolean atMax = currentLevel >= set.getMaxLevel();
+            statusText = !atMax
+                    ? I18n.format("gui.oneblockultima.upgrade_cost") + ": " + set.getLevel(currentLevel + 1).upgradeCost
                     : I18n.format("gui.oneblockultima.max_level");
         }
-        lines += fontRenderer.listFormattedStringToWidth(statusText, infoInternalWidth).size();
+        lines += fontRendererObj.listFormattedStringToWidth(statusText, infoInternalWidth).size();
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(container.getPlayer());
         String brokenText = I18n.format("gui.oneblockultima.blocks_broken") + ": " +
                 (data != null ? data.getBrokenBlocksCount(set.id) : 0);
-        lines += fontRenderer.listFormattedStringToWidth(brokenText, infoInternalWidth).size();
+        lines += fontRendererObj.listFormattedStringToWidth(brokenText, infoInternalWidth).size();
 
         if (data != null && currentLevel <= 0 && set.unlockConditions != null &&
                 !set.unlockConditions.conditions.isEmpty())
@@ -237,7 +233,7 @@ public class GuiOneBlock extends GuiContainer
             lines += 1 + set.unlockConditions.conditions.size();
         }
 
-        return capInfoHeight(lines * fontRenderer.FONT_HEIGHT + Math.max(0, lines - 1) * 4 + 8);
+        return capInfoHeight(lines * fontRendererObj.FONT_HEIGHT + Math.max(0, lines - 1) * 4 + 8);
     }
 
     private int capInfoHeight(int desiredHeight)
@@ -294,6 +290,7 @@ public class GuiOneBlock extends GuiContainer
         initBackgroundBlocks();
     }
 
+    @SuppressWarnings("unchecked")
     private void buildView()
     {
         if (factory == null || factory.getScreenWidth() != xSize || factory.getScreenHeight() != ySize)
@@ -338,7 +335,7 @@ public class GuiOneBlock extends GuiContainer
         switcher.replaceView(activeView, view);
         switcher.setView(activeView);
         updateViewButtons();
-        factory.build(buttonList, fontRenderer, guiLeft, guiTop, xSize, ySize);
+        factory.build(buttonList, fontRendererObj, guiLeft, guiTop, xSize, ySize);
     }
 
     private void buildSetsView(ColumnElement view)
@@ -511,14 +508,13 @@ public class GuiOneBlock extends GuiContainer
         }
         else
         {
-            BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
-            if (nextLevel != null)
+            if (currentLevel >= set.getMaxLevel())
             {
-                fr.drawString(I18n.format("gui.oneblockultima.upgrade_cost") + ": " + nextLevel.upgradeCost, x + 4, statusY, LIGHT_GRAY_COLOR_2);
+                fr.drawString(I18n.format("gui.oneblockultima.max_level"), x + 4, statusY, LIGHT_GRAY_COLOR_2);
             }
             else
             {
-                fr.drawString(I18n.format("gui.oneblockultima.max_level"), x + 4, statusY, LIGHT_GRAY_COLOR_2);
+                fr.drawString(I18n.format("gui.oneblockultima.upgrade_cost") + ": " + set.getLevel(currentLevel + 1).upgradeCost, x + 4, statusY, LIGHT_GRAY_COLOR_2);
             }
         }
 
@@ -550,16 +546,15 @@ public class GuiOneBlock extends GuiContainer
             }
             else
             {
-                BlockSetConfig.SetLevelDefinition nextLevel = set.getLevel(currentLevel + 1);
-                if (nextLevel != null)
-                {
-                    upgradeButton.text(I18n.format("gui.oneblockultima.upgrade"));
-                    upgradeButton.enabled(true);
-                }
-                else
+                if (currentLevel >= set.getMaxLevel())
                 {
                     upgradeButton.text(I18n.format("gui.oneblockultima.max"));
                     upgradeButton.enabled(false);
+                }
+                else
+                {
+                    upgradeButton.text(I18n.format("gui.oneblockultima.upgrade"));
+                    upgradeButton.enabled(true);
                 }
             }
         }
@@ -597,7 +592,8 @@ public class GuiOneBlock extends GuiContainer
             renderLevelPanel(currentDef, x, y, true, mouseX, mouseY);
         }
         int rightStartX = canShowCurrent ? rightPanelX : x;
-        BlockSetConfig.SetLevelDefinition nextDef = set.getLevel(currentLevel <= 0 ? 1 : currentLevel + 1);
+        BlockSetConfig.SetLevelDefinition nextDef = currentLevel >= set.getMaxLevel()
+                ? null : set.getLevel(currentLevel + 1);
         renderLevelPanel(nextDef, rightStartX, y, false, mouseX, mouseY);
 
         if (canShowCurrent && nextDef != null)
@@ -689,7 +685,7 @@ public class GuiOneBlock extends GuiContainer
     {
         try
         {
-            net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
+            net.minecraft.block.Block block = (net.minecraft.block.Block) net.minecraft.block.Block.blockRegistry.getObject(registry);
             if (block != null && isFullBlock(block, meta))
             {
                 backgroundBlocks.add(createBlockEntry(registry, meta));
@@ -724,16 +720,15 @@ public class GuiOneBlock extends GuiContainer
         int extraRows = 2;
 
         Minecraft mc = Minecraft.getMinecraft();
-        mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+        mc.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
 
-        GlStateManager.enableAlpha();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glEnable(GL11.GL_ALPHA_TEST);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder buf = tess.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        Tessellator tess = Tessellator.instance;
+        tess.startDrawingQuads();
 
         try
         {
@@ -747,7 +742,7 @@ public class GuiOneBlock extends GuiContainer
                     BlockSetConfig.BlockEntryDefinition entry = backgroundBlocks.get(blockIndex);
                     if (entry == null) continue;
 
-                    TextureAtlasSprite sprite = resolveBackgroundSprite(entry);
+                    IIcon sprite = resolveBackgroundSprite(entry);
                     if (sprite == null) continue;
 
                     int x = startX + col * texSize;
@@ -778,10 +773,10 @@ public class GuiOneBlock extends GuiContainer
                     int quadWidth = drawX2 - drawX;
                     int quadHeight = drawY2 - drawY;
 
-                    buf.pos(drawX, drawY + quadHeight, 0.0D).tex(uMin, vMax).endVertex();
-                    buf.pos(drawX + quadWidth, drawY + quadHeight, 0.0D).tex(uMax, vMax).endVertex();
-                    buf.pos(drawX + quadWidth, drawY, 0.0D).tex(uMax, vMin).endVertex();
-                    buf.pos(drawX, drawY, 0.0D).tex(uMin, vMin).endVertex();
+                    tess.addVertexWithUV(drawX, drawY + quadHeight, 0.0D, uMin, vMax);
+                    tess.addVertexWithUV(drawX + quadWidth, drawY + quadHeight, 0.0D, uMax, vMax);
+                    tess.addVertexWithUV(drawX + quadWidth, drawY, 0.0D, uMax, vMin);
+                    tess.addVertexWithUV(drawX, drawY, 0.0D, uMin, vMin);
                 }
             }
 
@@ -789,14 +784,14 @@ public class GuiOneBlock extends GuiContainer
         }
         catch (Exception ignored) {}
 
-        GlStateManager.disableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glDisable(GL11.GL_ALPHA_TEST);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    private TextureAtlasSprite resolveBackgroundSprite(BlockSetConfig.BlockEntryDefinition entry)
+    private IIcon resolveBackgroundSprite(BlockSetConfig.BlockEntryDefinition entry)
     {
-        TextureAtlasSprite cached = backgroundSpriteCache.get(entry);
+        IIcon cached = backgroundSpriteCache.get(entry);
         if (cached != null)
         {
             return cached;
@@ -808,49 +803,40 @@ public class GuiOneBlock extends GuiContainer
             net.minecraft.block.Block block = entry.resolveBlock();
             if (block == null) return null;
 
-            net.minecraft.block.state.IBlockState state = null;
+            IIcon icon = null;
             try
             {
-                state = block.getStateFromMeta(entry.meta);
+                icon = block.getIcon(2, entry.meta);
             }
             catch (Exception ex)
             {
                 try
                 {
-                    state = block.getDefaultState();
+                    icon = block.getIcon(0, entry.meta);
                 }
                 catch (Exception ignored) {}
             }
 
-            if (state == null) return null;
-
-            BlockRendererDispatcher blockRenderer = mc.getBlockRendererDispatcher();
-            TextureAtlasSprite sprite = null;
-
-            try
-            {
-                sprite = blockRenderer.getBlockModelShapes().getTexture(state);
-            }
-            catch (Exception ignored) {}
-
-            if (sprite == null || "missingno".equals(sprite.getIconName()))
+            if (icon == null || "missingno".equals(icon.getIconName()))
             {
                 try
                 {
-                    ResourceLocation registryName = Objects.requireNonNull(block.getRegistryName());
-                    sprite = mc.getTextureMapBlocks().getAtlasSprite(registryName.toString());
-                    if ("missingno".equals(sprite.getIconName()))
+                    String registryName = net.minecraft.block.Block.blockRegistry.getNameForObject(block);
+                    icon = mc.getTextureMapBlocks().getAtlasSprite(registryName);
+                    if (icon == null || "missingno".equals(icon.getIconName()))
                     {
-                        sprite = mc.getTextureMapBlocks().getAtlasSprite("minecraft:items/" + registryName.getResourcePath());
+                        int colon = registryName.indexOf(':');
+                        String itemPath = colon >= 0 ? registryName.substring(colon + 1) : registryName;
+                        icon = mc.getTextureMapBlocks().getAtlasSprite("minecraft:items/" + itemPath);
                     }
                 }
                 catch (Exception ignored) {}
             }
 
-            if (sprite == null) return null;
+            if (icon == null) return null;
 
-            backgroundSpriteCache.put(entry, sprite);
-            return sprite;
+            backgroundSpriteCache.put(entry, icon);
+            return icon;
         }
         catch (Exception ignored)
         {
@@ -873,13 +859,13 @@ public class GuiOneBlock extends GuiContainer
 
         try
         {
-            World mcWorld = Minecraft.getMinecraft().world;
-            Entity entity = EntityList.createEntityByIDFromName(new ResourceLocation(entry.registry), mcWorld);
+            World mcWorld = ModelUtil.getWorldOrCreateDummy();
+            Entity entity = mcWorld != null ? MobIdUtil.createEntity(entry.registry, mcWorld) : null;
             if (entity != null)
             {
-                if (entity.world == null)
+                if (entity.worldObj == null)
                 {
-                    entity.world = mcWorld;
+                    entity.worldObj = mcWorld;
                 }
                 if (entry.nbtTags != null && !entry.nbtTags.hasNoTags())
                 {
@@ -959,9 +945,9 @@ public class GuiOneBlock extends GuiContainer
         int gridStartY = getGridStartY(panelY);
         int areaHeight = getAreaHeight();
 
-        fontRenderer.drawString(I18n.format(isLeft ? "gui.oneblockultima.current_level" : "gui.oneblockultima.next_level") + ": " + levelDefinition.level,
+        fontRendererObj.drawString(I18n.format(isLeft ? "gui.oneblockultima.current_level" : "gui.oneblockultima.next_level") + ": " + levelDefinition.level,
                 panelX + INNER_PADDING, panelY + 4, LIGHT_BLUE_GRAY_COLOR);
-        fontRenderer.drawString(I18n.format("gui.oneblockultima.possible_blocks") + ": ",
+        fontRendererObj.drawString(I18n.format("gui.oneblockultima.possible_blocks") + ": ",
                 panelX + INNER_PADDING, panelY + getRowInterval(), LIGHT_BLUE_GRAY_COLOR);
 
         if (levelDefinition.blocks != null && !levelDefinition.blocks.isEmpty())
@@ -1010,7 +996,7 @@ public class GuiOneBlock extends GuiContainer
                     }
 
                     ItemStack stack = entry.getPickBlock();
-                    if (stack.isEmpty())
+                    if (stack == null || stack.stackSize <= 0)
                     {
                         net.minecraft.block.Block blockForIcon = entry.resolveBlock();
                         Item itemForIcon = null;
@@ -1018,16 +1004,17 @@ public class GuiOneBlock extends GuiContainer
                         {
                             itemForIcon = Item.getItemFromBlock(blockForIcon);
                         }
-                        if (itemForIcon == null || itemForIcon == Items.AIR)
+                        Item airItem = Item.getItemFromBlock(Blocks.air);
+                        if (itemForIcon == null || itemForIcon == airItem)
                         {
-                            try { itemForIcon = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.registry)); } catch (Exception ignored) { }
+                            try { itemForIcon = (Item) Item.itemRegistry.getObject(entry.registry); } catch (Exception ignored) { }
                         }
-                        if (itemForIcon != null && itemForIcon != Items.AIR)
+                        if (itemForIcon != null && itemForIcon != airItem)
                         {
                             try {
                                 stack = new ItemStack(itemForIcon, 1, entry.meta);
                                 if (entry.nbtTags != null && !entry.nbtTags.hasNoTags()) {
-                                    stack.setTagCompound(entry.nbtTags.copy());
+                                    stack.setTagCompound((net.minecraft.nbt.NBTTagCompound) entry.nbtTags.copy());
                                 }
                             } catch (Exception ignored) {
                                 stack = new ItemStack(itemForIcon);
@@ -1046,26 +1033,17 @@ public class GuiOneBlock extends GuiContainer
                     drawRect(cellX, cellY, cellX + 1, cellY + cellSize, borderColor);
                     drawRect(cellX + cellSize - 1, cellY, cellX + cellSize, cellY + cellSize, borderColor);
 
-                    if (!stack.isEmpty())
+                    if (stack != null && stack.stackSize > 0)
                     {
-                        RenderHelper.enableGUIStandardItemLighting();
-                        GlStateManager.enableDepth();
-
                         int iconX = cellX + (cellSize - 16) / 2;
                         int iconY = cellY + (cellSize - 16) / 2;
 
-                        RenderItem renderItem = Minecraft.getMinecraft().getRenderItem();
-                        renderItem.renderItemAndEffectIntoGUI(stack, iconX, iconY);
-
-                        GlStateManager.disableDepth();
-                        RenderHelper.disableStandardItemLighting();
+                        RenderUtil.renderItemIntoGUI(fontRendererObj, stack, iconX, iconY);
                     }
                     else
                     {
                         if (blockForIcon != null)
                         {
-                            net.minecraft.block.state.IBlockState state = null;
-                            try { state = blockForIcon.getStateFromMeta(entry.meta); } catch (Exception ex) { try { state = blockForIcon.getDefaultState(); } catch (Exception ignored) { } }
                             int iconX = cellX + (cellSize - 12) / 2;
                             int iconY = cellY + (cellSize - 12) / 2;
 
@@ -1084,26 +1062,26 @@ public class GuiOneBlock extends GuiContainer
                                 FluidElement fluidIcon = new FluidElement(fluid).size(12);
                                 fluidIcon.setComputedPosition(iconX, iconY);
                                 fluidIcon.setComputedSize(12, 12);
-                                fluidIcon.draw(fontRenderer, mouseX, mouseY, 0);
+                                fluidIcon.draw(fontRendererObj, mouseX, mouseY, 0);
                             }
-                            else if (state != null)
+                            else
                             {
-                                BlockElement blockIcon = new BlockElement(state).size(16);
+                                BlockElement blockIcon = new BlockElement(blockForIcon, entry.meta).size(16);
                                 blockIcon.setComputedPosition(iconX, iconY);
                                 blockIcon.setComputedSize(16, 16);
-                                blockIcon.draw(fontRenderer, mouseX, mouseY, 0);
+                                blockIcon.draw(fontRendererObj, mouseX, mouseY, 0);
                             }
                         }
                     }
 
                     int chance = entry.getChance();
                     String percent = chance + "%";
-                    int percentWidth = fontRenderer.getStringWidth(percent);
+                    int percentWidth = fontRendererObj.getStringWidth(percent);
                     int percentX = cellX + (cellSize - percentWidth) / 2;
-                    int percentY = cellY + cellSize - fontRenderer.FONT_HEIGHT - 1;
-                    GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                    int percentY = cellY + cellSize - fontRendererObj.FONT_HEIGHT - 1;
+                    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                     int color = chance < 10 ? RED_COLOR : chance < 20 ? ORANGE_COLOR : GREEN_COLOR;
-                    fontRenderer.drawStringWithShadow(percent, percentX, percentY, color);
+                    fontRendererObj.drawStringWithShadow(percent, percentX, percentY, color);
 
                     if (isHovered && hoveredEntry != null)
                     {
@@ -1136,7 +1114,7 @@ public class GuiOneBlock extends GuiContainer
 
             if (levelDefinition.mobs != null && !levelDefinition.mobs.isEmpty())
             {
-                fontRenderer.drawString(I18n.format("gui.oneblockultima.mobs") + ":",
+                fontRendererObj.drawString(I18n.format("gui.oneblockultima.mobs") + ":",
                         mobsStartX, panelY + getRowInterval(), LIGHT_BLUE_GRAY_COLOR);
 
                 int mobTotal = levelDefinition.mobs.size();
@@ -1188,7 +1166,7 @@ public class GuiOneBlock extends GuiContainer
                             EntityRendererElement mobIcon = new EntityRendererElement(entity).scale(iconScale);
                             mobIcon.setComputedPosition(cellX + cellPadding, cellY + cellPadding);
                             mobIcon.setComputedSize(iconScale, iconScale);
-                            mobIcon.draw(fontRenderer, mouseX, mouseY, 0);
+                            mobIcon.draw(fontRendererObj, mouseX, mouseY, 0);
                         }
 
                         if (isMobHovered)
@@ -1199,7 +1177,7 @@ public class GuiOneBlock extends GuiContainer
                                 hoveredMobNameLeft = null;
                                 if (entity != null)
                                 {
-                                    try { hoveredMobNameLeft = entity.getDisplayName().getUnformattedText(); } catch (Exception ignored) { }
+                                    try { hoveredMobNameLeft = entity.getCommandSenderName(); } catch (Exception ignored) { }
                                 }
                             }
                             else
@@ -1208,17 +1186,17 @@ public class GuiOneBlock extends GuiContainer
                                 hoveredMobNameRight = null;
                                 if (entity != null)
                                 {
-                                    try { hoveredMobNameRight = entity.getDisplayName().getUnformattedText(); } catch (Exception ignored) { }
+                                    try { hoveredMobNameRight = entity.getCommandSenderName(); } catch (Exception ignored) { }
                                 }
                             }
                         }
 
                         int chance = mobEntry.getChance();
                         String percent = chance + "%";
-                        int pw = fontRenderer.getStringWidth(percent);
-                        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+                        int pw = fontRendererObj.getStringWidth(percent);
+                        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                         int color = chance < 10 ? RED_COLOR : chance < 20 ? ORANGE_COLOR : GREEN_COLOR;
-                        fontRenderer.drawStringWithShadow(percent, cellX + (float) (cellSize - pw) / 2, cellY + cellSize - fontRenderer.FONT_HEIGHT - 2, color);
+                        fontRendererObj.drawStringWithShadow(percent, cellX + (cellSize - pw) / 2, cellY + cellSize - fontRendererObj.FONT_HEIGHT - 2, color);
                     }
                 }
 
@@ -1431,6 +1409,7 @@ public class GuiOneBlock extends GuiContainer
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY)
     {
         updateViewButtons();
@@ -1441,22 +1420,31 @@ public class GuiOneBlock extends GuiContainer
             return;
         }
 
-        if (hoveredEntryLeft == null && hoveredStackLeft.isEmpty() && hoveredMobEntryLeft == null &&
-                hoveredEntryRight == null && hoveredStackRight.isEmpty() && hoveredMobEntryRight == null) {
+        if (hoveredEntryLeft == null && (hoveredStackLeft == null || hoveredStackLeft.stackSize <= 0) && hoveredMobEntryLeft == null &&
+                hoveredEntryRight == null && (hoveredStackRight == null || hoveredStackRight.stackSize <= 0) && hoveredMobEntryRight == null) {
             return;
         }
 
-        if (!hoveredStackLeft.isEmpty())
+        if (hoveredStackLeft != null && hoveredStackLeft.stackSize > 0)
         {
-            List<String> tooltip = hoveredStackLeft.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+            List<String> tooltip;
+            try
+            {
+                tooltip = hoveredStackLeft.getTooltip(mc.thePlayer, mc.gameSettings.advancedItemTooltips);
+            }
+            catch (Exception ignored)
+            {
+                tooltip = new ArrayList<>();
+                tooltip.add(hoveredEntryLeft != null ? hoveredEntryLeft.registry : hoveredStackLeft.getItem().getUnlocalizedName());
+            }
             tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + (hoveredEntryLeft != null ? hoveredEntryLeft.getChance() : 0) + "%");
-            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
         }
         else if (hoveredEntryLeft != null && hoveredEntryLeft.isFluid())
         {
             List<String> tooltip = BlockUtil.getTooltip(hoveredEntryLeft, mc.gameSettings.advancedItemTooltips);
             tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + hoveredEntryLeft.getChance() + "%");
-            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
         }
         else if (hoveredMobEntryLeft != null)
         {
@@ -1466,13 +1454,16 @@ public class GuiOneBlock extends GuiContainer
             {
                 try
                 {
-                    String entityName = EntityList.getTranslationName(new ResourceLocation(hoveredMobEntryLeft.registry));
-                    if (entityName != null && !entityName.isEmpty())
+                    String entityName = hoveredMobEntryLeft.registry;
+                    int colon = entityName.indexOf(':');
+                    if (colon >= 0) entityName = entityName.substring(colon + 1);
+                    if (!entityName.isEmpty())
                     {
-                        String translationKey = "entity." + entityName + ".name";
-                        mobName = I18n.format(translationKey);
-                        if (mobName.equals(translationKey)) mobName = null;
+                        entityName = Character.toUpperCase(entityName.charAt(0)) + entityName.substring(1);
                     }
+                    String translationKey = "entity." + entityName + ".name";
+                    mobName = I18n.format(translationKey);
+                    if (mobName.equals(translationKey)) mobName = null;
                 }
                 catch (Exception ignored) { }
             }
@@ -1486,23 +1477,28 @@ public class GuiOneBlock extends GuiContainer
             {
                 tooltip.add("x" + hoveredMobEntryLeft.count);
             }
-            if (hoveredMobEntryLeft.nbtTags != null && !hoveredMobEntryLeft.nbtTags.hasNoTags())
-            {
-                tooltip.add(I18n.format("gui.oneblockultima.config.nbt_edit"));
-            }
-            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
         }
-        else if (!hoveredStackRight.isEmpty())
+        else if (hoveredStackRight != null && hoveredStackRight.stackSize > 0)
         {
-            List<String> tooltip = hoveredStackRight.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+            List<String> tooltip;
+            try
+            {
+                tooltip = hoveredStackRight.getTooltip(mc.thePlayer, mc.gameSettings.advancedItemTooltips);
+            }
+            catch (Exception ignored)
+            {
+                tooltip = new ArrayList<>();
+                tooltip.add(hoveredEntryRight != null ? hoveredEntryRight.registry : hoveredStackRight.getItem().getUnlocalizedName());
+            }
             tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + (hoveredEntryRight != null ? hoveredEntryRight.getChance() : 0) + "%");
-            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
         }
         else if (hoveredEntryRight != null && hoveredEntryRight.isFluid())
         {
             List<String> tooltip = BlockUtil.getTooltip(hoveredEntryRight, mc.gameSettings.advancedItemTooltips);
             tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + hoveredEntryRight.getChance() + "%");
-            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
         }
         else if (hoveredMobEntryRight != null)
         {
@@ -1512,13 +1508,16 @@ public class GuiOneBlock extends GuiContainer
             {
                 try
                 {
-                    String entityName = EntityList.getTranslationName(new ResourceLocation(hoveredMobEntryRight.registry));
-                    if (entityName != null && !entityName.isEmpty())
+                    String entityName = hoveredMobEntryRight.registry;
+                    int colon = entityName.indexOf(':');
+                    if (colon >= 0) entityName = entityName.substring(colon + 1);
+                    if (!entityName.isEmpty())
                     {
-                        String translationKey = "entity." + entityName + ".name";
-                        mobName = I18n.format(translationKey);
-                        if (mobName.equals(translationKey)) mobName = null;
+                        entityName = Character.toUpperCase(entityName.charAt(0)) + entityName.substring(1);
                     }
+                    String translationKey = "entity." + entityName + ".name";
+                    mobName = I18n.format(translationKey);
+                    if (mobName.equals(translationKey)) mobName = null;
                 }
                 catch (Exception ignored) { }
             }
@@ -1532,11 +1531,7 @@ public class GuiOneBlock extends GuiContainer
             {
                 tooltip.add("x" + hoveredMobEntryRight.count);
             }
-            if (hoveredMobEntryRight.nbtTags != null && !hoveredMobEntryRight.nbtTags.hasNoTags())
-            {
-                tooltip.add(I18n.format("gui.oneblockultima.config.nbt_edit"));
-            }
-            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRendererObj);
         }
     }
 
@@ -1569,21 +1564,21 @@ public class GuiOneBlock extends GuiContainer
             String conditionText = formatUnlockCondition(condition, data, generator);
             String fullText = " - " + conditionText + " \u2713";
 
-            int textWidth = fontRenderer.getStringWidth(fullText);
+            int textWidth = fontRendererObj.getStringWidth(fullText);
             columnWidth = Math.max(textWidth, columnWidth);
         }
 
         String title = I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config." + set.unlockConditions.mode);
-        int titleWidth = fontRenderer.getStringWidth(title);
+        int titleWidth = fontRendererObj.getStringWidth(title);
         columnWidth = Math.max(titleWidth, columnWidth);
         int startX = x + (width - columnWidth) / 2;
         conditionsStartX = startX;
         conditionsColumnWidth = columnWidth;
         int titleX = startX + titleWidth / 2;
-        fontRenderer.drawString(title, titleX, y, LIGHT_BLUE_GRAY_COLOR);
+        fontRendererObj.drawString(title, titleX, y, LIGHT_BLUE_GRAY_COLOR);
 
-        int lineSpacing = fontRenderer.FONT_HEIGHT + 1;
-        int areaTop = y + fontRenderer.FONT_HEIGHT + 2;
+        int lineSpacing = fontRendererObj.FONT_HEIGHT + 1;
+        int areaTop = y + fontRendererObj.FONT_HEIGHT + 2;
         int areaBottom = y + height;
         int areaHeight = areaBottom - areaTop;
         if (areaHeight < lineSpacing)
@@ -1616,7 +1611,7 @@ public class GuiOneBlock extends GuiContainer
             String status = satisfied ? " \u2713" : " \u2717";
             String fullText = " - " + conditionText + status;
 
-            fontRenderer.drawString(fullText, startX, textY, color);
+            fontRendererObj.drawString(fullText, startX, textY, color);
             textY += lineSpacing;
         }
 
@@ -1663,7 +1658,7 @@ public class GuiOneBlock extends GuiContainer
     }
 
     @Override
-    public void handleMouseInput() throws IOException
+    public void handleMouseInput()
     {
         super.handleMouseInput();
         int d = Mouse.getEventDWheel();
@@ -1804,7 +1799,7 @@ public class GuiOneBlock extends GuiContainer
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY)
     {
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
         clearHovered();
 
@@ -1830,7 +1825,7 @@ public class GuiOneBlock extends GuiContainer
             drawRect(guiLeft, contentTop, guiLeft + xSize, contentBottom, TRANSPARENT_DARK_GRAY_COLOR_1);
         }
 
-        factory.draw(fontRenderer, mouseX, mouseY, partialTicks, guiLeft, guiTop, xSize, ySize);
+        factory.draw(fontRendererObj, mouseX, mouseY, partialTicks, guiLeft, guiTop, xSize, ySize);
     }
 
     private void drawDonateHoverHint(int mouseX, int mouseY)
@@ -1860,7 +1855,7 @@ public class GuiOneBlock extends GuiContainer
 
             List<String> tooltip = new ArrayList<>();
             tooltip.add(hint);
-            drawHoveringText(tooltip, x + w / 2 - guiLeft, y - guiTop - 4, fontRenderer);
+            drawHoveringText(tooltip, x + w / 2 - guiLeft, y - guiTop - 4, fontRendererObj);
             break;
         }
         if (!hoveringTextButton)
@@ -1870,7 +1865,7 @@ public class GuiOneBlock extends GuiContainer
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
     {
         if (mouseX < guiLeft || mouseX >= guiLeft + xSize || mouseY < guiTop || mouseY >= guiTop + ySize)
         {
@@ -2061,11 +2056,11 @@ public class GuiOneBlock extends GuiContainer
     private void clearHovered()
     {
         hoveredEntryLeft = null;
-        hoveredStackLeft = ItemStack.EMPTY;
+        hoveredStackLeft = null;
         hoveredMobEntryLeft = null;
         hoveredMobNameLeft = null;
         hoveredEntryRight = null;
-        hoveredStackRight = ItemStack.EMPTY;
+        hoveredStackRight = null;
         hoveredMobEntryRight = null;
         hoveredMobNameRight = null;
     }
@@ -2082,7 +2077,7 @@ public class GuiOneBlock extends GuiContainer
             sb.setComputedSize(SCROLLBAR_WIDTH, scrollHeight);
         }
         sb.totalItems(totalItems).visibleItems(visible).scrollOffset(currentScroll);
-        sb.draw(fontRenderer, 0, 0, 0);
+        sb.draw(fontRendererObj, 0, 0, 0);
         return sb;
     }
 }

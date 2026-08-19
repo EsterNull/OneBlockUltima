@@ -1,11 +1,11 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Bootstrap;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.block.BlockCustomBreakable;
@@ -91,53 +91,70 @@ public class BlockSetConfigUnlockConditionTest
     @Test
     public void replacesUnbreakableBlocksWhenPlacedAboveGenerator()
     {
-        IBlockState barrier = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BARRIER.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
-        assertTrue("barrier must be substituted", barrier.getBlock() instanceof BlockCustomBreakable);
-        assertEquals(Blocks.BARRIER, ((BlockCustomBreakable) barrier.getBlock()).getEmulated());
+        World world = TestDummyWorld.newWorld(false);
+        int x = 8;
+        int y = 70;
+        int z = 8;
+        world.setBlock(x, y - 1, z, ModBlocks.ONE_BLOCK_GENERATOR, 0, 2);
 
-        IBlockState bedrock = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BEDROCK.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
-        assertTrue("bedrock must be substituted", bedrock.getBlock() instanceof BlockCustomBreakable);
-        assertEquals(Blocks.BEDROCK, ((BlockCustomBreakable) bedrock.getBlock()).getEmulated());
+        Block obsidian = BlockUtil.getReplacementBlockForGeneratorPlacement(Blocks.obsidian, world, x, y, z);
+        assertSame("obsidian is breakable and must stay as-is", Blocks.obsidian, obsidian);
 
-        IBlockState frame = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.END_PORTAL_FRAME.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
-        assertTrue("end portal frame must be substituted", frame.getBlock() instanceof BlockCustomBreakable);
-        assertEquals(Blocks.END_PORTAL_FRAME, ((BlockCustomBreakable) frame.getBlock()).getEmulated());
+        Block bedrock = BlockUtil.getReplacementBlockForGeneratorPlacement(Blocks.bedrock, world, x, y, z);
+        assertTrue("bedrock must be substituted", bedrock instanceof BlockCustomBreakable);
+        assertEquals(Blocks.bedrock, ((BlockCustomBreakable) bedrock).getEmulated());
+
+        Block frame = BlockUtil.getReplacementBlockForGeneratorPlacement(Blocks.end_portal_frame, world, x, y, z);
+        assertTrue("end portal frame must be substituted", frame instanceof BlockCustomBreakable);
+        assertEquals(Blocks.end_portal_frame, ((BlockCustomBreakable) frame).getEmulated());
     }
 
     @Test
     public void keepsBreakableBlocksWhenPlacedAboveGenerator()
     {
-        assertSame(Blocks.STONE.getDefaultState(),
-                BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.STONE.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState()));
+        World world = TestDummyWorld.newWorld(false);
+        int x = 8;
+        int y = 70;
+        int z = 8;
+        world.setBlock(x, y - 1, z, ModBlocks.ONE_BLOCK_GENERATOR, 0, 2);
+
+        assertSame(Blocks.stone, BlockUtil.getReplacementBlockForGeneratorPlacement(Blocks.stone, world, x, y, z));
     }
 
     @Test
     public void keepsUnbreakableBlocksWhenNotPlacedAboveGenerator()
     {
-        assertSame(Blocks.BARRIER.getDefaultState(),
-                BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.BARRIER.getDefaultState(), Blocks.STONE.getDefaultState()));
+        World world = TestDummyWorld.newWorld(false);
+        int x = 8;
+        int y = 70;
+        int z = 8;
+
+        assertSame(Blocks.obsidian, BlockUtil.getReplacementBlockForGeneratorPlacement(Blocks.obsidian, world, x, y, z));
     }
 
     @Test
     public void customBreakableIsBreakableAndDropsOriginalBlock()
     {
-        IBlockState state = BlockUtil.getReplacementStateForGeneratorPlacement(Blocks.END_PORTAL_FRAME.getDefaultState(), ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState());
+        World world = TestDummyWorld.newWorld(false);
+        int x = 8;
+        int y = 70;
+        int z = 8;
+        world.setBlock(x, y - 1, z, ModBlocks.ONE_BLOCK_GENERATOR, 0, 2);
 
-        //noinspection DataFlowIssue
-        assertTrue("substitute must be breakable", state.getBlockHardness(null, null) >= 0.0F);
-        //noinspection DataFlowIssue
-        List<ItemStack> drops = state.getBlock().getDrops(null, null, state, 0);
+        Block substitute = BlockUtil.getReplacementBlockForGeneratorPlacement(Blocks.end_portal_frame, world, x, y, z);
+        assertTrue("substitute must be breakable", BlockUtil.isBreakable(substitute));
+        assertTrue("substitute must be a custom breakable", substitute instanceof BlockCustomBreakable);
+
+        List<ItemStack> drops = substitute.getDrops(world, x, y, z, 0, 0);
         assertEquals(1, drops.size());
-        assertEquals(Item.getItemFromBlock(Blocks.END_PORTAL_FRAME), drops.get(0).getItem());
-        assertEquals(Blocks.END_PORTAL_FRAME.getDefaultState().getBlock().getMetaFromState(Blocks.END_PORTAL_FRAME.getDefaultState()),
-                drops.get(0).getMetadata());
+        assertEquals(Item.getItemFromBlock(Blocks.end_portal_frame), drops.get(0).getItem());
+        assertEquals(0, drops.get(0).getMetadata());
     }
 
     @Test
     public void fluidBarrierIsTransparentToExplosions()
     {
-        //noinspection DataFlowIssue
-        float resistance = ModBlocks.FLUID_BARRIER.getExplosionResistance(null, null, null, null);
+        float resistance = ModBlocks.FLUID_BARRIER.getExplosionResistance(null);
         assertEquals("FluidBarrier must not absorb explosion rays", 0.0F, resistance, DELTA);
     }
 
@@ -145,9 +162,8 @@ public class BlockSetConfigUnlockConditionTest
     public void fluidBarrierIsAirLikeForPlacement()
     {
         // ItemFlintAndSteel/ItemFireball require world.isAirBlock to place fire
-        //noinspection DataFlowIssue
         assertTrue("FluidBarrier must be treated as air so fire can be placed on its slot",
-                ModBlocks.FLUID_BARRIER.isAir(null, null, null));
+                ModBlocks.FLUID_BARRIER.isAir(null, 0, 0, 0));
     }
 
     @Test
@@ -156,7 +172,7 @@ public class BlockSetConfigUnlockConditionTest
         // Liquid flow (BlockDynamicLiquid.canFlowInto -> isBlocked) relies on the material
         // blocking movement; making the barrier air-like must not lift this.
         assertTrue("FluidBarrier must keep a movement-blocking material so liquids cannot flow into it",
-                ModBlocks.FLUID_BARRIER.getDefaultState().getMaterial().blocksMovement());
+                ModBlocks.FLUID_BARRIER.getMaterial().blocksMovement());
     }
 
     @Test
@@ -166,19 +182,19 @@ public class BlockSetConfigUnlockConditionTest
         CommandAcceptGeneratorInvite acceptCommand = new CommandAcceptGeneratorInvite();
         CommandDeclineGeneratorInvite declineCommand = new CommandDeclineGeneratorInvite();
 
-        assertEquals("inviteGeneratorMember", inviteCommand.getName());
+        assertEquals("inviteGeneratorMember", inviteCommand.getCommandName());
         //noinspection DataFlowIssue
-        assertEquals("/inviteGeneratorMember <playerName>", inviteCommand.getUsage(null));
+        assertEquals("/inviteGeneratorMember <playerName>", inviteCommand.getCommandUsage(null));
         assertEquals(0, inviteCommand.getRequiredPermissionLevel());
 
-        assertEquals("acceptGeneratorInvite", acceptCommand.getName());
+        assertEquals("acceptGeneratorInvite", acceptCommand.getCommandName());
         //noinspection DataFlowIssue
-        assertEquals("/acceptGeneratorInvite", acceptCommand.getUsage(null));
+        assertEquals("/acceptGeneratorInvite", acceptCommand.getCommandUsage(null));
         assertEquals(0, acceptCommand.getRequiredPermissionLevel());
 
-        assertEquals("declineGeneratorInvite", declineCommand.getName());
+        assertEquals("declineGeneratorInvite", declineCommand.getCommandName());
         //noinspection DataFlowIssue
-        assertEquals("/declineGeneratorInvite", declineCommand.getUsage(null));
+        assertEquals("/declineGeneratorInvite", declineCommand.getCommandUsage(null));
         assertEquals(0, declineCommand.getRequiredPermissionLevel());
     }
 
@@ -205,9 +221,9 @@ public class BlockSetConfigUnlockConditionTest
         otherGenerator.setOwnerId(playerId);
 
         //noinspection DataFlowIssue
-        freeGenerator.setWorld(null);
+        freeGenerator.setWorldObj(null);
         //noinspection DataFlowIssue
-        otherGenerator.setWorld(null);
+        otherGenerator.setWorldObj(null);
 
         assertFalse(freeGenerator.tryAssignOwnerIfEligible(playerId));
         assertTrue(freeGenerator.isFree());
@@ -227,11 +243,10 @@ public class BlockSetConfigUnlockConditionTest
     public void duplicateAccessDeniedMessagesAreSuppressedForSameInteraction()
     {
         java.util.UUID playerId = java.util.UUID.fromString("55555555-5555-5555-5555-555555555555");
-        BlockPos pos = new BlockPos(10, 64, 10);
 
-        assertTrue(ModEvents.trySendAccessDeniedMessage(playerId, pos, 100L));
-        assertFalse(ModEvents.trySendAccessDeniedMessage(playerId, pos, 100L));
-        assertTrue(ModEvents.trySendAccessDeniedMessage(playerId, pos, 101L));
+        assertTrue(ModEvents.trySendAccessDeniedMessage(playerId, 10, 64, 10, 100L));
+        assertFalse(ModEvents.trySendAccessDeniedMessage(playerId, 10, 64, 10, 100L));
+        assertTrue(ModEvents.trySendAccessDeniedMessage(playerId, 10, 64, 10, 101L));
     }
 
     @Test

@@ -1,9 +1,6 @@
 package ru.defea.oneblockultima;
 
 import net.minecraft.init.Bootstrap;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
@@ -35,24 +32,11 @@ public class BlockSetConfigSyncTest {
         BlockSetConfig.applySets(previousConfig != null ? previousConfig.getSets() : Collections.emptyList());
     }
 
-    private void quietLoadFromServerJson(String json) {
-        String loggerName = OneBlockUltima.MODID;
-        org.apache.logging.log4j.core.LoggerContext context =
-                (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
-        Level previousLevel = context.getConfiguration().getLoggerConfig(loggerName).getLevel();
-        Configurator.setLevel(loggerName, Level.OFF);
-        try {
-            BlockSetConfig.loadFromServerJson(json);
-        } finally {
-            Configurator.setLevel(loggerName, previousLevel);
-        }
-    }
-
     @Test
     public void toJsonReturnsNonNullNonEmpty() {
         String json = BlockSetConfig.get().toJson();
         assertNotNull(json);
-        assertFalse(json.isEmpty());
+        assertFalse(json.length() == 0);
     }
 
     @Test
@@ -214,7 +198,7 @@ public class BlockSetConfigSyncTest {
         BlockSetConfig original = BlockSetConfig.get();
         int countBefore = original.getSets().size();
 
-        quietLoadFromServerJson("not valid json {{{");
+        BlockSetConfig.loadFromServerJson("not valid json {{{");
         BlockSetConfig after = BlockSetConfig.get();
 
         assertEquals(countBefore, after.getSets().size());
@@ -225,7 +209,7 @@ public class BlockSetConfigSyncTest {
         BlockSetConfig original = BlockSetConfig.get();
         int countBefore = original.getSets().size();
 
-        quietLoadFromServerJson("");
+        BlockSetConfig.loadFromServerJson("");
         BlockSetConfig after = BlockSetConfig.get();
 
         assertEquals(countBefore, after.getSets().size());

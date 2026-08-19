@@ -27,7 +27,7 @@ public class TileEntityOneBlockGeneratorTest
     public static void setUp()
     {
         Bootstrap.register();
-        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(
+        cpw.mods.fml.common.registry.GameRegistry.registerTileEntity(
             TileEntityOneBlockGenerator.class, "oneblockultima:generator");
     }
 
@@ -458,7 +458,7 @@ public class TileEntityOneBlockGeneratorTest
         nbt.setBoolean("disableMobGeneration", true);
         nbt.setBoolean("disableChestGeneration", false);
         nbt.setBoolean("disableSaplingGeneration", true);
-        nbt.setUniqueId("ownerId", OWNER);
+        nbt.setString("ownerId", OWNER.toString());
         nbt.setBoolean("placedByPlayer", true);
 
         net.minecraft.nbt.NBTTagList levelsTag = new net.minecraft.nbt.NBTTagList();
@@ -493,7 +493,8 @@ public class TileEntityOneBlockGeneratorTest
         TileEntityOneBlockGenerator gen = newGenerator();
         gen.setOwnerId(OWNER);
 
-        NBTTagCompound nbt = gen.writeToNBT(new NBTTagCompound());
+        NBTTagCompound nbt = new NBTTagCompound();
+        gen.writeToNBT(nbt);
 
         TileEntityOneBlockGenerator loaded = newGenerator();
         loaded.readFromNBT(nbt);
@@ -524,7 +525,8 @@ public class TileEntityOneBlockGeneratorTest
     {
         TileEntityOneBlockGenerator gen = newGenerator();
         gen.setDisableFluidGeneration(true);
-        NBTTagCompound nbt = gen.writeToNBT(new NBTTagCompound());
+        NBTTagCompound nbt = new NBTTagCompound();
+        gen.writeToNBT(nbt);
         TileEntityOneBlockGenerator loaded = newGenerator();
         loaded.readFromNBT(nbt);
         assertTrue(loaded.isDisableFluidGeneration());
@@ -539,7 +541,8 @@ public class TileEntityOneBlockGeneratorTest
         TileEntityOneBlockGenerator gen = newGenerator();
         gen.setDisableMobGeneration(true);
         gen.setDisableSaplingGeneration(true);
-        NBTTagCompound nbt = gen.writeToNBT(new NBTTagCompound());
+        NBTTagCompound nbt = new NBTTagCompound();
+        gen.writeToNBT(nbt);
         TileEntityOneBlockGenerator loaded = newGenerator();
         loaded.readFromNBT(nbt);
         assertFalse(loaded.isDisableFluidGeneration());

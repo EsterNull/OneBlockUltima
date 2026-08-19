@@ -3,9 +3,10 @@ package ru.defea.oneblockultima.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import cpw.mods.fml.common.registry.GameRegistry;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.io.*;
@@ -87,17 +88,17 @@ public final class BlockPriceConfig
 
     public double getPriceFromItemStack(ItemStack stack)
     {
-        if (stack.isEmpty()) return 0;
+        if (stack == null || stack.stackSize <= 0) return 0;
         Item item = stack.getItem();
-        net.minecraft.util.ResourceLocation reg;
+        String reg;
         if (item instanceof net.minecraft.item.ItemBlock)
         {
-            Block block = ((net.minecraft.item.ItemBlock) item).getBlock();
-            reg = block.getRegistryName();
+            Block block = ((net.minecraft.item.ItemBlock) item).blockInstance;
+            reg = getRegistryName(block);
         }
         else
         {
-            reg = item.getRegistryName();
+            reg = getRegistryName(item);
         }
         if (reg != null)
         {
@@ -105,9 +106,23 @@ public final class BlockPriceConfig
             String metaKey = reg + ":" + meta;
             Double metaPrice = prices.get(metaKey);
             if (metaPrice != null) return metaPrice;
-            return getPrice(reg.toString());
+            return getPrice(reg);
         }
         return 0;
+    }
+
+    private static String getRegistryName(Block block)
+    {
+        if (block == null) return null;
+        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(block);
+        return id == null ? null : id.modId + ":" + id.name;
+    }
+
+    private static String getRegistryName(Item item)
+    {
+        if (item == null) return null;
+        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(item);
+        return id == null ? null : id.modId + ":" + id.name;
     }
 
     public Map<String, Double> getPrices()
@@ -175,32 +190,30 @@ public final class BlockPriceConfig
 
     public static ItemStack createItemStack(String registry, int meta)
     {
-        if (registry == null) return ItemStack.EMPTY;
+        if (registry == null) return null;
         try
         {
-            net.minecraft.util.ResourceLocation rl = new net.minecraft.util.ResourceLocation(registry);
-
-            Block block = ForgeRegistries.BLOCKS.getValue(rl);
-            if (block != null)
+            Block block = (Block) Block.blockRegistry.getObject(registry);
+            if (block != null && block != Blocks.air)
             {
                 Item item = Item.getItemFromBlock(block);
-                if (item != Item.getItemFromBlock(net.minecraft.init.Blocks.AIR))
+                if (item != null)
                 {
                     return new ItemStack(item, 1, meta);
                 }
             }
 
-            Item item = ForgeRegistries.ITEMS.getValue(rl);
-            if (item != null && item != net.minecraft.init.Items.AIR)
+            Item item = (Item) Item.itemRegistry.getObject(registry);
+            if (item != null)
             {
                 return new ItemStack(item, 1, meta);
             }
 
-            return ItemStack.EMPTY;
+            return null;
         }
         catch (Exception e)
         {
-            return ItemStack.EMPTY;
+            return null;
         }
     }
 

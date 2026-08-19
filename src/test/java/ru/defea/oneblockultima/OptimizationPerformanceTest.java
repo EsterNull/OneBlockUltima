@@ -2,7 +2,6 @@ package ru.defea.oneblockultima;
 
 import net.minecraft.init.Bootstrap;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -297,11 +296,13 @@ public class OptimizationPerformanceTest
     public void generatedBlockRegistryThrottlesDirtyWrites()
     {
         CountingRegistry registry = new CountingRegistry();
-        BlockPos pos = new BlockPos(1, 64, 2);
+        int posX = 1;
+        int posY = 64;
+        int posZ = 2;
 
         for (int i = 0; i < 100; i++)
         {
-            registry.markGenerated(pos, pos, "classic", 10, 1, "minecraft:stone", 0);
+            registry.markGenerated(posX, posY, posZ, posX, posY, posZ, "classic", 10, 1, "minecraft:stone", 0);
         }
 
         assertEquals("within a 2-second window the actual write must happen only once", 1, registry.markDirtyCount);
@@ -309,7 +310,7 @@ public class OptimizationPerformanceTest
         registry.flushPendingDirty();
         assertEquals("flushPendingDirty must forcibly flush the accumulated dirty state", 2, registry.markDirtyCount);
 
-        registry.markGenerated(pos, pos, "classic", 10, 1, "minecraft:stone", 0);
+        registry.markGenerated(posX, posY, posZ, posX, posY, posZ, "classic", 10, 1, "minecraft:stone", 0);
         assertEquals("a repeated call within the same window only accumulates", 2, registry.markDirtyCount);
 
         registry.flushPendingDirty();

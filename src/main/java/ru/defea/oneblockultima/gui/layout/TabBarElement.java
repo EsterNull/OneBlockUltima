@@ -88,8 +88,8 @@ public class TabBarElement extends ViewElement<TabBarElement> {
 
             int textColor = active ? WHITE_COLOR_1 : LIGHT_BLUE_GRAY_COLOR;
             fr.drawStringWithShadow(tab.label,
-                cx + (tabWidth - fr.getStringWidth(tab.label)) / 2.0f,
-                computedY + (computedHeight - 8) / 2.0f, textColor);
+                cx + (tabWidth - fr.getStringWidth(tab.label)) / 2,
+                computedY + (computedHeight - 8) / 2, textColor);
 
             cx += tabWidth;
         }

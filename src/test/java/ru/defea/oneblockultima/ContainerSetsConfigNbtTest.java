@@ -87,6 +87,17 @@ public class ContainerSetsConfigNbtTest {
         return null;
     }
 
+    private static NBTBase listGet(NBTTagList list, int index) {
+        try {
+            java.lang.reflect.Field field = NBTTagList.class.getDeclaredField("tagList");
+            field.setAccessible(true);
+            List<?> raw = (List<?>) field.get(list);
+            return (NBTBase) raw.get(index);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void cycleAddType(ContainerSetsConfig container, int targetType) {
         for (int i = 0; i < 12; i++) {
             if (container.getNbtEditorAddType() == targetType) return;
@@ -273,14 +284,14 @@ public class ContainerSetsConfigNbtTest {
         assertTrue(container.nbtEditorApply("", "3"));
         NBTTagList afterAppend = (NBTTagList) container.getEditingEntryNbt().getTag("L");
         assertEquals(3, afterAppend.tagCount());
-        assertEquals(3, ((net.minecraft.nbt.NBTTagByte) afterAppend.get(2)).getByte());
+        assertEquals(3, ((net.minecraft.nbt.NBTTagByte) listGet(afterAppend, 2)).getByte());
 
         container.nbtEditorStartEditIndex(0);
         assertTrue(container.nbtEditorIsEditingListElement());
         assertEquals("1", container.nbtEditorGetValue());
         assertTrue(container.nbtEditorApply("", "9"));
         NBTTagList afterSet = (NBTTagList) container.getEditingEntryNbt().getTag("L");
-        assertEquals(9, ((net.minecraft.nbt.NBTTagByte) afterSet.get(0)).getByte());
+        assertEquals(9, ((net.minecraft.nbt.NBTTagByte) listGet(afterSet, 0)).getByte());
         assertEquals(3, afterSet.tagCount());
     }
 
@@ -296,7 +307,7 @@ public class ContainerSetsConfigNbtTest {
         assertTrue(container.nbtEditorRemoveIndex(0));
         NBTTagList after = (NBTTagList) container.getEditingEntryNbt().getTag("L");
         assertEquals(1, after.tagCount());
-        assertEquals(2, ((net.minecraft.nbt.NBTTagByte) after.get(0)).getByte());
+        assertEquals(2, ((net.minecraft.nbt.NBTTagByte) listGet(after, 0)).getByte());
         assertFalse(container.nbtEditorRemoveIndex(5));
     }
 
@@ -311,7 +322,7 @@ public class ContainerSetsConfigNbtTest {
         assertTrue(container.nbtEditorApply("", "5"));
         NBTTagList after = (NBTTagList) container.getEditingEntryNbt().getTag("L");
         assertEquals(1, after.tagCount());
-        assertEquals(5, ((net.minecraft.nbt.NBTTagByte) after.get(0)).getByte());
+        assertEquals(5, ((net.minecraft.nbt.NBTTagByte) listGet(after, 0)).getByte());
     }
 
     @Test
@@ -562,7 +573,7 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void addEntryToCurrentSetCopiesNbtFromSearchResult() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
+        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.stone);
         net.minecraft.nbt.NBTTagCompound tag = new net.minecraft.nbt.NBTTagCompound();
         tag.setString("CustomColor", "blue");
         stack.setTagCompound(tag);
@@ -577,7 +588,7 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void addEntryToCurrentSetWithoutStackNbtStoresEmptyTag() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
+        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.stone);
         ContainerSetsConfig.SearchResult result = new ContainerSetsConfig.SearchResult("minecraft:stone", "Stone", "minecraft", stack);
 
         container.addEntryToCurrentSet(ContainerSetsConfig.EntryType.BLOCK, result, 1, 50);
@@ -595,7 +606,7 @@ public class ContainerSetsConfigNbtTest {
 
         net.minecraft.item.ItemStack stack = container.getItemStackFromEntry(entry, 0);
 
-        assertFalse(stack.isEmpty());
+        assertTrue(stack != null && stack.stackSize > 0);
         assertTrue(stack.hasTagCompound());
         assert stack.getTagCompound() != null;
         assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
@@ -612,7 +623,7 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void getExistingBlockKeysIncludesPlainAddedBlocks() {
         ContainerSetsConfig container = newContainer();
-        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
+        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.stone);
         container.addEntryToCurrentSet(ContainerSetsConfig.EntryType.BLOCK,
                 new ContainerSetsConfig.SearchResult("minecraft:stone", "Stone", "minecraft", stack), 1, 50);
 

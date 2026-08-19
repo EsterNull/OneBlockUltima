@@ -4,8 +4,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class TextureElement extends ViewElement<TextureElement> {
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
         if (texture == null) return;
         Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         Gui.drawModalRectWithCustomSizedTexture(
             computedX, computedY, u, v,
             computedWidth, computedHeight, width, height

@@ -1,13 +1,15 @@
 package ru.defea.oneblockultima;
 
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.event.FMLServerStoppingEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.SidedProxy;
+import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.event.FMLServerStoppingEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import net.minecraftforge.common.MinecraftForge;
+import cpw.mods.fml.common.FMLCommonHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import ru.defea.oneblockultima.block.ModBlocks;
@@ -16,9 +18,12 @@ import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.command.*;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.event.ModEvents;
 import ru.defea.oneblockultima.gui.GuiHandler;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
+import ru.defea.oneblockultima.item.ModItems;
 import ru.defea.oneblockultima.network.ModMessages;
+import ru.defea.oneblockultima.recipe.ModRecipes;
 import ru.defea.oneblockultima.tile.ModTileEntities;
 import ru.defea.oneblockultima.update.UpdateChecker;
 import ru.defea.oneblockultima.world.OneBlockWorldType;
@@ -76,6 +81,15 @@ public class OneBlockUltima
         return proxiedLogger;
     }
 
+    /**
+     * Unconditional logger for diagnostics; unlike {@link #getLogger()} it always
+     * writes regardless of the debug setting.
+     */
+    public static Logger getRawLogger()
+    {
+        return LogManager.getLogger(MODID);
+    }
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {
@@ -83,13 +97,19 @@ public class OneBlockUltima
         BlockSetConfig.load(event.getModConfigurationDirectory());
         BlockPriceConfig.load(event.getModConfigurationDirectory());
         OneBlockPlayerDataProvider.register();
+        ModBlocks.registerBlocksAndItems();
+        ModItems.registerItems();
+        ModRecipes.registerRecipes();
+        ModEvents modEvents = new ModEvents();
+        MinecraftForge.EVENT_BUS.register(modEvents);
+        FMLCommonHandler.instance().bus().register(modEvents);
         ModTileEntities.register();
         ModMessages.register();
         OneBlockWorldType.init();
         NetworkRegistry.INSTANCE.registerGuiHandler(instance, new GuiHandler());
         proxy.preInit();
 
-        if (net.minecraftforge.fml.common.FMLCommonHandler.instance().getSide() == net.minecraftforge.fml.relauncher.Side.CLIENT)
+        if (cpw.mods.fml.common.FMLCommonHandler.instance().getSide() == cpw.mods.fml.relauncher.Side.CLIENT)
         {
             ContainerSetsConfig.loadStaticCustomNames();
         }
@@ -101,6 +121,8 @@ public class OneBlockUltima
     {
         proxy.init();
         ModBlocks.registerOreDict();
+        ru.defea.oneblockultima.recipe.JsonRecipeLoader.registerRecipes();
+        ru.defea.oneblockultima.achievement.ModAchievements.init();
     }
 
     @Mod.EventHandler

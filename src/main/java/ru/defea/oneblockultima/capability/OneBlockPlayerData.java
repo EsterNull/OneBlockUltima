@@ -7,9 +7,17 @@ import java.util.Map;
 
 public class OneBlockPlayerData implements IOneBlockPlayerData
 {
+    /**
+     * Upper bound for the currency. The 1.7.10 balance is displayed by rounding
+     * {@code value * 100} into a {@code long}; values around {@code Long.MAX_VALUE / 100}
+     * (e.g. {@code 92233720368547760}) made that product overflow and produced a corrupt
+     * balance. The cap keeps the balance well below the overflow threshold.
+     */
+    public static final double MAX_CURRENCY = 1_000_000_000_000_000.0;
+
     private double currency;
-    private final Map<String, Integer> setLevels = new HashMap<String, Integer>();
-    private final Map<String, Integer> brokenBlocksBySet = new HashMap<String, Integer>();
+    private final Map<String, Integer> setLevels = new HashMap<>();
+    private final Map<String, Integer> brokenBlocksBySet = new HashMap<>();
     private int brokenBlocksTotal;
 
     @Override
@@ -21,16 +29,19 @@ public class OneBlockPlayerData implements IOneBlockPlayerData
     @Override
     public void addCurrency(double amount)
     {
-        if (amount > 0)
+        if (amount <= 0 || Double.isNaN(amount))
         {
-            currency += amount;
+            return;
         }
+
+        double sum = currency + amount;
+        this.currency = Double.isInfinite(sum) || sum > MAX_CURRENCY ? MAX_CURRENCY : sum;
     }
 
     @Override
     public boolean spendCurrency(double amount)
     {
-        if (amount < 0 || currency < amount)
+        if (amount < 0 || Double.isNaN(amount) || currency < amount)
         {
             return false;
         }
@@ -131,7 +142,11 @@ public class OneBlockPlayerData implements IOneBlockPlayerData
 
     public void setCurrency(double currency)
     {
-        this.currency = Math.max(0, currency);
+        if (Double.isNaN(currency))
+        {
+            currency = 0;
+        }
+        this.currency = Math.min(Math.max(0, currency), MAX_CURRENCY);
     }
 
     public void setBrokenBlocksTotal(int brokenBlocksTotal)

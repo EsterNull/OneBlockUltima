@@ -1,12 +1,8 @@
 package ru.defea.oneblockultima.item;
 
 import net.minecraft.item.Item;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import ru.defea.oneblockultima.OneBlockUltima;
+import cpw.mods.fml.common.registry.GameRegistry;
 
-@Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
 public final class ModItems
 {
     @SuppressWarnings("unused")
@@ -105,12 +101,35 @@ public final class ModItems
     {
     }
 
-    @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event)
+    public static void registerItems()
     {
         for (RegisterItem modItem : modItems)
         {
-            event.getRegistry().register(modItem.getItem());
+            Item item = modItem.getItem();
+            String name = item.getUnlocalizedName();
+            if (name.startsWith("item."))
+            {
+                name = name.substring("item.".length());
+            }
+            setItemTexture(item, name);
+            GameRegistry.registerItem(item, name);
+        }
+    }
+
+    private static void setItemTexture(Item item, String name)
+    {
+        if (item == GUIDE_BOOK)
+        {
+            item.setTextureName("oneblockultima:obu_guide_book");
+        }
+        else if (item instanceof ItemAdvancementIcon)
+        {
+            String iconName = name.substring("adv_icon_".length());
+            item.setTextureName("oneblockultima:advancements/adv_" + iconName);
+        }
+        else
+        {
+            item.setTextureName("oneblockultima:" + name);
         }
     }
 }

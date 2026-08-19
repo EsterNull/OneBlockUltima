@@ -6,7 +6,7 @@ public class ItemAdvancementIcon extends Item
 {
     public ItemAdvancementIcon(String name)
     {
-        this.setRegistryName(name);
+
         this.setUnlocalizedName(name);
     }
 }

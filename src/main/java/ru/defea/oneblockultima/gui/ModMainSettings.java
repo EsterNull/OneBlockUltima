@@ -25,7 +25,13 @@ public class ModMainSettings extends GuiScreen
         this.parent = parent;
     }
 
+    public ModMainSettings()
+    {
+        this(null);
+    }
+
     @Override
+    @SuppressWarnings("unchecked")
     public void initGui()
     {
         ViewFactory factory = new ViewFactory(width, height)
@@ -43,7 +49,7 @@ public class ModMainSettings extends GuiScreen
 
         int maxWidth = 0;
         for (String s : labels.values()) {
-            int stringWidth = fontRenderer.getStringWidth(s);
+            int stringWidth = fontRendererObj.getStringWidth(s);
             if (stringWidth > maxWidth) maxWidth = stringWidth;
         }
         maxWidth += ButtonElement.BUTTON_PADDING;
@@ -54,7 +60,7 @@ public class ModMainSettings extends GuiScreen
             factory.button(i, maxWidth, labels.get(i));
         }
 
-        factory.build(buttonList, fontRenderer);
+        factory.build(buttonList, fontRendererObj);
     }
 
     @Override

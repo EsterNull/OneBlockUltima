@@ -1,13 +1,11 @@
 package ru.defea.oneblockultima.gui.containers;
 
+import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import cpw.mods.fml.common.registry.GameRegistry;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 
@@ -41,7 +39,7 @@ public class ContainerBlockPrices
             this.registry = registry;
             this.name = name;
             this.stack = stack;
-            this.meta = stack.isEmpty() ? 0 : stack.getMetadata();
+            this.meta = stack != null ? stack.getMetadata() : 0;
         }
     }
 
@@ -193,28 +191,31 @@ public class ContainerBlockPrices
             else searchTerms.add(part.toLowerCase(Locale.ROOT));
         }
 
-        for (net.minecraft.block.Block block : ForgeRegistries.BLOCKS)
+        for (Object keyObj : Block.blockRegistry.getKeys())
         {
-            ResourceLocation reg = block.getRegistryName();
-            if (reg == null) continue;
+            Block block = (Block) Block.blockRegistry.getObject(keyObj);
+            if (block == null) continue;
 
-            String registry = reg.toString();
-            String registryId = reg.getResourcePath();
-            String modId = reg.getResourceDomain();
+            String registry = getRegistryName(block);
+            if (registry == null) continue;
+
+            int colon = registry.indexOf(':');
+            String registryId = colon >= 0 ? registry.substring(colon + 1) : registry;
+            String modId = colon >= 0 ? registry.substring(0, colon) : "";
 
             if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
             if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
 
             Item item = Item.getItemFromBlock(block);
-            if (item == Items.AIR) continue;
+            if (item == null) continue;
 
-            NonNullList<ItemStack> subItems = NonNullList.create();
-            item.getSubItems(CreativeTabs.SEARCH, subItems);
+            List<ItemStack> subItems = new ArrayList<>();
+            item.getSubItems(item, CreativeTabs.tabAllSearch, subItems);
             if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
 
             for (ItemStack subStack : subItems)
             {
-                if (subStack.isEmpty() || subStack.getItem() != item) continue;
+                if (subStack == null || subStack.getItem() != item) continue;
                 int meta = subStack.getMetadata();
                 String key = registry + ":" + meta;
                 if (stagedPrices.containsKey(key) || (meta == 0 && stagedPrices.containsKey(registry))) continue;
@@ -227,26 +228,29 @@ public class ContainerBlockPrices
             }
         }
 
-        for (Item item : ForgeRegistries.ITEMS)
+        for (Object keyObj : Item.itemRegistry.getKeys())
         {
-            if (item == null || item == Items.AIR || item instanceof ItemBlock) continue;
-            ResourceLocation reg = item.getRegistryName();
-            if (reg == null) continue;
+            Item item = (Item) Item.itemRegistry.getObject(keyObj);
+            if (item == null || item instanceof ItemBlock) continue;
+            if (item instanceof ru.defea.oneblockultima.item.ItemAdvancementIcon) continue;
 
-            String registry = reg.toString();
-            String registryId = reg.getResourcePath();
-            String modId = reg.getResourceDomain();
+            String registry = getRegistryName(item);
+            if (registry == null) continue;
+
+            int colon = registry.indexOf(':');
+            String registryId = colon >= 0 ? registry.substring(colon + 1) : registry;
+            String modId = colon >= 0 ? registry.substring(0, colon) : "";
 
             if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
             if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
 
-            NonNullList<ItemStack> subItems = NonNullList.create();
-            item.getSubItems(CreativeTabs.SEARCH, subItems);
+            List<ItemStack> subItems = new ArrayList<>();
+            item.getSubItems(item, CreativeTabs.tabAllSearch, subItems);
             if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
 
             for (ItemStack subStack : subItems)
             {
-                if (subStack.isEmpty() || subStack.getItem() != item) continue;
+                if (subStack == null || subStack.getItem() != item) continue;
                 int meta = subStack.getMetadata();
                 String key = registry + ":" + meta;
                 if (stagedPrices.containsKey(key) || (meta == 0 && stagedPrices.containsKey(registry))) continue;
@@ -272,10 +276,28 @@ public class ContainerBlockPrices
         return false;
     }
 
+    private static String getRegistryName(Block block)
+    {
+        if (block == null) return null;
+        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(block);
+        if (id != null) return id.modId + ":" + id.name;
+        Object name = Block.blockRegistry.getNameForObject(block);
+        return name != null ? String.valueOf(name) : null;
+    }
+
+    private static String getRegistryName(Item item)
+    {
+        if (item == null) return null;
+        GameRegistry.UniqueIdentifier id = GameRegistry.findUniqueIdentifierFor(item);
+        if (id != null) return id.modId + ":" + id.name;
+        Object name = Item.itemRegistry.getNameForObject(item);
+        return name != null ? String.valueOf(name) : null;
+    }
+
     public String getBlockDisplayName(String registry, int meta)
     {
         ItemStack stack = BlockPriceConfig.createItemStack(registry, meta);
-        if (!stack.isEmpty())
+        if (stack != null)
         {
             try { return stack.getDisplayName(); } catch (Exception ignored) {}
         }

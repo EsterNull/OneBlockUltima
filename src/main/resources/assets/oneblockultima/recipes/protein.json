@@ -2,11 +2,11 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "minecraft:cooked_fish",
+      "item": "minecraft:cooked_fished",
       "data": 0
     },
     {
-      "item": "minecraft:cooked_fish",
+      "item": "minecraft:cooked_fished",
       "data": 1
     },
     {
@@ -19,10 +19,11 @@
       "item": "minecraft:cooked_chicken"
     },
     {
-      "item": "minecraft:cooked_mutton"
+      "item": "minecraft:egg"
     },
     {
-      "item": "minecraft:cooked_rabbit"
+      "type": "forge:ore_dict",
+      "ore": "coal"
     },
     {
       "item": "minecraft:milk_bucket"

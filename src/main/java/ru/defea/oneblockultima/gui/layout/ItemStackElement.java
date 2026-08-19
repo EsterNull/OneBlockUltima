@@ -1,11 +1,10 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.item.ItemStack;
+import org.lwjgl.opengl.GL11;
+import ru.defea.oneblockultima.util.RenderUtil;
 
 import java.util.List;
 
@@ -34,26 +33,19 @@ public class ItemStackElement extends ViewElement<ItemStackElement> {
 
     @Override
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        if (stack == null || stack.isEmpty()) return;
-        Minecraft mc = Minecraft.getMinecraft();
-        GlStateManager.pushMatrix();
+        if (stack == null) return;
+        GL11.glPushMatrix();
         try
         {
             float scale = size / 16.0F;
-            GlStateManager.translate(computedX + computedWidth / 2.0F, computedY + computedHeight / 2.0F, 0.0F);
-            GlStateManager.scale(scale, scale, 1.0F);
-            GlStateManager.translate(-8.0F, -8.0F, 0.0F);
-            GlStateManager.enableDepth();
-            GlStateManager.enableRescaleNormal();
-            RenderHelper.enableGUIStandardItemLighting();
-            mc.getRenderItem().renderItemIntoGUI(stack, 0, 0);
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableRescaleNormal();
-            GlStateManager.disableDepth();
+            GL11.glTranslatef(computedX + computedWidth / 2.0F, computedY + computedHeight / 2.0F, 0.0F);
+            GL11.glScalef(scale, scale, 1.0F);
+            GL11.glTranslatef(-8.0F, -8.0F, 0.0F);
+            RenderUtil.renderItemIntoGUI(fr, stack, 0, 0);
         }
         finally
         {
-            GlStateManager.popMatrix();
+            GL11.glPopMatrix();
         }
     }
 

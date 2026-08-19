@@ -2,7 +2,7 @@ package ru.defea.oneblockultima.gui.layout;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
+import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
@@ -64,12 +64,12 @@ public class LabelElement extends ViewElement<LabelElement> {
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
         if (text == null || text.isEmpty()) return;
         if (scale != 1.0f) {
-            GlStateManager.pushMatrix();
-            GlStateManager.translate(computedX, computedY, 0);
-            GlStateManager.scale(scale, scale, 1.0f);
+            GL11.glPushMatrix();
+            GL11.glTranslatef(computedX, computedY, 0);
+            GL11.glScalef(scale, scale, 1.0f);
             int drawX = centered ? (int)((computedWidth / scale - fr.getStringWidth(text)) / 2) : 0;
             fr.drawString(text, drawX, 0, color);
-            GlStateManager.popMatrix();
+            GL11.glPopMatrix();
         } else if (centered) {
             fr.drawString(text, computedX + (computedWidth - fr.getStringWidth(text)) / 2, computedY, color);
         } else {

@@ -1,36 +1,38 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import ru.defea.oneblockultima.util.ModelUtil;
+import ru.defea.oneblockultima.util.RenderUtil;
 
 import java.util.List;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class BlockElement extends ViewElement<BlockElement> {
-    private IBlockState blockState;
+    private final net.minecraft.block.Block block;
+    private int meta;
     private int size = 16;
 
-    public BlockElement(IBlockState state) {
-        this.blockState = state;
+    public BlockElement(net.minecraft.block.Block block) {
+        this(block, 0);
+    }
+
+    public BlockElement(net.minecraft.block.Block block, int meta) {
+        this.block = block;
+        this.meta = meta;
     }
 
     public static BlockElement fromRegistry(String registry) {
-        ResourceLocation rl = new ResourceLocation(registry);
-        net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(rl);
+        net.minecraft.block.Block block = (net.minecraft.block.Block) net.minecraft.block.Block.blockRegistry.getObject(registry);
         if (block == null) return null;
-        return new BlockElement(block.getDefaultState());
+        return new BlockElement(block, 0);
     }
 
     public static BlockElement fromItemStack(net.minecraft.item.ItemStack stack) {
-        if (stack.isEmpty()) return null;
+        if (stack == null) return null;
         net.minecraft.block.Block block = net.minecraft.block.Block.getBlockFromItem(stack.getItem());
-        if (block == Blocks.AIR) return null;
-        return new BlockElement(block.getStateFromMeta(stack.getMetadata()));
+        if (block == Blocks.air) return null;
+        return new BlockElement(block, stack.getMetadata());
     }
 
     public BlockElement size(int size) {
@@ -38,8 +40,8 @@ public class BlockElement extends ViewElement<BlockElement> {
         return this;
     }
 
-    public BlockElement state(IBlockState state) {
-        this.blockState = state;
+    public BlockElement meta(int meta) {
+        this.meta = meta;
         return this;
     }
 
@@ -49,8 +51,10 @@ public class BlockElement extends ViewElement<BlockElement> {
 
     @Override
     public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        if (blockState == null) return;
-        ModelUtil.renderBlockModelToGUI(blockState, computedX, computedY, size);
+        if (block == null) return;
+        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(block, 1, meta);
+        if (stack.getItem() == null) return;
+        RenderUtil.renderItemAndEffectIntoGUI(fr, stack, computedX, computedY);
     }
 
     @Override

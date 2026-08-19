@@ -4,14 +4,11 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
-
-import java.io.IOException;
 
 import static ru.defea.oneblockultima.Constants.*;
 
@@ -62,6 +59,7 @@ public class GuiUiSettings extends GuiScreen
         buildView();
     }
 
+    @SuppressWarnings("unchecked")
     private void buildView() {
         int contentWidth = width - 20;
         int fieldWidth = Math.max(40, contentWidth / 20);
@@ -107,7 +105,7 @@ public class GuiUiSettings extends GuiScreen
                     String label = getPositionLabel(pos);
                     int textColor = isSelected ? SUCCESS_COLOR : WHITE_COLOR_1;
                     int tw = fr.getStringWidth(label);
-                    fr.drawStringWithShadow(label, x + (cw - tw) / 2.0F, y + (ch - 8) / 2.0F, textColor);
+                    fr.drawStringWithShadow(label, x + (cw - tw) / 2, y + (ch - 8) / 2, textColor);
                 })
                 .clickHandler((row, col, mx, my, mb) -> {
                     ModSettings.BalancePosition[][] g = {
@@ -169,8 +167,8 @@ public class GuiUiSettings extends GuiScreen
         hOffset = hStepper.getValue();
         vOffset = vStepper.getValue();
 
-        int hLabelW = fontRenderer.getStringWidth(hLabel);
-        int vLabelW = fontRenderer.getStringWidth(vLabel);
+        int hLabelW = fontRendererObj.getStringWidth(hLabel);
+        int vLabelW = fontRendererObj.getStringWidth(vLabel);
         int maxLabelW = Math.max(hLabelW, vLabelW);
 
         RowElement hControls = new RowElement(Alignment.LEFT).gap(5);
@@ -201,7 +199,8 @@ public class GuiUiSettings extends GuiScreen
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
         btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
 
-        factory.build(buttonList, fontRenderer);
+        //noinspection unchecked
+        factory.build(buttonList, fontRendererObj);
     }
 
     @Override
@@ -229,7 +228,7 @@ public class GuiUiSettings extends GuiScreen
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    protected void keyTyped(char typedChar, int keyCode)
     {
         if (keyCode == Keyboard.KEY_ESCAPE)
         {
@@ -240,7 +239,7 @@ public class GuiUiSettings extends GuiScreen
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
     {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (factory != null) factory.mouseClicked(mouseX, mouseY, mouseButton);
@@ -250,7 +249,7 @@ public class GuiUiSettings extends GuiScreen
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        if (factory != null) factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
+        if (factory != null) factory.draw(fontRendererObj, mouseX, mouseY, partialTicks);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
@@ -291,7 +290,7 @@ public class GuiUiSettings extends GuiScreen
         int innerW = previewWidth - 2;
         int innerH = previewHeight - 2;
 
-        ScaledResolution sr = new ScaledResolution(mc);
+        ScaledResolution sr = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
         int scale = sr.getScaleFactor();
         GL11.glScissor(innerX * scale, mc.displayHeight - (innerY + innerH) * scale, innerW * scale, innerH * scale);
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
@@ -335,19 +334,20 @@ public class GuiUiSettings extends GuiScreen
                 break;
         }
 
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         Gui.drawRect(boxX, boxY, boxX + boxW, boxY + boxH, TRANSPARENT_DARK_GRAY_COLOR_2);
-        GlStateManager.enableBlend();
+        GL11.glEnable(GL11.GL_BLEND);
         TextureElement coinIcon = new TextureElement(COIN_TEXTURE, coinSize, coinSize);
         coinIcon.setComputedPosition(boxX + hMargin, boxY + vMargin);
         coinIcon.setComputedSize(coinSize, coinSize);
         coinIcon.draw(fr, 0, 0, 0);
-        GlStateManager.disableBlend();
+        GL11.glDisable(GL11.GL_BLEND);
         fr.drawString(sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin - fr.FONT_HEIGHT / 4, GOLD_COLOR);
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
     }
 
+    @SuppressWarnings("UnnecessaryUnicodeEscape")
     private String getPositionLabel(ModSettings.BalancePosition pos)
     {
         switch (pos)

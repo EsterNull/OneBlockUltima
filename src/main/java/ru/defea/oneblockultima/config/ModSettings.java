@@ -2,7 +2,7 @@ package ru.defea.oneblockultima.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraftforge.fml.common.Loader;
+import cpw.mods.fml.common.Loader;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.io.*;

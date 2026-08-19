@@ -1,59 +1,63 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatStyle;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 
-import javax.annotation.Nonnull;
-
 public class CommandOBUSellAll extends CommandBase
 {
     @Override
-    @Nonnull
-    public String getName()
+    public String getCommandName()
     {
         return "obuSellAll";
     }
 
     @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    public String getCommandUsage(ICommandSender sender)
     {
         return "/obuSellAll";
     }
 
     @Override
-    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
+    @SuppressWarnings("rawtypes")
+    public java.util.List getCommandAliases()
     {
-        if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
+        // Minecraft 1.7.10 command lookup is case-sensitive; register a
+        // lowercase alias so /obusellall works as well as /obuSellAll.
+        return java.util.Collections.singletonList("obusellall");
+    }
+
+    @Override
+    public void processCommand(ICommandSender sender, String[] args)
+    {
+        if (!(sender instanceof EntityPlayerMP))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.only_player")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
         if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.sell_disabled")).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.sell_disabled")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) sender.getCommandSenderEntity();
+        EntityPlayerMP player = (EntityPlayerMP) sender;
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_generated")).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.not_generated")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
@@ -62,10 +66,19 @@ public class CommandOBUSellAll extends CommandBase
         int totalCount = 0;
         Item targetType = null;
 
+        // Sell all generator-made items of the same type as the item in hand
+        // (matches the documented behaviour). Fall back to the first generated
+        // item found in the inventory when the hand is empty or not a generated item.
+        ItemStack heldItem = player.getHeldItem();
+        if (heldItem != null && heldItem.stackSize > 0 && CommandOBUSell.isObuGenerated(heldItem))
+        {
+            targetType = heldItem.getItem();
+        }
+
         for (int i = 0; i < inventory.getSizeInventory(); i++)
         {
             ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
+            if (stack == null || stack.stackSize <= 0) continue;
 
             if (!CommandOBUSell.isObuGenerated(stack)) continue;
 
@@ -81,14 +94,14 @@ public class CommandOBUSellAll extends CommandBase
             double price = BlockPriceConfig.get().getPriceFromItemStack(stack);
             if (price <= 0) continue;
 
-            int count = stack.getCount();
+            int count = stack.stackSize;
             totalPrice += price * count;
             totalCount += count;
         }
 
         if (totalCount == 0)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.obuSellAll.empty")).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.obuSellAll.empty")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
@@ -96,20 +109,21 @@ public class CommandOBUSellAll extends CommandBase
         for (int i = 0; i < inventory.getSizeInventory(); i++)
         {
             ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
+            if (stack == null || stack.stackSize <= 0) continue;
             if (stack.getItem() != targetType) continue;
             if (!CommandOBUSell.isObuGenerated(stack)) continue;
 
-            int count = stack.getCount();
-            stack.shrink(count);
+            int count = stack.stackSize;
+            inventory.setInventorySlotContents(i, null);
             soldCount += count;
         }
+        player.inventoryContainer.detectAndSendChanges();
 
         data.addCurrency(totalPrice);
         OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
 
-        sender.sendMessage(new TextComponentString(I18n.format("command.obuSellAll.success", soldCount, totalPrice, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));
+        sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocalFormatted("command.obuSellAll.success", soldCount, totalPrice, data.getCurrency())).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN)));
     }
 
     @Override
@@ -119,7 +133,7 @@ public class CommandOBUSellAll extends CommandBase
     }
 
     @Override
-    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender)
+    public boolean canCommandSenderUseCommand(ICommandSender sender)
     {
         return true;
     }

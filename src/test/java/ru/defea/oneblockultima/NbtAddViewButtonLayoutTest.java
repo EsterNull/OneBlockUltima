@@ -59,7 +59,7 @@ public class NbtAddViewButtonLayoutTest {
 
         List<String> seen = new ArrayList<>();
         for (GuiButton b : buttons) {
-            String key = b.id + "@" + b.x + "," + b.y + "," + b.width + "x" + b.height;
+            String key = b.id + "@" + b.xPosition + "," + b.yPosition + "," + b.width + "x" + b.height;
             assertFalse("duplicate button: " + key, seen.contains(key));
             seen.add(key);
         }
@@ -73,8 +73,8 @@ public class NbtAddViewButtonLayoutTest {
 
         GuiButton typeButton = buttons.stream().filter(b -> b.id == BUTTON_TYPE).findFirst().orElse(null);
         assertNotNull(typeButton);
-        assertTrue("type button must be fully inside the screen", typeButton.x >= 0);
-        assertTrue(typeButton.x + typeButton.width <= 1000);
+        assertTrue("type button must be fully inside the screen", typeButton.xPosition >= 0);
+        assertTrue(typeButton.xPosition + typeButton.width <= 1000);
     }
 
     @Test
@@ -87,8 +87,8 @@ public class NbtAddViewButtonLayoutTest {
         assertNotNull(typeButton);
         for (GuiButton other : buttons) {
             if (other.id == BUTTON_TYPE) continue;
-            boolean sameRow = typeButton.y < other.y + other.height && other.y < typeButton.y + typeButton.height;
-            boolean overlapX = typeButton.x < other.x + other.width && other.x < typeButton.x + typeButton.width;
+            boolean sameRow = typeButton.yPosition < other.yPosition + other.height && other.yPosition < typeButton.yPosition + typeButton.height;
+            boolean overlapX = typeButton.xPosition < other.xPosition + other.width && other.xPosition < typeButton.xPosition + typeButton.width;
             assertFalse("type button must not overlap button " + other.id, sameRow && overlapX);
         }
     }

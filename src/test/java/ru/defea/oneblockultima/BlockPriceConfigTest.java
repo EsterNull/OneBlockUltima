@@ -271,32 +271,34 @@ public class BlockPriceConfigTest {
 
     @Test
     public void createItemStackReturnsEmptyForNull() {
-        assertTrue(BlockPriceConfig.createItemStack(null).isEmpty());
+        net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack(null);
+        assertTrue(stack == null || stack.stackSize <= 0);
     }
 
     @Test
     public void createItemStackReturnsEmptyForUnknownRegistry() {
-        assertTrue(BlockPriceConfig.createItemStack("nonexistent:fake_item").isEmpty());
+        net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("nonexistent:fake_item");
+        assertTrue(stack == null || stack.stackSize <= 0);
     }
 
     @Test
     public void createItemStackReturnsDirtForValidBlock() {
         net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:dirt");
-        assertFalse(stack.isEmpty());
-        assertEquals(1, stack.getCount());
+        assertFalse(stack == null || stack.stackSize <= 0);
+        assertEquals(1, stack.stackSize);
     }
 
     @Test
     public void createItemStackReturnsStoneForValidBlock() {
         net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:stone");
-        assertFalse(stack.isEmpty());
-        assertEquals(net.minecraft.init.Blocks.STONE, ((net.minecraft.item.ItemBlock) stack.getItem()).getBlock());
+        assertFalse(stack == null || stack.stackSize <= 0);
+        assertEquals(net.minecraft.init.Blocks.stone, ((net.minecraft.item.ItemBlock) stack.getItem()).blockInstance);
     }
 
     @Test
     public void createItemStackReturnsEmptyForAirRegistry() {
         net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:air");
-        assertTrue(stack.isEmpty());
+        assertTrue(stack == null || stack.stackSize <= 0);
     }
 
     // --- Multiple operations ---

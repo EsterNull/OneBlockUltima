@@ -11,6 +11,7 @@ import static ru.defea.oneblockultima.Constants.*;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
+    @SuppressWarnings("UnnecessaryUnicodeEscape")
     private static final String CHECKMARK = "\u2714";
 
     public enum LabelPosition {
@@ -131,32 +132,32 @@ public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
 
         guiButton = new GuiButton(buttonId, computedX, computedY, computedWidth, computedHeight, text) {
             @Override
-            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY) {
                 if (!this.visible) {
                     return;
                 }
-                this.hovered = mouseX >= this.x && mouseY >= this.y &&
-                        mouseX < this.x + this.width && mouseY < this.y + this.height;
+                this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
+                        mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
 
                 int actualBoxW = hasLabel ? Math.min(boxW, this.width) : this.width;
-                int boxX = hasLabel && labelPosition == LabelPosition.LEFT ? this.x + (this.width - actualBoxW) : this.x;
+                int boxX = hasLabel && labelPosition == LabelPosition.LEFT ? this.xPosition + (this.width - actualBoxW) : this.xPosition;
 
-                drawRect(boxX, this.y, boxX + actualBoxW, this.y + this.height, widgetFillColor(hovered));
-                drawRect(boxX, this.y, boxX + actualBoxW, this.y + borderSize, borderColor);
-                drawRect(boxX, this.y + this.height - borderSize, boxX + actualBoxW, this.y + this.height, borderColor);
-                drawRect(boxX, this.y, boxX + borderSize, this.y + this.height, borderColor);
-                drawRect(boxX + actualBoxW - borderSize, this.y, boxX + actualBoxW, this.y + this.height, borderColor);
-                this.drawCenteredString(fontRenderer, this.displayString,
+                drawRect(boxX, this.yPosition, boxX + actualBoxW, this.yPosition + this.height, widgetFillColor(hovered));
+                drawRect(boxX, this.yPosition, boxX + actualBoxW, this.yPosition + borderSize, borderColor);
+                drawRect(boxX, this.yPosition + this.height - borderSize, boxX + actualBoxW, this.yPosition + this.height, borderColor);
+                drawRect(boxX, this.yPosition, boxX + borderSize, this.yPosition + this.height, borderColor);
+                drawRect(boxX + actualBoxW - borderSize, this.yPosition, boxX + actualBoxW, this.yPosition + this.height, borderColor);
+                this.drawCenteredString(mc.fontRendererObj, this.displayString,
                         boxX + actualBoxW / 2,
-                        this.y + (this.height - fontRenderer.FONT_HEIGHT) / 2,
+                        this.yPosition + (this.height - mc.fontRendererObj.FONT_HEIGHT) / 2,
                         widgetTextColor(hovered));
 
                 if (hasLabel) {
                     int labelX = labelPosition == LabelPosition.RIGHT
-                            ? this.x + actualBoxW + labelGap
-                            : this.x;
-                    int labelY = this.y + (this.height - fontRenderer.FONT_HEIGHT) / 2;
-                    fontRenderer.drawString(label, labelX, labelY, enabled ? labelColor : DISABLED_BUTTON_TEXT);
+                            ? this.xPosition + actualBoxW + labelGap
+                            : this.xPosition;
+                    int labelY = this.yPosition + (this.height - mc.fontRendererObj.FONT_HEIGHT) / 2;
+                    mc.fontRendererObj.drawString(label, labelX, labelY, enabled ? labelColor : DISABLED_BUTTON_TEXT);
                 }
             }
         };

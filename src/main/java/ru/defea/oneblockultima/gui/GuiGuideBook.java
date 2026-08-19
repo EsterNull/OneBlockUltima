@@ -4,17 +4,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.client.renderer.texture.ITextureObject;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.StatCollector;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.guide.GuideBookContent;
+import ru.defea.oneblockultima.util.RenderUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,7 +65,7 @@ public class GuiGuideBook extends GuiScreen
     private final List<BookPage> pages = new ArrayList<>();
     private BookPage tocPage;
 
-    private ItemStack hoverStack = ItemStack.EMPTY;
+    private ItemStack hoverStack = null;
     private float hoverContentX;
     private float hoverContentY;
     private int hoverPageX = LEFT_PAGE_X;
@@ -111,7 +112,7 @@ public class GuiGuideBook extends GuiScreen
 
         TitleElement(String key)
         {
-            this(I18n.format(key), GOLD_COLOR);
+            this(StatCollector.translateToLocal(key), GOLD_COLOR);
         }
 
         @Override
@@ -175,7 +176,7 @@ public class GuiGuideBook extends GuiScreen
         {
             this.texture = texture;
             this.color = color;
-            this.lines = wrapText(Minecraft.getMinecraft().fontRenderer, text, CONTENT_W - 20);
+            this.lines = wrapText(Minecraft.getMinecraft().fontRendererObj, text, CONTENT_W - 20);
         }
 
         @Override
@@ -188,7 +189,7 @@ public class GuiGuideBook extends GuiScreen
         void draw(FontRenderer fr, int x, int y, int width, float mouseX, float mouseY)
         {
             Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             Gui.drawModalRectWithCustomSizedTexture(x, y, 0, 0, 16, 16, 16, 16);
             int cy = y + (16 - lines.size() * LINE_H) / 2;
             for (String line : lines)
@@ -210,10 +211,10 @@ public class GuiGuideBook extends GuiScreen
         CommandElement(FontRenderer fr, GuideBookContent.CommandInfo command)
         {
             this.command = command;
-            this.cheatMarker = command.cheat ? "[" + I18n.format("book.oneblockultima.command.cheat") + "] " : "";
+            this.cheatMarker = command.cheat ? "[" + StatCollector.translateToLocal("book.oneblockultima.command.cheat") + "] " : "";
             this.nameLines = wrapText(fr, "/" + command.name, CONTENT_W);
             this.usageLines = wrapText(fr, command.usage, CONTENT_W);
-            this.descLines = wrapText(fr, I18n.format(command.descriptionKey), CONTENT_W);
+            this.descLines = wrapText(fr, StatCollector.translateToLocal(command.descriptionKey), CONTENT_W);
         }
 
         @Override
@@ -282,7 +283,7 @@ public class GuiGuideBook extends GuiScreen
                 int cy = y + (i / 3) * SLOT;
                 drawSlot(cx, cy);
                 ItemStack stack = recipe.grid[i];
-                if (!stack.isEmpty())
+                if (stack != null)
                 {
                     drawItemStack(stack, cx + 1, cy + 1);
                     if (mouseIn(mouseX, mouseY, cx, cy, SLOT, SLOT))
@@ -292,12 +293,13 @@ public class GuiGuideBook extends GuiScreen
                 }
             }
 
-            drawCraftingArrow(x + ARROW_X, y + (GRID_SIZE - 9) / 2, ARROW_W, 9, GRAY_COLOR_5);
+            drawCraftingArrow(x + ARROW_X, y + (GRID_SIZE - 9) / 2, ARROW_W, 9, GRAY_COLOR_5, 1.0F);
 
             int rx = x + RESULT_X;
             int ry = y + (GRID_SIZE - SLOT) / 2;
             drawSlot(rx, ry);
             drawItemStack(recipe.result, rx + 1, ry + 1);
+
             if (mouseIn(mouseX, mouseY, rx, ry, SLOT, SLOT))
             {
                 setHoverContent(recipe.result, rx + (float) SLOT / 2, ry + (float) SLOT / 2);
@@ -425,12 +427,12 @@ public class GuiGuideBook extends GuiScreen
     {
         List<PageElement> elements = new ArrayList<>();
         elements.add(new TitleElement("book.oneblockultima.overview.title"));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.line1"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.line2"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.line3"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new IconLineElement(COIN_TEXTURE, I18n.format("book.oneblockultima.overview.currency"), GOLD_COLOR));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.sets"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.tip"), GRAY_COLOR_5, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.overview.line1"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.overview.line2"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.overview.line3"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new IconLineElement(COIN_TEXTURE, StatCollector.translateToLocal("book.oneblockultima.overview.currency"), GOLD_COLOR));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.overview.sets"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.overview.tip"), GRAY_COLOR_5, CONTENT_W));
         return paginate(elements);
     }
 
@@ -440,7 +442,7 @@ public class GuiGuideBook extends GuiScreen
         elements.add(new TitleElement("book.oneblockultima.tab.commands"));
         for (GuideBookContent.CommandInfo command : commands)
         {
-            elements.add(new CommandElement(fontRenderer, command));
+            elements.add(new CommandElement(fontRendererObj, command));
         }
         return paginate(elements);
     }
@@ -451,14 +453,14 @@ public class GuiGuideBook extends GuiScreen
         elements.add(new TitleElement("book.oneblockultima.tab.recipes"));
         if (recipes.isEmpty())
         {
-            elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.recipes.empty"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+            elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.recipes.empty"), LIGHT_GRAY_COLOR_1, CONTENT_W));
         }
         else
         {
-            elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.recipes_count", recipes.size()), GRAY_COLOR_5, CONTENT_W));
+            elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocalFormatted("book.oneblockultima.recipes_count", recipes.size()), GRAY_COLOR_5, CONTENT_W));
             for (GuideBookContent.Recipe recipe : recipes)
             {
-                elements.add(new RecipeElement(fontRenderer, recipe));
+                elements.add(new RecipeElement(fontRendererObj, recipe));
             }
         }
         return paginate(elements);
@@ -468,17 +470,17 @@ public class GuiGuideBook extends GuiScreen
     {
         List<PageElement> elements = new ArrayList<>();
         elements.add(new TitleElement("book.oneblockultima.tab.mechanics"));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.intro"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.break"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.mobs"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.currency"), GOLD_COLOR, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.mode"), GOLD_COLOR, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.sets"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.conditions"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.claim"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.invites"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.mechanics.settings"), LIGHT_GRAY_COLOR_1, CONTENT_W));
-        elements.add(new TextElement(fontRenderer, I18n.format("book.oneblockultima.overview.tip"), GRAY_COLOR_5, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.intro"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.break"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.mobs"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.currency"), GOLD_COLOR, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.mode"), GOLD_COLOR, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.sets"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.conditions"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.claim"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.invites"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.mechanics.settings"), LIGHT_GRAY_COLOR_1, CONTENT_W));
+        elements.add(new TextElement(fontRendererObj, StatCollector.translateToLocal("book.oneblockultima.overview.tip"), GRAY_COLOR_5, CONTENT_W));
         return paginate(elements);
     }
 
@@ -491,7 +493,7 @@ public class GuiGuideBook extends GuiScreen
 
         for (Map.Entry<String, Integer> entry : sectionStart.entrySet())
         {
-            String label = I18n.format(entry.getKey());
+            String label = StatCollector.translateToLocal(entry.getKey());
             int targetPage = entry.getValue();
             page.placed.add(new Placed(new TocEntryElement(label, targetPage + 1, targetPage), y));
             y += TOC_ROW_H;
@@ -540,7 +542,7 @@ public class GuiGuideBook extends GuiScreen
             }
             else
             {
-                int height = element.measure(fontRenderer, CONTENT_W);
+                int height = element.measure(fontRendererObj, CONTENT_W);
                 if (y + height > CONTENT_H)
                 {
                     result.add(page);
@@ -560,20 +562,21 @@ public class GuiGuideBook extends GuiScreen
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
         drawDefaultBackground();
-        hoverStack = ItemStack.EMPTY;
+        hoverStack = null;
 
         float localMouseX = (mouseX - bookX) / scale;
         float localMouseY = (mouseY - bookY) / scale;
 
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(bookX, bookY, 0);
-        GlStateManager.scale(scale, scale, 1.0F);
+        GL11.glPushMatrix();
+        GL11.glTranslatef(bookX, bookY, 0);
+        GL11.glScalef(scale, scale, 1.0F);
 
         Minecraft.getMinecraft().getTextureManager().bindTexture(GUIDE_BOOK_BG_TEXTURE);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         Gui.drawModalRectWithCustomSizedTexture(0, 0, 0, 0, BOOK_W, BOOK_H, BOOK_W, BOOK_H);
 
         int leftIndex = currentSpread * 2;
@@ -590,17 +593,25 @@ public class GuiGuideBook extends GuiScreen
         drawPageNumbers(leftIndex, rightIndex);
         drawNavigation(localMouseX, localMouseY);
 
-        GlStateManager.popMatrix();
+        GL11.glPopMatrix();
 
         super.drawScreen(mouseX, mouseY, partialTicks);
 
-        if (!hoverStack.isEmpty())
+        if (hoverStack != null)
         {
             int tipX = bookX + (int) ((hoverPageX + PAD + hoverContentX * CONTENT_SCALE) * scale) + 8;
             int tipY = bookY + (int) ((PAGE_Y + PAD + hoverContentY * CONTENT_SCALE) * scale);
-            List<String> tooltip = hoverStack.getTooltip(mc.player,
-                    mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-            drawHoveringText(tooltip, tipX, tipY, fontRenderer);
+            List<String> tooltip;
+            try
+            {
+                tooltip = hoverStack.getTooltip(mc.thePlayer, mc.gameSettings.advancedItemTooltips);
+            }
+            catch (Exception ignored)
+            {
+                tooltip = new ArrayList<>();
+                tooltip.add(hoverStack.getItem().getUnlocalizedName());
+            }
+            drawHoveringText(tooltip, tipX, tipY, fontRendererObj);
         }
     }
 
@@ -609,32 +620,32 @@ public class GuiGuideBook extends GuiScreen
         float contentMouseX = (localMouseX - (pageX + PAD)) / CONTENT_SCALE;
         float contentMouseY = (localMouseY - (PAGE_Y + PAD)) / CONTENT_SCALE;
 
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(pageX + PAD, PAGE_Y + PAD, 0);
-        GlStateManager.scale(CONTENT_SCALE, CONTENT_SCALE, 1.0F);
+        GL11.glPushMatrix();
+        GL11.glTranslatef(pageX + PAD, PAGE_Y + PAD, 0);
+        GL11.glScalef(CONTENT_SCALE, CONTENT_SCALE, 1.0F);
 
         ItemStack hoverBefore = hoverStack;
         for (Placed placed : page.placed)
         {
-            placed.element.draw(fontRenderer, 0, placed.y, CONTENT_W, contentMouseX, contentMouseY);
+            placed.element.draw(fontRendererObj, 0, placed.y, CONTENT_W, contentMouseX, contentMouseY);
         }
         if (hoverStack != hoverBefore)
         {
             hoverPageX = pageX;
         }
 
-        GlStateManager.popMatrix();
+        GL11.glPopMatrix();
     }
 
     private void drawPageNumbers(int leftIndex, int rightIndex)
     {
         if (leftIndex < pages.size())
         {
-            drawCenteredString(fontRenderer, String.valueOf(leftIndex + 1), LEFT_PAGE_X + PAGE_W / 2, PAGE_Y + PAGE_H + 1, GRAY_COLOR_5);
+            drawCenteredString(fontRendererObj, String.valueOf(leftIndex + 1), LEFT_PAGE_X + PAGE_W / 2, PAGE_Y + PAGE_H + 1, GRAY_COLOR_5);
         }
         if (rightIndex < pages.size() && !(currentSpread == 0 && rightIndex == 1))
         {
-            drawCenteredString(fontRenderer, String.valueOf(rightIndex + 1), RIGHT_PAGE_X + PAGE_W / 2, PAGE_Y + PAGE_H + 1, GRAY_COLOR_5);
+            drawCenteredString(fontRendererObj, String.valueOf(rightIndex + 1), RIGHT_PAGE_X + PAGE_W / 2, PAGE_Y + PAGE_H + 1, GRAY_COLOR_5);
         }
     }
 
@@ -702,16 +713,21 @@ public class GuiGuideBook extends GuiScreen
     }
 
     @SuppressWarnings("SameParameterValue")
-    private static void drawCraftingArrow(int x, int y, int w, int h, int color)
+    private static void drawCraftingArrow(int x, int y, int w, int h, int color, float progress)
     {
-        Gui.drawRect(x, y + h / 2 - 1, x + w - h / 2 - 1, y + h / 2 + 2, color);
+        float clamped = Math.min(1.0F, Math.max(0.0F, progress));
+        int tipX = x + Math.round((w - h / 2 - 1) * clamped);
+        if (tipX > x)
+        {
+            Gui.drawRect(x, y + h / 2 - 1, tipX, y + h / 2 + 2, color);
+        }
         for (int k = 0; k < h; k++)
         {
             int dy = Math.abs(k - h / 2);
-            int start = x + w - h / 2 - 1 + dy;
+            int start = tipX + dy;
             if (start < x + w)
             {
-                Gui.drawRect(start, y + k, x + w, y + k + 1, color);
+                Gui.drawRect(start, y + k, start + 1, y + k + 1, color);
             }
         }
     }
@@ -725,7 +741,7 @@ public class GuiGuideBook extends GuiScreen
 
     private void setHoverContent(ItemStack stack, float contentX, float contentY)
     {
-        if (!stack.isEmpty())
+        if (stack != null)
         {
             hoverStack = stack;
             hoverContentX = contentX;
@@ -764,8 +780,9 @@ public class GuiGuideBook extends GuiScreen
     private static List<String> wrapLine(FontRenderer fr, String line, int width)
     {
         List<String> result = new ArrayList<>();
-        for (String part : fr.listFormattedStringToWidth(line, width))
+        for (Object obj : fr.listFormattedStringToWidth(line, width))
         {
+            String part = (String) obj;
             if (fr.getStringWidth(part) <= width)
             {
                 result.add(part);
@@ -802,19 +819,32 @@ public class GuiGuideBook extends GuiScreen
 
     private static void drawItemStack(ItemStack stack, int x, int y)
     {
-        if (stack == null || stack.isEmpty())
+        if (stack == null)
         {
             return;
         }
-        Minecraft mc = Minecraft.getMinecraft();
-        RenderHelper.enableGUIStandardItemLighting();
-        mc.getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-        mc.getRenderItem().renderItemOverlayIntoGUI(mc.fontRenderer, stack, x, y, null);
-        RenderHelper.disableStandardItemLighting();
+        RenderUtil.renderItemAndEffectIntoGUI(Minecraft.getMinecraft().fontRendererObj, stack, x, y);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    public void updateScreen()
+    {
+        super.updateScreen();
+        TextureManager tm = Minecraft.getMinecraft().getTextureManager();
+        ITextureObject items = tm.getTexture(TextureMap.locationItemsTexture);
+        if (items instanceof TextureMap)
+        {
+            ((TextureMap) items).updateAnimations();
+        }
+        ITextureObject blocks = tm.getTexture(TextureMap.locationBlocksTexture);
+        if (blocks instanceof TextureMap)
+        {
+            ((TextureMap) blocks).updateAnimations();
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
     {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (mouseButton != 0)
@@ -861,7 +891,7 @@ public class GuiGuideBook extends GuiScreen
     }
 
     @Override
-    public void handleMouseInput() throws IOException
+    public void handleMouseInput()
     {
         super.handleMouseInput();
         int wheel = Mouse.getEventDWheel();
@@ -876,7 +906,7 @@ public class GuiGuideBook extends GuiScreen
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    protected void keyTyped(char typedChar, int keyCode)
     {
         if (keyCode == Keyboard.KEY_LEFT && currentSpread > 0)
         {

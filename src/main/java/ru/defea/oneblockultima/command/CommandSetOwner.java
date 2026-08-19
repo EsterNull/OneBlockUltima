@@ -1,70 +1,67 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
 import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatStyle;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.StatCollector;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 public class CommandSetOwner extends CommandBase
 {
     @Override
-    @Nonnull
-    public String getName()
+    public String getCommandName()
     {
         return "setOwner";
     }
 
     @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    public String getCommandUsage(ICommandSender sender)
     {
         return "/setOwner <x> <y> <z> <playerName>";
     }
 
     @Override
-    public void execute(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args) throws CommandException
+    public void processCommand(ICommandSender sender, String[] args)
     {
         if (args.length != 4)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.usage") + getUsage(sender)).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.usage") + getCommandUsage(sender)).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        BlockPos pos = CommandBase.parseBlockPos(sender, args, 0, false);
-        EntityPlayerMP player = server.getPlayerList().getPlayerByUsername(args[3]);
+        int x = CommandBase.parseInt(sender, args[0]);
+        int y = CommandBase.parseInt(sender, args[1]);
+        int z = CommandBase.parseInt(sender, args[2]);
+        EntityPlayerMP player = MinecraftServer.getServer().getConfigurationManager().getPlayerByUsername(args[3]);
 
         if (player == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.player_not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.player_not_found")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
             return;
         }
 
-        TileEntity tileEntity = server.getEntityWorld().getTileEntity(pos);
+        TileEntity tileEntity = MinecraftServer.getServer().getEntityWorld().getTileEntity(x, y, z);
         if (tileEntity instanceof TileEntityOneBlockGenerator) {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
             generator.setOwnerId(player.getUniqueID());
-            sender.sendMessage(new TextComponentString(I18n.format("command.setOwner.success")).setStyle(new Style().setColor(TextFormatting.GREEN)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.setOwner.success")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.GREEN)));
         }
         else
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
+            sender.addChatMessage(new ChatComponentText(StatCollector.translateToLocal("command.no_generator")).setChatStyle(new ChatStyle().setColor(EnumChatFormatting.RED)));
         }
     }
 
     @Override
-    @Nonnull
-    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args, BlockPos targetPos)
+    @SuppressWarnings("rawtypes")
+    public List addTabCompletionOptions(ICommandSender sender, String[] args)
     {
         if (args.length == 1)
         {
@@ -80,10 +77,10 @@ public class CommandSetOwner extends CommandBase
         }
         else if (args.length == 4)
         {
-            return getListOfStringsMatchingLastWord(args, server.getOnlinePlayerNames());
+            return getListOfStringsMatchingLastWord(args, MinecraftServer.getServer().getAllUsernames());
         }
 
-        return super.getTabCompletions(server, sender, args, targetPos);
+        return super.addTabCompletionOptions(sender, args);
     }
 
     @Override
