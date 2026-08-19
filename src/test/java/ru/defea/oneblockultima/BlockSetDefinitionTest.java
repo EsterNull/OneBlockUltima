@@ -8,6 +8,7 @@ import org.junit.Test;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig.*;
+import ru.defea.oneblockultima.config.ModSettings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -234,6 +235,109 @@ public class BlockSetDefinitionTest {
 
         set.ensureComputedLevels();
         assertTrue(set.getMaxLevel() > 0);
+    }
+
+    @Test
+    public void maxLevelCoversHighestElementBaseLevel() {
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "max_level_test";
+
+        BlockElementDefinition low = new BlockElementDefinition();
+        low.registry = "minecraft:stone";
+        low.baseLevel = 1;
+        low.baseChance = 100;
+        set.blocks.add(low);
+
+        BlockElementDefinition high = new BlockElementDefinition();
+        high.registry = "minecraft:diamond_ore";
+        high.baseLevel = 6;
+        high.baseChance = 100;
+        set.blocks.add(high);
+
+        set.ensureComputedLevels();
+        assertTrue("Max level must reach the highest element base level", set.getMaxLevel() >= 6);
+        assertNotNull(set.getLevel(6));
+    }
+
+    @Test
+    public void gapLevelsGetPreviousContent() {
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "gap_test";
+
+        BlockElementDefinition low = new BlockElementDefinition();
+        low.registry = "minecraft:stone";
+        low.baseLevel = 1;
+        low.baseChance = 100;
+        set.blocks.add(low);
+
+        BlockElementDefinition high = new BlockElementDefinition();
+        high.registry = "minecraft:diamond_ore";
+        high.baseLevel = 5;
+        high.baseChance = 100;
+        set.blocks.add(high);
+
+        set.ensureComputedLevels();
+
+        // Level 4 is a gap (no element starts there) but must still resolve
+        SetLevelDefinition gap = set.getLevel(4);
+        assertNotNull(gap);
+        boolean hasStone = false;
+        boolean hasDiamond = false;
+        for (BlockEntryDefinition b : gap.blocks) {
+            if ("minecraft:stone".equals(b.registry)) hasStone = true;
+            if ("minecraft:diamond_ore".equals(b.registry)) hasDiamond = true;
+        }
+        assertTrue(hasStone);
+        assertFalse("Elements above the gap level must not appear yet", hasDiamond);
+    }
+
+    @Test
+    public void getLevelClampedReturnsMaxDefinitionForHighLevels() {
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "clamp_test";
+
+        BlockElementDefinition block = new BlockElementDefinition();
+        block.registry = "minecraft:stone";
+        block.baseLevel = 1;
+        block.baseChance = 100;
+        set.blocks.add(block);
+
+        set.ensureComputedLevels();
+
+        int max = set.getMaxLevel();
+        SetLevelDefinition maxDef = set.getLevel(max);
+        SetLevelDefinition clamped = set.getLevelClamped(999);
+        assertNotNull(clamped);
+        assertSame(maxDef, clamped);
+    }
+
+    @Test
+    public void changingMobSpawnPercentDoesNotReduceMaxLevel() {
+        ModSettings settings = ModSettings.get();
+        int original = settings.getMaxMobSpawnPercent();
+        try {
+            settings.setMaxMobSpawnPercent(0);
+            BlockSetDefinition set = new BlockSetDefinition();
+            set.id = "mob_percent_test";
+
+            BlockElementDefinition block = new BlockElementDefinition();
+            block.registry = "minecraft:stone";
+            block.baseLevel = 1;
+            block.baseChance = 100;
+            set.blocks.add(block);
+
+            MobElementDefinition mob = new MobElementDefinition();
+            mob.registry = "minecraft:pig";
+            mob.baseLevel = 6;
+            mob.baseChance = 50;
+            set.mobs.add(mob);
+
+            set.ensureComputedLevels();
+            assertTrue("Max level must cover mob base level even with mob spawn percent 0", set.getMaxLevel() >= 6);
+            assertNotNull(set.getLevel(6));
+        } finally {
+            settings.setMaxMobSpawnPercent(original);
+        }
     }
 
     @Test

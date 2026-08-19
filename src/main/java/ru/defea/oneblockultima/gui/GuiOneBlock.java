@@ -593,11 +593,11 @@ public class GuiOneBlock extends GuiContainer
 
         if (canShowCurrent)
         {
-            BlockSetConfig.SetLevelDefinition currentDef = set.getLevel(currentLevel);
+            BlockSetConfig.SetLevelDefinition currentDef = set.getLevelClamped(currentLevel);
             renderLevelPanel(currentDef, x, y, true, mouseX, mouseY);
         }
         int rightStartX = canShowCurrent ? rightPanelX : x;
-        BlockSetConfig.SetLevelDefinition nextDef = set.getLevel(currentLevel <= 0 ? 1 : currentLevel + 1);
+        BlockSetConfig.SetLevelDefinition nextDef = set.getLevelClamped(currentLevel <= 0 ? 1 : currentLevel + 1);
         renderLevelPanel(nextDef, rightStartX, y, false, mouseX, mouseY);
 
         if (canShowCurrent && nextDef != null)
@@ -1753,7 +1753,7 @@ public class GuiOneBlock extends GuiContainer
     private int getMaxBlockScroll(BlockSetConfig.BlockSetDefinition set, int level)
     {
         if (set == null) return 0;
-        BlockSetConfig.SetLevelDefinition levelDef = set.getLevel(level);
+        BlockSetConfig.SetLevelDefinition levelDef = set.getLevelClamped(level);
         if (levelDef == null || levelDef.blocks == null || levelDef.blocks.isEmpty()) return 0;
 
         calculateColumns(getPanelWidth());
@@ -1769,7 +1769,7 @@ public class GuiOneBlock extends GuiContainer
     private int getMaxMobScroll(BlockSetConfig.BlockSetDefinition set, int level)
     {
         if (set == null) return 0;
-        BlockSetConfig.SetLevelDefinition levelDef = set.getLevel(level);
+        BlockSetConfig.SetLevelDefinition levelDef = set.getLevelClamped(level);
         if (levelDef == null || levelDef.mobs == null || levelDef.mobs.isEmpty()) return 0;
 
         calculateColumns(getPanelWidth());

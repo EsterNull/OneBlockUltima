@@ -1261,7 +1261,7 @@ public final class ModEvents
         }
 
         OneBlockUltima.getLogger().info("[Mob Spawn] Set found: {}", set.id);
-        BlockSetConfig.SetLevelDefinition levelDefinition = set.getLevel(entry.level);
+        BlockSetConfig.SetLevelDefinition levelDefinition = set.getLevelClamped(entry.level);
         if (levelDefinition == null)
         {
             OneBlockUltima.getLogger().info("[Mob Spawn] Level definition is null for level={}", entry.level);
