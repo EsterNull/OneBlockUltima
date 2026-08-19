@@ -33,6 +33,7 @@ jobs:
             echo "keys=1.12 1.12.1 1.12.2" >> "$GITHUB_OUTPUT"
             echo "keys_json=[\"1.12\", \"1.12.1\", \"1.12.2\"]" >> "$GITHUB_OUTPUT"
           fi
+          echo "tag_ref=$(echo "${{ github.ref_name }}" | sed 's/^forge_//')" >> "$GITHUB_OUTPUT"
 
       - name: Check versions.json
         id: check
@@ -95,7 +96,7 @@ jobs:
         if: steps.check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}
+          tag_name: forge-${{ steps.mc.outputs.tag_ref }}-${{ steps.version.outputs.mod_version }}
           name: ${{ steps.pr.outputs.title }}
           body_path: /tmp/pr_body.md
           target_commitish: ${{ github.ref_name }}
@@ -106,4 +107,4 @@ jobs:
       - name: Print release URL
         if: steps.check.outputs.exists == 'false'
         run: |
-          echo "Release URL: https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-${{ github.ref_name }}-${{ steps.version.outputs.mod_version }}"
+          echo "Release URL: https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-${{ steps.mc.outputs.tag_ref }}-${{ steps.version.outputs.mod_version }}"
