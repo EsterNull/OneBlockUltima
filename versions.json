@@ -45,17 +45,17 @@
     "3.0.1": "Fixed max level"
   },
   "promos": {
-    "1.7.10-latest": "2.1.2",
-    "1.7.10-recommended": "2.1.2",
-    "1.7.10-recommended_release": "https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-forge_1.7.10-2.1.2",
-    "1.12-latest": "3.0.0",
-    "1.12-recommended": "3.0.0",
-    "1.12-recommended_release": "https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-forge_1.12.x-3.0.0",
-    "1.12.1-latest": "3.0.0",
-    "1.12.1-recommended": "3.0.0",
-    "1.12.1-recommended_release": "https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-forge_1.12.x-3.0.0",
-    "1.12.2-latest": "3.0.0",
-    "1.12.2-recommended": "3.0.0",
-    "1.12.2-recommended_release": "https://github.com/XZSt4nce/OneBlockUltima/releases/tag/forge-forge_1.12.x-3.0.0"
+    "1.7.10-latest": "3.0.0",
+    "1.7.10-recommended": "3.0.0",
+    "1.7.10-recommended_release": "https://github.com/EsterNull/OneBlockUltima/releases/tag/forge-1.7.10-3.0.0",
+    "1.12-latest": "3.0.1",
+    "1.12-recommended": "3.0.1",
+    "1.12-recommended_release": "https://github.com/EsterNull/OneBlockUltima/releases/tag/forge-1.12.x-3.0.1",
+    "1.12.1-latest": "3.0.1",
+    "1.12.1-recommended": "3.0.1",
+    "1.12.1-recommended_release": "https://github.com/EsterNull/OneBlockUltima/releases/tag/forge-1.12.x-3.0.1",
+    "1.12.2-latest": "3.0.1",
+    "1.12.2-recommended": "3.0.1",
+    "1.12.2-recommended_release": "https://github.com/EsterNull/OneBlockUltima/releases/tag/forge-1.12.x-3.0.1"
   }
 }
