@@ -1,143 +1,250 @@
 package ru.defea.oneblockultima.block;
 
-import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.init.Blocks;
+import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraftforge.oredict.OreDictionary;
+import ru.defea.oneblockultima.item.ItemBlockCompressed;
+
+import javax.annotation.Nullable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class ModBlocks
 {
+    @SuppressWarnings("unused")
+    public static final class RegisterBlock
+    {
+        private final Block block;
+        private boolean isItem = false;
+        private String variantIn = "inventory";
+        private int meta = 0;
+        private String subBlockName;
+        private int subBlockCount = 1;
+
+        private RegisterBlock(Block block)
+        {
+            this.block = block;
+        }
+
+        private RegisterBlock(Block block, boolean isItem)
+        {
+            this.block = block;
+            this.isItem = isItem;
+        }
+
+        private RegisterBlock(Block block, String variantIn)
+        {
+            this.block = block;
+            this.variantIn = variantIn;
+        }
+
+        private RegisterBlock(Block block, boolean isItem, String variantIn)
+        {
+            this.block = block;
+            this.isItem = isItem;
+            this.variantIn = variantIn;
+        }
+
+        private RegisterBlock(Block block, int meta)
+        {
+            this.block = block;
+            this.meta = meta;
+        }
+
+        private RegisterBlock(Block block, boolean isItem, int meta)
+        {
+            this.block = block;
+            this.isItem = isItem;
+            this.meta = meta;
+        }
+
+        private RegisterBlock(Block block, String variantIn, int meta)
+        {
+            this.block = block;
+            this.variantIn = variantIn;
+            this.meta = meta;
+        }
+
+        private RegisterBlock(Block block, boolean isItem, String variantIn, int meta)
+        {
+            this.block = block;
+            this.isItem = isItem;
+            this.variantIn = variantIn;
+            this.meta = meta;
+        }
+
+        private RegisterBlock(Block block, boolean isItem, String variantIn, int meta, String subBlockName, int subBlockCount)
+        {
+            this.block = block;
+            this.isItem = isItem;
+            this.variantIn = variantIn;
+            this.meta = meta;
+            this.subBlockName = subBlockName;
+            this.subBlockCount = subBlockCount;
+        }
+
+        public Block getBlock()
+        {
+            return this.block;
+        }
+
+        public String getVariantIn()
+        {
+            return this.variantIn;
+        }
+
+        public int getMeta()
+        {
+            return this.meta;
+        }
+
+        public String getSubBlockName()
+        {
+            return this.subBlockName;
+        }
+
+        public int getSubBlockCount()
+        {
+            return this.subBlockCount;
+        }
+    }
+
     public static final BlockOneBlockGenerator ONE_BLOCK_GENERATOR = new BlockOneBlockGenerator();
     public static final BlockFluidBarrier FLUID_BARRIER = new BlockFluidBarrier();
-    public static final BlockCustomBedrock CUSTOM_BEDROCK = new BlockCustomBedrock();
-    public static final BlockCustomPortalFrame CUSTOM_PORTAL_FRAME = new BlockCustomPortalFrame();
-    public static final BlockCompressedBedrock COMPRESSED_BEDROCK_1X = new BlockCompressedBedrock();
-    public static final BlockCompressedCoalBlock COMPRESSED_COAL_1X = new BlockCompressedCoalBlock();
-    public static final BlockCompressedDiamondBlock COMPRESSED_DIAMOND_1X = new BlockCompressedDiamondBlock();
-    public static final BlockCompressedEmeraldBlock COMPRESSED_EMERALD_1X = new BlockCompressedEmeraldBlock();
-    public static final BlockCompressedEndStone COMPRESSED_END_STONE_1X = new BlockCompressedEndStone();
-    public static final BlockCompressedGoldBlock COMPRESSED_GOLD_1X = new BlockCompressedGoldBlock();
-    public static final BlockCompressedIronBlock COMPRESSED_IRON_1X = new BlockCompressedIronBlock();
-    public static final BlockCompressedLapisBlock COMPRESSED_LAPIS_1X = new BlockCompressedLapisBlock();
-    public static final BlockCompressedNetherrack COMPRESSED_NETHERRACK_1X = new BlockCompressedNetherrack();
-    public static final BlockCompressedRedstoneBlock COMPRESSED_REDSTONE_1X = new BlockCompressedRedstoneBlock();
-    public static final BlockCompressedMineralBlock BLOCK_COMPRESSED_MINERAL_BLOCK = new BlockCompressedMineralBlock();
+    public static final BlockCompressedMineralBlock COMPRESSED_MINERAL_BLOCK = new BlockCompressedMineralBlock();
 
-    public static final BlockCompressedDoubleBedrock COMPRESSED_BEDROCK_2X = new BlockCompressedDoubleBedrock();
-    public static final BlockCompressedDoubleCoalBlock COMPRESSED_COAL_2X = new BlockCompressedDoubleCoalBlock();
-    public static final BlockCompressedDoubleDiamondBlock COMPRESSED_DIAMOND_2X = new BlockCompressedDoubleDiamondBlock();
-    public static final BlockCompressedDoubleEmeraldBlock COMPRESSED_EMERALD_2X = new BlockCompressedDoubleEmeraldBlock();
-    public static final BlockCompressedDoubleEndStone COMPRESSED_END_STONE_2X = new BlockCompressedDoubleEndStone();
-    public static final BlockCompressedDoubleGoldBlock COMPRESSED_GOLD_2X = new BlockCompressedDoubleGoldBlock();
-    public static final BlockCompressedDoubleIronBlock COMPRESSED_IRON_2X = new BlockCompressedDoubleIronBlock();
-    public static final BlockCompressedDoubleLapisBlock COMPRESSED_LAPIS_2X = new BlockCompressedDoubleLapisBlock();
-    public static final BlockCompressedDoubleNetherrack COMPRESSED_NETHERRACK_2X = new BlockCompressedDoubleNetherrack();
-    public static final BlockCompressedDoubleRedstoneBlock COMPRESSED_REDSTONE_2X = new BlockCompressedDoubleRedstoneBlock();
+    public static final BlockCompressedBedrock COMPRESSED_BEDROCK = new BlockCompressedBedrock();
+    public static final BlockCompressedRedstoneBlock COMPRESSED_REDSTONE_BLOCK = new BlockCompressedRedstoneBlock();
+    public static final BlockCompressedGoldBlock COMPRESSED_GOLD_BLOCK = new BlockCompressedGoldBlock();
+    public static final BlockCompressedIronBlock COMPRESSED_IRON_BLOCK = new BlockCompressedIronBlock();
+    public static final BlockCompressedDiamondBlock COMPRESSED_DIAMOND_BLOCK = new BlockCompressedDiamondBlock();
+    public static final BlockCompressedStoneBlock COMPRESSED_STONE_BLOCK = new BlockCompressedStoneBlock();
+    public static final BlockCompressedEmeraldBlock COMPRESSED_EMERALD_BLOCK = new BlockCompressedEmeraldBlock();
+    public static final BlockCompressedLapisBlock COMPRESSED_LAPIS_BLOCK = new BlockCompressedLapisBlock();
+    public static final BlockCompressedEndStone COMPRESSED_END_STONE = new BlockCompressedEndStone();
+    public static final BlockCompressedNetherrack COMPRESSED_NETHERRACK = new BlockCompressedNetherrack();
 
-    public static final BlockCompressedTripleBedrock COMPRESSED_BEDROCK_3X = new BlockCompressedTripleBedrock();
-    public static final BlockCompressedTripleCoalBlock COMPRESSED_COAL_3X = new BlockCompressedTripleCoalBlock();
-    public static final BlockCompressedTripleDiamondBlock COMPRESSED_DIAMOND_3X = new BlockCompressedTripleDiamondBlock();
-    public static final BlockCompressedTripleEmeraldBlock COMPRESSED_EMERALD_3X = new BlockCompressedTripleEmeraldBlock();
-    public static final BlockCompressedTripleEndStone COMPRESSED_END_STONE_3X = new BlockCompressedTripleEndStone();
-    public static final BlockCompressedTripleGoldBlock COMPRESSED_GOLD_3X = new BlockCompressedTripleGoldBlock();
-    public static final BlockCompressedTripleIronBlock COMPRESSED_IRON_3X = new BlockCompressedTripleIronBlock();
-    public static final BlockCompressedTripleLapisBlock COMPRESSED_LAPIS_3X = new BlockCompressedTripleLapisBlock();
-    public static final BlockCompressedTripleNetherrack COMPRESSED_NETHERRACK_3X = new BlockCompressedTripleNetherrack();
-    public static final BlockCompressedTripleRedstoneBlock COMPRESSED_REDSTONE_3X = new BlockCompressedTripleRedstoneBlock();
+    public static RegisterBlock[] modBlocks = {
+            new RegisterBlock(ONE_BLOCK_GENERATOR, true),
+            new RegisterBlock(FLUID_BARRIER),
+            new RegisterBlock(COMPRESSED_MINERAL_BLOCK, true, "normal"),
 
-    public static final BlockCompressedQuadrupleBedrock COMPRESSED_BEDROCK_4X = new BlockCompressedQuadrupleBedrock();
-    public static final BlockCompressedQuadrupleCoalBlock COMPRESSED_COAL_4X = new BlockCompressedQuadrupleCoalBlock();
-    public static final BlockCompressedQuadrupleDiamondBlock COMPRESSED_DIAMOND_4X = new BlockCompressedQuadrupleDiamondBlock();
-    public static final BlockCompressedQuadrupleEmeraldBlock COMPRESSED_EMERALD_4X = new BlockCompressedQuadrupleEmeraldBlock();
-    public static final BlockCompressedQuadrupleEndStone COMPRESSED_END_STONE_4X = new BlockCompressedQuadrupleEndStone();
-    public static final BlockCompressedQuadrupleGoldBlock COMPRESSED_GOLD_4X = new BlockCompressedQuadrupleGoldBlock();
-    public static final BlockCompressedQuadrupleIronBlock COMPRESSED_IRON_4X = new BlockCompressedQuadrupleIronBlock();
-    public static final BlockCompressedQuadrupleLapisBlock COMPRESSED_LAPIS_4X = new BlockCompressedQuadrupleLapisBlock();
-    public static final BlockCompressedQuadrupleNetherrack COMPRESSED_NETHERRACK_4X = new BlockCompressedQuadrupleNetherrack();
-    public static final BlockCompressedQuadrupleRedstoneBlock COMPRESSED_REDSTONE_4X = new BlockCompressedQuadrupleRedstoneBlock();
+            new RegisterBlock(COMPRESSED_BEDROCK, true, "normal", 0, "compressed_bedrock", BlockCompressedBedrock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_REDSTONE_BLOCK, true, "normal", 0, "compressed_redstone_block", BlockCompressedRedstoneBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_GOLD_BLOCK, true, "normal", 0, "compressed_gold_block", BlockCompressedGoldBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_IRON_BLOCK, true, "normal", 0, "compressed_iron_block", BlockCompressedIronBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_DIAMOND_BLOCK, true, "normal", 0, "compressed_diamond_block", BlockCompressedDiamondBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_STONE_BLOCK, true, "normal", 0, "compressed_stone_block", BlockCompressedStoneBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_EMERALD_BLOCK, true, "normal", 0, "compressed_emerald_block", BlockCompressedEmeraldBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_LAPIS_BLOCK, true, "normal", 0, "compressed_lapis_block", BlockCompressedLapisBlock.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_END_STONE, true, "normal", 0, "compressed_end_stone", BlockCompressedEndStone.MAX_LEVEL),
+            new RegisterBlock(COMPRESSED_NETHERRACK, true, "normal", 0, "compressed_netherrack", BlockCompressedNetherrack.MAX_LEVEL)
+    };
 
-    public static final BlockCompressedQuintupleCoalBlock COMPRESSED_COAL_5X = new BlockCompressedQuintupleCoalBlock();
-    public static final BlockCompressedQuintupleDiamondBlock COMPRESSED_DIAMOND_5X = new BlockCompressedQuintupleDiamondBlock();
-    public static final BlockCompressedQuintupleEmeraldBlock COMPRESSED_EMERALD_5X = new BlockCompressedQuintupleEmeraldBlock();
-    public static final BlockCompressedQuintupleEndStone COMPRESSED_END_STONE_5X = new BlockCompressedQuintupleEndStone();
-    public static final BlockCompressedQuintupleGoldBlock COMPRESSED_GOLD_5X = new BlockCompressedQuintupleGoldBlock();
-    public static final BlockCompressedQuintupleIronBlock COMPRESSED_IRON_5X = new BlockCompressedQuintupleIronBlock();
-    public static final BlockCompressedQuintupleLapisBlock COMPRESSED_LAPIS_5X = new BlockCompressedQuintupleLapisBlock();
-    public static final BlockCompressedQuintupleNetherrack COMPRESSED_NETHERRACK_5X = new BlockCompressedQuintupleNetherrack();
-    public static final BlockCompressedQuintupleRedstoneBlock COMPRESSED_REDSTONE_5X = new BlockCompressedQuintupleRedstoneBlock();
+    public static final int CUSTOM_BREAKABLE_POOL_SIZE = 32;
 
-    public static final BlockCompressedSextupleLapisBlock COMPRESSED_LAPIS_6X = new BlockCompressedSextupleLapisBlock();
-    public static final BlockCompressedSextupleRedstoneBlock COMPRESSED_REDSTONE_6X = new BlockCompressedSextupleRedstoneBlock();
+    public static final List<BlockCustomBreakable> CUSTOM_BREAKABLE_POOL = new ArrayList<>();
+
+    private static final Map<Block, BlockCustomBreakable> BREAKABLE_BY_EMULATED = new HashMap<>();
+
+    static
+    {
+        for (int i = 0; i < CUSTOM_BREAKABLE_POOL_SIZE; i++)
+        {
+            CUSTOM_BREAKABLE_POOL.add(new BlockCustomBreakable("custom_breakable_" + i));
+        }
+        RegisterBlock[] poolEntries = new RegisterBlock[CUSTOM_BREAKABLE_POOL.size()];
+        for (int i = 0; i < poolEntries.length; i++)
+        {
+            poolEntries[i] = new RegisterBlock(CUSTOM_BREAKABLE_POOL.get(i), "normal");
+        }
+        RegisterBlock[] combined = Arrays.copyOf(modBlocks, modBlocks.length + poolEntries.length);
+        System.arraycopy(poolEntries, 0, combined, modBlocks.length, poolEntries.length);
+        modBlocks = combined;
+    }
+
+    @Nullable
+    public static BlockCustomBreakable getBreakableFor(Block block)
+    {
+        if (block == null || block == Blocks.air)
+        {
+            return null;
+        }
+        BlockCustomBreakable bound = BREAKABLE_BY_EMULATED.get(block);
+        if (bound != null)
+        {
+            return bound;
+        }
+        for (BlockCustomBreakable cb : CUSTOM_BREAKABLE_POOL)
+        {
+            if (cb.getEmulated() == null)
+            {
+                cb.setEmulated(block);
+                BREAKABLE_BY_EMULATED.put(block, cb);
+                return cb;
+            }
+        }
+        return null;
+    }
+
+    public static void registerOreDict()
+    {
+        registerCompressedOres(COMPRESSED_BEDROCK, "Bedrock");
+        registerCompressedOres(COMPRESSED_REDSTONE_BLOCK, "RedstoneBlock");
+        registerCompressedOres(COMPRESSED_GOLD_BLOCK, "GoldBlock");
+        registerCompressedOres(COMPRESSED_IRON_BLOCK, "IronBlock");
+        registerCompressedOres(COMPRESSED_DIAMOND_BLOCK, "DiamondBlock");
+        registerCompressedOres(COMPRESSED_STONE_BLOCK, "Stone");
+        registerCompressedOres(COMPRESSED_EMERALD_BLOCK, "EmeraldBlock");
+        registerCompressedOres(COMPRESSED_LAPIS_BLOCK, "LapisBlock");
+        registerCompressedOres(COMPRESSED_END_STONE, "EndStone");
+        registerCompressedOres(COMPRESSED_NETHERRACK, "Netherrack");
+    }
+
+    private static void registerCompressedOres(BlockCompressedBase block, String capName)
+    {
+        for (int level = 1; level <= block.getMaxLevel(); level++)
+        {
+            OreDictionary.registerOre("compressed" + level + "x" + capName, new net.minecraft.item.ItemStack(block, 1, level - 1));
+        }
+    }
 
     private ModBlocks()
     {
     }
 
-    public static void register()
+    public static void registerBlocksAndItems()
     {
-        GameRegistry.registerBlock(ONE_BLOCK_GENERATOR, "one_block_generator");
-        GameRegistry.registerBlock(FLUID_BARRIER, "fluid_barrier");
-        GameRegistry.registerBlock(CUSTOM_BEDROCK, "custom_bedrock");
-        GameRegistry.registerBlock(CUSTOM_PORTAL_FRAME, "custom_end_portal_frame");
-        registerCompressed(COMPRESSED_BEDROCK_1X);
-        registerCompressed(COMPRESSED_COAL_1X);
-        registerCompressed(COMPRESSED_DIAMOND_1X);
-        registerCompressed(COMPRESSED_EMERALD_1X);
-        registerCompressed(COMPRESSED_END_STONE_1X);
-        registerCompressed(COMPRESSED_GOLD_1X);
-        registerCompressed(COMPRESSED_IRON_1X);
-        registerCompressed(COMPRESSED_LAPIS_1X);
-        registerCompressed(COMPRESSED_NETHERRACK_1X);
-        registerCompressed(COMPRESSED_REDSTONE_1X);
-        registerCompressed(BLOCK_COMPRESSED_MINERAL_BLOCK);
-        registerCompressed(COMPRESSED_BEDROCK_2X);
-        registerCompressed(COMPRESSED_COAL_2X);
-        registerCompressed(COMPRESSED_DIAMOND_2X);
-        registerCompressed(COMPRESSED_EMERALD_2X);
-        registerCompressed(COMPRESSED_END_STONE_2X);
-        registerCompressed(COMPRESSED_GOLD_2X);
-        registerCompressed(COMPRESSED_IRON_2X);
-        registerCompressed(COMPRESSED_LAPIS_2X);
-        registerCompressed(COMPRESSED_NETHERRACK_2X);
-        registerCompressed(COMPRESSED_REDSTONE_2X);
-        registerCompressed(COMPRESSED_BEDROCK_3X);
-        registerCompressed(COMPRESSED_COAL_3X);
-        registerCompressed(COMPRESSED_DIAMOND_3X);
-        registerCompressed(COMPRESSED_EMERALD_3X);
-        registerCompressed(COMPRESSED_END_STONE_3X);
-        registerCompressed(COMPRESSED_GOLD_3X);
-        registerCompressed(COMPRESSED_IRON_3X);
-        registerCompressed(COMPRESSED_LAPIS_3X);
-        registerCompressed(COMPRESSED_NETHERRACK_3X);
-        registerCompressed(COMPRESSED_REDSTONE_3X);
-        registerCompressed(COMPRESSED_BEDROCK_4X);
-        registerCompressed(COMPRESSED_COAL_4X);
-        registerCompressed(COMPRESSED_DIAMOND_4X);
-        registerCompressed(COMPRESSED_EMERALD_4X);
-        registerCompressed(COMPRESSED_END_STONE_4X);
-        registerCompressed(COMPRESSED_GOLD_4X);
-        registerCompressed(COMPRESSED_IRON_4X);
-        registerCompressed(COMPRESSED_LAPIS_4X);
-        registerCompressed(COMPRESSED_NETHERRACK_4X);
-        registerCompressed(COMPRESSED_REDSTONE_4X);
-        registerCompressed(COMPRESSED_COAL_5X);
-        registerCompressed(COMPRESSED_DIAMOND_5X);
-        registerCompressed(COMPRESSED_EMERALD_5X);
-        registerCompressed(COMPRESSED_END_STONE_5X);
-        registerCompressed(COMPRESSED_GOLD_5X);
-        registerCompressed(COMPRESSED_IRON_5X);
-        registerCompressed(COMPRESSED_LAPIS_5X);
-        registerCompressed(COMPRESSED_NETHERRACK_5X);
-        registerCompressed(COMPRESSED_REDSTONE_5X);
-        registerCompressed(COMPRESSED_LAPIS_6X);
-        registerCompressed(COMPRESSED_REDSTONE_6X);
-    }
-
-    private static void registerCompressed(Block block)
-    {
-        String name = block.getUnlocalizedName();
-        if (name.startsWith("tile."))
+        for (RegisterBlock modBlock : modBlocks)
         {
-            name = name.substring(5);
+            String name = modBlock.block.getUnlocalizedName();
+            if (name.startsWith("tile."))
+            {
+                name = name.substring("tile.".length());
+            }
+            if (modBlock.isItem)
+            {
+                if (modBlock.getSubBlockCount() > 1)
+                {
+                    GameRegistry.registerBlock(modBlock.block, null, name);
+                    GameRegistry.registerItem(
+                            new ItemBlockCompressed(modBlock.block, modBlock.getSubBlockName(), modBlock.getSubBlockCount()),
+                            name);
+                }
+                else
+                {
+                    GameRegistry.registerBlock(modBlock.block, name);
+                }
+            }
+            else
+            {
+                GameRegistry.registerBlock(modBlock.block, null, name);
+            }
         }
-        GameRegistry.registerBlock(block, name);
     }
 }

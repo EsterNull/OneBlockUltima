@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:cooked_fished",
+      "data": 0
+    },
+    {
+      "item": "minecraft:cooked_fished",
+      "data": 1
+    },
+    {
+      "item": "minecraft:cooked_porkchop"
+    },
+    {
+      "item": "minecraft:cooked_beef"
+    },
+    {
+      "item": "minecraft:cooked_chicken"
+    },
+    {
+      "item": "minecraft:egg"
+    },
+    {
+      "type": "forge:ore_dict",
+      "ore": "coal"
+    },
+    {
+      "item": "minecraft:milk_bucket"
+    },
+    {
+      "item": "minecraft:fish",
+      "data": 2
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:protein"
+  }
+}

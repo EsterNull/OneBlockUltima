@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:natural_poison"
+    },
+    "title": {
+      "translate": "advancements.natural_poison.title"
+    },
+    "description": {
+      "translate": "advancements.natural_poison.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_natural_poison": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:natural_poison"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:root"
+}

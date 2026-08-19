@@ -1,24 +1,13 @@
 package ru.defea.oneblockultima.item;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.item.ItemFood;
 import ru.defea.oneblockultima.OneBlockUltima;
 
-public class ItemProtein extends ItemFood
-{
-    public ItemProtein()
-    {
-        super(3, 1.0F, true);
-        setUnlocalizedName("oneblockultima.protein");
+public class ItemProtein extends ItemFood {
+    public ItemProtein() {
+        super(3, 1F, true);
         setCreativeTab(OneBlockUltima.modTab);
-    }
 
-    @SideOnly(Side.CLIENT)
-    @Override
-    public void registerIcons(IIconRegister register)
-    {
-        this.itemIcon = register.registerIcon(OneBlockUltima.MODID + ":protein");
+        this.setUnlocalizedName("protein");
     }
 }

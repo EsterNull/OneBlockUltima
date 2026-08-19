@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "oneblockultima:blocks/one_block_generator_texture"
+  }
+}

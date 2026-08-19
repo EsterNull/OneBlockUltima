@@ -1,48 +1,69 @@
 package ru.defea.oneblockultima.gui;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.StatCollector;
-import net.minecraft.world.World;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.resources.I18n;
+import org.lwjgl.input.Keyboard;
+import ru.defea.oneblockultima.gui.layout.Alignment;
+import ru.defea.oneblockultima.gui.layout.LabelElement;
+import ru.defea.oneblockultima.gui.layout.SpacerElement;
+import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketOneBlockAction;
 
-public class GuiClaimGenerator extends GuiContainer
+import javax.annotation.Nonnull;
+
+import static ru.defea.oneblockultima.Constants.LIGHT_GRAY_COLOR_1;
+
+public class GuiClaimGenerator extends GuiScreen
 {
     private static final int BUTTON_CLAIM = 0;
-    private final ContainerClaimGenerator container;
 
-    public GuiClaimGenerator(EntityPlayer player, World world, int generatorX, int generatorY, int generatorZ)
+    private final int generatorX;
+    private final int generatorY;
+    private final int generatorZ;
+    private ViewFactory factory;
+
+    public GuiClaimGenerator(int generatorX, int generatorY, int generatorZ)
     {
-        super(new ContainerClaimGenerator(player, world, generatorX, generatorY, generatorZ));
-        this.container = (ContainerClaimGenerator) this.inventorySlots;
-        this.xSize = 220;
-        this.ySize = 140;
+        this.generatorX = generatorX;
+        this.generatorY = generatorY;
+        this.generatorZ = generatorZ;
     }
 
     @Override
     public void initGui()
     {
-        super.initGui();
+        Keyboard.enableRepeatEvents(true);
         buttonList.clear();
-        buttonList.add(new GuiButton(BUTTON_CLAIM, guiLeft + 40, guiTop + 70, 140, 20, StatCollector.translateToLocal("gui.oneblockultima.claim_owner")));
+        buildView();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void buildView()
+    {
+        factory = new ViewFactory(width, height)
+                .margin(8).padding(4)
+                .gap(6)
+                .align(Alignment.CENTER)
+                .centerVertical();
+
+        factory.title(I18n.format("gui.oneblockultima.claim_title"));
+        factory.add(new LabelElement(I18n.format("gui.oneblockultima.claim_description")).color(LIGHT_GRAY_COLOR_1).centered());
+        factory.add(new SpacerElement(12));
+        factory.button(BUTTON_CLAIM, I18n.format("gui.oneblockultima.claim_owner"));
+
+        factory.build(buttonList, fontRendererObj);
     }
 
     @Override
-    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY)
+    protected void actionPerformed(@Nonnull GuiButton button)
     {
-        drawDefaultBackground();
-        drawCenteredString(fontRendererObj, StatCollector.translateToLocal("gui.oneblockultima.claim_title"), width / 2, guiTop + 24, 0xFFFFFF);
-        drawCenteredString(fontRendererObj, StatCollector.translateToLocal("gui.oneblockultima.claim_description"), width / 2, guiTop + 44, 0xCCCCCC);
-    }
+        factory.actionPerformed(button);
 
-    @Override
-    protected void actionPerformed(GuiButton button)
-    {
         if (button.id == BUTTON_CLAIM)
         {
-            ModMessages.sendToServer(new PacketOneBlockAction(container.getGeneratorX(), container.getGeneratorY(), container.getGeneratorZ(), PacketOneBlockAction.Action.CLAIM_OWNER, ""));
+            ModMessages.sendToServer(new PacketOneBlockAction(generatorX, generatorY, generatorZ, PacketOneBlockAction.Action.CLAIM_OWNER, ""));
             mc.thePlayer.closeScreen();
         }
     }
@@ -50,6 +71,15 @@ public class GuiClaimGenerator extends GuiContainer
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks)
     {
+        drawDefaultBackground();
+        factory.draw(fontRendererObj, mouseX, mouseY, partialTicks);
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
+
+    @Override
+    public void onGuiClosed()
+    {
+        Keyboard.enableRepeatEvents(false);
+    }
+
 }

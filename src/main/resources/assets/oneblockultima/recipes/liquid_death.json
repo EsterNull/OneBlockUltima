@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SRS",
+    "SSS"
+  ],
+  "key": {
+    "S": { "item": "oneblockultima:super_poison" },
+    "R": { "item": "minecraft:blaze_rod" }
+  },
+  "result": {
+    "item": "oneblockultima:liquid_death"
+  }
+}

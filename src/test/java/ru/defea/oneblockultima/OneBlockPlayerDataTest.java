@@ -1,5 +1,6 @@
 package ru.defea.oneblockultima;
 
+import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
@@ -12,8 +13,11 @@ import static org.junit.Assert.*;
 
 public class OneBlockPlayerDataTest {
 
+    private static final double DELTA = 0.0001;
+
     @BeforeClass
     public static void setUp() {
+        Bootstrap.register();
         BlockSetConfig.reset();
     }
 
@@ -24,23 +28,23 @@ public class OneBlockPlayerDataTest {
     @Test
     public void freshPlayerDataHasZeroBalance() {
         OneBlockPlayerData data = newData();
-        assertEquals(0, data.getCurrency());
+        assertEquals(0, data.getCurrency(), DELTA);
     }
 
     @Test
     public void addingCurrencyIncreasesBalance() {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
     public void addingNegativeOrZeroCurrencyIsIgnored() {
         OneBlockPlayerData data = newData();
         data.addCurrency(-5);
-        assertEquals(0, data.getCurrency());
+        assertEquals(0, data.getCurrency(), DELTA);
         data.addCurrency(0);
-        assertEquals(0, data.getCurrency());
+        assertEquals(0, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -48,7 +52,7 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
         assertTrue(data.spendCurrency(50));
-        assertEquals(50, data.getCurrency());
+        assertEquals(50, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -56,7 +60,7 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
         assertFalse(data.spendCurrency(150));
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -64,7 +68,7 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
         assertFalse(data.spendCurrency(-10));
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -72,7 +76,7 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
         assertTrue(data.spendCurrency(100));
-        assertEquals(0, data.getCurrency());
+        assertEquals(0, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -108,7 +112,7 @@ public class OneBlockPlayerDataTest {
         data.addCurrency(100);
         assertTrue(data.upgradeSet("classic", 50, 10));
         assertEquals(2, data.getSetLevel("classic"));
-        assertEquals(50, data.getCurrency());
+        assertEquals(50, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -117,7 +121,7 @@ public class OneBlockPlayerDataTest {
         data.addCurrency(100);
         assertFalse(data.upgradeSet("classic", 50, 1));
         assertEquals(1, data.getSetLevel("classic"));
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -125,7 +129,7 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
         assertFalse(data.upgradeSet("classic", 200, 10));
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -134,7 +138,7 @@ public class OneBlockPlayerDataTest {
         data.addCurrency(100);
         assertTrue(data.upgradeSet("classic", 0, 10));
         assertEquals(2, data.getSetLevel("classic"));
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
@@ -150,7 +154,7 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData target = newData();
         target.copyFrom(source);
 
-        assertEquals(500, target.getCurrency());
+        assertEquals(500, target.getCurrency(), DELTA);
         assertEquals(50, target.getBrokenBlocksCount());
         assertEquals(30, target.getBrokenBlocksCount("classic"));
         assertEquals(20, target.getBrokenBlocksCount("nether"));
@@ -163,20 +167,73 @@ public class OneBlockPlayerDataTest {
         OneBlockPlayerData data = newData();
         data.addCurrency(100);
         data.copyFrom(null);
-        assertEquals(100, data.getCurrency());
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
     public void setCurrencyClampsNegative() {
         OneBlockPlayerData data = newData();
         data.setCurrency(-10);
-        assertEquals(0, data.getCurrency());
+        assertEquals(0, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void setCurrencyClampsAboveMax() {
+        OneBlockPlayerData data = newData();
+        data.setCurrency(OneBlockPlayerData.MAX_CURRENCY * 10);
+        assertEquals(OneBlockPlayerData.MAX_CURRENCY, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void setCurrencyClampsTheReportedCorruptValue() {
+        OneBlockPlayerData data = newData();
+        data.setCurrency(92233720368547760.0);
+        assertTrue("corrupt balance must be clamped below the long-overflow display threshold",
+                data.getCurrency() <= OneBlockPlayerData.MAX_CURRENCY);
+    }
+
+    @Test
+    public void setCurrencyIgnoresNaN() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(100);
+        data.setCurrency(Double.NaN);
+        assertEquals(0, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void addCurrencyClampsToMax() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(1e300);
+        assertEquals(OneBlockPlayerData.MAX_CURRENCY, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void addCurrencyClampsSumAboveMax() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(OneBlockPlayerData.MAX_CURRENCY - 5);
+        data.addCurrency(10);
+        assertEquals(OneBlockPlayerData.MAX_CURRENCY, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void addCurrencyIgnoresNaN() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(Double.NaN);
+        assertEquals(0, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void spendCurrencyFailsOnNaN() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(100);
+        assertFalse(data.spendCurrency(Double.NaN));
+        assertEquals(100, data.getCurrency(), DELTA);
     }
 
     @Test
     public void setBrokenBlocksBySetClampsNegative() {
         OneBlockPlayerData data = newData();
-        Map<String, Integer> blocks = new HashMap<String, Integer>();
+        Map<String, Integer> blocks = new HashMap<>();
         blocks.put("classic", -5);
         blocks.put("nether", 10);
         data.setBrokenBlocksBySet(blocks);
@@ -194,5 +251,22 @@ public class OneBlockPlayerDataTest {
     public void getSetLevelReturnsZeroForUnknownSet() {
         OneBlockPlayerData data = newData();
         assertEquals(0, data.getSetLevel("nonexistent"));
+    }
+
+    @Test
+    public void addingFractionalCurrency() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(0.5);
+        assertEquals(0.5, data.getCurrency(), DELTA);
+        data.addCurrency(0.25);
+        assertEquals(0.75, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void spendingFractionalCurrency() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(10);
+        assertTrue(data.spendCurrency(0.5));
+        assertEquals(9.5, data.getCurrency(), DELTA);
     }
 }

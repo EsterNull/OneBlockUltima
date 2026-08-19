@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:far_star"
+    },
+    "title": {
+      "translate": "advancements.far_star.title"
+    },
+    "description": {
+      "translate": "advancements.far_star.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_far_star": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:far_star"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:space_soup"
+}

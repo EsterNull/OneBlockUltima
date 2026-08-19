@@ -1,0 +1,29 @@
+{
+  "display": {
+    "icon": {
+      "item": "oneblockultima:graviton"
+    },
+    "title": {
+      "translate": "advancements.graviton.title"
+    },
+    "description": {
+      "translate": "advancements.graviton.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "has_graviton": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "oneblockultima:graviton"
+          }
+        ]
+      }
+    }
+  },
+  "parent": "oneblockultima:compressed_mineral"
+}

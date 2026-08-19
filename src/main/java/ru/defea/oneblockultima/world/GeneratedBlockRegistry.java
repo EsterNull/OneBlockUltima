@@ -4,7 +4,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSavedData;
-import net.minecraft.world.storage.MapStorage;
+import net.minecraftforge.common.util.Constants;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.util.HashMap;
@@ -13,8 +13,11 @@ import java.util.Map;
 public class GeneratedBlockRegistry extends WorldSavedData
 {
     private static final String DATA_NAME = OneBlockUltima.MODID + "_generated_blocks";
+    private static final long DIRTY_FLUSH_INTERVAL_MS = 2000L;
 
-    private final HashMap<Long, GeneratedBlockEntry> entries = new HashMap<Long, GeneratedBlockEntry>();
+    private final Map<Long, GeneratedBlockEntry> entries = new HashMap<>();
+    private long lastDirtyMs = 0L;
+    private boolean pendingDirty = false;
 
     public GeneratedBlockRegistry()
     {
@@ -26,20 +29,17 @@ public class GeneratedBlockRegistry extends WorldSavedData
         super(name);
     }
 
-    private static long posToKey(int x, int y, int z)
-    {
-        return ((long) x & 0x3FFFFFFL) << 38 | ((long) y & 0xFF) << 26 | ((long) z & 0x3FFFFFFL);
-    }
-
     public static GeneratedBlockRegistry get(World world)
     {
-        MapStorage storage = world.mapStorage;
-        GeneratedBlockRegistry data = (GeneratedBlockRegistry) storage.loadData(GeneratedBlockRegistry.class, DATA_NAME);
+        GeneratedBlockRegistry data = (GeneratedBlockRegistry) world.loadItemData(
+                GeneratedBlockRegistry.class,
+                DATA_NAME
+        );
 
         if (data == null)
         {
             data = new GeneratedBlockRegistry();
-            storage.setData(DATA_NAME, data);
+            world.setItemData(DATA_NAME, data);
         }
 
         return data;
@@ -47,30 +47,72 @@ public class GeneratedBlockRegistry extends WorldSavedData
 
     public void markGenerated(int x, int y, int z, int gx, int gy, int gz, String setId, int currency, int level, String blockRegistry, int blockMeta)
     {
-        entries.put(posToKey(x, y, z), new GeneratedBlockEntry(gx, gy, gz, setId, currency, level, blockRegistry, blockMeta));
-        markDirty();
+        entries.put(getKey(x, y, z), new GeneratedBlockEntry(gx, gy, gz, setId, currency, level, blockRegistry, blockMeta));
+        markDirtyThrottled();
     }
 
     public boolean isGenerated(int x, int y, int z)
     {
-        return entries.containsKey(posToKey(x, y, z));
+        return entries.containsKey(getKey(x, y, z));
     }
 
     public GeneratedBlockEntry getEntry(int x, int y, int z)
     {
-        return entries.get(posToKey(x, y, z));
+        return entries.get(getKey(x, y, z));
     }
 
-    public int[] getGeneratorPos(int x, int y, int z)
+    public int getGeneratorX(int x, int y, int z)
     {
-        GeneratedBlockEntry entry = entries.get(posToKey(x, y, z));
-        return entry == null ? null : new int[]{entry.gx, entry.gy, entry.gz};
+        GeneratedBlockEntry entry = entries.get(getKey(x, y, z));
+        return entry == null ? 0 : entry.generatorX;
+    }
+
+    public int getGeneratorY(int x, int y, int z)
+    {
+        GeneratedBlockEntry entry = entries.get(getKey(x, y, z));
+        return entry == null ? 0 : entry.generatorY;
+    }
+
+    public int getGeneratorZ(int x, int y, int z)
+    {
+        GeneratedBlockEntry entry = entries.get(getKey(x, y, z));
+        return entry == null ? 0 : entry.generatorZ;
     }
 
     public void remove(int x, int y, int z)
     {
-        if (entries.remove(posToKey(x, y, z)) != null)
+        if (entries.remove(getKey(x, y, z)) != null)
         {
+            markDirtyThrottled();
+        }
+    }
+
+    private static long getKey(int x, int y, int z)
+    {
+        return ((long) (x & 0xFFFFFF) << 40) | ((long) (y & 0xFFFF) << 24) | (long) (z & 0xFFFFFF);
+    }
+
+    /**
+     * Throttles write frequency: a heavy NBT dump of the whole registry runs at most once every 2 seconds.
+     * A guaranteed flush on world unload is performed via {@link #flushPendingDirty()}.
+     */
+    private void markDirtyThrottled()
+    {
+        pendingDirty = true;
+        long now = System.currentTimeMillis();
+        if (now - lastDirtyMs >= DIRTY_FLUSH_INTERVAL_MS)
+        {
+            lastDirtyMs = now;
+            pendingDirty = false;
+            markDirty();
+        }
+    }
+
+    public void flushPendingDirty()
+    {
+        if (pendingDirty)
+        {
+            pendingDirty = false;
             markDirty();
         }
     }
@@ -79,21 +121,20 @@ public class GeneratedBlockRegistry extends WorldSavedData
     public void readFromNBT(NBTTagCompound nbt)
     {
         entries.clear();
-        NBTTagList list = nbt.getTagList("entries", 10);
+        NBTTagList list = nbt.getTagList("entries", Constants.NBT.TAG_COMPOUND);
 
         for (int i = 0; i < list.tagCount(); i++)
         {
-            NBTTagCompound entryTag = (NBTTagCompound) list.getCompoundTagAt(i);
+            NBTTagCompound entryTag = list.getCompoundTagAt(i);
             int x = entryTag.getInteger("x");
             int y = entryTag.getInteger("y");
             int z = entryTag.getInteger("z");
-            int gx = entryTag.getInteger("gx");
-            int gy = entryTag.getInteger("gy");
-            int gz = entryTag.getInteger("gz");
             String blockRegistry = entryTag.getString("blockRegistry");
             int blockMeta = entryTag.getInteger("blockMeta");
-            entries.put(posToKey(x, y, z), new GeneratedBlockEntry(
-                    gx, gy, gz,
+            entries.put(getKey(x, y, z), new GeneratedBlockEntry(
+                    entryTag.getInteger("gx"),
+                    entryTag.getInteger("gy"),
+                    entryTag.getInteger("gz"),
                     entryTag.getString("setId"),
                     entryTag.getInteger("currency"),
                     entryTag.getInteger("level"),
@@ -111,18 +152,14 @@ public class GeneratedBlockRegistry extends WorldSavedData
         for (Map.Entry<Long, GeneratedBlockEntry> entry : entries.entrySet())
         {
             NBTTagCompound entryTag = new NBTTagCompound();
-            long key = entry.getKey();
-            int x = (int) (key >> 38);
-            int y = (int) (key >> 26) & 0xFF;
-            int z = (int) (key & 0x3FFFFFF);
             GeneratedBlockEntry value = entry.getValue();
 
-            entryTag.setInteger("x", x);
-            entryTag.setInteger("y", y);
-            entryTag.setInteger("z", z);
-            entryTag.setInteger("gx", value.gx);
-            entryTag.setInteger("gy", value.gy);
-            entryTag.setInteger("gz", value.gz);
+            entryTag.setInteger("x", extractX(entry.getKey()));
+            entryTag.setInteger("y", extractY(entry.getKey()));
+            entryTag.setInteger("z", extractZ(entry.getKey()));
+            entryTag.setInteger("gx", value.generatorX);
+            entryTag.setInteger("gy", value.generatorY);
+            entryTag.setInteger("gz", value.generatorZ);
             entryTag.setString("setId", value.setId);
             entryTag.setInteger("currency", value.currency);
             entryTag.setInteger("level", value.level);
@@ -134,27 +171,42 @@ public class GeneratedBlockRegistry extends WorldSavedData
         compound.setTag("entries", list);
     }
 
+    private static int extractX(long key)
+    {
+        return (int) (key >> 40);
+    }
+
+    private static int extractY(long key)
+    {
+        return (int) ((key >> 24) & 0xFFFF);
+    }
+
+    private static int extractZ(long key)
+    {
+        return (int) (key & 0xFFFFFF);
+    }
+
     public static class GeneratedBlockEntry
     {
-        public final int gx;
-        public final int gy;
-        public final int gz;
+        public final int generatorX;
+        public final int generatorY;
+        public final int generatorZ;
         public final String setId;
         public final int currency;
         public final int level;
         public final String blockRegistry;
         public final int blockMeta;
 
-        public GeneratedBlockEntry(int gx, int gy, int gz, String setId, int currency, int level)
+        public GeneratedBlockEntry(int generatorX, int generatorY, int generatorZ, String setId, int currency, int level)
         {
-            this(gx, gy, gz, setId, currency, level, null, 0);
+            this(generatorX, generatorY, generatorZ, setId, currency, level, null, 0);
         }
 
-        public GeneratedBlockEntry(int gx, int gy, int gz, String setId, int currency, int level, String blockRegistry, int blockMeta)
+        public GeneratedBlockEntry(int generatorX, int generatorY, int generatorZ, String setId, int currency, int level, String blockRegistry, int blockMeta)
         {
-            this.gx = gx;
-            this.gy = gy;
-            this.gz = gz;
+            this.generatorX = generatorX;
+            this.generatorY = generatorY;
+            this.generatorZ = generatorZ;
             this.setId = setId;
             this.currency = currency;
             this.level = level;

@@ -7,8 +7,8 @@ import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import ru.defea.oneblockultima.OneBlockUltima;
-import ru.defea.oneblockultima.gui.ContainerClaimGenerator;
-import ru.defea.oneblockultima.gui.ContainerOneBlock;
+import ru.defea.oneblockultima.gui.containers.ContainerClaimGenerator;
+import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 
 public class PacketOneBlockAction implements IMessage
 {
@@ -84,7 +84,9 @@ public class PacketOneBlockAction implements IMessage
                 if (player.openContainer instanceof ContainerClaimGenerator)
                 {
                     ContainerClaimGenerator claimContainer = (ContainerClaimGenerator) player.openContainer;
-                    if (claimContainer.getGeneratorX() != message.x || claimContainer.getGeneratorY() != message.y || claimContainer.getGeneratorZ() != message.z)
+                    if (claimContainer.getGeneratorX() != message.x
+                            || claimContainer.getGeneratorY() != message.y
+                            || claimContainer.getGeneratorZ() != message.z)
                     {
                         return null;
                     }
@@ -107,7 +109,9 @@ public class PacketOneBlockAction implements IMessage
                 }
 
                 ContainerOneBlock container = (ContainerOneBlock) player.openContainer;
-                if (container.getGeneratorX() != message.x || container.getGeneratorY() != message.y || container.getGeneratorZ() != message.z)
+                if (container.getGeneratorX() != message.x
+                        || container.getGeneratorY() != message.y
+                        || container.getGeneratorZ() != message.z)
                 {
                     return null;
                 }

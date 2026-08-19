@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DSD",
+    "SFS",
+    "DSD"
+  ],
+  "key": {
+    "S": { "item": "oneblockultima:space_soup" },
+    "D": { "item": "oneblockultima:dark_matter" },
+    "F": { "item": "oneblockultima:far_star" }
+  },
+  "result": {
+    "item": "oneblockultima:one_block_generator"
+  }
+}

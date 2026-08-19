@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    },
+    {
+      "item": "oneblockultima:compressed_mineral"
+    }
+  ],
+  "result": {
+    "item": "oneblockultima:compressed_mineral_block"
+  }
+}

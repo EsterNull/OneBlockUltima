@@ -1,12 +1,13 @@
 package ru.defea.oneblockultima;
 
-import cpw.mods.fml.client.IModGuiFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
+import cpw.mods.fml.client.IModGuiFactory;
 import ru.defea.oneblockultima.gui.ModMainSettings;
 
 import java.util.Set;
 
+@SuppressWarnings("unused")
 public class ModGuiFactory implements IModGuiFactory
 {
     @Override
@@ -21,19 +22,14 @@ public class ModGuiFactory implements IModGuiFactory
     }
 
     @Override
-    public Set<RuntimeOptionCategoryElement> runtimeGuiCategories()
+    public Set<IModGuiFactory.RuntimeOptionCategoryElement> runtimeGuiCategories()
     {
         return null;
     }
 
     @Override
-    public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element)
+    public IModGuiFactory.RuntimeOptionGuiHandler getHandlerFor(IModGuiFactory.RuntimeOptionCategoryElement element)
     {
         return null;
-    }
-
-    public GuiScreen createConfigGui(GuiScreen parentScreen)
-    {
-        return new ModMainSettings(parentScreen);
     }
 }

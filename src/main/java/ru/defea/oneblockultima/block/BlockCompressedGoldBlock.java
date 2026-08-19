@@ -4,26 +4,20 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
-import ru.defea.oneblockultima.OneBlockUltima;
 
-public class BlockCompressedGoldBlock extends Block {
-    public BlockCompressedGoldBlock() {
-        super(Material.rock);
-        init("compressed_gold_block_1x");
+public class BlockCompressedGoldBlock extends BlockCompressedBase {
+    public static final int MAX_LEVEL = 5;
+
+    public BlockCompressedGoldBlock()
+    {
+        super(Material.iron, "compressed_gold_block", MAX_LEVEL);
+        this.setStepSound(Block.soundTypeMetal);
+        this.setHardness(3F * 9F);
+        this.setResistance(10F * 9F);
     }
-    protected BlockCompressedGoldBlock(String name) {
-        super(Material.rock);
-        init(name);
-    }
+
     @Override
     public float getExplosionResistance(Entity exploder) {
         return Blocks.gold_block.getExplosionResistance(exploder) * 9.0F;
-    }
-    private void init(String name) {
-        this.setHardness(5F * 9F);
-        this.setResistance(10F * 9F);
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setBlockName(name);
-        this.setBlockTextureName(OneBlockUltima.MODID + ":" + name);
     }
 }

@@ -1,5 +1,6 @@
 package ru.defea.oneblockultima;
 
+import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
@@ -17,11 +18,12 @@ public class BlockSetConfigSyncTest {
 
     @BeforeClass
     public static void initMinecraftBootstrap() {
+        Bootstrap.register();
     }
 
     private void saveAndApply(BlockSetDefinition... sets) {
         previousConfig = BlockSetConfig.get();
-        List<BlockSetDefinition> list = new ArrayList();
+        List<BlockSetDefinition> list = new ArrayList<>();
         Collections.addAll(list, sets);
         BlockSetConfig.applySets(list);
     }
@@ -34,7 +36,7 @@ public class BlockSetConfigSyncTest {
     public void toJsonReturnsNonNullNonEmpty() {
         String json = BlockSetConfig.get().toJson();
         assertNotNull(json);
-        assertFalse(json.isEmpty());
+        assertFalse(json.length() == 0);
     }
 
     @Test
@@ -76,7 +78,6 @@ public class BlockSetConfigSyncTest {
     public void toJsonRoundTripPreservesBlockEntries() {
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stone";
-        block.currency = 15;
         block.meta = 0;
         block.baseLevel = 1;
         block.baseChance = 100;
@@ -96,7 +97,6 @@ public class BlockSetConfigSyncTest {
             assertNotNull(restoredSet);
             assertEquals(1, restoredSet.blocks.size());
             assertEquals("minecraft:stone", restoredSet.blocks.get(0).registry);
-            assertEquals(15, restoredSet.blocks.get(0).currency);
         } finally {
             restore();
         }
@@ -174,8 +174,7 @@ public class BlockSetConfigSyncTest {
 
     @Test
     public void loadFromServerJsonReplacesInstance() {
-        BlockSetConfig original = BlockSetConfig.get();
-        int originalCount = original.getSets().size();
+        BlockSetConfig.get();
 
         BlockSetDefinition customSet = new BlockSetDefinition();
         customSet.id = "server_only_set";
@@ -281,7 +280,7 @@ public class BlockSetConfigSyncTest {
 
     @Test
     public void toJsonRoundTripPreservesMultipleSets() {
-        List<BlockSetDefinition> sets = new ArrayList();
+        List<BlockSetDefinition> sets = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             BlockSetDefinition set = new BlockSetDefinition();
             set.id = "set_" + i;
@@ -336,7 +335,7 @@ public class BlockSetConfigSyncTest {
         BlockElementDefinition block = new BlockElementDefinition();
         block.registry = "minecraft:stained_hardened_clay";
         block.meta = 0;
-        block.metas = new ArrayList(java.util.Arrays.asList(1, 2, 3, 4));
+        block.metas = new ArrayList<>(java.util.Arrays.asList(1, 2, 3, 4));
         block.baseLevel = 1;
         block.baseChance = 100;
 
@@ -353,6 +352,68 @@ public class BlockSetConfigSyncTest {
 
             List<Integer> restoredMetas = restored.getSet("metas_test").blocks.get(0).getMetaValues();
             assertEquals(4, restoredMetas.size());
+        } finally {
+            restore();
+        }
+    }
+
+    @Test
+    public void mergeKeepsSameMetaDifferentNbtSeparate() {
+        BlockElementDefinition a = new BlockElementDefinition();
+        a.registry = "minecraft:stone";
+        a.meta = 0;
+        a.baseLevel = 1;
+        a.baseChance = 100;
+        a.nbtTags.setString("Type", "A");
+
+        BlockElementDefinition b = new BlockElementDefinition();
+        b.registry = "minecraft:stone";
+        b.meta = 0;
+        b.baseLevel = 1;
+        b.baseChance = 100;
+        b.nbtTags.setString("Type", "B");
+
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "nbt_variants";
+        set.blocks.add(a);
+        set.blocks.add(b);
+
+        saveAndApply(set);
+
+        try {
+            assertEquals(2, BlockSetConfig.get().getSet("nbt_variants").blocks.size());
+        } finally {
+            restore();
+        }
+    }
+
+    @Test
+    public void mergeCombinesSameMetaSameNbt() {
+        BlockElementDefinition a = new BlockElementDefinition();
+        a.registry = "minecraft:stone";
+        a.meta = 0;
+        a.baseLevel = 1;
+        a.baseChance = 100;
+        a.nbtTags.setString("Type", "A");
+
+        BlockElementDefinition b = new BlockElementDefinition();
+        b.registry = "minecraft:stone";
+        b.meta = 1;
+        b.baseLevel = 1;
+        b.baseChance = 100;
+        b.nbtTags.setString("Type", "A");
+
+        BlockSetDefinition set = new BlockSetDefinition();
+        set.id = "merge_same_nbt";
+        set.blocks.add(a);
+        set.blocks.add(b);
+
+        saveAndApply(set);
+
+        try {
+            List<BlockElementDefinition> blocks = BlockSetConfig.get().getSet("merge_same_nbt").blocks;
+            assertEquals(1, blocks.size());
+            assertEquals(2, blocks.get(0).getMetaValues().size());
         } finally {
             restore();
         }

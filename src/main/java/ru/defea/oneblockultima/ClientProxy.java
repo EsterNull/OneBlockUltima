@@ -1,19 +1,34 @@
 package ru.defea.oneblockultima;
 
-import cpw.mods.fml.client.registry.RenderingRegistry;
-import ru.defea.oneblockultima.client.render.OneBlockRenderHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
+import cpw.mods.fml.common.FMLCommonHandler;
+import net.minecraft.item.Item;
+import net.minecraftforge.client.MinecraftForgeClient;
+import net.minecraftforge.common.MinecraftForge;
+import ru.defea.oneblockultima.block.ModBlocks;
+import ru.defea.oneblockultima.client.RenderItemGeneratorCube;
 import ru.defea.oneblockultima.event.ModEventsClient;
+import ru.defea.oneblockultima.gui.GuiGuideBook;
 
+@SuppressWarnings("unused")
 public class ClientProxy extends CommonProxy
 {
-    public static int oneBlockRenderId = -1;
+    @Override
+    public void preInit()
+    {
+        ModEventsClient modEventsClient = new ModEventsClient();
+        MinecraftForge.EVENT_BUS.register(modEventsClient);
+        FMLCommonHandler.instance().bus().register(modEventsClient);
+
+        MinecraftForgeClient.registerItemRenderer(
+                Item.getItemFromBlock(ModBlocks.ONE_BLOCK_GENERATOR),
+                new RenderItemGeneratorCube());
+    }
 
     @Override
-    public void init()
+    public void openGuideBookGui(EntityPlayer player)
     {
-        super.init();
-        oneBlockRenderId = RenderingRegistry.getNextAvailableRenderId();
-        RenderingRegistry.registerBlockHandler(new OneBlockRenderHandler(oneBlockRenderId));
-        ModEventsClient.register();
+        Minecraft.getMinecraft().displayGuiScreen(new GuiGuideBook());
     }
 }
