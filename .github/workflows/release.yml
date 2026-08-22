@@ -15,12 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Read mod version and java version
+      - name: Read mod version, base name and java version
         id: version
         run: |
           VERSION=$(grep "^version = " build.gradle | sed "s/version = '\(.*\)'/\1/" | tr -d ' \r\n')
+          BASE=$(grep "^archivesBaseName" build.gradle | sed "s/archivesBaseName = '\(.*\)'/\1/" | tr -d ' \r\n')
           JAVA_VER=$(grep "^ci.java.version=" gradle.properties | cut -d'=' -f2 | tr -d ' \r\n')
           echo "mod_version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "base_name=$BASE" >> "$GITHUB_OUTPUT"
           echo "java_version=$JAVA_VER" >> "$GITHUB_OUTPUT"
 
       - name: Resolve MC version keys
@@ -97,7 +99,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: forge-${{ steps.mc.outputs.tag_ref }}-${{ steps.version.outputs.mod_version }}
-          name: ${{ steps.pr.outputs.title }}
+          name: ${{ steps.version.outputs.base_name }}-${{ steps.version.outputs.mod_version }}
           body_path: /tmp/pr_body.md
           target_commitish: ${{ github.ref_name }}
           files: ${{ steps.jar.outputs.path }}
