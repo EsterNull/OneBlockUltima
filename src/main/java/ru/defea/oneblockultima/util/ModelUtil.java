@@ -210,6 +210,37 @@ public final class ModelUtil {
         catch (Exception ignored) { }
     }
 
+    public static int getBlockSpriteTint(net.minecraft.block.state.IBlockState state, TextureAtlasSprite sprite)
+    {
+        if (state == null || sprite == null) return 0xFFFFFFFF;
+        try
+        {
+            Minecraft mc = Minecraft.getMinecraft();
+            net.minecraft.client.renderer.block.model.IBakedModel model =
+                mc.getBlockRendererDispatcher().getModelForState(state);
+
+            int tintIndex = -1;
+            for (net.minecraft.client.renderer.block.model.BakedQuad quad : model.getQuads(state, null, 0L))
+            {
+                if (quad.getSprite() == sprite)
+                {
+                    tintIndex = quad.getTintIndex();
+                    break;
+                }
+            }
+            if (tintIndex < 0) return 0xFFFFFFFF;
+
+            net.minecraft.util.math.BlockPos pos = mc.player != null ? mc.player.getPosition() : null;
+            int color = mc.getBlockColors().colorMultiplier(state, mc.world, pos, tintIndex);
+            if ((color & 0xFF000000) == 0) color |= 0xFF000000;
+            return color;
+        }
+        catch (Exception ignored)
+        {
+            return 0xFFFFFFFF;
+        }
+    }
+
     public static void drawEntityOnScreenScaled(int posX, int posY, Entity entity, float finalScale)
     {
         renderEntityOnScreen(posX, posY, entity, finalScale);

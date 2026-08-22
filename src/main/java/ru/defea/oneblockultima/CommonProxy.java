@@ -1,6 +1,7 @@
 package ru.defea.oneblockultima;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 
 public class CommonProxy
 {
@@ -13,6 +14,10 @@ public class CommonProxy
     }
 
     public void openGuideBookGui(EntityPlayer player)
+    {
+    }
+
+    public void openCaseRouletteGui(EntityPlayer player, ItemStack caseStack)
     {
     }
 }

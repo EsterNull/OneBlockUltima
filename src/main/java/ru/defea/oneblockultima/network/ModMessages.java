@@ -20,6 +20,8 @@ public final class ModMessages
         network.registerMessage(PacketOneBlockAction.Handler.class, PacketOneBlockAction.class, 0, Side.SERVER);
         network.registerMessage(PacketSyncPlayerData.Handler.class, PacketSyncPlayerData.class, 1, Side.CLIENT);
         network.registerMessage(PacketSyncBlockSetConfig.Handler.class, PacketSyncBlockSetConfig.class, 2, Side.CLIENT);
+        network.registerMessage(PacketOpenCase.Handler.class, PacketOpenCase.class, 3, Side.SERVER);
+        network.registerMessage(PacketCaseResult.Handler.class, PacketCaseResult.class, 4, Side.CLIENT);
     }
 
     public static void sendToServer(IMessage message)

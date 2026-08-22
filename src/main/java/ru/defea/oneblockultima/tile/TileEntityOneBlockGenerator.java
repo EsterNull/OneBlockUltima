@@ -163,6 +163,32 @@ public class TileEntityOneBlockGenerator extends TileEntity
             return;
         }
 
+        // Case block generation: place a physical case block in the world instead of dropping the item
+        ModSettings caseSettings = ModSettings.get();
+        if (set.hasCaseEntries()
+                && caseSettings.getCaseDropPercent() > 0.0D
+                && world.rand.nextDouble() * 100.0D < caseSettings.getCaseDropPercent())
+        {
+            BlockPos casePos = pos.up();
+            if (BlockUtil.canReplaceForGeneration(world, casePos))
+            {
+                GeneratedBlockRegistry caseRegistry = GeneratedBlockRegistry.get(world);
+                if (caseRegistry.isGenerated(casePos))
+                {
+                    caseRegistry.remove(casePos);
+                }
+                world.setBlockState(casePos, ModBlocks.CASE_BLOCK.getDefaultState(), 3);
+                caseRegistry.markGenerated(casePos, pos, selectedSetId, 0, level, "oneblockultima:case_block", 0);
+                OneBlockUltima.getLogger().info("[Generator] Placed case block at {}", casePos);
+                if (world != null && !world.isRemote)
+                {
+                    nonPlayerBreakCooldownActive = false;
+                    lastNonPlayerBreakTick = Long.MIN_VALUE;
+                }
+                return;
+            }
+        }
+
         BlockSetConfig.BlockEntryDefinition entry = pickGenerationEntry(levelDefinition);
         if (entry == null)
         {

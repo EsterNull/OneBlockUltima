@@ -130,6 +130,25 @@ gui.oneblockultima.config.level_chance_updated=Set updated
 gui.oneblockultima.config.base_level=Level
 gui.oneblockultima.config.error.invalid_level_chance=Invalid value
 
+gui.oneblockultima.config.case=Case
+gui.oneblockultima.config.case_editor=Case Contents
+gui.oneblockultima.config.case_on=enabled
+gui.oneblockultima.config.case_off=disabled
+gui.oneblockultima.config.case_no_entries=No case entries
+gui.oneblockultima.config.case_add_loot=Add Loot Table
+gui.oneblockultima.config.case_add_title=Add Item to Case
+gui.oneblockultima.config.case_entry_edit_title=Case Entry
+gui.oneblockultima.config.case_loot_edit_title=Case Loot Table
+gui.oneblockultima.config.case_meta=Meta
+gui.oneblockultima.config.case_count=Count
+gui.oneblockultima.config.case_chance=Chance
+gui.oneblockultima.config.case_loot_table=Loot Table
+gui.oneblockultima.config.case_loot_none=Select loot table...
+gui.oneblockultima.config.case_loot_pick_title=Select Loot Table
+gui.oneblockultima.config.case_loot=Loot
+gui.oneblockultima.config.case_entry_saved=Case entry saved
+gui.oneblockultima.config.error.empty_loot_table=Loot table is not specified
+
 gui.oneblockultima.config.unlock_conditions_count=Count
 gui.oneblockultima.config.unlock_conditions_type_set_level=Set level
 gui.oneblockultima.config.unlock_conditions_type_broken_blocks=Broken blocks in set
@@ -370,6 +389,26 @@ gui.oneblockultima.misc.max_generator_members=Max generator members (0 - no limi
 
 # Tooltip
 gui.oneblockultima.tooltip.obu_generated=Block obtained from generator
+
+# Case
+item.case.name=Case
+gui.oneblockultima.case.title=Case
+gui.oneblockultima.case.empty=Case is empty
+gui.oneblockultima.case.reward=You got: %s
+gui.oneblockultima.case.skip=Skip
+gui.oneblockultima.case.click_close=Click to close
+gui.oneblockultima.case.tooltip.set=Set: %s
+gui.oneblockultima.case.tooltip.contents=Items inside: %s
+gui.oneblockultima.case.tooltip.right_click=Right-click to open
+gui.oneblockultima.misc.case_drop_percent=Case drop chance (%):
+key.oneblockultima.hide_panel=Show/Hide info panel
+key.categories.oneblockultima=OneBlockUltima
+
+# Info panel
+gui.oneblockultima.panel.title=Block Generator
+gui.oneblockultima.panel.upgrade_hint=RMB — upgrade the generator
+gui.oneblockultima.panel.hide_hint=Press %s to hide the panel
+gui.oneblockultima.panel.nametag_broken=Blocks broken: %s
 
 # Guide book
 item.obu_guide_book.name=OneBlock Guidebook

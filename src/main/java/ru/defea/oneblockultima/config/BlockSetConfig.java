@@ -154,6 +154,8 @@ public final class BlockSetConfig
             loaded = new BlockSetConfig();
         }
 
+        migrateCaseInfo(loaded);
+
         if (loaded.getSets().isEmpty())
         {
             loaded = new BlockSetConfig();
@@ -166,6 +168,49 @@ public final class BlockSetConfig
 
         instance = loaded;
         instance.buildIndex();
+    }
+
+    /**
+     * Fills in missing caseInfo from the bundled default config for sets that predate the case feature.
+     */
+    private static void migrateCaseInfo(BlockSetConfig config)
+    {
+        if (config == null || config.getSets() == null || config.getSets().isEmpty())
+        {
+            return;
+        }
+
+        BlockSetConfig defaults = loadDefaultFromResources();
+        if (defaults == null || defaults.getSets() == null || defaults.getSets().isEmpty())
+        {
+            return;
+        }
+
+        Map<String, CaseDefinition> defaultCases = new java.util.HashMap<>();
+        for (BlockSetDefinition set : defaults.getSets())
+        {
+            if (set != null && set.id != null && set.caseInfo != null)
+            {
+                defaultCases.put(set.id, set.caseInfo);
+            }
+        }
+
+        for (BlockSetDefinition set : config.getSets())
+        {
+            if (set == null || set.id == null)
+            {
+                continue;
+            }
+            if (set.caseInfo == null || !set.caseInfo.customized)
+            {
+                CaseDefinition defaultsForSet = defaultCases.get(set.id);
+                if (defaultsForSet != null && defaultsForSet.enabled
+                        && defaultsForSet.entries != null && !defaultsForSet.entries.isEmpty())
+                {
+                    set.caseInfo = copyCaseDefinition(defaultsForSet);
+                }
+            }
+        }
     }
 
     public static void load(File configDir)
@@ -303,6 +348,22 @@ public final class BlockSetConfig
         public int baseChance = 0;
         public int count = 1;
         public NBTTagCompound nbtTags = new NBTTagCompound();
+    }
+
+    public static class CaseDefinition
+    {
+        public boolean enabled = true;
+        public boolean customized = false;
+        public List<CaseEntryDefinition> entries = new ArrayList<>();
+    }
+
+    public static class CaseEntryDefinition
+    {
+        public String item = null;
+        public int meta = 0;
+        public int count = 1;
+        public String lootTable = null;
+        public int weight = 1;
     }
 
     // internal runtime element used for unified computations of percentages
@@ -757,6 +818,7 @@ public final class BlockSetConfig
         // New format: separate lists for block-elements and mob-elements
         public List<BlockElementDefinition> blocks = new ArrayList<>();
         public List<MobElementDefinition> mobs = new ArrayList<>();
+        public CaseDefinition caseInfo = new CaseDefinition();
 
         // transient cache for computed levels
         public transient java.util.Map<Integer, SetLevelDefinition> computedLevels = null;
@@ -764,6 +826,12 @@ public final class BlockSetConfig
         public boolean isAvailable()
         {
             return requiredMods.isAvailable();
+        }
+
+        public boolean hasCaseEntries()
+        {
+            return caseInfo != null && caseInfo.enabled
+                    && caseInfo.entries != null && !caseInfo.entries.isEmpty();
         }
 
         public boolean hasUnlockRequirementsMet(IOneBlockPlayerData data)
@@ -1411,7 +1479,39 @@ public final class BlockSetConfig
         copy.unlockConditions = copyUnlockConditionGroup(source.unlockConditions);
         copy.blocks = copyBlockElements(source.blocks);
         copy.mobs = copyMobElements(source.mobs);
+        copy.caseInfo = copyCaseDefinition(source.caseInfo);
         copy.computedLevels = null;
+        return copy;
+    }
+
+    private static CaseDefinition copyCaseDefinition(CaseDefinition source)
+    {
+        if (source == null)
+        {
+            return new CaseDefinition();
+        }
+
+        CaseDefinition copy = new CaseDefinition();
+        copy.enabled = source.enabled;
+        copy.customized = source.customized;
+        copy.entries = new ArrayList<>();
+        if (source.entries != null)
+        {
+            for (CaseEntryDefinition entry : source.entries)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+                CaseEntryDefinition entryCopy = new CaseEntryDefinition();
+                entryCopy.item = entry.item;
+                entryCopy.meta = entry.meta;
+                entryCopy.count = entry.count;
+                entryCopy.lootTable = entry.lootTable;
+                entryCopy.weight = entry.weight;
+                copy.entries.add(entryCopy);
+            }
+        }
         return copy;
     }
 

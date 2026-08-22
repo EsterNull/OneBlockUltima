@@ -23,6 +23,7 @@ import net.minecraft.nbt.NBTTagShort;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.storage.loot.LootTableList;
 import static net.minecraftforge.common.util.Constants.NBT.*;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -32,6 +33,7 @@ import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +53,10 @@ public class ContainerSetsConfig
     public static final int VIEW_UNLOCK_CONDITIONS = 7;
     public static final int VIEW_EDIT_NBT = 8;
     public static final int VIEW_NBT_ADD = 9;
+    public static final int VIEW_CASE_EDITOR = 10;
+    public static final int VIEW_CASE_ENTRY_ADD = 11;
+    public static final int VIEW_CASE_ENTRY_EDIT = 12;
+    public static final int VIEW_CASE_LOOT_PICK = 13;
 
     private static final int[] NBT_ADDABLE_TYPES = {
             TAG_STRING, TAG_BYTE, TAG_SHORT, TAG_INT, TAG_LONG,
@@ -155,6 +161,14 @@ public class ContainerSetsConfig
     private int nbtEditorEditingIndex = -1;
     private String nbtEditorValueText = "";
     private String nbtEditorKeyText = "";
+
+    private boolean caseEditorInitialized = false;
+    private int selectedCaseEntryIndex = -1;
+    private int editingCaseEntryIndex = -1;
+    private boolean caseEntryAddPending = false;
+    private String caseCountText = "1";
+    private String caseWeightText = "1";
+    private String caseLootTableText = "";
 
     public ContainerSetsConfig()
     {
@@ -274,6 +288,10 @@ public class ContainerSetsConfig
         selectedMobIndex = -1;
         editingCurrencyIndex = -1;
         requiredModsEditorInitialized = false;
+        caseEditorInitialized = false;
+        selectedCaseEntryIndex = -1;
+        editingCaseEntryIndex = -1;
+        caseEntryAddPending = false;
         reloadConfig();
     }
 
@@ -334,6 +352,28 @@ public class ContainerSetsConfig
         savedNewSetName = "";
         savedNewSetId = "";
         savedNewSetCost = "0";
+        sortSetElements();
+    }
+
+    public void sortSetElements()
+    {
+        if (editingSet == null) return;
+
+        if (editingSet.blocks != null)
+        {
+            editingSet.blocks.sort(Comparator.nullsLast(Comparator
+                    .comparingInt((BlockSetConfig.BlockElementDefinition b) -> b.baseLevel)
+                    .thenComparingInt(b -> -b.baseChance)
+                    .thenComparing(b -> b.registry == null ? "" : b.registry.toLowerCase(Locale.ROOT))));
+        }
+
+        if (editingSet.mobs != null)
+        {
+            editingSet.mobs.sort(Comparator.nullsLast(Comparator
+                    .comparingInt((BlockSetConfig.MobElementDefinition m) -> m.baseLevel)
+                    .thenComparingInt(m -> -m.baseChance)
+                    .thenComparing(m -> m.registry == null ? "" : m.registry.toLowerCase(Locale.ROOT))));
+        }
     }
 
     public void addNewSet()
@@ -1529,6 +1569,253 @@ public class ContainerSetsConfig
         editingSet.unlockConditions.conditions.addAll(unlockConditionsEditorConditions);
     }
 
+    public boolean isCaseEditorInitialized() { return caseEditorInitialized; }
+
+    public void initCaseEditor()
+    {
+        if (editingSet == null) return;
+        if (editingSet.caseInfo == null) editingSet.caseInfo = new BlockSetConfig.CaseDefinition();
+        if (editingSet.caseInfo.entries == null) editingSet.caseInfo.entries = new ArrayList<>();
+        caseEditorInitialized = true;
+        selectedCaseEntryIndex = -1;
+        editingCaseEntryIndex = -1;
+        caseEntryAddPending = false;
+    }
+
+    public boolean isCaseEnabled()
+    {
+        return editingSet != null && editingSet.caseInfo != null && editingSet.caseInfo.enabled;
+    }
+
+    public void toggleCaseEnabled()
+    {
+        if (editingSet == null) return;
+        if (editingSet.caseInfo == null) editingSet.caseInfo = new BlockSetConfig.CaseDefinition();
+        editingSet.caseInfo.enabled = !editingSet.caseInfo.enabled;
+        editingSet.caseInfo.customized = true;
+    }
+
+    public List<BlockSetConfig.CaseEntryDefinition> getCaseEntries()
+    {
+        if (editingSet == null || editingSet.caseInfo == null || editingSet.caseInfo.entries == null)
+            return Collections.emptyList();
+        return editingSet.caseInfo.entries;
+    }
+
+    public int getSelectedCaseEntryIndex() { return selectedCaseEntryIndex; }
+    public void setSelectedCaseEntryIndex(int v) { selectedCaseEntryIndex = v; }
+
+    public BlockSetConfig.CaseEntryDefinition getEditingCaseEntry()
+    {
+        List<BlockSetConfig.CaseEntryDefinition> entries = getCaseEntries();
+        if (editingCaseEntryIndex < 0 || editingCaseEntryIndex >= entries.size()) return null;
+        return entries.get(editingCaseEntryIndex);
+    }
+
+    public void startEditingCaseEntry(int index)
+    {
+        List<BlockSetConfig.CaseEntryDefinition> entries = getCaseEntries();
+        if (index < 0 || index >= entries.size()) return;
+        selectedCaseEntryIndex = index;
+        editingCaseEntryIndex = index;
+        caseEntryAddPending = false;
+        BlockSetConfig.CaseEntryDefinition entry = entries.get(index);
+        caseCountText = String.valueOf(entry.count);
+        caseWeightText = String.valueOf(entry.weight);
+        caseLootTableText = entry.lootTable != null ? entry.lootTable : "";
+    }
+
+    public void stageCaseEntryAdd(SearchResult result)
+    {
+        if (editingSet == null) return;
+        if (editingSet.caseInfo == null) editingSet.caseInfo = new BlockSetConfig.CaseDefinition();
+        if (editingSet.caseInfo.entries == null) editingSet.caseInfo.entries = new ArrayList<>();
+        BlockSetConfig.CaseEntryDefinition entry = new BlockSetConfig.CaseEntryDefinition();
+        entry.item = result.registry;
+        entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+        entry.count = 1;
+        entry.weight = 1;
+        editingSet.caseInfo.entries.add(entry);
+        editingCaseEntryIndex = editingSet.caseInfo.entries.size() - 1;
+        selectedCaseEntryIndex = editingCaseEntryIndex;
+        caseEntryAddPending = true;
+        editingSet.caseInfo.customized = true;
+        caseCountText = String.valueOf(entry.count);
+        caseWeightText = String.valueOf(entry.weight);
+        caseLootTableText = "";
+    }
+
+    public void stageCaseLootAdd()
+    {
+        if (editingSet == null) return;
+        if (editingSet.caseInfo == null) editingSet.caseInfo = new BlockSetConfig.CaseDefinition();
+        if (editingSet.caseInfo.entries == null) editingSet.caseInfo.entries = new ArrayList<>();
+        BlockSetConfig.CaseEntryDefinition entry = new BlockSetConfig.CaseEntryDefinition();
+        entry.item = null;
+        entry.count = 1;
+        entry.weight = 1;
+        editingSet.caseInfo.entries.add(entry);
+        editingCaseEntryIndex = editingSet.caseInfo.entries.size() - 1;
+        selectedCaseEntryIndex = editingCaseEntryIndex;
+        caseEntryAddPending = true;
+        editingSet.caseInfo.customized = true;
+        caseCountText = String.valueOf(entry.count);
+        caseWeightText = String.valueOf(entry.weight);
+        caseLootTableText = "";
+    }
+
+    public boolean saveCaseEntry(int count, int chance, String lootTable)
+    {
+        BlockSetConfig.CaseEntryDefinition entry = getEditingCaseEntry();
+        if (entry == null) return false;
+        if (count < 1 || chance < 1)
+        {
+            statusMessage = safeFormat("gui.oneblockultima.config.error.invalid_level_chance");
+            statusTimer = 100;
+            return false;
+        }
+        boolean isLootEntry = entry.item == null || entry.item.isEmpty();
+        if (isLootEntry)
+        {
+            String trimmed = lootTable == null ? "" : lootTable.trim();
+            if (trimmed.isEmpty())
+            {
+                statusMessage = safeFormat("gui.oneblockultima.config.error.empty_loot_table");
+                statusTimer = 100;
+                return false;
+            }
+            entry.lootTable = trimmed;
+        }
+        else
+        {
+            entry.count = count;
+        }
+        entry.weight = chance;
+        caseEntryAddPending = false;
+        editingCaseEntryIndex = -1;
+        selectedCaseEntryIndex = -1;
+        if (editingSet != null && editingSet.caseInfo != null) editingSet.caseInfo.customized = true;
+        statusMessage = safeFormat("gui.oneblockultima.config.case_entry_saved");
+        statusTimer = 60;
+        return true;
+    }
+
+    public void cancelCaseEntryAdd()
+    {
+        if (!caseEntryAddPending) return;
+        List<BlockSetConfig.CaseEntryDefinition> entries = getCaseEntries();
+        if (editingCaseEntryIndex >= 0 && editingCaseEntryIndex < entries.size())
+        {
+            entries.remove(editingCaseEntryIndex);
+        }
+        editingCaseEntryIndex = -1;
+        selectedCaseEntryIndex = -1;
+        caseEntryAddPending = false;
+    }
+
+    public void removeCaseEntry()
+    {
+        int index = editingCaseEntryIndex >= 0 ? editingCaseEntryIndex : selectedCaseEntryIndex;
+        List<BlockSetConfig.CaseEntryDefinition> entries = getCaseEntries();
+        if (index >= 0 && index < entries.size())
+        {
+            entries.remove(index);
+            statusMessage = I18n.format("gui.oneblockultima.config.removed");
+            statusTimer = 60;
+        }
+        if (editingSet != null && editingSet.caseInfo != null) editingSet.caseInfo.customized = true;
+        editingCaseEntryIndex = -1;
+        selectedCaseEntryIndex = -1;
+        caseEntryAddPending = false;
+    }
+
+    public ItemStack getItemStackFromCaseEntry(BlockSetConfig.CaseEntryDefinition entry)
+    {
+        if (entry == null || entry.item == null || entry.item.isEmpty()) return ItemStack.EMPTY;
+        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.item));
+        if (item == null || item == Items.AIR) return ItemStack.EMPTY;
+        return new ItemStack(item, 1, Math.max(0, entry.meta));
+    }
+
+    public String getLocalizedNameForCaseEntry(BlockSetConfig.CaseEntryDefinition entry)
+    {
+        if (entry == null) return "-";
+        if (entry.item != null && !entry.item.isEmpty())
+        {
+            ItemStack stack = getItemStackFromCaseEntry(entry);
+            if (!stack.isEmpty())
+            {
+                try { return stack.getDisplayName(); } catch (Exception ignored) {}
+            }
+            return entry.item;
+        }
+        if (entry.lootTable != null && !entry.lootTable.isEmpty())
+        {
+            return I18n.format("gui.oneblockultima.config.case_loot") + ": " + entry.lootTable;
+        }
+        return "-";
+    }
+
+    public String getCaseButtonLabel()
+    {
+        if (editingSet == null || editingSet.caseInfo == null || !editingSet.caseInfo.enabled)
+            return I18n.format("gui.oneblockultima.config.case") + ": " + I18n.format("gui.oneblockultima.config.case_off");
+        int n = editingSet.caseInfo.entries == null ? 0 : editingSet.caseInfo.entries.size();
+        if (n == 0) return I18n.format("gui.oneblockultima.config.case") + ": " + I18n.format("gui.oneblockultima.config.none");
+        return I18n.format("gui.oneblockultima.config.case") + ": [" + n + "]";
+    }
+
+    public String getCaseEntryInfoLine(BlockSetConfig.CaseEntryDefinition entry)
+    {
+        if (entry == null) return "";
+        if (entry.item != null && !entry.item.isEmpty())
+        {
+            return I18n.format("gui.oneblockultima.config.case_chance") + ": " + entry.weight
+                    + "  " + I18n.format("gui.oneblockultima.config.case_count") + ": " + entry.count;
+        }
+        return I18n.format("gui.oneblockultima.config.case_chance") + ": " + entry.weight;
+    }
+
+    public String getCaseCountText() { return caseCountText; }
+    public void setCaseCountText(String v) { caseCountText = v == null ? "" : v; }
+    public String getCaseWeightText() { return caseWeightText; }
+    public void setCaseWeightText(String v) { caseWeightText = v == null ? "" : v; }
+    public String getCaseLootTableText() { return caseLootTableText; }
+    public void setCaseLootTableText(String v) { caseLootTableText = v == null ? "" : v; }
+
+    public List<ResourceLocation> getAvailableLootTables()
+    {
+        List<ResourceLocation> tables = new ArrayList<>();
+        java.util.Set<String> used = new java.util.HashSet<>();
+        if (editingSet != null && editingSet.caseInfo != null && editingSet.caseInfo.entries != null)
+        {
+            for (BlockSetConfig.CaseEntryDefinition entry : editingSet.caseInfo.entries)
+            {
+                if (entry != null && entry.lootTable != null && !entry.lootTable.isEmpty())
+                {
+                    used.add(entry.lootTable);
+                }
+            }
+        }
+        try
+        {
+            for (ResourceLocation location : LootTableList.getAll())
+            {
+                if (location != null && !location.equals(LootTableList.EMPTY)) {
+                    if (location.getResourcePath().startsWith("chests/") && !used.contains(location.toString())) {
+                        tables.add(location);
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            OneBlockUltima.getLogger().error("Failed to enumerate loot tables", e);
+        }
+        tables.sort(Comparator.comparing(ResourceLocation::toString));
+        return tables;
+    }
+
     public void resetToDefault()
     {
         try
@@ -1598,6 +1885,7 @@ public class ContainerSetsConfig
                 String modId = reg.getResourceDomain();
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
+                if (OneBlockUltima.MODID.equals(modId) && ("case".equals(registryId) || "case_block".equals(registryId))) continue;
 
                 Fluid fluid = block instanceof IFluidBlock ? ((IFluidBlock) block).getFluid() : FluidRegistry.lookupFluidForBlock(block);
                 if (fluid != null)
@@ -1636,6 +1924,7 @@ public class ContainerSetsConfig
                 String modId = reg.getResourceDomain();
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
+                if (OneBlockUltima.MODID.equals(modId) && ("case".equals(registryId) || "case_block".equals(registryId))) continue;
                 String name = "";
                 try { name = new ItemStack(item, 1).getDisplayName(); } catch (Exception ignored) {}
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;

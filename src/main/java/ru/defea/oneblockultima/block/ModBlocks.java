@@ -126,6 +126,7 @@ public final class ModBlocks
     public static final BlockOneBlockGenerator ONE_BLOCK_GENERATOR = new BlockOneBlockGenerator();
     public static final BlockFluidBarrier FLUID_BARRIER = new BlockFluidBarrier();
     public static final BlockCompressedMineralBlock COMPRESSED_MINERAL_BLOCK = new BlockCompressedMineralBlock();
+    public static final BlockCase CASE_BLOCK = new BlockCase();
 
     public static final BlockCompressedBedrock COMPRESSED_BEDROCK = new BlockCompressedBedrock();
     public static final BlockCompressedRedstoneBlock COMPRESSED_REDSTONE_BLOCK = new BlockCompressedRedstoneBlock();
@@ -141,6 +142,7 @@ public final class ModBlocks
     public static RegisterBlock[] modBlocks = {
         new RegisterBlock(ONE_BLOCK_GENERATOR, true),
         new RegisterBlock(FLUID_BARRIER),
+        new RegisterBlock(CASE_BLOCK),
         new RegisterBlock(COMPRESSED_MINERAL_BLOCK, true, "normal"),
 
         new RegisterBlock(COMPRESSED_BEDROCK, true, "normal", 0, "compressed_bedrock", BlockCompressedBedrock.MAX_LEVEL),

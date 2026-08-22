@@ -54,4 +54,10 @@ public final class Constants {
     public static final int LIGHT_BLUE_GRAY_COLOR = 0xFFA0B0C0;
     public static final int DARK_BLUE_GRAY_COLOR_1 = 0xFF3F5060;
     public static final int DARK_BLUE_GRAY_COLOR_2 = 0xFF2E3A45;
+
+    public static final int LIME_COLOR = 0xFF7FFF00;
+    public static final int CASE_BG_GRADIENT_TOP = 0xF0101418;
+    public static final int CASE_BG_GRADIENT_BOTTOM = 0xE01E242E;
+    public static final int CASE_GOLD_RGB = 0xFFD700;
+    public static final int CASE_SPARK_WHITE = 0xFFFFFF;
 }

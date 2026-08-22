@@ -17,6 +17,7 @@ import net.minecraftforge.fluids.Fluid;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
 import ru.defea.oneblockultima.gui.layout.*;
 import ru.defea.oneblockultima.util.ModelUtil;
@@ -64,6 +65,14 @@ public class GuiSetsConfig extends GuiScreen
     private static final int BUTTON_NBT_CYCLE_TYPE = 31;
     private static final int BUTTON_NBT_CYCLE_ELEM_TYPE = 32;
     private static final int BUTTON_DELETE_ENTRY = 33;
+    private static final int BUTTON_EDIT_CASE = 34;
+    private static final int BUTTON_CASE_ENABLED_TOGGLE = 35;
+    private static final int BUTTON_CASE_ADD = 36;
+    private static final int BUTTON_CASE_ENTRY_SAVE = 37;
+    private static final int BUTTON_CASE_ENTRY_CANCEL = 38;
+    private static final int BUTTON_CASE_ENTRY_DELETE = 39;
+    private static final int BUTTON_CASE_ADD_LOOT = 40;
+    private static final int BUTTON_CASE_LOOT_PICK = 41;
     private static final int ENTRY_HEIGHT = 22;
     private static final int NBT_ROW_PADDING = 4;
     private static final int NBT_ROW_BUTTON_HEIGHT = 14;
@@ -92,6 +101,8 @@ public class GuiSetsConfig extends GuiScreen
     private TextFieldElement unlockCountElement;
     private TextFieldElement nbtKeyElement;
     private TextFieldElement nbtValueElement;
+    private TextFieldElement caseCountElement;
+    private TextFieldElement caseWeightElement;
 
     private ScrollableListElement setsList;
     private TwoColumnListElement entriesList;
@@ -100,6 +111,8 @@ public class GuiSetsConfig extends GuiScreen
     private ScrollableListElement addModsList;
     private ScrollableListElement conditionsList;
     private ScrollableListElement nbtList;
+    private ScrollableListElement caseEntriesList;
+    private ScrollableListElement caseLootList;
 
     private int setsScrollOffset = 0;
     private int entriesScrollOffset = 0;
@@ -108,6 +121,8 @@ public class GuiSetsConfig extends GuiScreen
     private int addModsScrollOffset = 0;
     private int conditionsScrollOffset = 0;
     private int nbtScrollOffset = 0;
+    private int caseScrollOffset = 0;
+    private int caseLootScrollOffset = 0;
 
     private boolean suppressMouseUntilRelease = false;
     private boolean suppressNextMouseClick = false;
@@ -207,6 +222,10 @@ public class GuiSetsConfig extends GuiScreen
             case VIEW_UNLOCK_CONDITIONS: buildUnlockConditionsView(); break;
             case VIEW_EDIT_NBT: buildEditNbtView(); break;
             case VIEW_NBT_ADD: buildNbtAddView(); break;
+            case VIEW_CASE_EDITOR: buildCaseEditorView(); break;
+            case VIEW_CASE_ENTRY_ADD: buildCaseEntryAddView(); break;
+            case VIEW_CASE_ENTRY_EDIT: buildCaseEntryEditView(); break;
+            case VIEW_CASE_LOOT_PICK: buildCaseLootPickView(); break;
         }
 
         int view = container.getCurrentView();
@@ -224,6 +243,8 @@ public class GuiSetsConfig extends GuiScreen
         if (addModsList != null) addModsScrollOffset = addModsList.getScrollOffset();
         if (conditionsList != null) conditionsScrollOffset = conditionsList.getScrollOffset();
         if (nbtList != null) nbtScrollOffset = nbtList.getScrollOffset();
+        if (caseEntriesList != null) caseScrollOffset = caseEntriesList.getScrollOffset();
+        if (caseLootList != null) caseLootScrollOffset = caseLootList.getScrollOffset();
     }
 
     @Override
@@ -325,7 +346,7 @@ public class GuiSetsConfig extends GuiScreen
                 }
             }
         }
-        if (view == VIEW_ADD_ENTRY && entrySearchElement != null && entrySearchElement.isFocused())
+        if ((view == VIEW_ADD_ENTRY || view == VIEW_CASE_ENTRY_ADD) && entrySearchElement != null && entrySearchElement.isFocused())
         {
             String text = entrySearchElement.getText();
             if (!text.equals(pendingAddEntrySearchText))
@@ -403,6 +424,8 @@ public class GuiSetsConfig extends GuiScreen
         if (unlockCountElement != null) unlockCountElement.focused(false);
         if (nbtKeyElement != null) nbtKeyElement.focused(false);
         if (nbtValueElement != null) nbtValueElement.focused(false);
+        if (caseCountElement != null) caseCountElement.focused(false);
+        if (caseWeightElement != null) caseWeightElement.focused(false);
     }
 
     @Override
@@ -448,6 +471,19 @@ public class GuiSetsConfig extends GuiScreen
         if (button.id == BUTTON_NBT_CANCEL) { changeView(VIEW_EDIT_NBT); return; }
         if (button.id == BUTTON_NBT_CYCLE_TYPE) { container.cycleNbtEditorAddType(); initGui(); return; }
         if (button.id == BUTTON_NBT_CYCLE_ELEM_TYPE) { container.cycleNbtEditorListElementType(); initGui(); }
+        if (button.id == BUTTON_EDIT_CASE) { saveCurrentFormState(); container.initCaseEditor(); changeView(VIEW_CASE_EDITOR); return; }
+        if (button.id == BUTTON_CASE_ENABLED_TOGGLE) { container.toggleCaseEnabled(); initGui(); return; }
+        if (button.id == BUTTON_CASE_ADD) { saveCurrentFormState(); container.setCurrentEntryType(EntryType.BLOCK); container.setCurrentSearchType(SearchType.BLOCKS); pendingAddEntrySearchText = ""; changeView(VIEW_CASE_ENTRY_ADD); return; }
+        if (button.id == BUTTON_CASE_ADD_LOOT) { container.stageCaseLootAdd(); changeView(VIEW_CASE_ENTRY_EDIT); return; }
+        if (button.id == BUTTON_CASE_ENTRY_SAVE) { handleCaseEntrySave(); return; }
+        if (button.id == BUTTON_CASE_ENTRY_CANCEL) { container.cancelCaseEntryAdd(); changeView(VIEW_CASE_EDITOR); return; }
+        if (button.id == BUTTON_CASE_LOOT_PICK) { changeView(VIEW_CASE_LOOT_PICK); return; }
+        if (button.id == BUTTON_CASE_ENTRY_DELETE)
+        {
+            container.removeCaseEntry();
+            if (container.getCurrentView() == VIEW_CASE_EDITOR) initGui();
+            else changeView(VIEW_CASE_EDITOR);
+        }
     }
 
     private void handleBack()
@@ -464,6 +500,10 @@ public class GuiSetsConfig extends GuiScreen
         else if (v == VIEW_REQUIRED_MODS_ADD) changeView(VIEW_REQUIRED_MODS_EDITOR);
         else if (v == VIEW_EDIT_NBT) handleNbtBack();
         else if (v == VIEW_NBT_ADD) changeView(VIEW_EDIT_NBT);
+        else if (v == VIEW_CASE_EDITOR) { changeView(VIEW_SET_DETAILS); }
+        else if (v == VIEW_CASE_ENTRY_ADD) changeView(VIEW_CASE_EDITOR);
+        else if (v == VIEW_CASE_ENTRY_EDIT) { container.cancelCaseEntryAdd(); changeView(VIEW_CASE_EDITOR); }
+        else if (v == VIEW_CASE_LOOT_PICK) { changeView(VIEW_CASE_ENTRY_EDIT); }
         else mc.displayGuiScreen(parent);
     }
 
@@ -494,6 +534,11 @@ public class GuiSetsConfig extends GuiScreen
             {
                 container.setSavedNewSetCost(unlockCostElement.getText());
             }
+        }
+        if (getCurrentView() == VIEW_CASE_ENTRY_EDIT)
+        {
+            if (caseCountElement != null) container.setCaseCountText(caseCountElement.getText());
+            if (caseWeightElement != null) container.setCaseWeightText(caseWeightElement.getText());
         }
     }
 
@@ -743,17 +788,25 @@ public class GuiSetsConfig extends GuiScreen
         costRow.add(unlockCostElement);
         factory.add(costRow);
 
-        RowElement configButtons = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
-        configButtons.add(new SpacerElement(formMargin, 20));
-        configButtons.add(new LabelElement("").width(formLabelWidth).height(20));
+        RowElement configButtons = new RowElement(Alignment.CENTER).gap(6).widthPercent(100);
         configButtons.button(BUTTON_EDIT_REQUIRED_MODS, container.getRequiredModsButtonLabel());
         configButtons.button(BUTTON_EDIT_UNLOCK_CONDITIONS, container.getUnlockConditionsButtonLabel());
+        configButtons.button(BUTTON_EDIT_CASE, container.getCaseButtonLabel());
         factory.add(configButtons);
 
         factory.add(new SeparatorElement());
 
         List<TwoColumnListElement.TwoColumnEntry> leftEntries = new ArrayList<>();
         List<TwoColumnListElement.TwoColumnEntry> rightEntries = new ArrayList<>();
+
+        double caseDropPercent = 0.0D;
+        if (editingSet.hasCaseEntries())
+        {
+            caseDropPercent = ModSettings.get().getCaseDropPercent();
+            if (caseDropPercent < 0.0D) caseDropPercent = 0.0D;
+            if (caseDropPercent > 100.0D) caseDropPercent = 100.0D;
+        }
+        final double caseScaleFactor = (100.0D - caseDropPercent) / 100.0D;
 
         if (editingSet.blocks != null)
         {
@@ -830,7 +883,8 @@ public class GuiSetsConfig extends GuiScreen
                             fr.drawString(nbtLabel, infoX + badgeTextPadding, badgeY + 1, GOLD_COLOR);
                             infoX += badgeW + 2 * badgeTextPadding;
                         }
-                        String registryInfo = block.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": " + block.baseChance + "%";
+                        String registryInfo = block.registry + "  " + I18n.format("gui.oneblockultima.chance") + ": "
+                                + Math.round(block.baseChance * caseScaleFactor) + "%";
                         int maxRegW = Math.max(10, rightBound - infoX);
                         if (fr.getStringWidth(registryInfo) > maxRegW)
                             registryInfo = fr.trimStringToWidth(registryInfo, maxRegW - fr.getStringWidth("...")) + "...";
@@ -1641,5 +1695,295 @@ public class GuiSetsConfig extends GuiScreen
             });
         }
         return entries;
+    }
+
+    private void buildCaseEditorView()
+    {
+        if (container.getEditingSet() == null) { changeView(VIEW_SET_DETAILS); return; }
+        if (!container.isCaseEditorInitialized()) container.initCaseEditor();
+
+        factory.title("gui.oneblockultima.config.case_editor");
+
+        RowElement toggleRow = new RowElement(Alignment.LEFT).gap(6).widthPercent(100);
+        toggleRow.add(new LabelElement(I18n.format("gui.oneblockultima.config.case") + ":").color(GRAY_COLOR_5));
+        toggleRow.button(BUTTON_CASE_ENABLED_TOGGLE, container.isCaseEnabled()
+                ? I18n.format("gui.oneblockultima.config.case_on")
+                : I18n.format("gui.oneblockultima.config.case_off"));
+        factory.add(toggleRow);
+
+        factory.add(new SeparatorElement());
+
+        List<ScrollableListElement.ScrollableListEntry> entries = new ArrayList<>();
+        List<BlockSetConfig.CaseEntryDefinition> caseEntries = container.getCaseEntries();
+        for (int i = 0; i < caseEntries.size(); i++)
+        {
+            final int idx = i;
+            final BlockSetConfig.CaseEntryDefinition entry = caseEntries.get(i);
+            entries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    boolean isSelected = container.getSelectedCaseEntryIndex() == idx;
+                    if (isSelected) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+
+                    ItemStack stack = container.getItemStackFromCaseEntry(entry);
+                    final int cellPadding = 2;
+                    final int itemIconSize = 16;
+                    if (!stack.isEmpty())
+                    {
+                        GlStateManager.enableDepth();
+                        RenderHelper.enableGUIStandardItemLighting();
+                        GlStateManager.enableRescaleNormal();
+                        Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(stack, x + cellPadding, y + cellPadding);
+                        RenderHelper.disableStandardItemLighting();
+                        GlStateManager.disableRescaleNormal();
+                        GlStateManager.disableDepth();
+                    }
+
+                    String name = container.getLocalizedNameForCaseEntry(entry);
+                    int btnSize = height - 2 * cellPadding;
+                    int rightBound = x + width - btnSize - 2 * cellPadding;
+                    int textX = x + cellPadding + itemIconSize + cellPadding;
+                    int maxNameW = Math.max(10, rightBound - textX - 6);
+                    String displayName = name;
+                    if (fr.getStringWidth(displayName) > maxNameW)
+                        displayName = fr.trimStringToWidth(displayName, maxNameW - fr.getStringWidth("...")) + "...";
+                    fr.drawString(displayName, textX, y + 2, GRAY_COLOR_5);
+                    String info = container.getCaseEntryInfoLine(entry);
+                    int maxInfoW = Math.max(10, rightBound - textX);
+                    if (fr.getStringWidth(info) > maxInfoW)
+                        info = fr.trimStringToWidth(info, maxInfoW - fr.getStringWidth("...")) + "...";
+                    fr.drawString(info, textX, y + 12, GRAY_COLOR_1);
+
+                    int editX = x + width - btnSize - cellPadding;
+                    Gui.drawRect(editX, y + cellPadding, editX + btnSize, y + cellPadding + btnSize, DARK_BLUE_GRAY_COLOR_1);
+                    fr.drawString("\u270E", editX + btnSize / 2 - 4, y + cellPadding + 3, WHITE_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    int btnSize = entryHeight - 4;
+                    int editX = entryWidth - btnSize - 2;
+                    if (mouseXOffset >= editX && mouseXOffset <= editX + btnSize
+                            && mouseYOffset >= 2 && mouseYOffset <= 2 + btnSize)
+                    {
+                        container.startEditingCaseEntry(idx);
+                        changeView(VIEW_CASE_ENTRY_EDIT);
+                        return true;
+                    }
+                    container.setSelectedCaseEntryIndex(idx);
+                    return true;
+                }
+            });
+        }
+
+        caseEntriesList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(entries)
+                .scrollOffset(caseScrollOffset);
+        caseEntriesList.flexible(true);
+        caseEntriesList.visible(true);
+        factory.add(caseEntriesList);
+
+        if (caseEntries.isEmpty())
+        {
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.case_no_entries")).color(GRAY_COLOR_1).centered());
+        }
+
+        RowElement btnRow = new RowElement(Alignment.CENTER).gap(4);
+        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+        btnRow.add(new DangerButtonElement(BUTTON_CASE_ENTRY_DELETE, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.button(BUTTON_CASE_ADD_LOOT, I18n.format("gui.oneblockultima.config.case_add_loot"));
+        btnRow.button(BUTTON_CASE_ADD, I18n.format("gui.oneblockultima.config.add"));
+        factory.add(btnRow);
+    }
+
+    private void buildCaseEntryAddView()
+    {
+        container.setCurrentSearchType(SearchType.BLOCKS);
+        container.performSearch(pendingAddEntrySearchText);
+
+        factory.title("gui.oneblockultima.config.case_add_title");
+
+        entrySearchElement = new TextFieldElement(0).widthPercent(80).focused(true);
+        if (!pendingAddEntrySearchText.isEmpty())
+            entrySearchElement.text(pendingAddEntrySearchText);
+        factory.add(entrySearchElement);
+
+        String helpText = I18n.format("gui.oneblockultima.config.search.help");
+        factory.add(new LabelElement(helpText).color(GRAY_COLOR_1));
+
+        List<ScrollableListElement.ScrollableListEntry> searchEntries = new ArrayList<>();
+        List<SearchResult> results = container.getSearchResults();
+        for (final SearchResult result : results)
+        {
+            if (result.isFluid) continue;
+            searchEntries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    int iconSize = Math.min(16, height - 4);
+                    if (!result.stack.isEmpty())
+                    {
+                        GlStateManager.enableDepth();
+                        RenderHelper.enableGUIStandardItemLighting();
+                        GlStateManager.enableRescaleNormal();
+                        Minecraft.getMinecraft().getRenderItem().renderItemIntoGUI(result.stack, x + 2, y + 2);
+                        RenderHelper.disableStandardItemLighting();
+                        GlStateManager.disableRescaleNormal();
+                        GlStateManager.disableDepth();
+                    }
+                    String displayName = result.name != null && !result.name.isEmpty() ? result.name : result.registry;
+                    int textX = x + iconSize + 6;
+                    fr.drawStringWithShadow(displayName, textX, y + 2, WHITE_COLOR_1);
+                    fr.drawStringWithShadow(result.registry, textX, y + 12, GRAY_COLOR_1);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    pendingAddEntrySearchText = entrySearchElement != null ? entrySearchElement.getText() : "";
+                    container.stageCaseEntryAdd(result);
+                    changeView(VIEW_CASE_ENTRY_EDIT);
+                    return true;
+                }
+            });
+        }
+
+        searchResultsList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(searchEntries)
+                .scrollOffset(searchScrollOffset);
+        searchResultsList.flexible(true);
+        searchResultsList.visible(true);
+        factory.add(searchResultsList);
+
+        if (searchEntries.isEmpty())
+        {
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered());
+        }
+
+        factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+    }
+
+    private void buildCaseEntryEditView()
+    {
+        BlockSetConfig.CaseEntryDefinition entry = container.getEditingCaseEntry();
+        if (entry == null) { changeView(VIEW_CASE_EDITOR); return; }
+
+        boolean isLootEntry = entry.item == null || entry.item.isEmpty();
+
+        factory.title(isLootEntry
+                ? I18n.format("gui.oneblockultima.config.case_loot_edit_title")
+                : I18n.format("gui.oneblockultima.config.case_entry_edit_title"));
+
+        if (!isLootEntry)
+        {
+            String entryName = container.getLocalizedNameForCaseEntry(entry);
+            if (!entryName.isEmpty()) factory.add(new LabelElement(entryName).centered());
+        }
+
+        factory.gap(3).centerVertical().fitContent();
+
+        int fieldWidth = Math.max(40, width * 5 / 100);
+        String chanceLabel = I18n.format("gui.oneblockultima.config.case_chance") + ":";
+        int labelWidth = fontRenderer.getStringWidth(chanceLabel);
+        String countLabel = I18n.format("gui.oneblockultima.config.case_count") + ":";
+        if (fontRenderer.getStringWidth(countLabel) > labelWidth) fontRenderer.getStringWidth(countLabel);
+
+        ColumnElement labelCol = new ColumnElement().align(Alignment.RIGHT).gap(4);
+        ColumnElement fieldCol = new ColumnElement().gap(4);
+
+        if (isLootEntry)
+        {
+            labelCol.add(new LabelElement(I18n.format("gui.oneblockultima.config.case_loot_table") + ":").color(GRAY_COLOR_5));
+            String lootTableName = container.getCaseLootTableText().trim();
+            String lootButtonLabel = lootTableName.isEmpty()
+                    ? I18n.format("gui.oneblockultima.config.case_loot_none")
+                    : lootTableName;
+            fieldCol.add(new ButtonElement<>(BUTTON_CASE_LOOT_PICK, lootButtonLabel));
+
+            labelCol.add(new LabelElement(chanceLabel).color(GRAY_COLOR_5));
+            caseWeightElement = new TextFieldElement(fieldWidth).text(container.getCaseWeightText());
+            fieldCol.add(caseWeightElement);
+        }
+        else
+        {
+            labelCol.add(new LabelElement(countLabel).color(GRAY_COLOR_5));
+            caseCountElement = new TextFieldElement(fieldWidth).text(container.getCaseCountText());
+            fieldCol.add(caseCountElement);
+
+            labelCol.add(new LabelElement(chanceLabel).color(GRAY_COLOR_5));
+            caseWeightElement = new TextFieldElement(fieldWidth).text(container.getCaseWeightText());
+            fieldCol.add(caseWeightElement);
+        }
+
+        RowElement formRow = factory.row(Alignment.CENTER).gap(10).height(ROW_HEIGHT);
+        formRow.add(labelCol);
+        formRow.add(fieldCol);
+
+        RowElement btnRow = factory.row(Alignment.CENTER).gap(6).height(ROW_HEIGHT);
+        btnRow.button(BUTTON_CASE_ENTRY_CANCEL, I18n.format("gui.oneblockultima.cancel"));
+        btnRow.add(new DangerButtonElement(BUTTON_CASE_ENTRY_DELETE, I18n.format("gui.oneblockultima.config.remove")));
+        btnRow.add(new SuccessButtonElement(BUTTON_CASE_ENTRY_SAVE, I18n.format("gui.oneblockultima.done")));
+    }
+
+    private void handleCaseEntrySave()
+    {
+        saveCurrentFormState();
+        try
+        {
+            int count = caseCountElement != null && !caseCountElement.getText().trim().isEmpty()
+                    ? Integer.parseInt(caseCountElement.getText().trim()) : 1;
+            int chance = caseWeightElement != null && !caseWeightElement.getText().trim().isEmpty()
+                    ? Integer.parseInt(caseWeightElement.getText().trim()) : 1;
+            String lootTable = container.getCaseLootTableText();
+            if (container.saveCaseEntry(count, chance, lootTable))
+            {
+                changeView(VIEW_CASE_EDITOR);
+            }
+            else initGui();
+        }
+        catch (NumberFormatException e) { initGui(); }
+    }
+
+    private void buildCaseLootPickView()
+    {
+        factory.title("gui.oneblockultima.config.case_loot_pick_title");
+
+        List<ScrollableListElement.ScrollableListEntry> lootEntries = new ArrayList<>();
+        List<ResourceLocation> tables = container.getAvailableLootTables();
+        String current = container.getCaseLootTableText().trim();
+        for (final ResourceLocation location : tables)
+        {
+            final String tableName = location.toString();
+            final boolean isCurrent = tableName.equalsIgnoreCase(current);
+            lootEntries.add(new ScrollableListElement.ScrollableListEntry() {
+                @Override
+                public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, net.minecraft.client.gui.FontRenderer fr, int mouseX, int mouseY) {
+                    if (isCurrent) Gui.drawRect(x + 1, y, x + width - 1, y + height, DARK_BLUE_GRAY_COLOR_1);
+                    else if (hovered) Gui.drawRect(x + 1, y, x + width - 1, y + height, TRANSPARENT_WHITE);
+                    fr.drawStringWithShadow(tableName, x + 4, y + (float) (height - fr.FONT_HEIGHT) / 2, isCurrent ? WHITE_COLOR_1 : GRAY_COLOR_5);
+                }
+
+                @Override
+                public boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton) {
+                    container.setCaseLootTableText(tableName);
+                    changeView(VIEW_CASE_ENTRY_EDIT);
+                    return true;
+                }
+            });
+        }
+
+        caseLootList = new ScrollableListElement(ENTRY_HEIGHT)
+                .entries(lootEntries)
+                .scrollOffset(caseLootScrollOffset);
+        caseLootList.flexible(true);
+        caseLootList.visible(true);
+        factory.add(caseLootList);
+
+        if (lootEntries.isEmpty())
+        {
+            factory.add(new LabelElement(I18n.format("gui.oneblockultima.config.search.no_results")).color(GRAY_COLOR_1).centered());
+        }
+
+        factory.button(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
     }
 }
