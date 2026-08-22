@@ -40,6 +40,7 @@ public class GuiMiscSettings extends GuiScreen {
     private int breakCooldownTicks;
     private int mobSpawnPercent;
     private int generatorMembers;
+    private double caseDropPercent;
 
     private ButtonToggleElement mobWorldGenerationToggle;
     private ButtonToggleElement debugModeToggle;
@@ -47,6 +48,7 @@ public class GuiMiscSettings extends GuiScreen {
     private StepperElement breakCooldownStepper;
     private StepperElement mobSpawnPercentStepper;
     private StepperElement generatorMembersStepper;
+    private DoubleStepperElement caseDropPercentStepper;
 
     public GuiMiscSettings(GuiScreen parent)
     {
@@ -66,6 +68,7 @@ public class GuiMiscSettings extends GuiScreen {
         breakCooldownTicks = settings.getNonPlayerBreakCooldownTicks();
         mobSpawnPercent = settings.getMaxMobSpawnPercent();
         generatorMembers = settings.getMaxGeneratorMembers();
+        caseDropPercent = settings.getCaseDropPercent();
 
         buildView();
     }
@@ -134,6 +137,18 @@ public class GuiMiscSettings extends GuiScreen {
                 .gap(4);
         generatorMembersControls.add(generatorMembersStepper);
 
+        RowElement caseDropPercentControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
+        caseDropPercentControls.label(I18n.format("gui.oneblockultima.misc.case_drop_percent"));
+        caseDropPercentStepper = new DoubleStepperElement()
+                .value(caseDropPercent)
+                .min(0.0)
+                .max(100.0)
+                .step(1.0)
+                .decimals(0)
+                .fieldWidth(50)
+                .gap(4);
+        caseDropPercentControls.add(caseDropPercentStepper);
+
         RowElement btnRow = factory.row(Alignment.CENTER).gap(4);
         btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
         btnRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
@@ -157,6 +172,7 @@ public class GuiMiscSettings extends GuiScreen {
             settings.setNonPlayerBreakCooldownTicks(breakCooldownStepper.getValue());
             settings.setMaxMobSpawnPercent(mobSpawnPercentStepper.getValue());
             settings.setMaxGeneratorMembers(generatorMembersStepper.getValue());
+            settings.setCaseDropPercent(caseDropPercentStepper.getValue());
             BlockSetConfig.invalidateComputedLevels();
             mc.displayGuiScreen(parent);
             return;
@@ -176,12 +192,14 @@ public class GuiMiscSettings extends GuiScreen {
             breakCooldownTicks = 20;
             mobSpawnPercent = 10;
             generatorMembers = 0;
+            caseDropPercent = 1.0;
             if (mobWorldGenerationToggle != null) mobWorldGenerationToggle.stateTriggered(false);
             if (debugModeToggle != null) debugModeToggle.stateTriggered(false);
             if (inviteDurationStepper != null) inviteDurationStepper.setValue(inviteDurationTicks);
             if (breakCooldownStepper != null) breakCooldownStepper.setValue(breakCooldownTicks);
             if (mobSpawnPercentStepper != null) mobSpawnPercentStepper.setValue(mobSpawnPercent);
             if (generatorMembersStepper != null) generatorMembersStepper.setValue(generatorMembers);
+            if (caseDropPercentStepper != null) caseDropPercentStepper.setValue(caseDropPercent);
         }
     }
 

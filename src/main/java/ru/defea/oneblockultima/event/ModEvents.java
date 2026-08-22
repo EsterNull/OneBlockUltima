@@ -45,6 +45,7 @@ import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.update.UpdateChecker;
 import ru.defea.oneblockultima.util.BlockUtil;
+import ru.defea.oneblockultima.util.CaseUtil;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
 import ru.defea.oneblockultima.world.OneBlockWorldType;
 import ru.defea.oneblockultima.world.SpawnConfigData;
@@ -1087,6 +1088,20 @@ public final class ModEvents
 
         // Clear all drops
         event.getDrops().clear();
+
+        // Case block: always drops a case item
+        if (event.getState().getBlock() == ModBlocks.CASE_BLOCK && mobSpawnEntry.setId != null)
+        {
+            BlockSetConfig.BlockSetDefinition set = BlockSetConfig.get().getSet(mobSpawnEntry.setId);
+            if (set != null && set.hasCaseEntries())
+            {
+                ItemStack caseStack = CaseUtil.createCaseItem(world, set);
+                if (!caseStack.isEmpty())
+                {
+                    drops.add(caseStack);
+                }
+            }
+        }
 
         // Check for obuGenerated - any block from GeneratedBlockRegistry counts as generated
 

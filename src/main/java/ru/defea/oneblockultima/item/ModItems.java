@@ -73,6 +73,7 @@ public final class ModItems
     public static final ItemCompressedMineral COMPRESSED_MINERAL = new ItemCompressedMineral();
     public static final ItemFarStar FAR_STAR = new ItemFarStar();
     public static final ItemGuideBook GUIDE_BOOK = new ItemGuideBook();
+    public static final ItemCase CASE = new ItemCase();
 
     public static final ItemAdvancementIcon ADV_ICON_BRIAN_FRY = new ItemAdvancementIcon("adv_icon_brian_fry");
     public static final ItemAdvancementIcon ADV_ICON_ROYAL_TASTER = new ItemAdvancementIcon("adv_icon_royal_taster");
@@ -96,6 +97,7 @@ public final class ModItems
             new RegisterItem(COMPRESSED_MINERAL),
             new RegisterItem(FAR_STAR),
             new RegisterItem(GUIDE_BOOK),
+            new RegisterItem(CASE),
             new RegisterItem(ADV_ICON_BRIAN_FRY),
             new RegisterItem(ADV_ICON_ROYAL_TASTER),
             new RegisterItem(ADV_ICON_TASTE_DEATH)

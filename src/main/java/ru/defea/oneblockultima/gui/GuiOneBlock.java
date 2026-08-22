@@ -30,6 +30,7 @@ import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
 import ru.defea.oneblockultima.gui.layout.Alignment;
@@ -46,8 +47,10 @@ import ru.defea.oneblockultima.gui.layout.TabBarElement;
 import ru.defea.oneblockultima.gui.layout.TextureElement;
 import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.gui.layout.ViewSwitcherElement;
+import ru.defea.oneblockultima.item.ModItems;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.util.BlockUtil;
+import ru.defea.oneblockultima.util.ModelUtil;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -133,13 +136,19 @@ public class GuiOneBlock extends GuiContainer
     private final boolean[] scrollbarActive = new boolean[4];
     private boolean donateJustCopied = false;
 
+    private double activeCaseScaleFactor = 1.0D;
+
     private BlockSetConfig.BlockEntryDefinition hoveredEntryLeft = null;
     private ItemStack hoveredStackLeft = ItemStack.EMPTY;
+    private boolean hoveredCaseLeft = false;
+    private int caseDropPercentDisplayLeft = 0;
     private BlockSetConfig.MobEntryDefinition hoveredMobEntryLeft = null;
     private String hoveredMobNameLeft = null;
 
     private BlockSetConfig.BlockEntryDefinition hoveredEntryRight = null;
     private ItemStack hoveredStackRight = ItemStack.EMPTY;
+    private boolean hoveredCaseRight = false;
+    private int caseDropPercentDisplayRight = 0;
     private BlockSetConfig.MobEntryDefinition hoveredMobEntryRight = null;
     private String hoveredMobNameRight = null;
 
@@ -150,7 +159,10 @@ public class GuiOneBlock extends GuiContainer
     private String clientActiveSetId = null;
 
     private final List<BlockSetConfig.BlockEntryDefinition> backgroundBlocks = new ArrayList<>();
+    private final List<BlockSetConfig.BlockEntryDefinition> backgroundFullBlocks = new ArrayList<>();
     private final Map<BlockSetConfig.BlockEntryDefinition, TextureAtlasSprite> backgroundSpriteCache = new HashMap<>();
+    private final Map<BlockSetConfig.BlockEntryDefinition, Integer> backgroundTintCache = new HashMap<>();
+    private TextureAtlasSprite dirtSpriteCache = null;
     private final Map<BlockSetConfig.MobEntryDefinition, Entity> mobEntityCache = new HashMap<>();
 
     private ViewFactory factory;
@@ -591,14 +603,27 @@ public class GuiOneBlock extends GuiContainer
 
         int rightPanelX = x + panelWidth + panelGap;
 
+        double caseDropPercent = 0.0D;
+        if (set.hasCaseEntries())
+        {
+            caseDropPercent = ModSettings.get().getCaseDropPercent();
+            if (caseDropPercent < 0.0D) caseDropPercent = 0.0D;
+            if (caseDropPercent > 100.0D) caseDropPercent = 100.0D;
+        }
+        final double caseScaleFactor = (100.0D - caseDropPercent) / 100.0D;
+        final boolean showCaseEntry = caseDropPercent > 0.0D;
+        final int caseDropPercentDisplay = (int) Math.round(caseDropPercent);
+
+        activeCaseScaleFactor = caseScaleFactor;
+
         if (canShowCurrent)
         {
             BlockSetConfig.SetLevelDefinition currentDef = set.getLevelClamped(currentLevel);
-            renderLevelPanel(currentDef, x, y, true, mouseX, mouseY);
+            renderLevelPanel(currentDef, x, y, true, mouseX, mouseY, showCaseEntry, caseDropPercentDisplay, caseScaleFactor);
         }
         int rightStartX = canShowCurrent ? rightPanelX : x;
         BlockSetConfig.SetLevelDefinition nextDef = set.getLevelClamped(currentLevel <= 0 ? 1 : currentLevel + 1);
-        renderLevelPanel(nextDef, rightStartX, y, false, mouseX, mouseY);
+        renderLevelPanel(nextDef, rightStartX, y, false, mouseX, mouseY, showCaseEntry, caseDropPercentDisplay, caseScaleFactor);
 
         if (canShowCurrent && nextDef != null)
         {
@@ -633,7 +658,9 @@ public class GuiOneBlock extends GuiContainer
     private void initBackgroundBlocks()
     {
         backgroundBlocks.clear();
+        backgroundFullBlocks.clear();
         backgroundSpriteCache.clear();
+        backgroundTintCache.clear();
         mobEntityCache.clear();
 
         BlockSetConfig.BlockSetDefinition currentSet = getBlockSetDefinition();
@@ -653,10 +680,14 @@ public class GuiOneBlock extends GuiContainer
 
                         net.minecraft.block.Block mcBlock = block.resolveBlock();
                         if (mcBlock == null) continue;
-
-                        if (!isFullBlock(mcBlock, block.meta)) continue;
+                        if (mcBlock.getDefaultState().getMaterial().isLiquid()) continue;
+                        if (mcBlock instanceof net.minecraftforge.fluids.IFluidBlock) continue;
 
                         backgroundBlocks.add(block);
+                        if (isFullBlock(mcBlock, block.meta))
+                        {
+                            backgroundFullBlocks.add(block);
+                        }
                     }
                 }
             }
@@ -666,6 +697,11 @@ public class GuiOneBlock extends GuiContainer
         {
             OneBlockUltima.getLogger().warn("No blocks found for background, adding defaults");
             addDefaultBackgroundBlocks();
+        }
+
+        if (backgroundFullBlocks.isEmpty())
+        {
+            addBlockIfFull("minecraft:dirt", 0);
         }
     }
 
@@ -692,7 +728,9 @@ public class GuiOneBlock extends GuiContainer
             net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
             if (block != null && isFullBlock(block, meta))
             {
-                backgroundBlocks.add(createBlockEntry(registry, meta));
+                BlockSetConfig.BlockEntryDefinition entry = createBlockEntry(registry, meta);
+                backgroundBlocks.add(entry);
+                backgroundFullBlocks.add(entry);
             }
         }
         catch (Exception ignored) {}
@@ -733,7 +771,7 @@ public class GuiOneBlock extends GuiContainer
 
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
-        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        buf.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
 
         try
         {
@@ -747,41 +785,33 @@ public class GuiOneBlock extends GuiContainer
                     BlockSetConfig.BlockEntryDefinition entry = backgroundBlocks.get(blockIndex);
                     if (entry == null) continue;
 
-                    TextureAtlasSprite sprite = resolveBackgroundSprite(entry);
-                    if (sprite == null) continue;
-
                     int x = startX + col * texSize;
                     int y = startY + row * texSize;
 
-                    int drawX = Math.max(startX, x);
-                    int drawY = Math.max(startY, y);
-                    int drawX2 = Math.min(startX + width, x + texSize);
-                    int drawY2 = Math.min(startY + height, y + texSize);
+                    boolean partial = !isFullBlock(entry.resolveBlock(), entry.meta);
+                    if (partial)
+                    {
+                        TextureAtlasSprite backdrop = resolveBackgroundBackdropSprite(row, col);
+                        if (backdrop != null)
+                        {
+                            drawBackgroundCellQuad(buf, backdrop, x, y, texSize, startX, startY, width, height, 255, 255, 255);
+                        }
+                    }
 
-                    if (drawX >= drawX2 || drawY >= drawY2) continue;
+                    TextureAtlasSprite sprite = resolveBackgroundSprite(entry);
+                    if (sprite == null) continue;
 
-                    float u1 = (drawX - x) / (float)texSize;
-                    float v1 = (drawY - y) / (float)texSize;
-                    float u2 = (drawX2 - x) / (float)texSize;
-                    float v2 = (drawY2 - y) / (float)texSize;
+                    Integer tintBoxed = backgroundTintCache.get(entry);
+                    if (tintBoxed == null)
+                    {
+                        int argb = ModelUtil.getBlockSpriteTint(resolveBackgroundState(entry), sprite);
+                        backgroundTintCache.put(entry, argb);
+                        tintBoxed = argb;
+                    }
+                    int tint = tintBoxed;
 
-                    float minU = sprite.getMinU();
-                    float maxU = sprite.getMaxU();
-                    float minV = sprite.getMinV();
-                    float maxV = sprite.getMaxV();
-
-                    float uMin = minU + (maxU - minU) * u1;
-                    float uMax = minU + (maxU - minU) * u2;
-                    float vMin = minV + (maxV - minV) * v1;
-                    float vMax = minV + (maxV - minV) * v2;
-
-                    int quadWidth = drawX2 - drawX;
-                    int quadHeight = drawY2 - drawY;
-
-                    buf.pos(drawX, drawY + quadHeight, 0.0D).tex(uMin, vMax).endVertex();
-                    buf.pos(drawX + quadWidth, drawY + quadHeight, 0.0D).tex(uMax, vMax).endVertex();
-                    buf.pos(drawX + quadWidth, drawY, 0.0D).tex(uMax, vMin).endVertex();
-                    buf.pos(drawX, drawY, 0.0D).tex(uMin, vMin).endVertex();
+                    drawBackgroundCellQuad(buf, sprite, x, y, texSize, startX, startY, width, height,
+                            (tint >> 16) & 0xFF, (tint >> 8) & 0xFF, tint & 0xFF);
                 }
             }
 
@@ -792,6 +822,92 @@ public class GuiOneBlock extends GuiContainer
         GlStateManager.disableBlend();
         GlStateManager.disableAlpha();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
+    private TextureAtlasSprite resolveBackgroundBackdropSprite(int row, int col)
+    {
+        if (!backgroundFullBlocks.isEmpty())
+        {
+            int idx = ((row + col) * 5 + col * 11) % backgroundFullBlocks.size();
+            if (idx < 0) idx += backgroundFullBlocks.size();
+            return resolveBackgroundSprite(backgroundFullBlocks.get(idx));
+        }
+        return resolveDirtSprite();
+    }
+
+    private TextureAtlasSprite resolveDirtSprite()
+    {
+        if (dirtSpriteCache != null)
+        {
+            return dirtSpriteCache;
+        }
+        try
+        {
+            net.minecraft.block.Block dirt = ForgeRegistries.BLOCKS.getValue(new ResourceLocation("minecraft:dirt"));
+            if (dirt != null)
+            {
+                dirtSpriteCache = Minecraft.getMinecraft().getBlockRendererDispatcher()
+                        .getBlockModelShapes().getTexture(dirt.getDefaultState());
+            }
+        }
+        catch (Exception ignored) {}
+        return dirtSpriteCache;
+    }
+
+private void drawBackgroundCellQuad(BufferBuilder buf, TextureAtlasSprite sprite,
+            int x, int y, int texSize, int startX, int startY, int width, int height,
+            int cr, int cg, int cb)
+    {
+        int drawX = Math.max(startX, x);
+        int drawY = Math.max(startY, y);
+        int drawX2 = Math.min(startX + width, x + texSize);
+        int drawY2 = Math.min(startY + height, y + texSize);
+
+        if (drawX >= drawX2 || drawY >= drawY2) return;
+
+        float u1 = (drawX - x) / (float)texSize;
+        float v1 = (drawY - y) / (float)texSize;
+        float u2 = (drawX2 - x) / (float)texSize;
+        float v2 = (drawY2 - y) / (float)texSize;
+
+        float minU = sprite.getMinU();
+        float maxU = sprite.getMaxU();
+        float minV = sprite.getMinV();
+        float maxV = sprite.getMaxV();
+
+        float uMin = minU + (maxU - minU) * u1;
+        float uMax = minU + (maxU - minU) * u2;
+        float vMin = minV + (maxV - minV) * v1;
+        float vMax = minV + (maxV - minV) * v2;
+
+        int quadWidth = drawX2 - drawX;
+        int quadHeight = drawY2 - drawY;
+
+        buf.pos(drawX, drawY + quadHeight, 0.0D).tex(uMin, vMax).color(cr, cg, cb, 255).endVertex();
+        buf.pos(drawX + quadWidth, drawY + quadHeight, 0.0D).tex(uMax, vMax).color(cr, cg, cb, 255).endVertex();
+        buf.pos(drawX + quadWidth, drawY, 0.0D).tex(uMax, vMin).color(cr, cg, cb, 255).endVertex();
+        buf.pos(drawX, drawY, 0.0D).tex(uMin, vMin).color(cr, cg, cb, 255).endVertex();
+    }
+
+    private net.minecraft.block.state.IBlockState resolveBackgroundState(BlockSetConfig.BlockEntryDefinition entry)
+    {
+        try
+        {
+            net.minecraft.block.Block block = entry.resolveBlock();
+            if (block == null) return null;
+            try
+            {
+                return block.getStateFromMeta(entry.meta);
+            }
+            catch (Exception ex)
+            {
+                return block.getDefaultState();
+            }
+        }
+        catch (Exception ignored)
+        {
+            return null;
+        }
     }
 
     private TextureAtlasSprite resolveBackgroundSprite(BlockSetConfig.BlockEntryDefinition entry)
@@ -946,7 +1062,8 @@ public class GuiOneBlock extends GuiContainer
         return Math.max(0, getPanelHeight() - getRowInterval() * 2);
     }
 
-    private void renderLevelPanel(BlockSetConfig.SetLevelDefinition levelDefinition, int panelX, int panelY, boolean isLeft, int mouseX, int mouseY)
+    private void renderLevelPanel(BlockSetConfig.SetLevelDefinition levelDefinition, int panelX, int panelY, boolean isLeft, int mouseX, int mouseY,
+                                  boolean showCaseEntry, int caseDropPercentDisplay, double caseScaleFactor)
     {
         if (levelDefinition == null) return;
 
@@ -964,9 +1081,9 @@ public class GuiOneBlock extends GuiContainer
         fontRenderer.drawString(I18n.format("gui.oneblockultima.possible_blocks") + ": ",
                 panelX + INNER_PADDING, panelY + getRowInterval(), LIGHT_BLUE_GRAY_COLOR);
 
-        if (levelDefinition.blocks != null && !levelDefinition.blocks.isEmpty())
+        if (levelDefinition.blocks != null && (!levelDefinition.blocks.isEmpty() || showCaseEntry))
         {
-            int total = levelDefinition.blocks.size();
+            int total = levelDefinition.blocks.size() + (showCaseEntry ? 1 : 0);
             int rows = (total + blockCols - 1) / blockCols;
 
             int visibleRows = Math.min(rows, Math.max(1, areaHeight / (cellSize + cellPadding)));
@@ -991,9 +1108,6 @@ public class GuiOneBlock extends GuiContainer
                     int index = realRow * blockCols + col;
                     if (index >= total) break;
 
-                    BlockSetConfig.BlockEntryDefinition entry = levelDefinition.blocks.get(index);
-                    if (entry == null) continue;
-
                     int cellX = panelX + INNER_PADDING + col * (cellSize + cellPadding);
                     int cellY = gridStartY + row * (cellSize + cellPadding);
 
@@ -1001,11 +1115,21 @@ public class GuiOneBlock extends GuiContainer
                         continue;
                     }
 
-                    boolean isHovered = false;
-                    if (mouseX >= cellX && mouseX < cellX + cellSize &&
-                            mouseY >= cellY && mouseY < cellY + cellSize)
+                    boolean isHovered = mouseX >= cellX && mouseX < cellX + cellSize &&
+                            mouseY >= cellY && mouseY < cellY + cellSize;
+
+                    if (showCaseEntry && levelDefinition.blocks != null && index == levelDefinition.blocks.size())
                     {
-                        isHovered = true;
+                        renderCaseCell(cellX, cellY, isLeft, isHovered, caseDropPercentDisplay);
+                        continue;
+                    }
+
+                    assert levelDefinition.blocks != null;
+                    BlockSetConfig.BlockEntryDefinition entry = levelDefinition.blocks.get(index);
+                    if (entry == null) continue;
+
+                    if (isHovered)
+                    {
                         hoveredEntry = entry;
                     }
 
@@ -1097,12 +1221,13 @@ public class GuiOneBlock extends GuiContainer
                     }
 
                     int chance = entry.getChance();
-                    String percent = chance + "%";
+                    int displayChance = showCaseEntry ? (int) Math.round(chance * caseScaleFactor) : chance;
+                    String percent = displayChance + "%";
                     int percentWidth = fontRenderer.getStringWidth(percent);
                     int percentX = cellX + (cellSize - percentWidth) / 2;
                     int percentY = cellY + cellSize - fontRenderer.FONT_HEIGHT - 1;
                     GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-                    int color = chance < 10 ? RED_COLOR : chance < 20 ? ORANGE_COLOR : GREEN_COLOR;
+                    int color = displayChance < 10 ? RED_COLOR : displayChance < 20 ? ORANGE_COLOR : GREEN_COLOR;
                     fontRenderer.drawStringWithShadow(percent, percentX, percentY, color);
 
                     if (isHovered && hoveredEntry != null)
@@ -1233,6 +1358,57 @@ public class GuiOneBlock extends GuiContainer
                 {
                     scrollbarActive[mobScrollbarSlot] = false;
                 }
+            }
+        }
+    }
+
+    private void renderCaseCell(int cellX, int cellY, boolean isLeft, boolean isHovered, int caseDropPercentDisplay)
+    {
+        ItemStack caseStack = new ItemStack(ModItems.CASE);
+
+        int bgColor = isHovered ? DARK_BLUE_GRAY_COLOR_1 : DARK_GRAY_COLOR_2;
+        int borderColor = isHovered ? WHITE_COLOR_1 : DARK_GRAY_COLOR_1;
+
+        drawRect(cellX, cellY, cellX + cellSize, cellY + cellSize, bgColor);
+        drawRect(cellX, cellY, cellX + cellSize, cellY + 1, borderColor);
+        drawRect(cellX, cellY + cellSize - 1, cellX + cellSize, cellY + cellSize, borderColor);
+        drawRect(cellX, cellY, cellX + 1, cellY + cellSize, borderColor);
+        drawRect(cellX + cellSize - 1, cellY, cellX + cellSize, cellY + cellSize, borderColor);
+
+        if (!caseStack.isEmpty())
+        {
+            RenderHelper.enableGUIStandardItemLighting();
+            GlStateManager.enableDepth();
+
+            int iconX = cellX + (cellSize - 16) / 2;
+            int iconY = cellY + (cellSize - 16) / 2;
+
+            RenderItem renderItem = Minecraft.getMinecraft().getRenderItem();
+            renderItem.renderItemAndEffectIntoGUI(caseStack, iconX, iconY);
+
+            GlStateManager.disableDepth();
+            RenderHelper.disableStandardItemLighting();
+        }
+
+        String percent = caseDropPercentDisplay + "%";
+        int percentWidth = fontRenderer.getStringWidth(percent);
+        int percentX = cellX + (cellSize - percentWidth) / 2;
+        int percentY = cellY + cellSize - fontRenderer.FONT_HEIGHT - 1;
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        int color = caseDropPercentDisplay < 10 ? RED_COLOR : caseDropPercentDisplay < 20 ? ORANGE_COLOR : GREEN_COLOR;
+        fontRenderer.drawStringWithShadow(percent, percentX, percentY, color);
+
+        if (isHovered)
+        {
+            if (isLeft)
+            {
+                hoveredCaseLeft = true;
+                caseDropPercentDisplayLeft = caseDropPercentDisplay;
+            }
+            else
+            {
+                hoveredCaseRight = true;
+                caseDropPercentDisplayRight = caseDropPercentDisplay;
             }
         }
     }
@@ -1441,21 +1617,31 @@ public class GuiOneBlock extends GuiContainer
             return;
         }
 
-        if (hoveredEntryLeft == null && hoveredStackLeft.isEmpty() && hoveredMobEntryLeft == null &&
-                hoveredEntryRight == null && hoveredStackRight.isEmpty() && hoveredMobEntryRight == null) {
+        if (hoveredEntryLeft == null && hoveredStackLeft.isEmpty() && !hoveredCaseLeft && hoveredMobEntryLeft == null &&
+                hoveredEntryRight == null && hoveredStackRight.isEmpty() && !hoveredCaseRight && hoveredMobEntryRight == null) {
             return;
         }
 
-        if (!hoveredStackLeft.isEmpty())
+        if (hoveredCaseLeft)
+        {
+            ItemStack caseStack = new ItemStack(ModItems.CASE);
+            List<String> tooltip = caseStack.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + caseDropPercentDisplayLeft + "%");
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+        }
+        else if (!hoveredStackLeft.isEmpty())
         {
             List<String> tooltip = hoveredStackLeft.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + (hoveredEntryLeft != null ? hoveredEntryLeft.getChance() : 0) + "%");
+            int leftChance = hoveredEntryLeft != null ? hoveredEntryLeft.getChance() : 0;
+            int leftDisplayChance = hoveredEntryLeft != null ? (int) Math.round(leftChance * activeCaseScaleFactor) : leftChance;
+            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + leftDisplayChance + "%");
             drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
         }
         else if (hoveredEntryLeft != null && hoveredEntryLeft.isFluid())
         {
             List<String> tooltip = BlockUtil.getTooltip(hoveredEntryLeft, mc.gameSettings.advancedItemTooltips);
-            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + hoveredEntryLeft.getChance() + "%");
+            int leftFluidDisplayChance = (int) Math.round(hoveredEntryLeft.getChance() * activeCaseScaleFactor);
+            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + leftFluidDisplayChance + "%");
             drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
         }
         else if (hoveredMobEntryLeft != null)
@@ -1495,13 +1681,23 @@ public class GuiOneBlock extends GuiContainer
         else if (!hoveredStackRight.isEmpty())
         {
             List<String> tooltip = hoveredStackRight.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + (hoveredEntryRight != null ? hoveredEntryRight.getChance() : 0) + "%");
+            int rightChance = hoveredEntryRight != null ? hoveredEntryRight.getChance() : 0;
+            int rightDisplayChance = hoveredEntryRight != null ? (int) Math.round(rightChance * activeCaseScaleFactor) : rightChance;
+            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + rightDisplayChance + "%");
+            drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
+        }
+        else if (hoveredCaseRight)
+        {
+            ItemStack caseStack = new ItemStack(ModItems.CASE);
+            List<String> tooltip = caseStack.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + caseDropPercentDisplayRight + "%");
             drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
         }
         else if (hoveredEntryRight != null && hoveredEntryRight.isFluid())
         {
             List<String> tooltip = BlockUtil.getTooltip(hoveredEntryRight, mc.gameSettings.advancedItemTooltips);
-            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + hoveredEntryRight.getChance() + "%");
+            int rightFluidDisplayChance = (int) Math.round(hoveredEntryRight.getChance() * activeCaseScaleFactor);
+            tooltip.add(I18n.format("gui.oneblockultima.chance") + ": " + rightFluidDisplayChance + "%");
             drawHoveringText(tooltip, mouseX - guiLeft, mouseY - guiTop, fontRenderer);
         }
         else if (hoveredMobEntryRight != null)
@@ -1754,12 +1950,14 @@ public class GuiOneBlock extends GuiContainer
     {
         if (set == null) return 0;
         BlockSetConfig.SetLevelDefinition levelDef = set.getLevelClamped(level);
-        if (levelDef == null || levelDef.blocks == null || levelDef.blocks.isEmpty()) return 0;
+        if (levelDef == null || levelDef.blocks == null) return 0;
 
         calculateColumns(getPanelWidth());
         int areaHeight = getAreaHeight();
 
-        int total = levelDef.blocks.size();
+        boolean showCaseEntry = set.hasCaseEntries() && ModSettings.get().getCaseDropPercent() > 0.0D;
+        int total = levelDef.blocks.size() + (showCaseEntry ? 1 : 0);
+        if (total <= 0) return 0;
         int rows = (total + blockCols - 1) / blockCols;
         int visibleRows = Math.min(rows, Math.max(1, areaHeight / (cellSize + cellPadding)));
 
@@ -2062,10 +2260,14 @@ public class GuiOneBlock extends GuiContainer
     {
         hoveredEntryLeft = null;
         hoveredStackLeft = ItemStack.EMPTY;
+        hoveredCaseLeft = false;
+        caseDropPercentDisplayLeft = 0;
         hoveredMobEntryLeft = null;
         hoveredMobNameLeft = null;
         hoveredEntryRight = null;
         hoveredStackRight = ItemStack.EMPTY;
+        hoveredCaseRight = false;
+        caseDropPercentDisplayRight = 0;
         hoveredMobEntryRight = null;
         hoveredMobNameRight = null;
     }

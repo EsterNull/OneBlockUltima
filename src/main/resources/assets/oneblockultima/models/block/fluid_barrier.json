@@ -1,0 +1,6 @@
+{
+  "parent": "builtin/generated",
+  "textures": {
+    "layer0": "oneblockultima:blocks/one_block_generator_texture"
+  }
+}

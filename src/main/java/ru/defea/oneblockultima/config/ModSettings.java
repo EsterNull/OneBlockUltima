@@ -53,6 +53,8 @@ public final class ModSettings
     private int nonPlayerBreakCooldownTicks = 20;
     private int maxMobSpawnPercent = 10;
     private int maxGeneratorMembers = 0;
+    private double caseDropPercent = 5.0;
+    private boolean isShowInfoPanel = true;
 
     public static ModSettings get()
     {
@@ -81,6 +83,8 @@ public final class ModSettings
     public int getNonPlayerBreakCooldownTicks() { return nonPlayerBreakCooldownTicks; }
     public int getMaxMobSpawnPercent() { return maxMobSpawnPercent; }
     public int getMaxGeneratorMembers() { return maxGeneratorMembers; }
+    public double getCaseDropPercent() { return caseDropPercent; }
+    public boolean isNotShowInfoPanel() { return !isShowInfoPanel; }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { setHOffset(balancePosition, offset); }
@@ -105,6 +109,8 @@ public final class ModSettings
     public void setNonPlayerBreakCooldownTicks(int nonPlayerBreakCooldownTicks) { this.nonPlayerBreakCooldownTicks = nonPlayerBreakCooldownTicks; save(); }
     public void setMaxMobSpawnPercent(int maxMobSpawnPercent) { this.maxMobSpawnPercent = maxMobSpawnPercent; save(); }
     public void setMaxGeneratorMembers(int maxGeneratorMembers) { this.maxGeneratorMembers = maxGeneratorMembers; save(); }
+    public void setCaseDropPercent(double caseDropPercent) { this.caseDropPercent = caseDropPercent; save(); }
+    public void setShowInfoPanel(boolean showInfoPanel) { this.isShowInfoPanel = showInfoPanel; save(); }
 
     private static File getFile()
     {

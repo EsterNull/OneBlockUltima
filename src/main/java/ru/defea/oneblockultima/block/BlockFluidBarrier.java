@@ -7,6 +7,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
@@ -18,6 +19,7 @@ import ru.defea.oneblockultima.OneBlockUltima;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Random;
 
 public class BlockFluidBarrier extends Block
 {
@@ -121,5 +123,24 @@ public class BlockFluidBarrier extends Block
         // ItemFlintAndSteel requires world.isAirBlock for the slot. Liquids are still
         // blocked by the GROUND material (Material#blocksMovement).
         return true;
+    }
+
+    @Override
+    public void randomDisplayTick(@Nonnull IBlockState stateIn, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Random rand)
+    {
+        if (rand.nextInt(3) == 0)
+        {
+            double x = pos.getX() + 0.2D + 0.6D * rand.nextDouble();
+            double y = pos.getY() + 0.2D + 0.6D * rand.nextDouble();
+            double z = pos.getZ() + 0.2D + 0.6D * rand.nextDouble();
+            double vx = (rand.nextDouble() - 0.5D) * 0.15D;
+            double vy = 0.05D + 0.1D * rand.nextDouble();
+            double vz = (rand.nextDouble() - 0.5D) * 0.15D;
+            worldIn.spawnParticle(
+                    EnumParticleTypes.PORTAL,
+                    x, y, z,
+                    vx, vy, vz
+            );
+        }
     }
 }
