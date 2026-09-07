@@ -1,12 +1,10 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.item.Item;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.world.item.Item;
+import ru.defea.oneblockultima.ModTab;
 
 public class ItemHiggsBoson extends Item {
     public ItemHiggsBoson() {
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("higgs_boson");
-        this.setUnlocalizedName("higgs_boson");
+        super(new Item.Properties());
     }
 }

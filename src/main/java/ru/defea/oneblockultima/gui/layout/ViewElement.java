@@ -1,7 +1,9 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -19,11 +21,15 @@ public abstract class ViewElement<T extends ViewElement<T>> {
     protected int heightPercent = -1;
     protected boolean stretchToContent = false;
 
-    public abstract void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory);
+    public abstract void createWidgets(Screen screen, Font font, ViewFactory factory);
 
-    public abstract void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks);
+    public abstract void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks);
 
-    public boolean actionPerformed(GuiButton button) {
+    public AbstractWidget getWidget() {
+        return null;
+    }
+
+    public boolean actionPerformed(AbstractWidget button) {
         return false;
     }
 
@@ -67,11 +73,11 @@ public abstract class ViewElement<T extends ViewElement<T>> {
 
     public abstract int getPreferredHeight();
 
-    public int getPreferredWidth(FontRenderer fr) {
+    public int getPreferredWidth(Font font) {
         return getPreferredWidth();
     }
 
-    public int getPreferredHeight(FontRenderer fr) {
+    public int getPreferredHeight(Font font) {
         return getPreferredHeight();
     }
 

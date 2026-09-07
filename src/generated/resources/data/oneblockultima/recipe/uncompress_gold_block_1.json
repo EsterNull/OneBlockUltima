@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_0"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "minecraft:gold_block"
+  }
+}

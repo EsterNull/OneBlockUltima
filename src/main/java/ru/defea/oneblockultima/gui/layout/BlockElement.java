@@ -1,36 +1,38 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import ru.defea.oneblockultima.util.ModelUtil;
 
 import java.util.List;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class BlockElement extends ViewElement<BlockElement> {
-    private IBlockState blockState;
+    private BlockState blockState;
     private int size = 16;
 
-    public BlockElement(IBlockState state) {
+    public BlockElement(BlockState state) {
         this.blockState = state;
     }
 
     public static BlockElement fromRegistry(String registry) {
-        ResourceLocation rl = new ResourceLocation(registry);
-        net.minecraft.block.Block block = ForgeRegistries.BLOCKS.getValue(rl);
-        if (block == null) return null;
-        return new BlockElement(block.getDefaultState());
+        ResourceLocation rl = ResourceLocation.parse(registry);
+        Block block = BuiltInRegistries.BLOCK.get(rl);
+        if (block == null || block == net.minecraft.world.level.block.Blocks.AIR) return null;
+        return new BlockElement(block.defaultBlockState());
     }
 
-    public static BlockElement fromItemStack(net.minecraft.item.ItemStack stack) {
+    public static BlockElement fromItemStack(ItemStack stack) {
         if (stack.isEmpty()) return null;
-        net.minecraft.block.Block block = net.minecraft.block.Block.getBlockFromItem(stack.getItem());
-        if (block == Blocks.AIR) return null;
-        return new BlockElement(block.getStateFromMeta(stack.getMetadata()));
+        Block block = Block.byItem(stack.getItem());
+        if (block == net.minecraft.world.level.block.Blocks.AIR) return null;
+        return new BlockElement(block.defaultBlockState());
     }
 
     public BlockElement size(int size) {
@@ -38,19 +40,19 @@ public class BlockElement extends ViewElement<BlockElement> {
         return this;
     }
 
-    public BlockElement state(IBlockState state) {
+    public BlockElement state(BlockState state) {
         this.blockState = state;
         return this;
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (blockState == null) return;
-        ModelUtil.renderBlockModelToGUI(blockState, computedX, computedY, size);
+        ModelUtil.renderBlockModelToGUI(g, blockState, computedX, computedY, size);
     }
 
     @Override

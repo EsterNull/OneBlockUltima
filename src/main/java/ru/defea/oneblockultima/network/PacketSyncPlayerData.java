@@ -1,103 +1,114 @@
 package ru.defea.oneblockultima.network;
 
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.event.network.CustomPayloadEvent;
+import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 
-public class PacketSyncPlayerData implements IMessage
+import java.util.function.Supplier;
+
+public class PacketSyncPlayerData implements CustomPacketPayload
 {
-    private NBTTagCompound data;
+    public static final Type<PacketSyncPlayerData> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "sync_player_data"));
+    public static final StreamCodec<FriendlyByteBuf, PacketSyncPlayerData> STREAM_CODEC = StreamCodec.of(
+            (buf, p) -> p.write(buf),
+            PacketSyncPlayerData::new
+    );
+
+    private CompoundTag tag;
 
     public PacketSyncPlayerData()
     {
     }
 
-    public PacketSyncPlayerData(NBTTagCompound data)
+    public PacketSyncPlayerData(CompoundTag tag)
     {
-        this.data = data;
+        this.tag = tag;
+    }
+
+    public PacketSyncPlayerData(FriendlyByteBuf buf)
+    {
+        this.tag = buf.readNbt();
+    }
+
+    public void write(FriendlyByteBuf buf)
+    {
+        buf.writeNbt(tag);
     }
 
     @Override
-    public void fromBytes(ByteBuf buf)
+    public Type<PacketSyncPlayerData> type()
     {
-        data = ByteBufUtils.readTag(buf);
+        return TYPE;
     }
 
-    @Override
-    public void toBytes(ByteBuf buf)
+    public static void sendToPlayer(ServerPlayer player)
     {
-        ByteBufUtils.writeTag(buf, data);
-    }
-
-    public static void sendToPlayer(EntityPlayer player)
-    {
-        ru.defea.oneblockultima.capability.IOneBlockPlayerData playerData = OneBlockPlayerDataProvider.get(player);
-        if (!(playerData instanceof OneBlockPlayerData) || !(player instanceof net.minecraft.entity.player.EntityPlayerMP))
+        IOneBlockPlayerData playerData = OneBlockPlayerDataProvider.get(player);
+        if (!(playerData instanceof OneBlockPlayerData))
         {
             return;
         }
 
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setDouble("currency", playerData.getCurrency());
-        tag.setInteger("brokenBlocksTotal", playerData.getBrokenBlocksCount());
-        NBTTagCompound levels = new NBTTagCompound();
-        for (java.util.Map.Entry<String, Integer> entry : ((OneBlockPlayerData) playerData).getSetLevels().entrySet())
+        OneBlockPlayerData data = (OneBlockPlayerData) playerData;
+        CompoundTag sync = new CompoundTag();
+        sync.putDouble("currency", data.getCurrency());
+        sync.putInt("brokenBlocksTotal", data.getBrokenBlocksCount());
+        CompoundTag levels = new CompoundTag();
+        for (java.util.Map.Entry<String, Integer> entry : data.getSetLevels().entrySet())
         {
-            levels.setInteger(entry.getKey(), entry.getValue());
+            levels.putInt(entry.getKey(), entry.getValue());
         }
-        tag.setTag("setLevels", levels);
-        NBTTagCompound brokenBlocksBySet = new NBTTagCompound();
-        for (java.util.Map.Entry<String, Integer> entry : ((OneBlockPlayerData) playerData).getBrokenBlocksBySet().entrySet())
+        sync.put("setLevels", levels);
+        CompoundTag brokenBlocksBySet = new CompoundTag();
+        for (java.util.Map.Entry<String, Integer> entry : data.getBrokenBlocksBySet().entrySet())
         {
-            brokenBlocksBySet.setInteger(entry.getKey(), entry.getValue());
+            brokenBlocksBySet.putInt(entry.getKey(), entry.getValue());
         }
-        tag.setTag("brokenBlocksBySet", brokenBlocksBySet);
-        ModMessages.sendToPlayer(new PacketSyncPlayerData(tag), (net.minecraft.entity.player.EntityPlayerMP) player);
+        sync.put("brokenBlocksBySet", brokenBlocksBySet);
+        ModMessages.sendToPlayer(new PacketSyncPlayerData(sync), player);
     }
 
-    public static class Handler implements IMessageHandler<PacketSyncPlayerData, IMessage>
+    public void handle(CustomPayloadEvent.Context context)
     {
-        @Override
-        @SideOnly(Side.CLIENT)
-        public IMessage onMessage(PacketSyncPlayerData message, MessageContext ctx)
-        {
-            Minecraft.getMinecraft().addScheduledTask(() -> {
-                EntityPlayer player = Minecraft.getMinecraft().player;
-                if (player == null)
-                {
-                    return;
-                }
+        context.enqueueWork(() -> {
+            Player player = Minecraft.getInstance().player;
+            if (player == null)
+            {
+                return;
+            }
 
-                ru.defea.oneblockultima.capability.IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
-                if (data instanceof OneBlockPlayerData)
+            IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
+            if (data instanceof OneBlockPlayerData)
+            {
+                OneBlockPlayerData playerData = (OneBlockPlayerData) data;
+                OneBlockUltima.getLogger().warn("[OBU-Balance] Client received sync, old={} new={}",
+                        playerData.getCurrency(), tag.getDouble("currency"));
+                playerData.setCurrency(tag.getDouble("currency"));
+                playerData.setBrokenBlocksTotal(tag.getInt("brokenBlocksTotal"));
+                playerData.getSetLevels().clear();
+                CompoundTag levels = tag.getCompound("setLevels");
+                for (String key : levels.getAllKeys())
                 {
-                    OneBlockPlayerData playerData = (OneBlockPlayerData) data;
-                    playerData.setCurrency(message.data.getDouble("currency"));
-                    playerData.setBrokenBlocksTotal(message.data.getInteger("brokenBlocksTotal"));
-                    playerData.getSetLevels().clear();
-                    NBTTagCompound levels = message.data.getCompoundTag("setLevels");
-                    for (String key : levels.getKeySet())
-                    {
-                        playerData.getSetLevels().put(key, levels.getInteger(key));
-                    }
-                    playerData.getBrokenBlocksBySet().clear();
-                    NBTTagCompound brokenBlocksBySet = message.data.getCompoundTag("brokenBlocksBySet");
-                    for (String key : brokenBlocksBySet.getKeySet())
-                    {
-                        playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInteger(key));
-                    }
+                    playerData.getSetLevels().put(key, levels.getInt(key));
                 }
-            });
-            return null;
-        }
+                playerData.getBrokenBlocksBySet().clear();
+                CompoundTag brokenBlocksBySet = tag.getCompound("brokenBlocksBySet");
+                for (String key : brokenBlocksBySet.getAllKeys())
+                {
+                    playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInt(key));
+                }
+            }
+        });
+        context.setPacketHandled(true);
     }
 }

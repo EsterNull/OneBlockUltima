@@ -1,9 +1,9 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.ModSettings;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.lang.reflect.Constructor;
 
@@ -13,7 +13,8 @@ public class ModSettingsTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        // initialises FMLPaths.CONFIGDIR so the save() calls inside the setters work headless
+        TestBootstrap.prepare();
     }
 
     private ModSettings newInstance() throws Exception {

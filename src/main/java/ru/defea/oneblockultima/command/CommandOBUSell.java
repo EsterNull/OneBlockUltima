@@ -1,111 +1,93 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 
-import javax.annotation.Nonnull;
-
 import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
 
-public class CommandOBUSell extends CommandBase
+public final class CommandOBUSell
 {
-    @Override
-    @Nonnull
-    public String getName()
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher)
     {
-        return "obuSell";
+        dispatcher.register(Commands.literal("obuSell")
+                .requires(s -> s.hasPermission(0))
+                .executes(ctx -> {
+                    execute(ctx.getSource());
+                    return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                }));
     }
 
-    @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    private static void execute(CommandSourceStack source)
     {
-        return "/obuSell";
-    }
-
-    @Override
-    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
-    {
-        if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
+        ServerPlayer player = source.getPlayer();
+        if (player == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.only_player").withStyle(ChatFormatting.RED));
             return;
         }
 
         if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.sell_disabled")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.sell_disabled").withStyle(ChatFormatting.RED));
             return;
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) sender.getCommandSenderEntity();
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_generated")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.not_generated").withStyle(ChatFormatting.RED));
             return;
         }
 
-        ItemStack heldItem = player.getHeldItemMainhand();
+        ItemStack heldItem = player.getMainHandItem();
         if (heldItem.isEmpty())
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_generated")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.not_generated").withStyle(ChatFormatting.RED));
             return;
         }
 
         if (!isObuGenerated(heldItem))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_generated")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.not_generated").withStyle(ChatFormatting.RED));
             return;
         }
 
         double price = BlockPriceConfig.get().getPriceFromItemStack(heldItem);
         if (price <= 0)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.not_found").withStyle(ChatFormatting.RED));
             return;
         }
 
         int count = heldItem.getCount();
         double totalValue = price * count;
-        String itemName = heldItem.getDisplayName();
-        player.getHeldItemMainhand().shrink(count);
+        Component itemName = heldItem.getDisplayName();
+        heldItem.shrink(count);
 
         data.addCurrency(totalValue);
         OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
 
-        sender.sendMessage(new TextComponentString(I18n.format("command.obuSell.success", count, itemName, totalValue, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));
+        source.sendSuccess(() -> Component.translatable("command.obuSell.success", count, itemName, totalValue, data.getCurrency())
+                .withStyle(ChatFormatting.GREEN), false);
     }
 
     public static boolean isObuGenerated(ItemStack stack)
     {
         if (stack.isEmpty()) return false;
-        net.minecraft.nbt.NBTTagCompound nbt = stack.getTagCompound();
+        var customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        if (customData == null) return false;
+        net.minecraft.nbt.CompoundTag nbt = customData.getUnsafe();
         if (nbt == null) return false;
-        return nbt.hasKey(NBT_OBU_GENERATED) && nbt.getBoolean(NBT_OBU_GENERATED);
-    }
-
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 0;
-    }
-
-    @Override
-    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender)
-    {
-        return true;
+        return nbt.getBoolean(NBT_OBU_GENERATED);
     }
 }

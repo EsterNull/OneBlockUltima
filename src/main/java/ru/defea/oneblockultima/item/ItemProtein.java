@@ -1,13 +1,11 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.item.ItemFood;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.Item;
+import ru.defea.oneblockultima.ModTab;
 
-public class ItemProtein extends ItemFood {
+public class ItemProtein extends Item {
     public ItemProtein() {
-        super(3, 1F, true);
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("protein");
-        this.setUnlocalizedName("protein");
+        super(new Item.Properties().food(new FoodProperties.Builder().nutrition(3).saturationModifier(1.0F).build()));
     }
 }

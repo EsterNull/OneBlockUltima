@@ -1,11 +1,10 @@
 package ru.defea.oneblockultima.gui.layout;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.item.ItemStack;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 
@@ -29,31 +28,21 @@ public class ItemStackElement extends ViewElement<ItemStackElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (stack == null || stack.isEmpty()) return;
-        Minecraft mc = Minecraft.getMinecraft();
-        GlStateManager.pushMatrix();
-        try
-        {
+        g.pose().pushPose();
+        try {
             float scale = size / 16.0F;
-            GlStateManager.translate(computedX + computedWidth / 2.0F, computedY + computedHeight / 2.0F, 0.0F);
-            GlStateManager.scale(scale, scale, 1.0F);
-            GlStateManager.translate(-8.0F, -8.0F, 0.0F);
-            GlStateManager.enableDepth();
-            GlStateManager.enableRescaleNormal();
-            RenderHelper.enableGUIStandardItemLighting();
-            mc.getRenderItem().renderItemIntoGUI(stack, 0, 0);
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableRescaleNormal();
-            GlStateManager.disableDepth();
-        }
-        finally
-        {
-            GlStateManager.popMatrix();
+            g.pose().translate(computedX + computedWidth / 2.0F, computedY + computedHeight / 2.0F, 0.0F);
+            g.pose().scale(scale, scale, 1.0F);
+            g.pose().translate(-8.0F, -8.0F, 0.0F);
+            g.renderItem(stack, 0, 0);
+        } finally {
+            g.pose().popPose();
         }
     }
 

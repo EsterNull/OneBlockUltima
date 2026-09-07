@@ -1,18 +1,19 @@
 package ru.defea.oneblockultima.world;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldSavedData;
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GeneratedBlockRegistry extends WorldSavedData
+public class GeneratedBlockRegistry extends SavedData
 {
     private static final String DATA_NAME = OneBlockUltima.MODID + "_generated_blocks";
     private static final long DIRTY_FLUSH_INTERVAL_MS = 2000L;
@@ -23,27 +24,24 @@ public class GeneratedBlockRegistry extends WorldSavedData
 
     public GeneratedBlockRegistry()
     {
-        this(DATA_NAME);
     }
 
-    public GeneratedBlockRegistry(String name)
+    public static GeneratedBlockRegistry get(Level world)
     {
-        super(name);
-    }
-
-    public static GeneratedBlockRegistry get(World world)
-    {
-        GeneratedBlockRegistry data = (GeneratedBlockRegistry) world.getPerWorldStorage().getOrLoadData(
-                GeneratedBlockRegistry.class,
-                DATA_NAME
+        if (!(world instanceof ServerLevel serverWorld))
+            return new GeneratedBlockRegistry();
+        SavedData.Factory<GeneratedBlockRegistry> factory = new SavedData.Factory<>(
+                GeneratedBlockRegistry::new,
+                GeneratedBlockRegistry::load,
+                null
         );
+        return serverWorld.getDataStorage().computeIfAbsent(factory, DATA_NAME);
+    }
 
-        if (data == null)
-        {
-            data = new GeneratedBlockRegistry();
-            world.getPerWorldStorage().setData(DATA_NAME, data);
-        }
-
+    public static GeneratedBlockRegistry load(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider provider)
+    {
+        GeneratedBlockRegistry data = new GeneratedBlockRegistry();
+        data.read(nbt);
         return data;
     }
 
@@ -77,10 +75,6 @@ public class GeneratedBlockRegistry extends WorldSavedData
         }
     }
 
-    /**
-     * Throttles write frequency: a heavy NBT dump of the whole registry runs at most once every 2 seconds.
-     * A guaranteed flush on world unload is performed via {@link #flushPendingDirty()}.
-     */
     private void markDirtyThrottled()
     {
         pendingDirty = true;
@@ -89,7 +83,7 @@ public class GeneratedBlockRegistry extends WorldSavedData
         {
             lastDirtyMs = now;
             pendingDirty = false;
-            markDirty();
+            this.setDirty();
         }
     }
 
@@ -98,69 +92,68 @@ public class GeneratedBlockRegistry extends WorldSavedData
         if (pendingDirty)
         {
             pendingDirty = false;
-            markDirty();
+            this.setDirty();
         }
     }
 
-    @Override
-    public void readFromNBT(NBTTagCompound nbt)
+    public void read(CompoundTag nbt)
     {
         entries.clear();
-        NBTTagList list = nbt.getTagList("entries", Constants.NBT.TAG_COMPOUND);
+        ListTag list = nbt.getList("entries", Tag.TAG_COMPOUND);
 
-        for (int i = 0; i < list.tagCount(); i++)
+        for (int i = 0; i < list.size(); i++)
         {
-            NBTTagCompound entryTag = list.getCompoundTagAt(i);
+            CompoundTag entryTag = list.getCompound(i);
             BlockPos pos = new BlockPos(
-                    entryTag.getInteger("x"),
-                    entryTag.getInteger("y"),
-                    entryTag.getInteger("z")
+                    entryTag.getInt("x"),
+                    entryTag.getInt("y"),
+                    entryTag.getInt("z")
             );
             BlockPos generatorPos = new BlockPos(
-                    entryTag.getInteger("gx"),
-                    entryTag.getInteger("gy"),
-                    entryTag.getInteger("gz")
+                    entryTag.getInt("gx"),
+                    entryTag.getInt("gy"),
+                    entryTag.getInt("gz")
             );
             String blockRegistry = entryTag.getString("blockRegistry");
-            int blockMeta = entryTag.getInteger("blockMeta");
+            int blockMeta = entryTag.getInt("blockMeta");
             entries.put(pos, new GeneratedBlockEntry(
                     generatorPos,
                     entryTag.getString("setId"),
-                    entryTag.getInteger("currency"),
-                    entryTag.getInteger("level"),
+                    entryTag.getInt("currency"),
+                    entryTag.getInt("level"),
                     blockRegistry.isEmpty() ? null : blockRegistry,
                     blockMeta
             ));
         }
     }
 
-    @Override
     @Nonnull
-    public NBTTagCompound writeToNBT(@Nonnull NBTTagCompound compound)
+    @Override
+    public CompoundTag save(CompoundTag compound, net.minecraft.core.HolderLookup.Provider provider)
     {
-        NBTTagList list = new NBTTagList();
+        ListTag list = new ListTag();
 
         for (Map.Entry<BlockPos, GeneratedBlockEntry> entry : entries.entrySet())
         {
-            NBTTagCompound entryTag = new NBTTagCompound();
+            CompoundTag entryTag = new CompoundTag();
             BlockPos pos = entry.getKey();
             GeneratedBlockEntry value = entry.getValue();
 
-            entryTag.setInteger("x", pos.getX());
-            entryTag.setInteger("y", pos.getY());
-            entryTag.setInteger("z", pos.getZ());
-            entryTag.setInteger("gx", value.generatorPos.getX());
-            entryTag.setInteger("gy", value.generatorPos.getY());
-            entryTag.setInteger("gz", value.generatorPos.getZ());
-            entryTag.setString("setId", value.setId);
-            entryTag.setInteger("currency", value.currency);
-            entryTag.setInteger("level", value.level);
-            entryTag.setString("blockRegistry", value.blockRegistry == null ? "" : value.blockRegistry);
-            entryTag.setInteger("blockMeta", value.blockMeta);
-            list.appendTag(entryTag);
+            entryTag.putInt("x", pos.getX());
+            entryTag.putInt("y", pos.getY());
+            entryTag.putInt("z", pos.getZ());
+            entryTag.putInt("gx", value.generatorPos.getX());
+            entryTag.putInt("gy", value.generatorPos.getY());
+            entryTag.putInt("gz", value.generatorPos.getZ());
+            entryTag.putString("setId", value.setId);
+            entryTag.putInt("currency", value.currency);
+            entryTag.putInt("level", value.level);
+            entryTag.putString("blockRegistry", value.blockRegistry == null ? "" : value.blockRegistry);
+            entryTag.putInt("blockMeta", value.blockMeta);
+            list.add(entryTag);
         }
 
-        compound.setTag("entries", list);
+        compound.put("entries", list);
         return compound;
     }
 

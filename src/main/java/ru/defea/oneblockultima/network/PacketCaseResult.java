@@ -1,16 +1,24 @@
 package ru.defea.oneblockultima.network;
 
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.event.network.CustomPayloadEvent;
+import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.gui.GuiCaseRoulette;
 
-public class PacketCaseResult implements IMessage
+import java.util.function.Supplier;
+
+public class PacketCaseResult implements CustomPacketPayload
 {
+    public static final Type<PacketCaseResult> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "case_result"));
+    public static final StreamCodec<FriendlyByteBuf, PacketCaseResult> STREAM_CODEC = StreamCodec.of(
+            (buf, p) -> p.write(buf),
+            PacketCaseResult::new
+    );
+
     private int index;
 
     public PacketCaseResult()
@@ -22,26 +30,30 @@ public class PacketCaseResult implements IMessage
         this.index = index;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf)
+    public PacketCaseResult(FriendlyByteBuf buf)
     {
-        index = buf.readInt();
+        this.index = buf.readInt();
     }
 
-    @Override
-    public void toBytes(ByteBuf buf)
+    public void write(FriendlyByteBuf buf)
     {
         buf.writeInt(index);
     }
 
-    public static class Handler implements IMessageHandler<PacketCaseResult, IMessage>
+    @Override
+    public Type<PacketCaseResult> type()
     {
-        @Override
-        @SideOnly(Side.CLIENT)
-        public IMessage onMessage(PacketCaseResult message, MessageContext ctx)
-        {
-            Minecraft.getMinecraft().addScheduledTask(() -> GuiCaseRoulette.receiveResult(message.index));
-            return null;
-        }
+        return TYPE;
+    }
+
+    public void handle(CustomPayloadEvent.Context context)
+    {
+        context.enqueueWork(() -> {
+            if (Minecraft.getInstance().screen instanceof GuiCaseRoulette gui)
+            {
+                gui.receiveResult(index);
+            }
+        });
+        context.setPacketHandled(true);
     }
 }

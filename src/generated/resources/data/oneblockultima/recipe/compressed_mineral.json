@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_redstone_block_5"
+    },
+    {
+      "item": "oneblockultima:compressed_lapis_block_5"
+    },
+    {
+      "item": "oneblockultima:compressed_diamond_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_gold_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_iron_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_end_stone_5"
+    },
+    {
+      "item": "oneblockultima:compressed_emerald_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_stone_block_5"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_5"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:compressed_mineral"
+  }
+}

@@ -1,5 +1,9 @@
 {
-  "variants": {
-    "normal": { "model": "oneblockultima:fluid_barrier" }
-  }
+    "variants":  {
+                     "":  {
+                              "model": "oneblockultima:block/fluid_barrier"
+                          }
+                 }
 }
+
+

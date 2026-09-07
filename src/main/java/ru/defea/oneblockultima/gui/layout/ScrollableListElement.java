@@ -1,8 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
     private final ScrollbarElement scrollbar = new ScrollbarElement();
 
     public interface ScrollableListEntry {
-        void draw(int x, int y, int width, int height, boolean hovered, boolean selected, FontRenderer fr, int mouseX, int mouseY);
+        void draw(int x, int y, int width, int height, boolean hovered, boolean selected, Font font, int mouseX, int mouseY);
         boolean mouseClicked(int mouseX, int mouseY, int mouseXOffset, int mouseYOffset, int entryWidth, int entryHeight, int mouseButton);
     }
 
@@ -63,13 +63,13 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (panelColor != 0) {
-            Gui.drawRect(computedX, computedY, computedX + computedWidth, computedY + computedHeight, panelColor);
+            g.fill(computedX, computedY, computedX + computedWidth, computedY + computedHeight, panelColor);
         }
 
         if (entries == null || entries.isEmpty()) return;
@@ -84,19 +84,19 @@ public class ScrollableListElement extends ViewElement<ScrollableListElement> {
             int row = scrollOffset + i;
             int y = contentTop + i * itemHeight;
             boolean hovered = mouseX >= computedX && mouseX <= computedX + listWidth &&
-                              mouseY >= y && mouseY < y + itemHeight;
+                    mouseY >= y && mouseY < y + itemHeight;
             if (hovered) hoveredRow = row;
 
             int bg = (row % 2 == 0) ? DARK_GRAY_COLOR_2 : DARK_GRAY_COLOR_3;
-            Gui.drawRect(computedX, y, computedX + listWidth, y + itemHeight, bg);
+            g.fill(computedX, y, computedX + listWidth, y + itemHeight, bg);
 
             ScrollableListEntry entry = entries.get(row);
-            entry.draw(computedX, y, listWidth, itemHeight, hovered, false, fr, mouseX, mouseY);
+            entry.draw(computedX, y, listWidth, itemHeight, hovered, false, font, mouseX, mouseY);
         }
 
         if (entries.size() > visibleItems) {
             layoutScrollbar(listWidth);
-            scrollbar.draw(fr, mouseX, mouseY, partialTicks);
+            scrollbar.draw(g, font, mouseX, mouseY, partialTicks);
             scrollOffset = scrollbar.getScrollOffset();
         }
     }

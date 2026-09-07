@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "minecraft:cake"
+    },
+    "L": {
+      "item": "oneblockultima:liquid_death"
+    },
+    "P": {
+      "item": "oneblockultima:ultimate_protein"
+    },
+    "V": {
+      "item": "oneblockultima:ultimate_mashed_vegetables"
+    }
+  },
+  "pattern": [
+    "LVL",
+    "PCP",
+    "LVL"
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:space_soup"
+  }
+}

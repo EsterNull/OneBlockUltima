@@ -1,7 +1,10 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -18,17 +21,17 @@ public class ViewFactoryElement extends ViewElement<ViewFactoryElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory outer) {
-        factory.build(buttonList, fontRenderer, computedX, computedY, computedWidth, computedHeight);
+    public void createWidgets(Screen screen, Font font, ViewFactory outer) {
+        factory.build(screen, font, computedX, computedY, computedWidth, computedHeight);
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        factory.draw(fr, mouseX, mouseY, partialTicks, computedX, computedY, computedWidth, computedHeight);
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
+        factory.draw(g, font, mouseX, mouseY, partialTicks, computedX, computedY, computedWidth, computedHeight);
     }
 
     @Override
-    public boolean actionPerformed(GuiButton button) {
+    public boolean actionPerformed(AbstractWidget button) {
         return factory.actionPerformed(button);
     }
 
@@ -69,23 +72,23 @@ public class ViewFactoryElement extends ViewElement<ViewFactoryElement> {
 
     @Override
     public int getPreferredWidth() {
-        return 0;
+        return getPreferredWidth(Minecraft.getInstance().font);
     }
 
     @Override
     public int getPreferredHeight() {
-        return 0;
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
-        int natural = factory.computeNaturalContentWidth(fr);
+    public int getPreferredWidth(Font font) {
+        int natural = factory.computeNaturalContentWidth(font);
         return Math.max(natural, 0);
     }
 
     @Override
-    public int getPreferredHeight(FontRenderer fr) {
-        int natural = factory.computeNaturalContentHeight(fr);
+    public int getPreferredHeight(Font font) {
+        int natural = factory.computeNaturalContentHeight(font);
         return Math.max(natural, 0);
     }
 }

@@ -1,86 +1,61 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.MobEffects;
-import net.minecraft.item.ItemPotion;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.NonNullList;
-import net.minecraft.world.World;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.Constants;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-public abstract class CustomPotion extends ItemPotion {
-    private final PotionEffect[] potionEffects;
+public abstract class CustomPotion extends Item {
+    private final MobEffectInstance[] potionEffects;
 
-    public CustomPotion(String name, PotionEffect[] potionEffects) {
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName(name);
-        this.setUnlocalizedName(name);
+    public CustomPotion(String name, MobEffectInstance[] potionEffects) {
+        super(new Item.Properties().stacksTo(1));
         this.potionEffects = potionEffects;
     }
 
-    @Override
-    public ICapabilityProvider initCapabilities(@Nonnull ItemStack stack, @Nullable NBTTagCompound nbt) {
-        // Add effects when the item is created
-        addPotionEffectsToStack(stack);
-        return super.initCapabilities(stack, nbt);
-    }
-
-    @Override
-    public void getSubItems(@Nonnull CreativeTabs tab, @Nonnull NonNullList<ItemStack> items) {
-        if (this.isInCreativeTab(tab)) {
-            ItemStack stack = new ItemStack(this);
-            items.add(stack);
-        }
-    }
-
-    @Override
     @Nonnull
-    public String getItemStackDisplayName(@Nonnull ItemStack stack) {
-        return net.minecraft.util.text.translation.I18n.translateToLocal(this.getUnlocalizedNameInefficiently(stack) + ".name").trim();
+    @Override
+    public UseAnim getUseAnimation(ItemStack stack) {
+        return UseAnim.DRINK;
     }
 
     @Override
-    @Nonnull
-    public ItemStack onItemUseFinish(@Nonnull ItemStack stack, @Nonnull World worldIn, @Nonnull EntityLivingBase entityLiving) {
-        ItemStack resultStack = super.onItemUseFinish(stack, worldIn, entityLiving);
+    public int getUseDuration(ItemStack stack, LivingEntity entity) {
+        return 32;
+    }
 
-        if (!worldIn.isRemote) {
-            for (PotionEffect potionEffect : potionEffects)
-            {
-                entityLiving.addPotionEffect(potionEffect);
+    @Nonnull
+    @Override
+    public InteractionResultHolder<ItemStack> use(@Nonnull Level worldIn, @Nonnull Player playerIn, @Nonnull InteractionHand handIn) {
+        ItemStack stack = playerIn.getItemInHand(handIn);
+        playerIn.startUsingItem(handIn);
+        return InteractionResultHolder.consume(stack);
+    }
+
+    @Nonnull
+    @Override
+    public ItemStack finishUsingItem(@Nonnull ItemStack stack, @Nonnull Level worldIn, @Nonnull LivingEntity entityLiving) {
+        if (!worldIn.isClientSide) {
+            for (MobEffectInstance potionEffect : potionEffects) {
+                entityLiving.addEffect(new MobEffectInstance(potionEffect.getEffect(), potionEffect.getDuration(), potionEffect.getAmplifier()));
             }
-            entityLiving.addPotionEffect(new PotionEffect(MobEffects.POISON, 30 * 20, 2));
+            entityLiving.addEffect(new MobEffectInstance(MobEffects.POISON, 30 * 20, 2));
         }
-
-        return resultStack;
+        return new ItemStack(net.minecraft.world.item.Items.GLASS_BOTTLE);
     }
 
-    public void addPotionEffectsToStack(ItemStack stack) {
-        NBTTagCompound nbt = stack.getTagCompound();
-        if (nbt == null) {
-            nbt = new NBTTagCompound();
-        }
-
-        NBTTagList effectsList = nbt.getTagList("CustomPotionEffects", Constants.NBT.TAG_COMPOUND);
-
-        // Save the effect in NBT
-        for (PotionEffect potionEffect : potionEffects)
-        {
-            NBTTagCompound effectTag = new NBTTagCompound();
-            potionEffect.writeCustomPotionEffectToNBT(effectTag);
-            effectsList.appendTag(effectTag);
-        }
-
-        nbt.setTag("CustomPotionEffects", effectsList);
-        stack.setTagCompound(nbt);
+    @Nonnull
+    @Override
+    public net.minecraft.sounds.SoundEvent getDrinkingSound() {
+        return SoundEvents.GENERIC_DRINK;
     }
 }

@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/super_mashed_vegetables"
+    "layer0": "oneblockultima:item/super_mashed_vegetables"
   }
 }
+

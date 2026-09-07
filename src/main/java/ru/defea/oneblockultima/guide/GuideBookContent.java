@@ -1,17 +1,26 @@
 package ru.defea.oneblockultima.guide;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.client.Minecraft;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistries;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 
 import java.io.BufferedReader;
@@ -79,27 +88,26 @@ public final class GuideBookContent
     {
         List<Recipe> recipes = new ArrayList<>();
         Set<String> seen = new HashSet<>();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null)
+        {
+            return recipes;
+        }
+        RecipeManager rm = mc.level.getRecipeManager();
         try
         {
-            for (ResourceLocation key : ForgeRegistries.RECIPES.getKeys())
+            for (RecipeHolder<?> holder : rm.getRecipes())
             {
-                if (!OneBlockUltima.MODID.equals(key.getResourceDomain()))
+                ResourceLocation key = holder.id();
+                if (!OneBlockUltima.MODID.equals(key.getNamespace()))
                 {
                     continue;
                 }
-                if (!ForgeRegistries.RECIPES.containsKey(key))
-                {
-                    continue;
-                }
-                Recipe recipe = parseRecipe(key);
-                if (recipe == null)
-                {
-                    recipe = parseRecipeFromIRecipe(key);
-                }
+                Recipe recipe = parseRecipe(holder);
                 if (recipe != null && !recipe.result.isEmpty())
                 {
-                    String ingredientKey = ingredientKey(recipe.grid);
-                    if (seen.add(ingredientKey))
+                    String ingredientKeyStr = ingredientKey(recipe.grid);
+                    if (seen.add(ingredientKeyStr))
                     {
                         recipes.add(recipe);
                     }
@@ -109,7 +117,7 @@ public final class GuideBookContent
         catch (Exception ignored)
         {
         }
-        recipes.sort(Comparator.comparing(r -> r.result.getDisplayName()));
+        recipes.sort(Comparator.comparing(r -> r.result.getHoverName().getString()));
         return recipes;
     }
 
@@ -120,8 +128,8 @@ public final class GuideBookContent
         {
             if (stack != null && !stack.isEmpty())
             {
-                ResourceLocation name = stack.getItem().getRegistryName();
-                parts.add(name == null ? "?" : name + "@" + stack.getMetadata());
+                ResourceLocation name = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                parts.add(name == null ? "?" : name + "@" + ModBlocks.metaOf(stack));
             }
         }
         Collections.sort(parts);
@@ -141,94 +149,61 @@ public final class GuideBookContent
         return result;
     }
 
-    private static Recipe parseRecipe(ResourceLocation key)
+    private static Recipe parseRecipe(RecipeHolder<?> holder)
     {
         try
         {
-            ResourceLocation jsonLocation = new ResourceLocation(
-                    key.getResourceDomain(),
-                    "recipes/" + key.getResourcePath() + ".json"
-            );
-            JsonObject root = readJson(jsonLocation);
-            if (root == null)
+            net.minecraft.world.item.crafting.Recipe<?> recipe = holder.value();
+            ItemStack result = recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY);
+            if (result == null || result.isEmpty())
             {
                 return null;
             }
-
-            String type = root.has("type") ? root.get("type").getAsString() : "";
-            boolean shaped = type != null && type.contains("crafting_shaped");
-
-            JsonObject resultObj = root.getAsJsonObject("result");
-            ItemStack result = resolveItem(resultObj);
-            if (result.isEmpty())
+            if (result.getCount() < 1)
             {
-                return null;
-            }
-            if (resultObj.has("count"))
-            {
-                result.setCount(Math.max(1, resultObj.get("count").getAsInt()));
+                result.setCount(1);
             }
 
             ItemStack[] grid = new ItemStack[9];
             Arrays.fill(grid, ItemStack.EMPTY);
 
-            if (shaped)
+            List<Ingredient> ingredients = recipe.getIngredients();
+            boolean shaped = recipe instanceof net.minecraft.world.item.crafting.ShapedRecipe;
+            if (recipe instanceof net.minecraft.world.item.crafting.ShapedRecipe s)
             {
-                JsonArray pattern = root.getAsJsonArray("pattern");
-                List<String> rows = new ArrayList<>();
-                for (JsonElement element : pattern)
+                int w = s.getWidth();
+                int h = s.getHeight();
+                int startCol = (3 - w) / 2;
+                int startRow = (3 - h) / 2;
+                int idx = 0;
+                for (int r = 0; r < h && idx < ingredients.size(); r++)
                 {
-                    rows.add(element.getAsString());
-                }
-                JsonObject keyObj = root.getAsJsonObject("key");
-                int gridW = rows.isEmpty() ? 0 : rows.get(0).length();
-                int gridH = rows.size();
-                int startRow = (3 - gridH) / 2;
-                int startCol = (3 - gridW) / 2;
-                for (int r = 0; r < gridH; r++)
-                {
-                    String row = rows.get(r);
-                    for (int c = 0; c < row.length(); c++)
+                    for (int c = 0; c < w && idx < ingredients.size(); c++)
                     {
-                        char symbol = row.charAt(c);
-                        if (symbol == ' ')
-                        {
-                            continue;
-                        }
-                        JsonElement keyEntry = keyObj.get(String.valueOf(symbol));
-                        if (keyEntry == null || !keyEntry.isJsonObject())
-                        {
-                            continue;
-                        }
+                        Ingredient ing = ingredients.get(idx++);
                         int gr = startRow + r;
                         int gc = startCol + c;
-                        if (gr < 0 || gr > 2 || gc < 0 || gc > 2)
+                        if (gr >= 0 && gr < 3 && gc >= 0 && gc < 3)
                         {
-                            continue;
+                            grid[gr * 3 + gc] = firstStack(ing);
                         }
-                        grid[gr * 3 + gc] = resolveItem(keyEntry.getAsJsonObject());
                     }
                 }
             }
             else
             {
-                JsonArray ingredients = root.getAsJsonArray("ingredients");
-                int index = 0;
-                for (JsonElement element : ingredients)
+                int i = 0;
+                for (Ingredient ing : ingredients)
                 {
-                    if (index >= 9)
+                    if (i >= 9)
                     {
                         break;
                     }
-                    if (element.isJsonObject())
-                    {
-                        grid[index] = resolveItem(element.getAsJsonObject());
-                    }
-                    index++;
+                    grid[i++] = firstStack(ing);
                 }
             }
 
-            return new Recipe(key.getResourcePath(), result, grid, shaped);
+            return new Recipe(holder.id().getPath(), result, grid, shaped);
         }
         catch (Exception ignored)
         {
@@ -236,106 +211,19 @@ public final class GuideBookContent
         }
     }
 
-    private static Recipe parseRecipeFromIRecipe(ResourceLocation key)
+    private static ItemStack firstStack(Ingredient ing)
     {
-        try
-        {
-            IRecipe recipe = ForgeRegistries.RECIPES.getValue(key);
-            if (recipe == null)
-            {
-                return null;
-            }
-            ItemStack result = recipe.getRecipeOutput();
-            if (result == null || result.isEmpty())
-            {
-                return null;
-            }
-            ItemStack[] grid = new ItemStack[9];
-            Arrays.fill(grid, ItemStack.EMPTY);
-            int index = 0;
-            for (Ingredient ingredient : recipe.getIngredients())
-            {
-                if (index >= 9)
-                {
-                    break;
-                }
-                if (ingredient == null || ingredient == Ingredient.EMPTY)
-                {
-                    continue;
-                }
-                ItemStack display = ItemStack.EMPTY;
-                for (ItemStack stack : ingredient.getMatchingStacks())
-                {
-                    if (stack != null && !stack.isEmpty())
-                    {
-                        display = stack.copy();
-                        break;
-                    }
-                }
-                grid[index] = display;
-                index++;
-            }
-            return new Recipe(key.getResourcePath(), result, grid, false);
-        }
-        catch (Exception ignored)
-        {
-            return null;
-        }
-    }
-
-    private static ItemStack resolveItem(JsonObject entry)
-    {
-        if (entry == null)
+        if (ing == null || ing == Ingredient.EMPTY)
         {
             return ItemStack.EMPTY;
         }
-        String type = entry.has("type") ? entry.get("type").getAsString() : "";
-        if ("forge:ore_dict".equals(type))
+        for (ItemStack stack : ing.getItems())
         {
-            if (!entry.has("ore"))
+            if (stack != null && !stack.isEmpty())
             {
-                return ItemStack.EMPTY;
-            }
-            List<ItemStack> ores = net.minecraftforge.oredict.OreDictionary.getOres(entry.get("ore").getAsString());
-            for (ItemStack ore : ores)
-            {
-                if (ore != null && !ore.isEmpty())
-                {
-                    return ore.copy();
-                }
-            }
-            return ItemStack.EMPTY;
-        }
-        if (!entry.has("item"))
-        {
-            return ItemStack.EMPTY;
-        }
-        String name = entry.get("item").getAsString();
-        int meta = entry.has("data") ? entry.get("data").getAsInt() : 0;
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(name));
-        if (item == null)
-        {
-            return ItemStack.EMPTY;
-        }
-        return new ItemStack(item, 1, meta);
-    }
-
-    private static JsonObject readJson(ResourceLocation location)
-    {
-        try
-        {
-            net.minecraft.client.resources.IResource resource =
-                    Minecraft.getMinecraft().getResourceManager().getResource(location);
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)))
-            {
-                JsonElement element = new JsonParser().parse(reader);
-                return element != null && element.isJsonObject() ? element.getAsJsonObject() : null;
+                return stack.copy();
             }
         }
-        catch (Exception ignored)
-        {
-            return null;
-        }
+        return ItemStack.EMPTY;
     }
 }

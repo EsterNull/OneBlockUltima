@@ -1,24 +1,31 @@
 package ru.defea.oneblockultima.util;
 
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.storage.loot.LootContext;
-import net.minecraft.world.storage.loot.LootTable;
-import net.minecraft.world.storage.loot.LootTableList;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.item.ModItems;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public final class CaseUtil
 {
@@ -36,68 +43,67 @@ public final class CaseUtil
         return stack != null && !stack.isEmpty() && stack.getItem() == ModItems.CASE;
     }
 
-    public static ItemStack createCaseItem(World world, BlockSetConfig.BlockSetDefinition set)
+    public static ItemStack createCaseItem(Level world, BlockSetConfig.BlockSetDefinition set)
     {
         if (world == null || set == null || !set.hasCaseEntries())
         {
             return ItemStack.EMPTY;
         }
 
-        // Deterministic resolution per set so all cases of the same set share identical NBT and stack together
-        Random seededRandom = new Random(set.id == null ? 0L : set.id.hashCode());
+        ItemStack caseStack = new ItemStack(ModItems.CASE);
+        RandomSource seededRandom = RandomSource.create(set.id == null ? 0L : set.id.hashCode());
         List<WeightedStack> weighted = resolveContents(world, set, seededRandom);
         if (weighted.isEmpty())
         {
             return ItemStack.EMPTY;
         }
 
-        ItemStack caseStack = new ItemStack(ModItems.CASE);
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setString(NBT_CASE_SET_ID, set.id == null ? "" : set.id);
-        NBTTagList contents = new NBTTagList();
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString(NBT_CASE_SET_ID, set.id == null ? "" : set.id);
+        ListTag contents = new ListTag();
         for (WeightedStack ws : weighted)
         {
-            NBTTagCompound tag = new NBTTagCompound();
-            tag.setTag(NBT_CASE_STACK, ws.stack.writeToNBT(new NBTTagCompound()));
-            tag.setInteger(NBT_CASE_WEIGHT, ws.weight);
-            contents.appendTag(tag);
+            CompoundTag tag = new CompoundTag();
+            tag.put(NBT_CASE_STACK, ws.stack.save(world.registryAccess()));
+            tag.putInt(NBT_CASE_WEIGHT, ws.weight);
+            contents.add(tag);
         }
-        nbt.setTag(NBT_CASE_CONTENTS, contents);
-        caseStack.setTagCompound(nbt);
+        nbt.put(NBT_CASE_CONTENTS, contents);
+        caseStack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(nbt));
         return caseStack;
     }
 
-    public static List<WeightedStack> readContents(ItemStack caseStack)
+    public static List<WeightedStack> readContents(ItemStack caseStack, net.minecraft.core.RegistryAccess registryAccess)
     {
         List<WeightedStack> result = new ArrayList<>();
-        if (caseStack == null || caseStack.isEmpty() || !caseStack.hasTagCompound())
+        if (caseStack == null || caseStack.isEmpty() || !caseStack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA))
         {
             return result;
         }
 
-        NBTTagCompound nbt = caseStack.getTagCompound();
-        if (nbt == null || !nbt.hasKey(NBT_CASE_CONTENTS, 9))
+        CompoundTag nbt = caseStack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).getUnsafe();
+        if (nbt == null || !nbt.contains(NBT_CASE_CONTENTS, Tag.TAG_LIST))
         {
             return result;
         }
 
-        NBTTagList contents = nbt.getTagList(NBT_CASE_CONTENTS, 10);
-        for (int i = 0; i < contents.tagCount(); i++)
+        ListTag contents = nbt.getList(NBT_CASE_CONTENTS, Tag.TAG_COMPOUND);
+        for (int i = 0; i < contents.size(); i++)
         {
-            NBTTagCompound tag = contents.getCompoundTagAt(i);
-            if (tag.hasKey(NBT_CASE_STACK, 10))
+            CompoundTag tag = contents.getCompound(i);
+            if (tag.contains(NBT_CASE_STACK, Tag.TAG_COMPOUND))
             {
-                ItemStack stack = new ItemStack(tag.getCompoundTag(NBT_CASE_STACK));
+                ItemStack stack = ItemStack.parse(registryAccess, tag.getCompound(NBT_CASE_STACK)).orElse(ItemStack.EMPTY);
                 if (!stack.isEmpty())
                 {
-                    result.add(new WeightedStack(stack, tag.getInteger(NBT_CASE_WEIGHT)));
+                    result.add(new WeightedStack(stack, tag.getInt(NBT_CASE_WEIGHT)));
                 }
             }
         }
         return result;
     }
 
-    public static int rollIndex(List<WeightedStack> contents, Random random)
+    public static int rollIndex(List<WeightedStack> contents, RandomSource random)
     {
         if (contents == null || contents.isEmpty())
         {
@@ -127,9 +133,10 @@ public final class CaseUtil
         return contents.size() - 1;
     }
 
-    private static List<WeightedStack> resolveContents(World world, BlockSetConfig.BlockSetDefinition set, Random random)
+    private static List<WeightedStack> resolveContents(Level world, BlockSetConfig.BlockSetDefinition set, RandomSource random)
     {
         List<WeightedStack> weighted = new ArrayList<>();
+        if (set.caseInfo == null) return weighted;
         for (BlockSetConfig.CaseEntryDefinition entry : set.caseInfo.entries)
         {
             if (entry == null || entry.weight <= 0)
@@ -139,11 +146,15 @@ public final class CaseUtil
 
             if (entry.item != null && !entry.item.isEmpty())
             {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.item));
-                if (item != null && item != Items.AIR)
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(entry.item));
+                if (item != Items.AIR)
                 {
-                    ItemStack stack = new ItemStack(item, Math.max(1, entry.count), Math.max(0, entry.meta));
-                    weighted.add(new WeightedStack(stack, entry.weight));
+                    ItemStack stack = ModBlocks.stackFromItemAndMeta(item, entry.meta);
+                    if (!stack.isEmpty())
+                    {
+                        stack.setCount(Math.max(1, entry.count));
+                        weighted.add(new WeightedStack(stack, entry.weight));
+                    }
                 }
             }
             else if (entry.lootTable != null && !entry.lootTable.isEmpty())
@@ -154,25 +165,30 @@ public final class CaseUtil
         return weighted;
     }
 
-    private static void resolveLootTable(World world, BlockSetConfig.CaseEntryDefinition entry, Random random, List<WeightedStack> weighted)
+    private static void resolveLootTable(Level world, BlockSetConfig.CaseEntryDefinition entry, RandomSource random, List<WeightedStack> weighted)
     {
         try
         {
-            ResourceLocation location = new ResourceLocation(entry.lootTable);
-            if (world instanceof WorldServer)
+            ResourceLocation location = ResourceLocation.parse(entry.lootTable);
+            if (world instanceof ServerLevel)
             {
-                LootTable table = world.getLootTableManager().getLootTableFromLocation(location);
-                if (location.equals(LootTableList.EMPTY))
+                ServerLevel server = (ServerLevel) world;
+                LootTable table = server.getServer().getServerResources().managers().fullRegistries()
+                        .getLootTable(ResourceKey.create(Registries.LOOT_TABLE, location));
+                if (table == null || table == LootTable.EMPTY || location.equals(BuiltInLootTables.EMPTY.location()))
                 {
                     return;
                 }
-                LootContext context = new LootContext.Builder((WorldServer) world).build();
-                List<ItemStack> stacks = table.generateLootForPools(random, context);
+                LootParams params = new LootParams.Builder(server)
+                        .withParameter(LootContextParams.ORIGIN, Vec3.ZERO)
+                        .withLuck(0)
+                        .create(LootContextParamSets.CHEST);
+                List<ItemStack> stacks = table.getRandomItems(params, random);
                 for (ItemStack stack : stacks)
                 {
                     if (stack != null && !stack.isEmpty())
                     {
-                        weighted.add(new WeightedStack(stack, entry.weight));
+                        weighted.add(new WeightedStack(stack.copy(), entry.weight));
                     }
                 }
             }

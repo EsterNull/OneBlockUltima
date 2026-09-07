@@ -1,12 +1,10 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.item.Item;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.world.item.Item;
+import ru.defea.oneblockultima.ModTab;
 
 public class ItemCompressedMineral extends Item {
     public ItemCompressedMineral() {
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("compressed_mineral");
-        this.setUnlocalizedName("compressed_mineral");
+        super(new Item.Properties());
     }
 }

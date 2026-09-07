@@ -1,7 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -21,11 +22,11 @@ public class SpacerElement extends ViewElement<SpacerElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
     }
 
     @Override

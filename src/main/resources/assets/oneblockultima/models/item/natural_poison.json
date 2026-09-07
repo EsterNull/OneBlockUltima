@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/natural_poison"
+    "layer0": "oneblockultima:item/natural_poison"
   }
 }
+

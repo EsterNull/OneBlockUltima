@@ -1,94 +1,51 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import javax.annotation.Nonnull;
-import java.util.List;
-
-public class CommandSetOwner extends CommandBase
+public final class CommandSetOwner
 {
-    @Override
-    @Nonnull
-    public String getName()
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher)
     {
-        return "setOwner";
+        dispatcher.register(Commands.literal("setOwner")
+                .requires(s -> s.hasPermission(2))
+                .then(Commands.argument("x", IntegerArgumentType.integer())
+                        .then(Commands.argument("y", IntegerArgumentType.integer())
+                                .then(Commands.argument("z", IntegerArgumentType.integer())
+                                        .then(Commands.argument("target", EntityArgument.player())
+                                                .executes(ctx -> {
+                                                    int x = IntegerArgumentType.getInteger(ctx, "x");
+                                                    int y = IntegerArgumentType.getInteger(ctx, "y");
+                                                    int z = IntegerArgumentType.getInteger(ctx, "z");
+                                                    execute(ctx.getSource(), new BlockPos(x, y, z), EntityArgument.getPlayer(ctx, "target"));
+                                                    return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                                                }))))));
     }
 
-    @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    private static void execute(CommandSourceStack source, BlockPos pos, ServerPlayer player)
     {
-        return "/setOwner <x> <y> <z> <playerName>";
-    }
-
-    @Override
-    public void execute(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args) throws CommandException
-    {
-        if (args.length != 4)
+        Level world = source.getServer().getLevel(Level.OVERWORLD);
+        BlockEntity tileEntity = world.getBlockEntity(pos);
+        if (tileEntity instanceof TileEntityOneBlockGenerator)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.usage") + getUsage(sender)).setStyle(new Style().setColor(TextFormatting.RED)));
-            return;
-        }
-
-        BlockPos pos = CommandBase.parseBlockPos(sender, args, 0, false);
-        EntityPlayerMP player = server.getPlayerList().getPlayerByUsername(args[3]);
-
-        if (player == null)
-        {
-            sender.sendMessage(new TextComponentString(I18n.format("command.player_not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
-            return;
-        }
-
-        TileEntity tileEntity = server.getEntityWorld().getTileEntity(pos);
-        if (tileEntity instanceof TileEntityOneBlockGenerator) {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
-            generator.setOwnerId(player.getUniqueID());
-            sender.sendMessage(new TextComponentString(I18n.format("command.setOwner.success")).setStyle(new Style().setColor(TextFormatting.GREEN)));
+            generator.setOwnerId(player.getUUID());
+            source.sendSuccess(() -> Component.translatable("command.setOwner.success").withStyle(ChatFormatting.GREEN), false);
         }
         else
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.no_generator").withStyle(ChatFormatting.RED));
         }
-    }
-
-    @Override
-    @Nonnull
-    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args, BlockPos targetPos)
-    {
-        if (args.length == 1)
-        {
-            return getListOfStringsMatchingLastWord(args, "~");
-        }
-        else if (args.length == 2)
-        {
-            return getListOfStringsMatchingLastWord(args, "~");
-        }
-        else if (args.length == 3)
-        {
-            return getListOfStringsMatchingLastWord(args, "~");
-        }
-        else if (args.length == 4)
-        {
-            return getListOfStringsMatchingLastWord(args, server.getOnlinePlayerNames());
-        }
-
-        return super.getTabCompletions(server, sender, args, targetPos);
-    }
-
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 2;
     }
 }

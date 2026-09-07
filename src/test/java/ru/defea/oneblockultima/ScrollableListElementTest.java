@@ -1,10 +1,10 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.init.Bootstrap;
+import net.minecraft.client.gui.Font;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.gui.layout.ScrollableListElement;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,12 +17,12 @@ public class ScrollableListElementTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     private static class Entry implements ScrollableListElement.ScrollableListEntry {
         @Override
-        public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, FontRenderer fr, int mouseX, int mouseY) {
+        public void draw(int x, int y, int width, int height, boolean hovered, boolean selected, Font font, int mouseX, int mouseY) {
         }
 
         @Override

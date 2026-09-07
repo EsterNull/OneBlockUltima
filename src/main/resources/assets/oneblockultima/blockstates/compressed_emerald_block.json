@@ -1,14 +1,21 @@
 {
-  "variants": {
-    "level=0": { "model": "oneblockultima:compressed_emerald_block" },
-    "0": { "model": "oneblockultima:compressed_emerald_block" },
-    "level=1": { "model": "oneblockultima:compressed_emerald_block" },
-    "1": { "model": "oneblockultima:compressed_emerald_block" },
-    "level=2": { "model": "oneblockultima:compressed_emerald_block" },
-    "2": { "model": "oneblockultima:compressed_emerald_block" },
-    "level=3": { "model": "oneblockultima:compressed_emerald_block" },
-    "3": { "model": "oneblockultima:compressed_emerald_block" },
-    "level=4": { "model": "oneblockultima:compressed_emerald_block" },
-    "4": { "model": "oneblockultima:compressed_emerald_block" }
-  }
+    "variants":  {
+                     "level=0":  {
+                                     "model": "oneblockultima:block/compressed_emerald_block"
+                                 },
+                     "level=1":  {
+                                     "model": "oneblockultima:block/compressed_emerald_block"
+                                 },
+                     "level=2":  {
+                                     "model": "oneblockultima:block/compressed_emerald_block"
+                                 },
+                     "level=3":  {
+                                     "model": "oneblockultima:block/compressed_emerald_block"
+                                 },
+                     "level=4":  {
+                                     "model": "oneblockultima:block/compressed_emerald_block"
+                                 }
+                 }
 }
+
+

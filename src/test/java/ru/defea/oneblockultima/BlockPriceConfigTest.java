@@ -1,11 +1,12 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.level.block.Blocks;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,48 +19,44 @@ public class BlockPriceConfigTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
         BlockPriceConfig.reset();
     }
 
-    private BlockPriceConfig newConfig() throws Exception {
-        BlockPriceConfig config = new BlockPriceConfig();
-        Field pricesField = BlockPriceConfig.class.getDeclaredField("prices");
-        pricesField.setAccessible(true);
-        pricesField.set(config, new LinkedHashMap<String, Double>());
-        return config;
+    private BlockPriceConfig newConfig() {
+        return new BlockPriceConfig();
     }
 
     // --- getPrice ---
 
     @Test
-    public void getPriceReturnsZeroForUnknown() throws Exception {
+    public void getPriceReturnsZeroForUnknown() {
         BlockPriceConfig config = newConfig();
         assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
-    public void getPriceReturnsZeroForNull() throws Exception {
+    public void getPriceReturnsZeroForNull() {
         BlockPriceConfig config = newConfig();
         assertEquals(0, config.getPrice(null), DELTA);
     }
 
     @Test
-    public void getPriceReturnsCorrectValue() throws Exception {
+    public void getPriceReturnsCorrectValue() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:dirt", 5);
         assertEquals(5, config.getPrice("minecraft:dirt"), DELTA);
     }
 
     @Test
-    public void getPriceReturnsFractionalValue() throws Exception {
+    public void getPriceReturnsFractionalValue() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:dirt", 0.5);
         assertEquals(0.5, config.getPrice("minecraft:dirt"), DELTA);
     }
 
     @Test
-    public void getPriceReturnsZeroAfterRemove() throws Exception {
+    public void getPriceReturnsZeroAfterRemove() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.removePrice("minecraft:stone");
@@ -69,27 +66,26 @@ public class BlockPriceConfigTest {
     // --- hasPrice ---
 
     @Test
-    public void hasPriceReturnsFalseForUnknown() throws Exception {
+    public void hasPriceReturnsFalseForUnknown() {
         BlockPriceConfig config = newConfig();
         assertFalse(config.hasPrice("minecraft:stone"));
     }
 
     @Test
-    public void hasPriceReturnsFalseForNull() throws Exception {
+    public void hasPriceReturnsFalseForNull() {
         BlockPriceConfig config = newConfig();
-        //noinspection ConstantValue
         assertFalse(config.hasPrice(null));
     }
 
     @Test
-    public void hasPriceReturnsTrueAfterSet() throws Exception {
+    public void hasPriceReturnsTrueAfterSet() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:diamond", 100);
         assertTrue(config.hasPrice("minecraft:diamond"));
     }
 
     @Test
-    public void hasPriceReturnsFalseAfterRemove() throws Exception {
+    public void hasPriceReturnsFalseAfterRemove() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:diamond", 100);
         config.removePrice("minecraft:diamond");
@@ -99,14 +95,14 @@ public class BlockPriceConfigTest {
     // --- setPrice ---
 
     @Test
-    public void setPriceAddsNewEntry() throws Exception {
+    public void setPriceAddsNewEntry() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         assertEquals(10, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
-    public void setPriceOverwritesExisting() throws Exception {
+    public void setPriceOverwritesExisting() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:stone", 25);
@@ -114,7 +110,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void setPriceWithZeroValue() throws Exception {
+    public void setPriceWithZeroValue() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 0);
         assertTrue(config.hasPrice("minecraft:stone"));
@@ -122,22 +118,21 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void setPriceWithNullRegistryIsNoOp() throws Exception {
+    public void setPriceWithNullRegistryIsNoOp() {
         BlockPriceConfig config = newConfig();
         config.setPrice(null, 10);
-        //noinspection ConstantValue
         assertFalse(config.hasPrice(null));
     }
 
     @Test
-    public void setPriceWithNegativeValueClampsToZero() throws Exception {
+    public void setPriceWithNegativeValueClampsToZero() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", -5);
         assertEquals(0, config.getPrice("minecraft:stone"), DELTA);
     }
 
     @Test
-    public void setPriceWithFractionalValue() throws Exception {
+    public void setPriceWithFractionalValue() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 0.25);
         assertEquals(0.25, config.getPrice("minecraft:stone"), DELTA);
@@ -146,7 +141,7 @@ public class BlockPriceConfigTest {
     // --- removePrice ---
 
     @Test
-    public void removePriceRemovesEntry() throws Exception {
+    public void removePriceRemovesEntry() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.removePrice("minecraft:stone");
@@ -154,14 +149,14 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void removePriceOnUnknownIsNoOp() throws Exception {
+    public void removePriceOnUnknownIsNoOp() {
         BlockPriceConfig config = newConfig();
         config.removePrice("minecraft:nonexistent");
         assertFalse(config.hasPrice("minecraft:nonexistent"));
     }
 
     @Test
-    public void removePriceWithNullIsNoOp() throws Exception {
+    public void removePriceWithNullIsNoOp() {
         BlockPriceConfig config = newConfig();
         config.removePrice(null);
     }
@@ -169,7 +164,7 @@ public class BlockPriceConfigTest {
     // --- replaceAll ---
 
     @Test
-    public void replaceAllReplacesAllPrices() throws Exception {
+    public void replaceAllReplacesAllPrices() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:dirt", 5);
@@ -186,7 +181,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void replaceAllWithEmptyMapClearsAll() throws Exception {
+    public void replaceAllWithEmptyMapClearsAll() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.replaceAll(new HashMap<>());
@@ -195,7 +190,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void replaceAllClampsNegativePrices() throws Exception {
+    public void replaceAllClampsNegativePrices() {
         BlockPriceConfig config = newConfig();
         Map<String, Double> newPrices = new LinkedHashMap<>();
         newPrices.put("minecraft:stone", 10.0);
@@ -207,7 +202,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void replaceAllWithNullIsNoOp() throws Exception {
+    public void replaceAllWithNullIsNoOp() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.replaceAll(null);
@@ -217,12 +212,11 @@ public class BlockPriceConfigTest {
     // --- getPrices ---
 
     @Test
-    public void getPricesReturnsUnmodifiableMap() throws Exception {
+    public void getPricesReturnsUnmodifiableMap() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         Map<String, Double> prices = config.getPrices();
         try {
-            //noinspection DataFlowIssue
             prices.put("minecraft:dirt", 5.0);
             fail("Should throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {
@@ -231,7 +225,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void getPricesReturnsCorrectSize() throws Exception {
+    public void getPricesReturnsCorrectSize() {
         BlockPriceConfig config = newConfig();
         assertEquals(0, config.getPrices().size());
         config.setPrice("minecraft:stone", 10);
@@ -243,7 +237,7 @@ public class BlockPriceConfigTest {
     // --- getPricesList ---
 
     @Test
-    public void getPricesListReturnsModifiableCopy() throws Exception {
+    public void getPricesListReturnsModifiableCopy() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:dirt", 5);
@@ -255,7 +249,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void getPricesListPreservesInsertionOrder() throws Exception {
+    public void getPricesListPreservesInsertionOrder() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:diamond", 100);
         config.setPrice("minecraft:stone", 10);
@@ -281,28 +275,28 @@ public class BlockPriceConfigTest {
 
     @Test
     public void createItemStackReturnsDirtForValidBlock() {
-        net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:dirt");
+        net.minecraft.world.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:dirt");
         assertFalse(stack.isEmpty());
         assertEquals(1, stack.getCount());
     }
 
     @Test
     public void createItemStackReturnsStoneForValidBlock() {
-        net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:stone");
+        net.minecraft.world.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:stone");
         assertFalse(stack.isEmpty());
-        assertEquals(net.minecraft.init.Blocks.STONE, ((net.minecraft.item.ItemBlock) stack.getItem()).getBlock());
+        assertEquals(Blocks.STONE, ((BlockItem) stack.getItem()).getBlock());
     }
 
     @Test
     public void createItemStackReturnsEmptyForAirRegistry() {
-        net.minecraft.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:air");
+        net.minecraft.world.item.ItemStack stack = BlockPriceConfig.createItemStack("minecraft:air");
         assertTrue(stack.isEmpty());
     }
 
     // --- Multiple operations ---
 
     @Test
-    public void multipleSetAndRemoveOperations() throws Exception {
+    public void multipleSetAndRemoveOperations() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:dirt", 5);
@@ -317,7 +311,7 @@ public class BlockPriceConfigTest {
     }
 
     @Test
-    public void setPriceZeroThenCheckHasPrice() throws Exception {
+    public void setPriceZeroThenCheckHasPrice() {
         BlockPriceConfig config = newConfig();
         config.setPrice("minecraft:stone", 10);
         config.setPrice("minecraft:stone", 0);
@@ -328,20 +322,20 @@ public class BlockPriceConfigTest {
     // --- BalanceMode ---
 
     @Test
-    public void defaultBalanceModeIsBreakBlock() throws Exception {
+    public void defaultBalanceModeIsBreakBlock() {
         BlockPriceConfig config = newConfig();
         assertEquals(BlockPriceConfig.BalanceMode.BREAK_BLOCK, config.getBalanceMode());
     }
 
     @Test
-    public void setBalanceModeChangesValue() throws Exception {
+    public void setBalanceModeChangesValue() {
         BlockPriceConfig config = newConfig();
         config.setBalanceMode(BlockPriceConfig.BalanceMode.SELL_BLOCK);
         assertEquals(BlockPriceConfig.BalanceMode.SELL_BLOCK, config.getBalanceMode());
     }
 
     @Test
-    public void setBalanceModeBackToBreakBlock() throws Exception {
+    public void setBalanceModeBackToBreakBlock() {
         BlockPriceConfig config = newConfig();
         config.setBalanceMode(BlockPriceConfig.BalanceMode.SELL_BLOCK);
         config.setBalanceMode(BlockPriceConfig.BalanceMode.BREAK_BLOCK);

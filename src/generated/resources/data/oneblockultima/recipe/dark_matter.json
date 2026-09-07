@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    },
+    {
+      "item": "oneblockultima:graviton"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:dark_matter"
+  }
+}

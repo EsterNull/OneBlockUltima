@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "E": {
+      "item": "minecraft:fermented_spider_eye"
+    },
+    "F": {
+      "item": "minecraft:rotten_flesh"
+    },
+    "I": {
+      "item": "minecraft:pufferfish"
+    },
+    "P": {
+      "item": "minecraft:poisonous_potato"
+    }
+  },
+  "pattern": [
+    "EFE",
+    "PIP",
+    "EFE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:natural_poison"
+  }
+}

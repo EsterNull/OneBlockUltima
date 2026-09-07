@@ -1,8 +1,9 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,7 +67,7 @@ public class ViewSwitcherElement extends ViewElement<ViewSwitcherElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         ViewElement<?> active = currentViewElement();
         if (active != null) {
             int x = computedX;
@@ -74,8 +75,8 @@ public class ViewSwitcherElement extends ViewElement<ViewSwitcherElement> {
             int w = computedWidth;
             int h = computedHeight;
             if (fitContent) {
-                int prefW = active.getPreferredWidth(fontRenderer);
-                int prefH = active.getPreferredHeight(fontRenderer);
+                int prefW = active.getPreferredWidth(font);
+                int prefH = active.getPreferredHeight(font);
                 w = Math.min(Math.max(prefW, 0), computedWidth);
                 h = Math.min(Math.max(prefH, 0), computedHeight);
                 x = computedX + (computedWidth - w) / 2;
@@ -83,12 +84,12 @@ public class ViewSwitcherElement extends ViewElement<ViewSwitcherElement> {
             }
             active.setComputedPosition(x, y);
             active.setComputedSize(w, h);
-            active.createWidgets(buttonList, fontRenderer, factory);
+            active.createWidgets(screen, font, factory);
         }
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         ViewElement<?> active = currentViewElement();
         if (active == null || !active.isVisible()) return;
         if (fitContent && panelColor != 0) {
@@ -96,19 +97,19 @@ public class ViewSwitcherElement extends ViewElement<ViewSwitcherElement> {
             int py = active.getComputedY() - 4;
             int pw = active.getComputedWidth() + 8;
             int ph = active.getComputedHeight() + 8;
-            Gui.drawRect(px, py, px + pw, py + ph, panelColor);
+            g.fill(px, py, px + pw, py + ph, panelColor);
             if (panelBorderColor != 0) {
-                Gui.drawRect(px, py, px + pw, py + 1, panelBorderColor);
-                Gui.drawRect(px, py + ph - 1, px + pw, py + ph, panelBorderColor);
-                Gui.drawRect(px, py, px + 1, py + ph, panelBorderColor);
-                Gui.drawRect(px + pw - 1, py, px + pw, py + ph, panelBorderColor);
+                g.fill(px, py, px + pw, py + 1, panelBorderColor);
+                g.fill(px, py + ph - 1, px + pw, py + ph - 1 + 1, panelBorderColor);
+                g.fill(px, py, px + 1, py + ph, panelBorderColor);
+                g.fill(px + pw - 1, py, px + pw - 1 + 1, py + ph, panelBorderColor);
             }
         }
-        active.draw(fr, mouseX, mouseY, partialTicks);
+        active.draw(g, font, mouseX, mouseY, partialTicks);
     }
 
     @Override
-    public boolean actionPerformed(GuiButton button) {
+    public boolean actionPerformed(AbstractWidget button) {
         ViewElement<?> active = currentViewElement();
         return active != null && active.actionPerformed(button);
     }

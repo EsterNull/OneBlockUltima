@@ -1,13 +1,13 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.init.MobEffects;
-import net.minecraft.potion.PotionEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 public class ItemNaturalPoison extends CustomPotion {
     public ItemNaturalPoison() {
         super("natural_poison",
-                new PotionEffect[]{
-                        new PotionEffect(MobEffects.POISON, 30 * 20, 1)
+                new MobEffectInstance[]{
+                        new MobEffectInstance(MobEffects.POISON, 30 * 20, 1)
                 });
     }
 }

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "N": {
+      "item": "oneblockultima:natural_poison"
+    },
+    "P": {
+      "item": "minecraft:nether_wart"
+    }
+  },
+  "pattern": [
+    "NNN",
+    "NPN",
+    "NNN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:super_poison"
+  }
+}

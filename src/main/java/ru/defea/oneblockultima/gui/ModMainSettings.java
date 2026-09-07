@@ -1,8 +1,11 @@
 package ru.defea.oneblockultima.gui;
-
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import ru.defea.oneblockultima.gui.layout.Alignment;
 import ru.defea.oneblockultima.gui.layout.ButtonElement;
 import ru.defea.oneblockultima.gui.layout.ViewFactory;
@@ -10,7 +13,7 @@ import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ModMainSettings extends GuiScreen
+public class ModMainSettings extends ModScreen
 {
     private static final int BUTTON_BACK = 999;
     private static final int BUTTON_CONFIG_EDITOR = 0;
@@ -18,15 +21,16 @@ public class ModMainSettings extends GuiScreen
     private static final int BUTTON_BLOCK_PRICES = 2;
     private static final int BUTTON_MISC_SETTINGS = 3;
 
-    private final GuiScreen parent;
+    private final Screen parent;
 
-    public ModMainSettings(GuiScreen parent)
+    public ModMainSettings(Screen parent)
     {
+        super(Component.literal(I18n.get("gui.oneblockultima.ui_settings.title")));
         this.parent = parent;
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
         ViewFactory factory = new ViewFactory(width, height)
                 .padding(10)
@@ -35,57 +39,41 @@ public class ModMainSettings extends GuiScreen
                 .centerVertical();
 
         Map<Integer, String> labels = new HashMap<>();
-        labels.put(BUTTON_CONFIG_EDITOR, I18n.format("gui.oneblockultima.config.sets_title"));
-        labels.put(BUTTON_UI_SETTINGS, I18n.format("gui.oneblockultima.ui_settings.title"));
-        labels.put(BUTTON_BLOCK_PRICES, I18n.format("gui.oneblockultima.settings.open_prices"));
-        labels.put(BUTTON_MISC_SETTINGS, I18n.format("gui.oneblockultima.misc.title"));
-        labels.put(BUTTON_BACK, I18n.format("gui.oneblockultima.back"));
+        labels.put(BUTTON_CONFIG_EDITOR, I18n.get("gui.oneblockultima.config.sets_title"));
+        labels.put(BUTTON_UI_SETTINGS, I18n.get("gui.oneblockultima.ui_settings.title"));
+        labels.put(BUTTON_BLOCK_PRICES, I18n.get("gui.oneblockultima.settings.open_prices"));
+        labels.put(BUTTON_MISC_SETTINGS, I18n.get("gui.oneblockultima.misc.title"));
+        labels.put(BUTTON_BACK, I18n.get("gui.oneblockultima.back"));
 
         int maxWidth = 0;
         for (String s : labels.values()) {
-            int stringWidth = fontRenderer.getStringWidth(s);
+            int stringWidth = this.font.width(s);
             if (stringWidth > maxWidth) maxWidth = stringWidth;
         }
         maxWidth += ButtonElement.BUTTON_PADDING;
 
         factory.title("gui.oneblockultima.ui_settings.title");
-        for (int i : labels.keySet())
-        {
-            factory.button(i, maxWidth, labels.get(i));
-        }
+        factory.button(BUTTON_CONFIG_EDITOR, maxWidth, labels.get(BUTTON_CONFIG_EDITOR))
+                .onPress(() -> minecraft.setScreen(new GuiSetsConfig(this)));
+        factory.button(BUTTON_UI_SETTINGS, maxWidth, labels.get(BUTTON_UI_SETTINGS))
+                .onPress(() -> minecraft.setScreen(new GuiUiSettings(this)));
+        factory.button(BUTTON_BLOCK_PRICES, maxWidth, labels.get(BUTTON_BLOCK_PRICES))
+                .onPress(() -> minecraft.setScreen(new GuiBlockPrices(this)));
+        factory.button(BUTTON_MISC_SETTINGS, maxWidth, labels.get(BUTTON_MISC_SETTINGS))
+                .onPress(() -> minecraft.setScreen(new GuiMiscSettings(this)));
+        factory.button(BUTTON_BACK, maxWidth, labels.get(BUTTON_BACK))
+                .onPress(() -> minecraft.setScreen(parent));
 
-        factory.build(buttonList, fontRenderer);
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton button)
-    {
-        if (button.id == BUTTON_CONFIG_EDITOR)
-        {
-            mc.displayGuiScreen(new GuiSetsConfig(this));
-        }
-        else if (button.id == BUTTON_UI_SETTINGS)
-        {
-            mc.displayGuiScreen(new GuiUiSettings(this));
-        }
-        else if (button.id == BUTTON_BLOCK_PRICES)
-        {
-            mc.displayGuiScreen(new GuiBlockPrices(this));
-        }
-        else if (button.id == BUTTON_MISC_SETTINGS)
-        {
-            mc.displayGuiScreen(new GuiMiscSettings(this));
-        }
-        else if (button.id == BUTTON_BACK)
-        {
-            mc.displayGuiScreen(parent);
+        factory.build(this, this.font);
+        for (net.minecraft.client.gui.components.AbstractWidget w : factory.getWidgets()) {
+            this.addRenderableWidget(w);
         }
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTicks)
     {
-        drawDefaultBackground();
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        this.drawModBackground(g);
+        super.render(g, mouseX, mouseY, partialTicks);
     }
 }

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_mashed_vegetables": {
+      "conditions": {
+        "items": [
+          {
+            "items": "oneblockultima:mashed_vegetables"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "oneblockultima:mashed_vegetables"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_mashed_vegetables"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "oneblockultima:mashed_vegetables"
+    ]
+  }
+}

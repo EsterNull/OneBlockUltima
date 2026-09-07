@@ -1,11 +1,11 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 
 public final class Constants {
-    public static final ResourceLocation COIN_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/coin.png");
-    public static final ResourceLocation SBP_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/sbp.png");
-    public static final ResourceLocation GUIDE_BOOK_BG_TEXTURE = new ResourceLocation(OneBlockUltima.MODID, "textures/gui/guide_book_bg.png");
+    public static final ResourceLocation COIN_TEXTURE = ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "textures/gui/coin.png");
+    public static final ResourceLocation SBP_TEXTURE = ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "textures/gui/sbp.png");
+    public static final ResourceLocation GUIDE_BOOK_BG_TEXTURE = ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "textures/gui/guide_book_bg.png");
 
     public static final String NBT_OBU_GENERATED = "obuGenerated";
     public static final String NBT_GUIDE_BOOK_GIVEN = "obuGuideBookGiven";

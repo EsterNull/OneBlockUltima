@@ -1,9 +1,11 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.init.Bootstrap;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.gui.layout.Alignment;
@@ -13,6 +15,7 @@ import ru.defea.oneblockultima.gui.layout.SpacerElement;
 import ru.defea.oneblockultima.gui.layout.ViewElement;
 import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.gui.layout.ViewSwitcherElement;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +39,7 @@ public class GuiOneBlockLayoutTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     private static class Stub extends ViewElement<Stub> {
@@ -49,11 +52,11 @@ public class GuiOneBlockLayoutTest {
         }
 
         @Override
-        public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+        public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         }
 
         @Override
-        public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         }
 
         @Override
@@ -78,20 +81,19 @@ public class GuiOneBlockLayoutTest {
         }
     }
 
-    private static class FakeTextField extends GuiTextField {
+    private static class FakeTextField extends EditBox {
         private int clicks;
         private boolean fakeFocused;
 
         FakeTextField(int id, int x, int y) {
-            //noinspection DataFlowIssue
-            super(id, null, x, y, 120, 20);
+            super(TestBootstrap.getStubFont(), x, y, 120, 20, Component.literal(""));
         }
 
         @Override
-        public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
             clicks++;
-            fakeFocused = mouseX >= this.x && mouseX < this.x + this.width
-                    && mouseY >= this.y && mouseY < this.y + this.height;
+            fakeFocused = mouseX >= this.getX() && mouseX < this.getX() + this.getWidth()
+                    && mouseY >= this.getY() && mouseY < this.getY() + this.getHeight();
             return fakeFocused;
         }
 
@@ -143,6 +145,22 @@ public class GuiOneBlockLayoutTest {
         return switcher;
     }
 
+    private static Screen screen() {
+        return new Screen(Component.literal("")) {
+            @Override
+            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            }
+        };
+    }
+
+    private static int buttonCount(Screen screen) {
+        int count = 0;
+        for (net.minecraft.client.gui.components.Renderable r : screen.renderables) {
+            if (r instanceof AbstractWidget) count++;
+        }
+        return count;
+    }
+
     @Test
     public void rootLayoutMatchesInsetContentMetrics() {
         ColumnElement view = new ColumnElement().gap(8);
@@ -150,7 +168,7 @@ public class GuiOneBlockLayoutTest {
 
         ViewFactory factory = createFactory();
         ViewSwitcherElement switcher = addRoot(factory, view);
-        factory.build(new ArrayList<>(), null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
+        factory.build(screen(), null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
 
         int contentTop = GUI_TOP + HEADER_HEIGHT + TAB_HEIGHT;
 
@@ -186,7 +204,7 @@ public class GuiOneBlockLayoutTest {
 
         ViewFactory factory = createFactory();
         addRoot(factory, view);
-        factory.build(new ArrayList<>(), null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
+        factory.build(screen(), null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
 
         int minX = view.getComputedX();
         int minY = view.getComputedY();
@@ -229,7 +247,7 @@ public class GuiOneBlockLayoutTest {
 
         ViewFactory factory = createFactory();
         addRoot(factory, view);
-        factory.build(new ArrayList<>(), null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
+        factory.build(screen(), null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
 
         int minX = view.getComputedX();
         int minY = view.getComputedY();
@@ -305,7 +323,7 @@ public class GuiOneBlockLayoutTest {
 
                 switcher.replaceView(0, setsView);
                 switcher.setView(0);
-                factory.build(new ArrayList<>(), null, guiLeft, guiTop, xSize, ySize);
+                factory.build(screen(), null, guiLeft, guiTop, xSize, ySize);
 
                 int panelH = panels.getComputedHeight();
                 int panelY = panels.getComputedY();
@@ -397,7 +415,7 @@ public class GuiOneBlockLayoutTest {
 
             switcher.replaceView(0, donateView);
             switcher.setView(0);
-            factory.build(new ArrayList<>(), null, guiLeft, guiTop, xSize, ySize);
+            factory.build(screen(), null, guiLeft, guiTop, xSize, ySize);
 
             String label = "w=" + w + " h=" + h;
             assertTrue(label + ": content row must be positioned",
@@ -450,19 +468,19 @@ public class GuiOneBlockLayoutTest {
         ViewFactory factory = createFactory();
         ViewSwitcherElement switcher = addRoot(factory, setsView);
 
-        List<GuiButton> buttonList = new ArrayList<>();
-        factory.build(buttonList, null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
-        assertEquals(0, buttonList.size());
+        Screen setsScreen = screen();
+        factory.build(setsScreen, null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
+        assertEquals(0, buttonCount(setsScreen));
 
         switcher.replaceView(1, donateView);
         switcher.setView(1);
-        buttonList.clear();
-        factory.build(buttonList, null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
-        assertEquals(1, buttonList.size());
+        Screen donateScreen = screen();
+        factory.build(donateScreen, null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
+        assertEquals(1, buttonCount(donateScreen));
 
-        buttonList.clear();
-        factory.build(buttonList, null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
-        assertEquals(1, buttonList.size());
+        Screen donateScreenRebuilt = screen();
+        factory.build(donateScreenRebuilt, null, GUI_LEFT, GUI_TOP, X_SIZE, Y_SIZE);
+        assertEquals(1, buttonCount(donateScreenRebuilt));
 
         assertInside(buttonsCol, donateView.getComputedX(), donateView.getComputedY(),
                 donateView.getComputedX() + donateView.getComputedWidth(),

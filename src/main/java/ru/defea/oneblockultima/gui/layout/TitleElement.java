@@ -1,8 +1,10 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 
 import java.util.List;
 
@@ -14,7 +16,7 @@ public class TitleElement extends ViewElement<TitleElement> {
     private int color = WHITE_COLOR_1;
 
     public TitleElement(String key, Object... args) {
-        this.text = I18n.format(key, args);
+        this.text = I18n.get(key, args);
     }
 
     public TitleElement color(int color) {
@@ -23,16 +25,15 @@ public class TitleElement extends ViewElement<TitleElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (text == null || text.isEmpty()) return;
         String t = text;
-        int tx = computedX + (computedWidth - fr.getStringWidth(t)) / 2;
-        int ty = computedY;
-        fr.drawString(t, tx, ty, color);
+        int tx = computedX + (computedWidth - font.width(t)) / 2;
+        g.drawString(font, t, tx, computedY, color);
     }
 
     @Override
@@ -42,11 +43,11 @@ public class TitleElement extends ViewElement<TitleElement> {
 
     @Override
     public int getPreferredHeight() {
-        return 12;
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredHeight(FontRenderer fr) {
-        return fr.FONT_HEIGHT + 4;
+    public int getPreferredHeight(Font font) {
+        return font.lineHeight + 4;
     }
 }

@@ -1,10 +1,14 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import ru.defea.oneblockultima.util.ModelUtil;
 
 import java.util.List;
@@ -17,10 +21,16 @@ public class EntityRendererElement extends ViewElement<EntityRendererElement> {
     private static final int FIT_MARGIN = 1;
 
     private Entity entity;
+    private EntityType<?> entityType;
     private int scale = 16;
 
     public EntityRendererElement(Entity entity) {
         this.entity = entity;
+    }
+
+    public EntityRendererElement(Entity entity, EntityType<?> entityType) {
+        this.entity = entity;
+        this.entityType = entityType;
     }
 
     public EntityRendererElement scale(int scale) {
@@ -38,23 +48,46 @@ public class EntityRendererElement extends ViewElement<EntityRendererElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        if (entity == null || !(entity instanceof EntityLivingBase)) {
-            Gui.drawRect(computedX, computedY, computedX + computedWidth, computedY + computedHeight, GRAY_COLOR_4);
-            fr.drawString("M", computedX + 2, computedY + 2, WHITE_COLOR_1);
-            return;
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
+        if (!drawEntity(g)) {
+            drawFallback(g, font);
         }
-        float[] units = ModelUtil.getModelUnits(entity);
-        int fitW = Math.max(4, computedWidth - 2 * FIT_MARGIN);
-        int fitH = Math.max(4, computedHeight - 2 * FIT_MARGIN);
-        float finalScale = Math.min(fitW / units[0], fitH / units[1]);
-        int ox = computedX + computedWidth / 2 - Math.round(units[2] * finalScale);
-        int oy = computedY + computedHeight / 2 + Math.round(units[3] * finalScale);
-        ModelUtil.drawEntityOnScreenScaled(ox, oy, entity, finalScale);
+    }
+
+    private boolean drawEntity(GuiGraphics g) {
+        if (entity == null || !(entity instanceof LivingEntity)) {
+            return false;
+        }
+        try {
+            float[] fit = ModelUtil.computeScreenEntityFit(computedWidth, computedHeight, entity);
+            float finalScale = fit[0];
+            int ox = computedX + computedWidth / 2 - Math.round(fit[1] * finalScale);
+            int oy = computedY + computedHeight / 2 + Math.round(fit[2] * finalScale);
+            ModelUtil.drawEntityOnScreenScaled(g, ox, oy, entity, finalScale);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private void drawFallback(GuiGraphics g, Font font) {
+        g.fill(computedX, computedY, computedX + computedWidth, computedY + computedHeight, GRAY_COLOR_4);
+        if (entityType != null)
+        {
+            Item egg = SpawnEggItem.byId(entityType);
+            if (egg != null)
+            {
+                int eggX = computedX + (computedWidth - 16) / 2;
+                int eggY = computedY + (computedHeight - 16) / 2;
+                g.renderFakeItem(new ItemStack(egg), eggX, eggY);
+                return;
+            }
+        }
+        g.drawString(font, "M", computedX + 2, computedY + 2, WHITE_COLOR_1);
     }
 
     @Override

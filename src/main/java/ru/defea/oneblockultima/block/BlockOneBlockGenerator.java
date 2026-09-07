@@ -1,27 +1,47 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.ITileEntityProvider;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraftforge.common.EnumPlantType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.TorchBlock;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.common.IPlantable;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.event.ModEvents;
-import ru.defea.oneblockultima.gui.GuiHandler;
+import ru.defea.oneblockultima.gui.containers.ContainerClaimGenerator;
+import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 import ru.defea.oneblockultima.world.GeneratedBlockRegistry;
 
@@ -29,171 +49,196 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Random;
 
-public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
+public class BlockOneBlockGenerator extends Block implements EntityBlock
 {
-    public static final BlockPos GENERATOR_POS = new BlockPos(0, 63, 0);
-    public static final BlockPos GENERATED_BLOCK_POS = GENERATOR_POS.up();
-    public static final BlockPos FLUID_BARRIER_POS = GENERATED_BLOCK_POS.up();
+    public static final BlockPos GENERATOR_POS = new BlockPos(0, 0, 0);
+    public static final BlockPos GENERATED_BLOCK_POS = GENERATOR_POS.above();
+    public static final BlockPos FLUID_BARRIER_POS = GENERATED_BLOCK_POS.above();
 
-    private static final AxisAlignedBB COLLISION_AABB = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 2.0D, 1.0D);
-    private static final AxisAlignedBB HIGHLIGHT_AABB = new AxisAlignedBB(0.0D, 1.0D, 0.0D, 1.0D, 2.0D, 1.0D);
-    private static final AxisAlignedBB BOUNDING_AABB = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.001D, 1.0D);
+    private static final AABB COLLISION_AABB = new AABB(0.0D, 0.0D, 0.0D, 1.0D, 2.0D, 1.0D);
+    private static final AABB HIGHLIGHT_AABB = new AABB(0.0D, 1.0D, 0.0D, 1.0D, 2.0D, 1.0D);
+    private static final AABB BOUNDING_AABB = new AABB(0.0D, 0.0D, 0.0D, 1.0D, 0.001D, 1.0D);
 
     public BlockOneBlockGenerator()
     {
-        super(Material.GROUND);
-        setHardness(-1.0F);
-        setResistance(6000000.0F);
-        setHarvestLevel("pickaxe", 0);
-        setCreativeTab(OneBlockUltima.modTab);
-        setRegistryName(OneBlockUltima.MODID, "one_block_generator");
-        setUnlocalizedName("one_block_generator");
-        this.setLightOpacity(0);
+        super(Properties.of().mapColor(MapColor.DIRT).strength(-1.0F, 6000000.0F).noCollission());
     }
 
-    @Override
-    public boolean onBlockActivated(@Nonnull World world, @Nonnull BlockPos pos, @Nonnull IBlockState state, EntityPlayer player, @Nonnull EnumHand hand, @Nonnull EnumFacing facing, float hitX, float hitY, float hitZ)
+    private static InteractionResult handleUse(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit)
     {
-        if (player.isSneaking())
+        if (player.isShiftKeyDown())
         {
-            return false;
+            return InteractionResult.PASS;
         }
 
-        if (world.isRemote)
+        if (world.isClientSide)
         {
-            return true;
+            return InteractionResult.SUCCESS;
         }
 
-        TileEntity tileEntity = world.getTileEntity(pos);
+        BlockEntity tileEntity = world.getBlockEntity(pos);
         if (tileEntity instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
-            if (generator.isFree() && generator.canBeClaimedBy(player.getUniqueID()))
+            if (generator.isFree() && generator.canBeClaimedBy(player.getUUID()))
             {
-                GuiHandler.openClaimScreen(player, pos);
-                return true;
+                ((ServerPlayer) player).openMenu(claimMenuProvider(pos), (buf) -> buf.writeBlockPos(pos));
+                return InteractionResult.SUCCESS;
             }
 
             if (!ModEvents.ensureGeneratorAccess(world, pos, player, generator))
             {
-                return true;
+                return InteractionResult.SUCCESS;
             }
 
-            GuiHandler.open(player, pos);
-            return true;
+            ((ServerPlayer) player).openMenu(mainMenuProvider(pos), (buf) -> buf.writeBlockPos(pos));
+            return InteractionResult.SUCCESS;
         }
 
-        GuiHandler.open(player, pos);
-        return true;
+        ((ServerPlayer) player).openMenu(mainMenuProvider(pos), (buf) -> buf.writeBlockPos(pos));
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public boolean hasTileEntity(@Nonnull IBlockState state)
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit)
     {
-        return true;
+        return handleUse(state, world, pos, player, hit);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit)
+    {
+        InteractionResult result = handleUse(state, world, pos, player, hit);
+        return result == InteractionResult.PASS ? ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION : ItemInteractionResult.SUCCESS;
+    }
+
+    private static MenuProvider claimMenuProvider(BlockPos pos)
+    {
+        return new MenuProvider()
+        {
+            @Override
+            public Component getDisplayName()
+            {
+                return Component.literal("");
+            }
+
+            @Override
+            public AbstractContainerMenu createMenu(int id, net.minecraft.world.entity.player.Inventory inv, net.minecraft.world.entity.player.Player p)
+            {
+                return new ContainerClaimGenerator(id, inv, pos);
+            }
+        };
+    }
+
+    private static MenuProvider mainMenuProvider(BlockPos pos)
+    {
+        return new MenuProvider()
+        {
+            @Override
+            public Component getDisplayName()
+            {
+                return Component.literal("");
+            }
+
+            @Override
+            public AbstractContainerMenu createMenu(int id, net.minecraft.world.entity.player.Inventory inv, net.minecraft.world.entity.player.Player p)
+            {
+                return new ContainerOneBlock(id, inv, pos);
+            }
+        };
     }
 
     @Nullable
     @Override
-    public TileEntity createNewTileEntity(@Nonnull World world, int meta)
+    public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state)
     {
-        return new TileEntityOneBlockGenerator();
-    }
-
-    @Override
-    @Nonnull
-    public EnumBlockRenderType getRenderType(@Nonnull IBlockState state)
-    {
-        return EnumBlockRenderType.INVISIBLE;
-    }
-
-    @Override
-    @Nonnull
-    public AxisAlignedBB getBoundingBox(@Nonnull IBlockState state, @Nonnull IBlockAccess source, @Nonnull BlockPos pos)
-    {
-        return BOUNDING_AABB;
-    }
-
-    @Override
-    @Nonnull
-    public AxisAlignedBB getSelectedBoundingBox(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos)
-    {
-        return HIGHLIGHT_AABB.offset(pos);
+        return new TileEntityOneBlockGenerator(pos, state);
     }
 
     @Nullable
     @Override
-    public AxisAlignedBB getCollisionBoundingBox(@Nonnull IBlockState blockState, @Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type)
     {
-        return COLLISION_AABB;
+        if (level.isClientSide)
+        {
+            return null;
+        }
+
+        if (type != ru.defea.oneblockultima.tile.ModTileEntities.ONE_BLOCK_GENERATOR.get())
+        {
+            return null;
+        }
+
+        return (lvl, pos, st, be) -> TileEntityOneBlockGenerator.serverTick(lvl, pos, st, (TileEntityOneBlockGenerator) be);
+    }
+
+    @Nonnull
+    @Override
+    public RenderShape getRenderShape(@Nonnull BlockState state)
+    {
+        return RenderShape.INVISIBLE;
+    }
+
+    // Fully transparent to sight and raycast: the crosshair/block-picking never targets the
+    // generator itself, clicks pass through to whatever is above it.
+    @Nonnull
+    @Override
+    public VoxelShape getShape(@Nonnull BlockState state, @Nonnull BlockGetter source, @Nonnull BlockPos pos, @Nonnull CollisionContext context)
+    {
+        return Shapes.empty();
+    }
+
+    @Nonnull
+    @Override
+    public VoxelShape getInteractionShape(@Nonnull BlockState state, @Nonnull BlockGetter level, @Nonnull BlockPos pos)
+    {
+        return Shapes.empty();
+    }
+
+    @Nonnull
+    @Override
+    public VoxelShape getCollisionShape(@Nonnull BlockState state, @Nonnull BlockGetter worldIn, @Nonnull BlockPos pos, @Nonnull CollisionContext context)
+    {
+        return Shapes.create(COLLISION_AABB);
     }
 
     @Override
-    public void addCollisionBoxToList(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull AxisAlignedBB entityBox, @Nonnull java.util.List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean p_185477_7_)
+    public boolean canSustainPlant(@Nonnull BlockState state, @Nonnull BlockGetter world, @Nonnull BlockPos pos, @Nonnull Direction direction, @Nonnull IPlantable plantable)
     {
-        super.addCollisionBoxToList(state, worldIn, pos, entityBox, collidingBoxes, entityIn, p_185477_7_);
-    }
-
-    @Nullable
-    @Override
-    public RayTraceResult collisionRayTrace(@Nonnull IBlockState blockState, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Vec3d start, @Nonnull Vec3d end)
-    {
-        return rayTrace(pos, start, end, HIGHLIGHT_AABB);
-    }
-
-    @Override
-    public boolean isOpaqueCube(@Nonnull IBlockState state)
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isFullBlock(@Nonnull IBlockState state)
-    {
-        return false;
-    }
-
-    @Override
-    public boolean canSustainPlant(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos, @Nonnull EnumFacing direction, @Nonnull IPlantable plantable)
-    {
-        if (direction != EnumFacing.UP)
+        if (direction != Direction.UP)
         {
             return false;
         }
 
-        EnumPlantType plantType = plantable.getPlantType(world, pos.offset(direction));
-        return plantType == EnumPlantType.Crop
-                || plantType == EnumPlantType.Plains
-                || plantType == EnumPlantType.Beach;
+        net.minecraftforge.common.PlantType plantType = plantable.getPlantType(world, pos.relative(direction));
+        return plantType == net.minecraftforge.common.PlantType.CROP
+                || plantType == net.minecraftforge.common.PlantType.PLAINS
+                || plantType == net.minecraftforge.common.PlantType.BEACH;
     }
 
     @Override
-    public void onBlockAdded(World world, @Nonnull BlockPos pos, @Nonnull IBlockState state)
+    public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving)
     {
-        if (!world.isRemote)
+        if (!world.isClientSide)
         {
             ModEvents.applyPendingGeneratorOwner(world, pos);
-
-            // Place the barrier above the generator
             ensureFluidBarrier(world, pos);
-
-            world.scheduleUpdate(pos, this, 1);
+            world.scheduleTick(pos, this, 1);
         }
-        super.onBlockAdded(world, pos, state);
+        super.onPlace(state, world, pos, oldState, isMoving);
     }
 
     @Override
-    public void updateTick(World world, @Nonnull BlockPos pos, @Nonnull IBlockState state, @Nonnull Random rand)
+    public void tick(BlockState state, net.minecraft.server.level.ServerLevel world, BlockPos pos, RandomSource random)
     {
-        if (world.isRemote)
+        if (world.isClientSide)
         {
             return;
         }
 
-        // Check whether the barrier needs to be restored
         ensureFluidBarrier(world, pos);
 
-        TileEntity tileEntity = world.getTileEntity(pos);
+        BlockEntity tileEntity = world.getBlockEntity(pos);
         if (tileEntity instanceof TileEntityOneBlockGenerator)
         {
             ModEvents.applyPendingGeneratorOwner(world, pos);
@@ -202,42 +247,36 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
     }
 
     @Override
-    public void neighborChanged(@Nonnull IBlockState state, @Nonnull World world, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos)
+    public void neighborChanged(@Nonnull BlockState state, @Nonnull Level world, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos, boolean isMoving)
     {
-        super.neighborChanged(state, world, pos, blockIn, fromPos);
-        if (world.isRemote)
+        super.neighborChanged(state, world, pos, blockIn, fromPos, isMoving);
+        if (world.isClientSide)
         {
             return;
         }
 
-        IBlockState currentState = world.getBlockState(fromPos);
-        if (currentState != Blocks.AIR.getDefaultState()) {
+        BlockState currentState = world.getBlockState(fromPos);
+        if (currentState != Blocks.AIR.defaultBlockState())
+        {
             return;
         }
 
-        if (world.getBlockState(fromPos.down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+        if (world.getBlockState(fromPos.below()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             ensureFluidBarrier(world, pos);
 
-            TileEntity tileEntity = world.getTileEntity(pos);
+            BlockEntity tileEntity = world.getBlockEntity(pos);
             if (tileEntity instanceof TileEntityOneBlockGenerator)
             {
-                if (net.minecraftforge.fml.common.Loader.isModLoaded("multimine"))
-                {
-                    world.scheduleUpdate(pos, this, 7);
-                }
-                else
-                {
-                    ((TileEntityOneBlockGenerator) tileEntity).tryGenerateBlock();
-                }
+                ((TileEntityOneBlockGenerator) tileEntity).tryGenerateBlock();
             }
         }
     }
 
-    public static void ensureFluidBarrier(World world, BlockPos generatorPos)
+    public static void ensureFluidBarrier(Level world, BlockPos generatorPos)
     {
-        BlockPos barrierPos = generatorPos.up(2);
-        IBlockState barrierState = world.getBlockState(barrierPos);
+        BlockPos barrierPos = generatorPos.above(2);
+        BlockState barrierState = world.getBlockState(barrierPos);
         Block barrierBlock = barrierState.getBlock();
 
         if (barrierBlock == ModBlocks.FLUID_BARRIER)
@@ -247,15 +286,21 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
 
         if (barrierBlock != Blocks.AIR)
         {
-            boolean generatedSlotEmpty = world.getBlockState(generatorPos.up()).getBlock() == Blocks.AIR;
-            if ((barrierBlock instanceof net.minecraft.block.BlockLever
-                    || barrierBlock instanceof net.minecraft.block.BlockButton
-                    || barrierBlock instanceof net.minecraft.block.BlockTorch)
-                    && (generatedSlotEmpty || !barrierBlock.canPlaceBlockAt(world, barrierPos)))
+            // The barrier's full shape is what stops liquids from passing through this
+            // slot — never destroy a liquid that reached it, that would just turn it
+            // into air. When the liquid disappears, the barrier will be placed here.
+            if (!barrierState.getFluidState().isEmpty() || barrierBlock instanceof LiquidBlock)
             {
-                barrierBlock.dropBlockAsItem(world, barrierPos, barrierState, 0);
-                world.setBlockToAir(barrierPos);
-                OneBlockUltima.getLogger().info("[Generator] Dropped attachable {} at {} via ensureFluidBarrier (generatedSlotEmpty={})", barrierBlock.getLocalizedName(), barrierPos, generatedSlotEmpty);
+                return;
+            }
+
+            boolean generatedSlotEmpty = world.getBlockState(generatorPos.above()).getBlock() == Blocks.AIR;
+            boolean nonSolidOccupant = !barrierState.isSolidRender(world, barrierPos)
+                    && (generatedSlotEmpty || !barrierState.canSurvive(world, barrierPos));
+            if (nonSolidOccupant)
+            {
+                world.destroyBlock(barrierPos, true);
+                OneBlockUltima.logDebug("[Generator] Dropped non-solid occupant {} at {} via ensureFluidBarrier (generatedSlotEmpty={})", barrierBlock, barrierPos, generatedSlotEmpty);
             }
             else
             {
@@ -263,17 +308,17 @@ public class BlockOneBlockGenerator extends Block implements ITileEntityProvider
             }
         }
 
-        world.setBlockState(barrierPos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
-        OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {}", barrierPos);
+        world.setBlock(barrierPos, ModBlocks.FLUID_BARRIER.defaultBlockState(), 3);
+        OneBlockUltima.logDebug("[Generator] BARRIER placed at {}", barrierPos);
     }
 
     @Override
-    public void breakBlock(World world, BlockPos pos, @Nonnull IBlockState state)
+    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving)
     {
-        if (world.getBlockState(pos.down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+        if (world.getBlockState(pos.below()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             GeneratedBlockRegistry.get(world).remove(pos);
         }
-        super.breakBlock(world, pos, state);
+        super.onRemove(state, world, pos, newState, isMoving);
     }
 }

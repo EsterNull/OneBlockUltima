@@ -1,5 +1,8 @@
 package ru.defea.oneblockultima.capability;
 
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
+
+@AutoRegisterCapability
 public interface IOneBlockPlayerData
 {
     double getCurrency();

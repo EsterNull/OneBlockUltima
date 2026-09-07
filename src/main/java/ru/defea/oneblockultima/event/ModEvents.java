@@ -1,34 +1,44 @@
 package ru.defea.oneblockultima.event;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.monster.EntitySlime;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraftforge.event.entity.living.LivingSpawnEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.world.BlockEvent;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Slime;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.MobSpawnEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.Event;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.MenuProvider;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.block.BlockOneBlockGenerator;
 import ru.defea.oneblockultima.block.ModBlocks;
@@ -37,7 +47,9 @@ import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
-import ru.defea.oneblockultima.gui.GuiHandler;
+import ru.defea.oneblockultima.gui.containers.ContainerClaimGenerator;
+import ru.defea.oneblockultima.gui.containers.ContainerOneBlock;
+import ru.defea.oneblockultima.item.ItemCase;
 import ru.defea.oneblockultima.item.ModItems;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketSyncBlockSetConfig;
@@ -67,11 +79,16 @@ public final class ModEvents
     {
     }
 
-    private static final java.util.Map<BlockPos, Boolean> processingBlocks = new java.util.HashMap<>();
+    private static final Map<BlockPos, Boolean> processingBlocks = new HashMap<>();
     private static final Map<BlockPos, UUID> pendingGeneratorOwners = new HashMap<>();
     private static final Map<String, Long> lastAccessDeniedMessageTicks = new HashMap<>();
     private static final Map<BlockPos, GeneratedBlockRegistry.GeneratedBlockEntry> pendingMobSpawnEntries = new HashMap<>();
     private static final Map<BlockPos, UUID> lastBreakPlayers = new HashMap<>();
+    private static final Map<BlockPos, Long> pendingBreakDrops = new HashMap<>();
+
+    private static final Map<BlockPos, Long> pendingMarkOnlyBreakDrops = new HashMap<>();
+
+    private static final Set<BlockPos> placedGeneratedBlocks = new HashSet<>();
     private static int lastBreakCleanupTick = 0;
 
     static final Map<UUID, Double> lastDisplayedCurrency = new HashMap<>();
@@ -83,7 +100,7 @@ public final class ModEvents
             return false;
         }
 
-        String key = playerId + ":" + pos.toLong();
+        String key = playerId + ":" + pos.asLong();
         Long lastTick = lastAccessDeniedMessageTicks.get(key);
         if (lastTick != null && lastTick == worldTick)
         {
@@ -94,22 +111,23 @@ public final class ModEvents
         return true;
     }
 
-    public static void trySendAccessDeniedMessage(EntityPlayer player, BlockPos pos, long worldTick)
+    public static void trySendAccessDeniedMessage(Player player, BlockPos pos, long worldTick)
     {
-        if (!(player instanceof EntityPlayerMP))
+        if (!(player instanceof ServerPlayer))
         {
             return;
         }
 
-        if (!trySendAccessDeniedMessage(player.getUniqueID(), pos, worldTick))
+        if (!trySendAccessDeniedMessage(player.getUUID(), pos, worldTick))
         {
             return;
         }
 
-        player.sendMessage(new net.minecraft.util.text.TextComponentTranslation("generator.access.denied").setStyle(new net.minecraft.util.text.Style().setColor(net.minecraft.util.text.TextFormatting.RED)));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("generator.access.denied")
+                .setStyle(net.minecraft.network.chat.Style.EMPTY.withColor(net.minecraft.ChatFormatting.RED)));
     }
 
-    public static boolean ensureGeneratorAccess(World world, BlockPos pos, EntityPlayer player, TileEntityOneBlockGenerator generator)
+    public static boolean ensureGeneratorAccess(Level world, BlockPos pos, Player player, TileEntityOneBlockGenerator generator)
     {
         if (generator == null || player == null)
         {
@@ -124,7 +142,7 @@ public final class ModEvents
         return generator.hasAccess(player);
     }
 
-    public static void registerPendingGeneratorOwner(World world, BlockPos pos, UUID playerId)
+    public static void registerPendingGeneratorOwner(Level world, BlockPos pos, UUID playerId)
     {
         if (world == null || pos == null || playerId == null)
         {
@@ -134,7 +152,7 @@ public final class ModEvents
         pendingGeneratorOwners.put(pos, playerId);
     }
 
-    public static void applyPendingGeneratorOwner(World world, BlockPos pos)
+    public static void applyPendingGeneratorOwner(Level world, BlockPos pos)
     {
         if (world == null || pos == null)
         {
@@ -147,103 +165,108 @@ public final class ModEvents
             return;
         }
 
-        TileEntity tileEntity = world.getTileEntity(pos);
+        BlockEntity tileEntity = world.getBlockEntity(pos);
         if (!(tileEntity instanceof TileEntityOneBlockGenerator))
         {
-            OneBlockUltima.getLogger().warn("[OwnerDebug] applyPendingGeneratorOwner: TE at {} is NOT a generator! it's {}", pos, tileEntity != null ? tileEntity.getClass().getSimpleName() : "NULL");
+            OneBlockUltima.logDebugWarn("[OwnerDebug] applyPendingGeneratorOwner: TE at {} is NOT a generator! it's {}", pos, tileEntity != null ? tileEntity.getClass().getSimpleName() : "NULL");
             return;
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
-        OneBlockUltima.getLogger().info("[OwnerDebug] applyPendingGeneratorOwner: pos={}, playerId={}, currentOwnerId={}, isFree={}", pos, playerId, generator.getOwnerId(), generator.isFree());
+        OneBlockUltima.logDebug("[OwnerDebug] applyPendingGeneratorOwner: pos={}, playerId={}, currentOwnerId={}, isFree={}", pos, playerId, generator.getOwnerId(), generator.isFree());
         if (generator.assignOwnerForPlacement(playerId))
         {
-            OneBlockUltima.getLogger().info("[OwnerDebug] applyPendingGeneratorOwner: SUCCESS, new ownerId={}", generator.getOwnerId());
+            OneBlockUltima.logDebug("[OwnerDebug] applyPendingGeneratorOwner: SUCCESS, new ownerId={}", generator.getOwnerId());
             pendingGeneratorOwners.remove(pos);
         }
         else
         {
-            OneBlockUltima.getLogger().warn("[OwnerDebug] applyPendingGeneratorOwner: FAILED to assign owner");
+            OneBlockUltima.logDebugWarn("[OwnerDebug] applyPendingGeneratorOwner: FAILED to assign owner");
         }
     }
 
     @SubscribeEvent
     public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event)
     {
-        if (event.player == null || event.player.world == null || event.player.world.isRemote)
+        if (event.getEntity() == null || event.getEntity().level() == null || event.getEntity().level().isClientSide())
         {
             return;
         }
 
-        IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(event.player);
+        IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(event.getEntity());
         if (data instanceof ru.defea.oneblockultima.capability.OneBlockPlayerData)
         {
-            OneBlockPlayerDataProvider.loadFromEntity(event.player, data);
-            PacketSyncPlayerData.sendToPlayer(event.player);
+            OneBlockPlayerDataProvider.loadFromEntity(event.getEntity(), data);
+            PacketSyncPlayerData.sendToPlayer((ServerPlayer) event.getEntity());
         }
     }
 
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event)
     {
-        if (event.player.world.isRemote)
+        Player player = event.getEntity();
+        if (player.level().isClientSide())
         {
             return;
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) event.player;
-        World world = player.world;
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        ServerPlayer serverPlayer = (ServerPlayer) player;
+        Level world = player.level();
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
 
-        //noinspection ConstantValue
-        boolean hasBedSpawn = player.getBedLocation(OVERWORLD_DIMENSION_ID) != null;
+        boolean hasBedSpawn = serverPlayer.getRespawnPosition() != null;
 
-        //noinspection ConstantConditions
         BlockPos spawnPos = new BlockPos(FLUID_BARRIER_POS);
-        //noinspection ConstantValue
         if (!hasBedSpawn)
         {
-            world.setSpawnPoint(spawnPos);
-            player.setSpawnPoint(spawnPos, true);
-            player.setSpawnChunk(spawnPos, true, player.dimension);
-            player.setPositionAndUpdate(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET);
-            player.connection.setPlayerLocation(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET, player.rotationYaw, player.rotationPitch);
+            ((ServerLevel) world).setDefaultSpawnPos(spawnPos, 0.0F);
+            serverPlayer.setRespawnPosition(world.dimension(), spawnPos, 0.0F, true, true);
+            player.teleportTo(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET);
         }
 
-        PacketSyncPlayerData.sendToPlayer(player);
+        IOneBlockPlayerData respawnData = OneBlockPlayerDataProvider.get(serverPlayer);
+        if (respawnData != null)
+        {
+            OneBlockPlayerDataProvider.loadFromEntity(serverPlayer, respawnData);
+            OneBlockUltima.getLogger().warn("[OBU-Balance] PlayerRespawnEvent: currency after loadFromEntity={}",
+                    respawnData.getCurrency());
+        }
+        PacketSyncPlayerData.sendToPlayer(serverPlayer);
     }
 
     @SubscribeEvent
-    public static void onWorldLoad(WorldEvent.Load event)
+    public static void onLevelLoad(LevelEvent.Load event)
     {
-        World world = event.getWorld();
-        if (world.isRemote || world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        Level world = (Level) event.getLevel();
+        if (world.isClientSide() || !OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
+
+        OneBlockUltima.logDebug("[WorldInit] onLevelLoad ENTER dim={} genBlock={} barrier={}", world.dimension().location(), world.getBlockState(GENERATOR_POS).getBlock().getDescriptionId(), world.getBlockState(FLUID_BARRIER_POS).getBlock().getDescriptionId());
 
         createWorldIcon(world);
 
         SpawnConfigData data = SpawnConfigData.get(world);
         if (!data.spawnInitialized)
         {
-            world.setSpawnPoint(new BlockPos(FLUID_BARRIER_POS));
+            ((ServerLevel) world).setDefaultSpawnPos(new BlockPos(FLUID_BARRIER_POS), 0.0F);
             data.spawnInitialized = true;
-            data.markDirty();
+            data.setDirty();
         }
 
         if (world.getBlockState(GENERATOR_POS).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             if (world.getBlockState(FLUID_BARRIER_POS).getBlock() == Blocks.AIR)
             {
-                world.setBlockState(FLUID_BARRIER_POS, ModBlocks.FLUID_BARRIER.getDefaultState(), 2);
-                OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {} on world load", FLUID_BARRIER_POS);
+                world.setBlock(FLUID_BARRIER_POS, ModBlocks.FLUID_BARRIER.defaultBlockState(), 2);
+                OneBlockUltima.logDebug("[Generator] BARRIER placed at {} on world load", FLUID_BARRIER_POS);
             }
 
-            TileEntity tileEntity = world.getTileEntity(GENERATOR_POS);
+            BlockEntity tileEntity = world.getBlockEntity(GENERATOR_POS);
             if (tileEntity instanceof TileEntityOneBlockGenerator)
             {
                 GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
@@ -255,17 +278,17 @@ public final class ModEvents
             }
             else
             {
-                world.scheduleUpdate(GENERATOR_POS, ModBlocks.ONE_BLOCK_GENERATOR, 1);
+                world.scheduleTick(GENERATOR_POS, ModBlocks.ONE_BLOCK_GENERATOR, 1);
             }
             return;
         }
 
-        if (world.getBlockState(GENERATOR_POS).getMaterial().isReplaceable()
-                || world.getBlockState(GENERATOR_POS).getBlock().isAir(world.getBlockState(GENERATOR_POS), world, GENERATOR_POS))
+        if (world.getBlockState(GENERATOR_POS).canBeReplaced()
+                || world.getBlockState(GENERATOR_POS).isAir())
         {
-            world.setBlockState(GENERATOR_POS, ModBlocks.ONE_BLOCK_GENERATOR.getDefaultState(), 3);
+            world.setBlock(GENERATOR_POS, ModBlocks.ONE_BLOCK_GENERATOR.defaultBlockState(), 3);
 
-            TileEntity createdGenerator = world.getTileEntity(GENERATOR_POS);
+            BlockEntity createdGenerator = world.getBlockEntity(GENERATOR_POS);
             if (createdGenerator instanceof TileEntityOneBlockGenerator)
             {
                 TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) createdGenerator;
@@ -274,36 +297,43 @@ public final class ModEvents
 
             if (world.getBlockState(FLUID_BARRIER_POS).getBlock() == Blocks.AIR)
             {
-                world.setBlockState(FLUID_BARRIER_POS, ModBlocks.FLUID_BARRIER.getDefaultState(), 2);
-                OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {} on generator creation", FLUID_BARRIER_POS);
+                world.setBlock(FLUID_BARRIER_POS, ModBlocks.FLUID_BARRIER.defaultBlockState(), 2);
+                OneBlockUltima.logDebug("[Generator] BARRIER placed at {} on generator creation", FLUID_BARRIER_POS);
             }
 
-            TileEntity tileEntity = world.getTileEntity(GENERATOR_POS);
+            BlockEntity tileEntity = world.getBlockEntity(GENERATOR_POS);
             if (tileEntity instanceof TileEntityOneBlockGenerator)
             {
                 ((TileEntityOneBlockGenerator) tileEntity).tryGenerateBlock();
             }
             else
             {
-                world.scheduleUpdate(GENERATOR_POS, ModBlocks.ONE_BLOCK_GENERATOR, 1);
+                world.scheduleTick(GENERATOR_POS, ModBlocks.ONE_BLOCK_GENERATOR, 1);
             }
         }
+
+        OneBlockUltima.logDebug("[WorldInit] onLevelLoad DONE dim={} genBlock={} generated={}", world.dimension().location(), world.getBlockState(GENERATOR_POS).getBlock().getDescriptionId(), GeneratedBlockRegistry.get(world).isGenerated(GENERATED_BLOCK_POS));
     }
 
     @SubscribeEvent
-    public static void onWorldSave(WorldEvent.Save event)
+    public static void onLevelSave(LevelEvent.Save event)
     {
-        if (event.getWorld() == null || event.getWorld().isRemote)
+        Level world = (Level) event.getLevel();
+        if (world == null || world.isClientSide())
         {
             return;
         }
 
-        GeneratedBlockRegistry.get(event.getWorld()).flushPendingDirty();
+        GeneratedBlockRegistry.get(world).flushPendingDirty();
     }
 
-    private static void createWorldIcon(World world)
+    private static void createWorldIcon(Level world)
     {
-        File worldDir = world.getSaveHandler().getWorldDirectory();
+        if (!(world instanceof ServerLevel))
+        {
+            return;
+        }
+        File worldDir = ((ServerLevel) world).getServer().getWorldPath(LevelResource.ROOT).toFile();
         File iconFile = new File(worldDir, "icon.png");
 
         if (iconFile.exists())
@@ -326,7 +356,7 @@ public final class ModEvents
             }
 
             Files.copy(input, iconFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            OneBlockUltima.getLogger().info("Icon created for world: {}", worldDir.getName());
+            OneBlockUltima.logDebug("Icon created for world: {}", worldDir.getName());
         }
         catch (IOException e)
         {
@@ -337,22 +367,24 @@ public final class ModEvents
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event)
     {
-        if (event.player == null || event.player.world == null || event.player.world.isRemote)
+        if (event.getEntity() == null || event.getEntity().level() == null || event.getEntity().level().isClientSide())
         {
             return;
         }
 
-        UpdateChecker.checkForUpdates((EntityPlayerMP) event.player);
+        ServerPlayer player = (ServerPlayer) event.getEntity();
+
+        UpdateChecker.checkForUpdates(player);
 
         try
         {
             String json = BlockSetConfig.get().toJson();
-            OneBlockUltima.getLogger().info("[Sync] BlockSetConfig JSON length: {}", json != null ? json.length() : "null");
+            OneBlockUltima.logDebug("[Sync] BlockSetConfig JSON length: {}", json != null ? json.length() : "null");
             if (json != null && !json.isEmpty())
             {
                 PacketSyncBlockSetConfig packet = new PacketSyncBlockSetConfig(json);
-                OneBlockUltima.getLogger().info("[Sync] Sending BlockSetConfig packet to {}", event.player.getName());
-                ModMessages.sendToPlayer(packet, (EntityPlayerMP) event.player);
+                OneBlockUltima.logDebug("[Sync] Sending BlockSetConfig packet to {}", player.getName().getString());
+                ModMessages.sendToPlayer(packet, player);
             }
         }
         catch (Exception e)
@@ -360,46 +392,40 @@ public final class ModEvents
             OneBlockUltima.getLogger().error("[Sync] Failed to send BlockSetConfig", e);
         }
 
-        giveGuideBookOnFirstJoin((EntityPlayerMP) event.player);
+        giveGuideBookOnFirstJoin(player);
 
-        World world = event.player.world;
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        Level world = player.level();
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
 
-        TileEntity tileEntity = world.getTileEntity(GENERATOR_POS);
+        BlockEntity tileEntity = world.getBlockEntity(GENERATOR_POS);
         if (tileEntity instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
             if (generator.isFree())
             {
-                generator.tryAssignOwnerIfEligible(event.player.getUniqueID());
+                generator.tryAssignOwnerIfEligible(player.getUUID());
             }
-        }
-
-        EntityPlayerMP player = (EntityPlayerMP) event.player;
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
-        {
-            return;
         }
 
         SpawnConfigData data = SpawnConfigData.get(world);
         BlockPos spawnPos = new BlockPos(FLUID_BARRIER_POS);
         if (!data.spawnInitialized)
         {
-            world.setSpawnPoint(spawnPos);
+            ((ServerLevel) world).setDefaultSpawnPos(spawnPos, 0.0F);
             data.spawnInitialized = true;
-            data.markDirty();
+            data.setDirty();
         }
 
-        BlockPos currentSpawn = world.getSpawnPoint();
-        if (!currentSpawn.equals(spawnPos))
+        BlockPos currentSpawn = world.getSharedSpawnPos();
+        if (currentSpawn == null || !currentSpawn.equals(spawnPos))
         {
-            world.setSpawnPoint(spawnPos);
+            ((ServerLevel) world).setDefaultSpawnPos(spawnPos, 0.0F);
         }
 
-        player.getBedLocation(OVERWORLD_DIMENSION_ID);
+        player.getRespawnPosition();
 
         IOneBlockPlayerData playerData = OneBlockPlayerDataProvider.get(player);
         if (playerData != null)
@@ -409,80 +435,75 @@ public final class ModEvents
 
         if (!data.spawnTeleportDone)
         {
-            player.setPositionAndUpdate(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET);
-            player.connection.setPlayerLocation(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET, player.rotationYaw, player.rotationPitch);
+            player.teleportTo(spawnPos.getX() + BLOCK_CENTER_OFFSET, spawnPos.getY(), spawnPos.getZ() + BLOCK_CENTER_OFFSET);
+            player.setYRot(player.getYRot());
+            player.setXRot(player.getXRot());
             data.spawnTeleportDone = true;
-            data.markDirty();
+            data.setDirty();
         }
 
         PacketSyncPlayerData.sendToPlayer(player);
     }
 
-    private static void giveGuideBookOnFirstJoin(EntityPlayerMP player)
+    private static void giveGuideBookOnFirstJoin(ServerPlayer player)
     {
-        if (player == null || player.world == null
-                || player.world.provider.getDimension() != OVERWORLD_DIMENSION_ID
-                || player.world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (player == null || player.level() == null || !OneBlockWorldType.isOneBlockWorld(player.level()))
         {
             return;
         }
 
-        NBTTagCompound playerData = player.getEntityData();
+        CompoundTag playerData = player.getPersistentData();
         if (playerData.getBoolean(NBT_GUIDE_BOOK_GIVEN))
         {
             return;
         }
 
-        playerData.setBoolean(NBT_GUIDE_BOOK_GIVEN, true);
+        playerData.putBoolean(NBT_GUIDE_BOOK_GIVEN, true);
         ItemStack guideBook = new ItemStack(ModItems.GUIDE_BOOK);
-        if (!player.inventory.addItemStackToInventory(guideBook))
+        if (!player.getInventory().add(guideBook))
         {
-            EntityItem entityItem = new EntityItem(player.world, player.posX, player.posY + 0.5D, player.posZ, guideBook);
-            player.world.spawnEntity(entityItem);
+            ItemEntity entityItem = new ItemEntity(player.level(), player.getX(), player.getY() + 0.5D, player.getZ(), guideBook);
+            player.level().addFreshEntity(entityItem);
         }
-        OneBlockUltima.getLogger().info("[GuideBook] Given guide book to {}", player.getName());
+        OneBlockUltima.logDebug("[GuideBook] Given guide book to {}", player.getName().getString());
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event)
     {
-        if (event.phase != Phase.END) return;
-        if (event.player == null || event.player.world == null) return;
+        if (event.phase != TickEvent.Phase.END) return;
+        Player player = event.player;
+        if (player == null || player.level() == null) return;
 
         try
         {
-            net.minecraft.entity.player.EntityPlayer player = event.player;
-            net.minecraft.world.World world = player.world;
-            if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
-                    || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+            Level world = player.level();
+            if (!OneBlockWorldType.isOneBlockWorld(world))
             {
                 return;
             }
             GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
 
-            int baseY = (int) Math.floor(player.posY - 0.1D);
-            // Check the block at player's feet and the block immediately below it
+            int baseY = (int) Math.floor(player.getY() - 0.1D);
             for (int dy = 0; dy <= 1; dy++)
             {
-                BlockPos checkPos = new BlockPos(player.posX, baseY - dy, player.posZ);
+                BlockPos checkPos = BlockPos.containing(player.getX(), baseY - dy, player.getZ());
                 if (!registry.isGenerated(checkPos)) continue;
 
-                net.minecraft.block.state.IBlockState state = world.getBlockState(checkPos);
-                boolean hasCollision = state.getCollisionBoundingBox(world, checkPos) != null && !state.getMaterial().isReplaceable();
-                double relY = player.posY - checkPos.getY();
-                // If there's no collision and player is falling into the block space, stop the fall and snap player above
-                if (!hasCollision && player.motionY < 0 && relY <= 1.2D)
+                BlockState state = world.getBlockState(checkPos);
+                boolean hasCollision = !state.getCollisionShape(world, checkPos).isEmpty() && !state.canBeReplaced();
+                double relY = player.getY() - checkPos.getY();
+                if (!hasCollision && player.getDeltaMovement().y < 0 && relY <= 1.2D)
                 {
-                    player.motionY = 0.0D;
+                    player.setDeltaMovement(player.getDeltaMovement().x, 0.0D, player.getDeltaMovement().z);
                     player.fallDistance = 0.0F;
-                    player.onGround = true;
-                    player.setPosition(player.posX, checkPos.getY() + 1.0D, player.posZ);
+                    player.setOnGround(true);
+                    player.setPos(player.getX(), checkPos.getY() + 1.0D, player.getZ());
                     break;
                 }
-                // If there is collision, ensure player's onGround is set correctly when standing
                 if (hasCollision && relY <= 1.2D && relY >= 0.0D)
                 {
-                    player.onGround = true;
+                    player.setOnGround(true);
                     break;
                 }
             }
@@ -491,15 +512,14 @@ public final class ModEvents
     }
 
     @SubscribeEvent
-    public static void onWorldTick(TickEvent.WorldTickEvent event)
+    public static void onWorldTick(TickEvent.LevelTickEvent event)
     {
-        if (event.phase != Phase.END || event.world == null || event.world.isRemote)
+        if (event.phase != TickEvent.Phase.END || event.level == null || event.level.isClientSide())
         {
             return;
         }
 
-        if (event.world.provider.getDimension() != OVERWORLD_DIMENSION_ID
-                || event.world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (!OneBlockWorldType.isOneBlockWorld(event.level))
         {
             return;
         }
@@ -513,7 +533,7 @@ public final class ModEvents
                 while (iterator.hasNext())
                 {
                     TileEntityOneBlockGenerator generator = iterator.next();
-                    if (generator == null || generator.isInvalid() || generator.getWorld() != event.world)
+                    if (generator == null || generator.isRemoved() || generator.getLevel() != event.level)
                     {
                         iterator.remove();
                         continue;
@@ -525,7 +545,7 @@ public final class ModEvents
 
         if (!lastAccessDeniedMessageTicks.isEmpty())
         {
-            long worldTick = event.world.getTotalWorldTime();
+            long worldTick = event.level.getGameTime();
             lastAccessDeniedMessageTicks.values().removeIf(lastTick -> lastTick != worldTick);
         }
 
@@ -533,19 +553,21 @@ public final class ModEvents
         {
             lastBreakCleanupTick = 0;
             lastBreakPlayers.clear();
+            pendingBreakDrops.clear();
+            pendingMarkOnlyBreakDrops.clear();
         }
     }
 
     @SubscribeEvent
-    public static void onLivingSpawn(LivingSpawnEvent.CheckSpawn event)
+    public static void onLivingSpawn(MobSpawnEvent.PositionCheck event)
     {
-        if (event.getWorld().isRemote)
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        World world = event.getWorld();
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        Level world = (Level) event.getLevel();
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
@@ -555,142 +577,157 @@ public final class ModEvents
             return;
         }
 
-        if (!event.isSpawner())
+        if (event.getSpawner() == null)
         {
             event.setResult(Event.Result.DENY);
         }
     }
 
     @SubscribeEvent
-    public static void onEntityJoinWorld(net.minecraftforge.event.entity.EntityJoinWorldEvent event)
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event)
     {
-        if (event.getWorld().isRemote)
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        if (!(event.getEntity() instanceof net.minecraft.entity.item.EntityItem))
+        if (!(event.getEntity() instanceof ItemEntity))
         {
             return;
         }
 
-        net.minecraft.entity.item.EntityItem entityItem = (net.minecraft.entity.item.EntityItem) event.getEntity();
-        World world = event.getWorld();
+        ItemEntity entityItem = (ItemEntity) event.getEntity();
+        Level world = event.getLevel();
 
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
 
-        BlockPos pos = new BlockPos(entityItem.posX, entityItem.posY, entityItem.posZ);
+        BlockPos pos = BlockPos.containing(entityItem.getX(), entityItem.getY(), entityItem.getZ());
+        boolean autoLoot = pendingBreakDrops.containsKey(pos);
+        boolean markOnly = !autoLoot && pendingMarkOnlyBreakDrops.containsKey(pos);
+        if (!autoLoot && !markOnly)
+        {
+            return;
+        }
+
+        ItemStack stack = entityItem.getItem();
+        if (stack.isEmpty())
+        {
+            return;
+        }
+        if (!(stack.getItem() instanceof ItemCase))
+        {
+            markGenerated(stack);
+        }
+
+        if (!autoLoot)
+        {
+            return;
+        }
+
         UUID breakerId = lastBreakPlayers.get(pos);
         if (breakerId == null)
         {
             return;
         }
 
-        EntityPlayer player = world.getPlayerEntityByUUID(breakerId);
+        Player player = world.getPlayerByUUID(breakerId);
         if (player == null)
         {
             return;
         }
 
-        net.minecraft.item.ItemStack stack = entityItem.getItem();
-        if (stack.isEmpty())
-        {
-            return;
-        }
-
-        player.inventory.addItemStackToInventory(stack);
+        player.getInventory().add(stack);
         event.setCanceled(true);
     }
 
     @SubscribeEvent
-    public static void onBlockPlace(BlockEvent.PlaceEvent event)
+    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event)
     {
-        if (event.getWorld().isRemote)
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        World world = event.getWorld();
+        Level world = (Level) event.getLevel();
         BlockPos pos = event.getPos();
-        IBlockState placedState = event.getPlacedBlock();
+        BlockState placedState = event.getPlacedBlock();
 
-        // Propagate obuGenerated from the ItemStack when re-placing through PlaceEvent
-        if (event.getPlayer() != null)
+        if (event.getEntity() instanceof Player)
         {
-            ItemStack heldItem = event.getPlayer().getHeldItemMainhand();
-            if (!heldItem.isEmpty() && heldItem.hasTagCompound()) {
-                assert heldItem.getTagCompound() != null;
-                if (heldItem.getTagCompound().hasKey(NBT_OBU_GENERATED)
-                        && heldItem.getTagCompound().getBoolean(NBT_OBU_GENERATED)) {
-                    TileEntity placedTE = world.getTileEntity(pos);
-                    if (placedTE != null) {
-                        placedTE.getTileData().setBoolean(NBT_OBU_GENERATED, true);
-                        placedTE.markDirty();
-                    }
+            Player placer = (Player) event.getEntity();
+            GeneratedBlockRegistry placedRegistry = GeneratedBlockRegistry.get(world);
+            if (placedRegistry.isGenerated(pos))
+            {
+                placedRegistry.remove(pos);
+                OneBlockUltima.logDebug("[BreakDebug] Player placed block at {} -> removed generated registry entry", pos);
+            }
 
-                    GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-                    if (!registry.isGenerated(pos)) {
-                        Block placedBlock = placedState.getBlock();
-                        String blockRegistry = placedBlock.getRegistryName() != null ? placedBlock.getRegistryName().toString() : "";
-                        int blockMeta = placedBlock.getMetaFromState(placedState);
-                        registry.markGenerated(pos, pos, "", 0, 0, blockRegistry, blockMeta);
-                    }
-                }
+            ItemStack heldItem = placer.getMainHandItem();
+            boolean isGeneratedItem = !heldItem.isEmpty()
+                    && heldItem.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
+                    && heldItem.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).getUnsafe().getBoolean(NBT_OBU_GENERATED);
+            if (isGeneratedItem)
+            {
+                placedGeneratedBlocks.add(pos);
+                OneBlockUltima.logDebug("[BreakDebug] Player placed generated block at {} -> mark-only on future break", pos);
+            }
+            else
+            {
+                placedGeneratedBlocks.remove(pos);
             }
         }
 
-        // OneBlock-specific logic
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
 
-        if (placedState.getBlock() == ModBlocks.ONE_BLOCK_GENERATOR && event.getPlayer() != null)
+        if (placedState.getBlock() == ModBlocks.ONE_BLOCK_GENERATOR && event.getEntity() instanceof Player)
         {
-            OneBlockUltima.getLogger().info("[OwnerDebug] PlaceEvent fired for generator at {} by player {}", pos, event.getPlayer().getName());
-            registerPendingGeneratorOwner(world, pos, event.getPlayer().getUniqueID());
+            Player placer = (Player) event.getEntity();
+            OneBlockUltima.logDebug("[OwnerDebug] PlaceEvent fired for generator at {} by player {}", pos, placer.getName().getString());
+            registerPendingGeneratorOwner(world, pos, placer.getUUID());
 
-            TileEntity tileEntity = world.getTileEntity(pos);
-            OneBlockUltima.getLogger().info("[OwnerDebug] tileEntity at pos {}: {}", pos, tileEntity != null ? tileEntity.getClass().getSimpleName() : "NULL");
+            BlockEntity tileEntity = world.getBlockEntity(pos);
+            OneBlockUltima.logDebug("[OwnerDebug] tileEntity at pos {}: {}", pos, tileEntity != null ? tileEntity.getClass().getSimpleName() : "NULL");
             if (tileEntity instanceof TileEntityOneBlockGenerator)
             {
                 TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
-                OneBlockUltima.getLogger().info("[OwnerDebug] generator.isFree()={}, ownerId={}, player={}", generator.isFree(), generator.getOwnerId(), event.getPlayer().getName());
+                OneBlockUltima.logDebug("[OwnerDebug] generator.isFree()={}, ownerId={}, player={}", generator.isFree(), generator.getOwnerId(), placer.getName().getString());
                 if (generator.isFree())
                 {
-                    boolean result = generator.assignOwnerForPlacement(event.getPlayer().getUniqueID());
-                    OneBlockUltima.getLogger().info("[OwnerDebug] assignOwnerForPlacement result={}, new ownerId={}", result, generator.getOwnerId());
+                    boolean result = generator.assignOwnerForPlacement(placer.getUUID());
+                    OneBlockUltima.logDebug("[OwnerDebug] assignOwnerForPlacement result={}, new ownerId={}", result, generator.getOwnerId());
                 }
                 else
                 {
-                    OneBlockUltima.getLogger().warn("[OwnerDebug] generator is NOT free, skipping assignOwnerForPlacement! ownerId={}", generator.getOwnerId());
+                    OneBlockUltima.logDebugWarn("[OwnerDebug] generator is NOT free, skipping assignOwnerForPlacement! ownerId={}", generator.getOwnerId());
                 }
             }
         }
 
-        IBlockState replacementState = BlockUtil.getReplacementStateForGeneratorPlacement(placedState, world.getBlockState(pos.down()));
+        BlockState replacementState = BlockUtil.getReplacementStateForGeneratorPlacement(placedState, world.getBlockState(pos.below()));
         if (replacementState != placedState)
         {
-            world.setBlockState(pos, replacementState, 3);
+            world.setBlock(pos, replacementState, 3);
         }
     }
 
     @SubscribeEvent
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event)
+    public static void onRightClickBlock(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock event)
     {
-        if (event.getEntityPlayer() == null)
+        Player player = event.getEntity();
+        if (player == null)
         {
             return;
         }
 
-        EntityPlayer player = event.getEntityPlayer();
-        World world = event.getWorld();
+        Level world = event.getLevel();
 
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
-                || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
@@ -703,11 +740,11 @@ public final class ModEvents
         {
             generatorPos = clickedPos;
         }
-        else if (world.getBlockState(clickedPos.down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+        else if (world.getBlockState(clickedPos.below()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            generatorPos = clickedPos.down();
+            generatorPos = clickedPos.below();
         }
-        else
+        else if (registry != null)
         {
             BlockPos registryGenPos = registry.getGeneratorPos(clickedPos);
             if (registryGenPos != null && world.getBlockState(registryGenPos).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
@@ -716,61 +753,90 @@ public final class ModEvents
             }
         }
 
-        if (player.isSneaking())
+        if (generatorPos == null)
         {
-            if (!world.isRemote && generatorPos != null && event.getHand() == EnumHand.MAIN_HAND)
+            BlockPos scan = clickedPos;
+            for (int i = 0; i < 12 && scan != null; i++)
             {
-                ItemStack heldItem = player.getHeldItemMainhand();
-                if (!heldItem.isEmpty() && heldItem.getItem() instanceof net.minecraft.item.ItemBlock)
+                scan = scan.below();
+                BlockState scanState = world.getBlockState(scan);
+                if (scanState.getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
                 {
-                    TileEntity te = world.getTileEntity(generatorPos);
+                    generatorPos = scan;
+                    break;
+                }
+            }
+        }
+
+        if (generatorPos != null)
+        {
+            OneBlockUltima.logDebug("[GenClick] right-click at {} resolved generator {}", clickedPos, generatorPos);
+        }
+        else
+        {
+            OneBlockUltima.logDebug("[GenClick] right-click at {} state={} no generator found in column",
+                    clickedPos, world.getBlockState(clickedPos).getBlock());
+        }
+
+        if (player.isShiftKeyDown())
+        {
+            if (!world.isClientSide() && generatorPos != null && event.getHand() == InteractionHand.MAIN_HAND)
+            {
+                ItemStack heldItem = player.getMainHandItem();
+                if (!heldItem.isEmpty() && heldItem.getItem() instanceof BlockItem)
+                {
+                    BlockEntity te = world.getBlockEntity(generatorPos);
                     if (te instanceof TileEntityOneBlockGenerator)
                     {
                         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) te;
                         if (generator.hasAccess(player))
                         {
-                            Vec3d hitVec = event.getHitVec();
+                            BlockHitResult hitResult = event.getHitVec();
+                            Vec3 hitVec = hitResult.getLocation();
                             BlockPos placePos = getBlockPos(hitVec, generatorPos);
 
                             if (!placePos.equals(generatorPos))
                             {
-                                IBlockState placeState = ((net.minecraft.item.ItemBlock) heldItem.getItem()).getBlock().getStateForPlacement(
-                                        world, placePos, Objects.requireNonNull(event.getFace()), (float) (hitVec.x - placePos.getX()),
-                                        (float) (hitVec.y - placePos.getY()), (float) (hitVec.z - placePos.getZ()),
-                                        heldItem.getMetadata(), player, EnumHand.MAIN_HAND);
-                                placeState = BlockUtil.getReplacementStateForGeneratorPlacement(placeState, world.getBlockState(placePos.down()));
-                                world.setBlockState(placePos, placeState, 3);
+                                BlockState placeState = ((BlockItem) heldItem.getItem()).getBlock()
+                                        .getStateForPlacement(new BlockPlaceContext(player, event.getHand(), heldItem,
+                                                new BlockHitResult(hitVec, event.getFace(), placePos, false)));
+                                if (placeState == null)
+                                {
+                                    placeState = ((BlockItem) heldItem.getItem()).getBlock().defaultBlockState();
+                                }
+                                placeState = BlockUtil.getReplacementStateForGeneratorPlacement(placeState, world.getBlockState(placePos.below()));
+                                world.setBlock(placePos, placeState, 3);
                                 if (!player.isCreative())
                                 {
                                     heldItem.shrink(1);
                                 }
 
-                                TileEntity placedTE = world.getTileEntity(placePos);
+                                BlockEntity placedTE = world.getBlockEntity(placePos);
                                 if (placedTE instanceof TileEntityOneBlockGenerator)
                                 {
-                                    ((TileEntityOneBlockGenerator) placedTE).assignOwnerForPlacement(player.getUniqueID());
+                                    ((TileEntityOneBlockGenerator) placedTE).assignOwnerForPlacement(player.getUUID());
                                 }
 
-                                if (heldItem.hasTagCompound()) {
-                                    assert heldItem.getTagCompound() != null;
-                                    if (heldItem.getTagCompound().hasKey(NBT_OBU_GENERATED) && heldItem.getTagCompound().getBoolean(NBT_OBU_GENERATED)) {
-                                        if (placedTE != null) {
-                                            NBTTagCompound teNbt = placedTE.getTileData();
-                                            teNbt.setBoolean(NBT_OBU_GENERATED, true);
-                                            placedTE.markDirty();
-                                        }
+                                if (registry.isGenerated(placePos))
+                                {
+                                    registry.remove(placePos);
+                                    OneBlockUltima.logDebug("[BreakDebug] Shift-right-click placed block at {} -> removed generated registry entry", placePos);
+                                }
 
-                                        if (!registry.isGenerated(placePos)) {
-                                            Block placedBlock = placeState.getBlock();
-                                            String blockReg = placedBlock.getRegistryName() != null ? placedBlock.getRegistryName().toString() : "";
-                                            int blockMeta = placedBlock.getMetaFromState(placeState);
-                                            registry.markGenerated(placePos, placePos, "", 0, 0, blockReg, blockMeta);
-                                        }
-                                    }
+                                boolean isPlacedGeneratedItem = heldItem.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
+                                        && heldItem.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).getUnsafe().getBoolean(NBT_OBU_GENERATED);
+                                if (isPlacedGeneratedItem)
+                                {
+                                    placedGeneratedBlocks.add(placePos);
+                                    OneBlockUltima.logDebug("[BreakDebug] Shift-right-click placed generated block at {} -> mark-only on future break", placePos);
+                                }
+                                else
+                                {
+                                    placedGeneratedBlocks.remove(placePos);
                                 }
 
                                 event.setCanceled(true);
-                                event.setCancellationResult(EnumActionResult.SUCCESS);
+                                event.setCancellationResult(InteractionResult.SUCCESS);
                                 return;
                             }
                         }
@@ -780,61 +846,95 @@ public final class ModEvents
             return;
         }
 
-        if (generatorPos == null)
+        // The generator menu opens on a right-click on the generator block itself (gen+0) or on
+        // the generated block sitting on top of it (gen+1). The fluid barrier (gen+2) is fully
+        // transparent, so clicks pass through it and hit the generated block / the generator.
+        boolean isGeneratorClicked = generatorPos != null && generatorPos.equals(clickedPos);
+        boolean isGeneratedBlockClicked = generatorPos != null
+                && generatorPos.above().equals(clickedPos)
+                && world.getBlockState(clickedPos).getBlock() != ModBlocks.FLUID_BARRIER
+                && (registry == null || registry.isGenerated(clickedPos));
+        if (!(isGeneratorClicked || isGeneratedBlockClicked))
         {
+            if (generatorPos != null)
+            {
+                OneBlockUltima.logDebug("[GenClick] right-click at {} ignored (menu opens on the generator block at {} or the generated block above it)",
+                        clickedPos, generatorPos);
+            }
             return;
         }
 
         event.setCanceled(true);
-        event.setCancellationResult(EnumActionResult.SUCCESS);
+        event.setCancellationResult(InteractionResult.SUCCESS);
 
-        if (world.isRemote)
+        if (world.isClientSide())
         {
             return;
         }
 
-        TileEntity generatorTile = world.getTileEntity(generatorPos);
+        final BlockPos genPos = generatorPos;
+        BlockEntity generatorTile = world.getBlockEntity(generatorPos);
         if (generatorTile instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) generatorTile;
-            OneBlockUltima.getLogger().info("[OwnerDebug] RightClick generator at {}, isFree={}, ownerId={}, player={}", generatorPos, generator.isFree(), generator.getOwnerId(), player.getName());
-            if (generator.isFree() && generator.canBeClaimedBy(player.getUniqueID()))
+            OneBlockUltima.logDebug("[OwnerDebug] RightClick generator at {}, isFree={}, ownerId={}, player={}", generatorPos, generator.isFree(), generator.getOwnerId(), player.getName().getString());
+            if (generator.isFree() && generator.canBeClaimedBy(player.getUUID()))
             {
-                OneBlockUltima.getLogger().info("[OwnerDebug] Opening claim screen");
-                GuiHandler.openClaimScreen(player, generatorPos);
+                OneBlockUltima.logDebug("[OwnerDebug] Opening claim screen");
+                ((ServerPlayer) player).openMenu(new MenuProvider() {
+                    @Override
+                    public net.minecraft.world.inventory.AbstractContainerMenu createMenu(int id, net.minecraft.world.entity.player.Inventory inv, Player p) {
+                        return new ContainerClaimGenerator(id, inv, genPos);
+                    }
+
+                    @Override
+                    public Component getDisplayName() {
+                        return Component.literal("Claim Generator");
+                    }
+                }, (buf) -> buf.writeBlockPos(genPos));
                 return;
             }
 
             if (!ensureGeneratorAccess(world, generatorPos, player, generator))
             {
-                OneBlockUltima.getLogger().warn("[OwnerDebug] ACCESS DENIED for player {} on generator at {}", player.getName(), generatorPos);
-                trySendAccessDeniedMessage(player, generatorPos, world.getTotalWorldTime());
+                OneBlockUltima.logDebugWarn("[OwnerDebug] ACCESS DENIED for player {} on generator at {}", player.getName().getString(), generatorPos);
+                trySendAccessDeniedMessage(player, generatorPos, world.getGameTime());
                 return;
             }
-            OneBlockUltima.getLogger().info("[OwnerDebug] ACCESS GRANTED for player {} on generator at {}", player.getName(), generatorPos);
+            OneBlockUltima.logDebug("[OwnerDebug] ACCESS GRANTED for player {} on generator at {}", player.getName().getString(), generatorPos);
         }
 
-        GuiHandler.open(player, generatorPos);
+        ((ServerPlayer) player).openMenu(new MenuProvider() {
+            @Override
+            public net.minecraft.world.inventory.AbstractContainerMenu createMenu(int id, net.minecraft.world.entity.player.Inventory inv, Player p) {
+                return new ContainerOneBlock(id, inv, genPos);
+            }
+
+            @Override
+            public Component getDisplayName() {
+                return Component.literal("One Block");
+            }
+        }, (buf) -> buf.writeBlockPos(genPos));
     }
 
-    private static BlockPos getBlockPos(Vec3d hitVec, BlockPos generatorPos) {
+    private static BlockPos getBlockPos(Vec3 hitVec, BlockPos generatorPos) {
         double relX = hitVec.x - generatorPos.getX();
         double relY = hitVec.y - generatorPos.getY();
         double relZ = hitVec.z - generatorPos.getZ();
 
         BlockPos placePos;
         if (relY >= 1.99) {
-            placePos = generatorPos.up(2);
+            placePos = generatorPos.above(2);
         } else if (relX <= 0.01) {
-            placePos = generatorPos.up().west();
+            placePos = generatorPos.above().west();
         } else if (relX >= 0.99) {
-            placePos = generatorPos.up().east();
+            placePos = generatorPos.above().east();
         } else if (relZ <= 0.01) {
-            placePos = generatorPos.up().north();
+            placePos = generatorPos.above().north();
         } else if (relZ >= 0.99) {
-            placePos = generatorPos.up().south();
+            placePos = generatorPos.above().south();
         } else {
-            placePos = generatorPos.up();
+            placePos = generatorPos.above();
         }
         return placePos;
     }
@@ -842,13 +942,13 @@ public final class ModEvents
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event)
     {
-        if (event.getWorld().isRemote)
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
         BlockPos pos = event.getPos();
-        World world = event.getWorld();
+        Level world = (Level) event.getLevel();
 
         if (world.getBlockState(pos).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
@@ -856,94 +956,155 @@ public final class ModEvents
             return;
         }
 
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
-                || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
+        if (!OneBlockWorldType.isOneBlockWorld(world))
         {
             return;
         }
 
-        EntityPlayer breaker = event.getPlayer();
+        Player breaker = event.getPlayer();
 
         if (processingBlocks.getOrDefault(event.getPos(), false))
         {
             return;
         }
 
-        TileEntity generatorTile = world.getTileEntity(pos);
+        BlockEntity generatorTile = world.getBlockEntity(pos);
         if (generatorTile instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) generatorTile;
             if (!generator.hasAccess(event.getPlayer()))
             {
                 event.setCanceled(true);
-                trySendAccessDeniedMessage(event.getPlayer(), pos, world.getTotalWorldTime());
+                trySendAccessDeniedMessage(event.getPlayer(), pos, world.getGameTime());
                 return;
             }
         }
 
-        if (world.getBlockState(pos).getBlock() == ModBlocks.FLUID_BARRIER && world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+        if (world.getBlockState(pos).getBlock() == ModBlocks.FLUID_BARRIER && world.getBlockState(pos.below(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 2);
-            OneBlockUltima.getLogger().info("[Generator] BARRIER placed at {} after block break", pos);
+            world.setBlock(pos, ModBlocks.FLUID_BARRIER.defaultBlockState(), 2);
+            OneBlockUltima.logDebug("[Generator] BARRIER placed at {} after block break", pos);
             event.setCanceled(true);
             return;
         }
 
-        GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(event.getWorld());
+        GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
         GeneratedBlockRegistry.GeneratedBlockEntry entry = registry.getEntry(event.getPos());
         if (entry == null)
         {
             lastBreakPlayers.remove(pos);
+            pendingBreakDrops.remove(pos);
             pendingMobSpawnEntries.remove(pos);
-            OneBlockUltima.getLogger().debug("[BreakDebug] No generated entry found for broken block {}", event.getPos());
+            if (placedGeneratedBlocks.remove(pos))
+            {
+                pendingMarkOnlyBreakDrops.put(pos, world.getGameTime());
+                OneBlockUltima.logDebug("[BreakDebug] Breaking player-placed generated block at {} -> mark drops only", pos);
+            }
+            OneBlockUltima.logDebug("[BreakDebug] No generated entry found for broken block {}", event.getPos());
             return;
         }
 
+        net.minecraft.world.level.block.Block actualBrokenBlock = world.getBlockState(pos).getBlock();
+        String actualBlockRegistryId = BuiltInRegistries.BLOCK.getKey(actualBrokenBlock).toString();
+        if (entry.blockRegistry != null && !entry.blockRegistry.equals(actualBlockRegistryId))
+        {
+            registry.remove(event.getPos());
+            lastBreakPlayers.remove(pos);
+            pendingBreakDrops.remove(pos);
+            pendingMobSpawnEntries.remove(pos);
+            if (placedGeneratedBlocks.remove(pos))
+            {
+                pendingMarkOnlyBreakDrops.put(pos, world.getGameTime());
+                OneBlockUltima.logDebug("[BreakDebug] Broken block {} does not match generated entry {} (was {}), removing registry entry",
+                        event.getPos(), actualBlockRegistryId, entry.blockRegistry);
+            }
+            return;
+        }
+
+        placedGeneratedBlocks.remove(pos);
+
         if (breaker != null)
         {
-            lastBreakPlayers.put(pos, breaker.getUniqueID());
+            lastBreakPlayers.put(pos, breaker.getUUID());
         }
+        pendingBreakDrops.put(pos, world.getGameTime());
 
         if (breaker != null && entry.generatorPos != null)
         {
-            TileEntity genTile = world.getTileEntity(entry.generatorPos);
+            BlockEntity genTile = world.getBlockEntity(entry.generatorPos);
             if (genTile instanceof TileEntityOneBlockGenerator)
             {
                 TileEntityOneBlockGenerator gen = (TileEntityOneBlockGenerator) genTile;
                 if (!gen.hasAccess(breaker))
                 {
                     event.setCanceled(true);
-                    trySendAccessDeniedMessage(breaker, entry.generatorPos, world.getTotalWorldTime());
+                    trySendAccessDeniedMessage(breaker, entry.generatorPos, world.getGameTime());
                     return;
                 }
             }
         }
 
-        OneBlockUltima.getLogger().debug("[BreakDebug] Generated entry found for {} -> generator {} set={} level={}", event.getPos(), entry.generatorPos, entry.setId, entry.level);
+        OneBlockUltima.logDebug("[BreakDebug] Generated entry found for {} -> generator {} set={} level={}", event.getPos(), entry.generatorPos, entry.setId, entry.level);
 
         pendingMobSpawnEntries.put(event.getPos(), entry);
+
+        if (world.getBlockState(pos).getBlock() == ModBlocks.CASE_BLOCK)
+        {
+            OneBlockUltima.logDebug("[BreakDebug] Case block broken at {} setId={} level={}", pos, entry.setId, entry.level);
+            if (breaker != null)
+            {
+                BlockSetConfig.BlockSetDefinition set = BlockSetConfig.get().getSet(entry.setId);
+                if (set != null && set.hasCaseEntries())
+                {
+                    ItemStack caseStack = CaseUtil.createCaseItem(world, set);
+                    if (!caseStack.isEmpty())
+                    {
+                        int nbContents = CaseUtil.readContents(caseStack, world.registryAccess()).size();
+                        boolean added = breaker.getInventory().add(caseStack);
+                        if (!added)
+                        {
+                            world.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(world,
+                                    pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, caseStack));
+                        }
+                        else if (breaker instanceof net.minecraft.server.level.ServerPlayer)
+                        {
+                            breaker.getInventory().setChanged();
+                            ((net.minecraft.server.level.ServerPlayer) breaker).inventoryMenu.broadcastChanges();
+                        }
+                        OneBlockUltima.logDebug("[BreakDebug] Case created set={} contents={} addedToInv={} (case item {})",
+                                entry.setId, nbContents, added, added ? "placed in inventory" : "dropped as ItemEntity");
+                    }
+                    else
+                    {
+                        OneBlockUltima.logDebug("[BreakDebug] createCaseItem returned empty for set {}", entry.setId);
+                    }
+                }
+                else
+                {
+                    OneBlockUltima.logDebug("[BreakDebug] Set {} has no case entries, case item not granted", entry.setId);
+                }
+            }
+        }
 
         spawnMobOnBlockBreak(world, event.getPos(), entry);
         registry.remove(event.getPos());
 
-        assert entry.generatorPos != null;
-        TileEntity generatedTile = world.getTileEntity(entry.generatorPos);
-        EntityPlayer player = event.getPlayer();
+        BlockEntity generatedTile = world.getBlockEntity(entry.generatorPos);
         if (generatedTile instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) generatedTile;
-            if (player == null)
+            if (breaker == null)
             {
-                OneBlockUltima.getLogger().info("[BreakDebug] Non-player break detected at {} for generator {}", event.getPos(), entry.generatorPos);
-                if (!generator.canProcessNonPlayerBreak(world.getTotalWorldTime()))
+                OneBlockUltima.logDebug("[BreakDebug] Non-player break detected at {} for generator {}", event.getPos(), entry.generatorPos);
+                if (!generator.canProcessNonPlayerBreak(world.getGameTime()))
                 {
-                    OneBlockUltima.getLogger().info("[BreakDebug] Non-player break blocked by cooldown for generator {} at tick {}", entry.generatorPos, world.getTotalWorldTime());
+                    OneBlockUltima.logDebug("[BreakDebug] Non-player break blocked by cooldown for generator {} at tick {}", entry.generatorPos, world.getGameTime());
                     event.setCanceled(true);
                     return;
                 }
 
-                generator.markNonPlayerBreak(world.getTotalWorldTime());
-                OneBlockUltima.getLogger().info("[BreakDebug] Non-player break accepted for generator {} at tick {}", entry.generatorPos, world.getTotalWorldTime());
+                generator.markNonPlayerBreak(world.getGameTime());
+                OneBlockUltima.logDebug("[BreakDebug] Non-player break accepted for generator {} at tick {}", entry.generatorPos, world.getGameTime());
             }
         }
 
@@ -952,23 +1113,22 @@ public final class ModEvents
             processingBlocks.put(event.getPos(), true);
         }
 
-        if (player == null && generatedTile instanceof TileEntityOneBlockGenerator)
+        if (breaker == null && generatedTile instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) generatedTile;
-            OneBlockUltima.getLogger().info("[BreakDebug] Invoking non-player generation for generator {} at tick {}", entry.generatorPos, world.getTotalWorldTime());
+            OneBlockUltima.logDebug("[BreakDebug] Invoking non-player generation for generator {} at tick {}", entry.generatorPos, world.getGameTime());
             generator.tryGenerateBlock();
         }
-        else if (player != null)
+        else if (breaker != null)
         {
-            OneBlockUltima.getLogger().info("[BreakDebug] Player break detected at {} for generator {}", event.getPos(), entry.generatorPos);
+            OneBlockUltima.logDebug("[BreakDebug] Player break detected at {} for generator {}", event.getPos(), entry.generatorPos);
         }
 
-        if (player != null)
+        if (breaker != null)
         {
-            IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
+            IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(breaker);
             if (data != null)
             {
-                // Only award currency and count broken blocks for blocks directly from generator
                 if (!entry.generatorPos.equals(event.getPos()))
                 {
                     if (BlockPriceConfig.get().getBalanceMode() == BlockPriceConfig.BalanceMode.BREAK_BLOCK)
@@ -978,238 +1138,56 @@ public final class ModEvents
                     }
                     data.addBrokenBlocks(entry.setId, 1);
                 }
-                OneBlockPlayerDataProvider.saveToEntity(player, data);
-                PacketSyncPlayerData.sendToPlayer(player);
+                OneBlockPlayerDataProvider.saveToEntity(breaker, data);
+                PacketSyncPlayerData.sendToPlayer((ServerPlayer) breaker);
             }
         }
+    }
+
+    public static GeneratedBlockRegistry.GeneratedBlockEntry consumePendingMobSpawnEntry(BlockPos pos)
+    {
+        return pendingMobSpawnEntries.remove(pos);
+    }
+
+    public static UUID consumeBreakerId(BlockPos pos)
+    {
+        return lastBreakPlayers.remove(pos);
+    }
+
+    private static void markGenerated(ItemStack stack)
+    {
+        net.minecraft.world.item.component.CustomData existing = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        CompoundTag tag = existing != null ? existing.copyTag() : new CompoundTag();
+        tag.putBoolean(NBT_OBU_GENERATED, true);
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(tag));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onHarvestDrops(BlockEvent.HarvestDropsEvent event)
-    {
-        if (event.getWorld().isRemote)
-        {
-            return;
-        }
-
-        World world = event.getWorld();
-        if (world.provider.getDimension() != OVERWORLD_DIMENSION_ID
-                || world.getWorldInfo().getTerrainType() != OneBlockWorldType.ONE_BLOCK)
-        {
-            return;
-        }
-
-        BlockPos pos = event.getPos();
-        GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
-        GeneratedBlockRegistry.GeneratedBlockEntry entry = registry.getEntry(pos);
-        GeneratedBlockRegistry.GeneratedBlockEntry savedEntry = pendingMobSpawnEntries.remove(pos);
-
-        boolean isTrackedBlock = entry != null || savedEntry != null;
-        GeneratedBlockRegistry.GeneratedBlockEntry mobSpawnEntry = entry != null ? entry : savedEntry;
-
-        if (!isTrackedBlock)
-        {
-            return;
-        }
-
-        UUID breakerId = lastBreakPlayers.remove(pos);
-        EntityPlayer player = breakerId != null ? world.getPlayerEntityByUUID(breakerId) : event.getHarvester();
-
-        // Mob spawn and registry removal now handled in onBlockBreak
-
-        // Get the standard drops
-        List<net.minecraft.item.ItemStack> drops = new java.util.ArrayList<>(event.getDrops());
-
-        // Check whether there are any real drops
-        boolean hasRealDrops = false;
-        for (net.minecraft.item.ItemStack drop : drops)
-        {
-            if (!drop.isEmpty())
-            {
-                hasRealDrops = true;
-                break;
-            }
-        }
-
-        // If there are no drops - check whether the block should drop at all
-        if (!hasRealDrops)
-        {
-            net.minecraft.block.Block block = event.getState().getBlock();
-
-            // Check whether the block can be mined without special conditions
-            // noinspection ConstantConditions
-            if (block != null && block != Blocks.AIR)
-            {
-                // Blocks that should not drop without a tool
-                boolean shouldDropBlock = isShouldDropBlock(block, player, drops);
-
-                if (shouldDropBlock)
-                {
-                    net.minecraft.item.Item item = net.minecraft.item.Item.getItemFromBlock(block);
-                    // noinspection ConstantConditions
-                    if (item != null && item != net.minecraft.init.Items.AIR)
-                    {
-                        net.minecraft.item.ItemStack blockStack = new net.minecraft.item.ItemStack(item, 1, block.getMetaFromState(event.getState()));
-                        drops.add(blockStack);
-                    }
-                }
-            }
-        }
-
-        if (player == null)
-        {
-            TileEntity generatedTile = world.getTileEntity(mobSpawnEntry.generatorPos);
-            if (generatedTile instanceof TileEntityOneBlockGenerator)
-            {
-                TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) generatedTile;
-                generator.markNonPlayerBreak(world.getTotalWorldTime());
-                generator.tryGenerateBlock();
-            }
-            return;
-        }
-
-        // Blocks re-placed by the player (generatorPos == pos) should drop normally to world
-        boolean isPlayerRePlaced = mobSpawnEntry.generatorPos != null && mobSpawnEntry.generatorPos.equals(pos);
-        if (isPlayerRePlaced)
-        {
-            // Tag obuGenerated on drops and let them fall naturally
-            for (net.minecraft.item.ItemStack drop : event.getDrops())
-            {
-                if (drop.isEmpty()) continue;
-                if (!drop.hasTagCompound())
-                {
-                    drop.setTagCompound(new NBTTagCompound());
-                }
-                assert drop.getTagCompound() != null;
-                drop.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
-            }
-            return;
-        }
-
-        // Clear all drops
-        event.getDrops().clear();
-
-        // Case block: always drops a case item
-        if (event.getState().getBlock() == ModBlocks.CASE_BLOCK && mobSpawnEntry.setId != null)
-        {
-            BlockSetConfig.BlockSetDefinition set = BlockSetConfig.get().getSet(mobSpawnEntry.setId);
-            if (set != null && set.hasCaseEntries())
-            {
-                ItemStack caseStack = CaseUtil.createCaseItem(world, set);
-                if (!caseStack.isEmpty())
-                {
-                    drops.add(caseStack);
-                }
-            }
-        }
-
-        // Check for obuGenerated - any block from GeneratedBlockRegistry counts as generated
-
-        // Add drops to the player's inventory
-        for (net.minecraft.item.ItemStack drop : drops)
-        {
-            if (drop.isEmpty()) continue;
-
-            net.minecraft.item.ItemStack remaining = drop.copy();
-            if (remaining.getTagCompound() == null) {
-                remaining.setTagCompound(new NBTTagCompound());
-            }
-            remaining.getTagCompound().setBoolean(NBT_OBU_GENERATED, true);
-            if (!player.inventory.addItemStackToInventory(remaining))
-            {
-                net.minecraft.entity.item.EntityItem entityItem = new net.minecraft.entity.item.EntityItem(
-                        event.getWorld(),
-                        pos.getX() + BLOCK_CENTER_OFFSET,
-                        pos.getY() + BLOCK_CENTER_OFFSET,
-                        pos.getZ() + BLOCK_CENTER_OFFSET,
-                        remaining
-                );
-                event.getWorld().spawnEntity(entityItem);
-            }
-        }
-    }
-
-    private static boolean isShouldDropBlock(Block block, EntityPlayer player, List<ItemStack> drops) {
-        if (player == null)
-        {
-            return true;
-        }
-
-        boolean shouldDropBlock = true;
-
-        // Check for grass
-        if (block == Blocks.TALLGRASS || block == Blocks.DOUBLE_PLANT || block == Blocks.DEADBUSH)
-        {
-            ItemStack heldItem = player.getHeldItemMainhand();
-            if (heldItem.isEmpty() || heldItem.getItem() != net.minecraft.init.Items.SHEARS)
-            {
-                shouldDropBlock = false;
-            }
-        }
-
-        // Check for leaves
-        if (block == Blocks.LEAVES || block == Blocks.LEAVES2)
-        {
-            ItemStack heldItem = player.getHeldItemMainhand();
-            if (heldItem.isEmpty() || heldItem.getItem() != net.minecraft.init.Items.SHEARS)
-            {
-                boolean hasSapling = false;
-                for (ItemStack drop : drops)
-                {
-                    if (!drop.isEmpty() && drop.getItem() == net.minecraft.init.Items.DYE)
-                    {
-                        hasSapling = true;
-                        break;
-                    }
-                }
-                if (!hasSapling)
-                {
-                    shouldDropBlock = false;
-                }
-            }
-        }
-
-        // Check for cobwebs
-        if (block == Blocks.WEB)
-        {
-            ItemStack heldItem = player.getHeldItemMainhand();
-            if (heldItem.isEmpty() || heldItem.getItem() != net.minecraft.init.Items.SHEARS)
-            {
-                shouldDropBlock = false;
-            }
-        }
-        return shouldDropBlock;
-    }
-
-    @SubscribeEvent
     public static void onNeighborNotify(BlockEvent.NeighborNotifyEvent event)
     {
-        if (event.getWorld().isRemote)
+        if (event.getLevel().isClientSide())
         {
             return;
         }
 
-        World world = event.getWorld();
+        Level world = (Level) event.getLevel();
         BlockPos pos = event.getPos();
 
-        // Restore the barrier above the generator if the barrier slot became AIR again
-        // (e.g. after a block placed above the generator was broken)
-        if (world.getBlockState(pos.down(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR
+        if (world.getBlockState(pos.below(2)).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR
                 && world.getBlockState(pos).getBlock() == Blocks.AIR)
         {
-            world.setBlockState(pos, ModBlocks.FLUID_BARRIER.getDefaultState(), 3);
-            OneBlockUltima.getLogger().info("[Generator] BARRIER restored at {} from NeighborNotify", pos);
+            world.setBlock(pos, ModBlocks.FLUID_BARRIER.defaultBlockState(), 3);
+            OneBlockUltima.logDebug("[Generator] BARRIER restored at {} from NeighborNotify", pos);
             return;
         }
 
-        IBlockState state = world.getBlockState(pos);
+        BlockState state = world.getBlockState(pos);
 
-        // Check only the block above the generator
-        if (world.getBlockState(event.getPos().down()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
+        if (world.getBlockState(event.getPos().below()).getBlock() == ModBlocks.ONE_BLOCK_GENERATOR)
         {
             if (state.getBlock() == Blocks.AIR)
             {
-                OneBlockUltima.getLogger().info("[Generator] NeighborNotify: generated slot {} became AIR", pos);
+                OneBlockUltima.logDebug("[Generator] NeighborNotify: generated slot {} became AIR", pos);
                 dropUnsupportedAttachables(world, pos);
 
                 GeneratedBlockRegistry registry = GeneratedBlockRegistry.get(world);
@@ -1221,145 +1199,112 @@ public final class ModEvents
                 }
             }
 
-            // Restore the barrier above the generator when its slot becomes empty
-            // (e.g. after fire placed on the barrier slot burns out)
-            BlockOneBlockGenerator.ensureFluidBarrier(world, event.getPos().down());
+            BlockOneBlockGenerator.ensureFluidBarrier(world, event.getPos().below());
             return;
         }
 
         if (state.getBlock() != Blocks.AIR)
         {
-            // Block exists
             processingBlocks.put(pos, false);
         }
     }
 
-    private static void dropUnsupportedAttachables(World world, BlockPos generatedPos)
+    private static void dropUnsupportedAttachables(Level world, BlockPos generatedPos)
     {
-        BlockPos abovePos = generatedPos.up();
-        IBlockState aboveState = world.getBlockState(abovePos);
+        BlockPos abovePos = generatedPos.above();
+        BlockState aboveState = world.getBlockState(abovePos);
         Block aboveBlock = aboveState.getBlock();
         if (aboveBlock == Blocks.AIR || aboveBlock == ModBlocks.FLUID_BARRIER)
         {
             return;
         }
-        if (!(aboveBlock instanceof net.minecraft.block.BlockLever)
-                && !(aboveBlock instanceof net.minecraft.block.BlockButton)
-                && !(aboveBlock instanceof net.minecraft.block.BlockTorch))
+        if (!(aboveBlock instanceof net.minecraft.world.level.block.LeverBlock)
+                && !(aboveBlock instanceof net.minecraft.world.level.block.ButtonBlock)
+                && !(aboveBlock instanceof net.minecraft.world.level.block.TorchBlock))
         {
             return;
         }
-        aboveBlock.dropBlockAsItem(world, abovePos, aboveState, 0);
-        world.setBlockToAir(abovePos);
-        OneBlockUltima.getLogger().info("[Generator] Dropped attachable {} at {} (generated block at {} removed)", aboveBlock.getLocalizedName(), abovePos, generatedPos);
+        net.minecraft.world.level.block.Block.dropResources(aboveState, world, abovePos);
+        world.setBlock(abovePos, Blocks.AIR.defaultBlockState(), 3);
+        OneBlockUltima.logDebug("[Generator] Dropped attachable {} at {} (generated block at {} removed)", aboveBlock.getName().getString(), abovePos, generatedPos);
     }
 
-    private static void spawnMobOnBlockBreak(World world, BlockPos pos, GeneratedBlockRegistry.GeneratedBlockEntry entry)
+    private static void spawnMobOnBlockBreak(Level world, BlockPos pos, GeneratedBlockRegistry.GeneratedBlockEntry entry)
     {
-        TileEntity tile = world.getTileEntity(entry.generatorPos);
+        BlockEntity tile = world.getBlockEntity(entry.generatorPos);
         if (tile instanceof TileEntityOneBlockGenerator)
         {
             TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tile;
             if (generator.isDisableMobGeneration())
             {
-                OneBlockUltima.getLogger().info("[Mob Spawn] Mob generation disabled on generator at {}", entry.generatorPos);
+                OneBlockUltima.logDebug("[Mob Spawn] Mob generation disabled on generator at {}", entry.generatorPos);
                 return;
             }
         }
 
-        OneBlockUltima.getLogger().info("[Mob Spawn] Entry: setId={}, level={}", entry.setId, entry.level);
+        OneBlockUltima.logDebug("[Mob Spawn] Entry: setId={}, level={}", entry.setId, entry.level);
         BlockSetConfig.BlockSetDefinition set = BlockSetConfig.get().getSet(entry.setId);
         if (set == null)
         {
-            OneBlockUltima.getLogger().info("[Mob Spawn] Set is null for setId={}", entry.setId);
+            OneBlockUltima.logDebug("[Mob Spawn] Set is null for setId={}", entry.setId);
             return;
         }
 
-        OneBlockUltima.getLogger().info("[Mob Spawn] Set found: {}", set.id);
+        OneBlockUltima.logDebug("[Mob Spawn] Set found: {}", set.id);
         BlockSetConfig.SetLevelDefinition levelDefinition = set.getLevelClamped(entry.level);
         if (levelDefinition == null)
         {
-            OneBlockUltima.getLogger().info("[Mob Spawn] Level definition is null for level={}", entry.level);
+            OneBlockUltima.logDebug("[Mob Spawn] Level definition is null for level={}", entry.level);
             return;
         }
 
-        OneBlockUltima.getLogger().info("[Mob Spawn] Level definition found. Total mobs: {}", levelDefinition.mobs != null ? levelDefinition.mobs.size() : 0);
-        BlockSetConfig.MobEntryDefinition mobEntry = levelDefinition.pickMob(world.rand);
+        OneBlockUltima.logDebug("[Mob Spawn] Level definition found. Total mobs: {}", levelDefinition.mobs != null ? levelDefinition.mobs.size() : 0);
+        BlockSetConfig.MobEntryDefinition mobEntry = levelDefinition.pickMob(world.getRandom());
         if (mobEntry == null || mobEntry.registry == null || mobEntry.registry.isEmpty())
         {
-            OneBlockUltima.getLogger().info("[Mob Spawn] pickMob returned null or empty registry");
+            OneBlockUltima.logDebug("[Mob Spawn] pickMob returned null or empty registry");
             return;
         }
 
-        OneBlockUltima.getLogger().info("[Mob Spawn] Attempting to spawn mob: {} count={}", mobEntry.registry, mobEntry.count);
+        OneBlockUltima.logDebug("[Mob Spawn] Attempting to spawn mob: {} count={}", mobEntry.registry, mobEntry.count);
         for (int i = 0; i < Math.max(1, mobEntry.count); i++)
         {
-            Entity entity = EntityList.createEntityByIDFromName(new ResourceLocation(mobEntry.registry), world);
+            EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(BlockUtil.normalizeLegacyId(mobEntry.registry)));
+            Entity entity = entityType.create(world);
             if (entity == null)
             {
-                OneBlockUltima.getLogger().info("[Mob Spawn] Failed to create entity for registry: {}", mobEntry.registry);
+                OneBlockUltima.logDebug("[Mob Spawn] Failed to create entity for registry: {}", mobEntry.registry);
                 continue;
             }
 
-            OneBlockUltima.getLogger().info("[Mob Spawn] Successfully spawned mob: {}", mobEntry.registry);
-            entity.setPosition(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + BLOCK_TOP_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
+            OneBlockUltima.logDebug("[Mob Spawn] Successfully spawned mob: {}", mobEntry.registry);
+            entity.setPos(pos.getX() + BLOCK_CENTER_OFFSET, pos.getY() + BLOCK_TOP_OFFSET, pos.getZ() + BLOCK_CENTER_OFFSET);
 
-            // Apply NBT tags to the mob if present
-            if (mobEntry.nbtTags != null && !mobEntry.nbtTags.hasNoTags())
+            if (mobEntry.nbtTags != null && !mobEntry.nbtTags.isEmpty())
             {
-                OneBlockUltima.getLogger().info("[Mob Spawn] Applying NBT tags to mob: {}", mobEntry.nbtTags);
+                OneBlockUltima.logDebug("[Mob Spawn] Applying NBT tags to mob: {}", mobEntry.nbtTags);
                 ru.defea.oneblockultima.util.BlockUtil.applyNbtToEntity(entity, mobEntry.nbtTags);
             }
 
-            // Randomize slime size (health scales with size automatically)
-            if (entity instanceof EntitySlime)
+            if (entity instanceof Slime)
             {
-                EntitySlime slime = (EntitySlime) entity;
-                int size = 1 + world.rand.nextInt(4);
-                java.lang.reflect.Method setSlimeSize = findMethodByName(EntitySlime.class,
-                        new Class<?>[] { int.class, boolean.class }, "setSlimeSize", "func_70799_a");
-                if (setSlimeSize != null)
-                {
-                    try
-                    {
-                        setSlimeSize.invoke(slime, size, true);
-                    }
-                    catch (Exception e)
-                    {
-                        OneBlockUltima.getLogger().error("[Mob Spawn] Failed to randomize slime size", e);
-                    }
-                }
-                OneBlockUltima.getLogger().info("[Mob Spawn] Randomized slime size to {} (health {})", size, slime.getMaxHealth());
+                Slime slime = (Slime) entity;
+                int size = 1 + world.getRandom().nextInt(4);
+                slime.setSize(size, true);
+                OneBlockUltima.logDebug("[Mob Spawn] Randomized slime size to {} (health {})", size, slime.getMaxHealth());
             }
 
-            world.spawnEntity(entity);
+            world.addFreshEntity(entity);
         }
-    }
-
-    private static java.lang.reflect.Method findMethodByName(@SuppressWarnings("SameParameterValue") Class<?> clazz, Class<?>[] paramTypes, String... names)
-    {
-        for (String name : names)
-        {
-            try
-            {
-                java.lang.reflect.Method method = clazz.getDeclaredMethod(name, paramTypes);
-                method.setAccessible(true);
-                return method;
-            }
-            catch (NoSuchMethodException ignored)
-            {
-            }
-        }
-        return null;
     }
 
     @SubscribeEvent
-    public static void attachCapabilities(net.minecraftforge.event.AttachCapabilitiesEvent<net.minecraft.entity.Entity> event)
+    public static void attachCapabilities(AttachCapabilitiesEvent<Entity> event)
     {
-        if (event.getObject() instanceof EntityPlayer)
+        if (event.getObject() instanceof Player)
         {
             event.addCapability(
-                    new ResourceLocation(OneBlockUltima.MODID, "player_data"),
+                    ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "player_data"),
                     new OneBlockPlayerDataProvider()
             );
         }
@@ -1369,7 +1314,7 @@ public final class ModEvents
     public static void clonePlayer(net.minecraftforge.event.entity.player.PlayerEvent.Clone event)
     {
         IOneBlockPlayerData oldData = OneBlockPlayerDataProvider.get(event.getOriginal());
-        IOneBlockPlayerData newData = OneBlockPlayerDataProvider.get(event.getEntityPlayer());
+        IOneBlockPlayerData newData = OneBlockPlayerDataProvider.get(event.getEntity());
         if (oldData instanceof ru.defea.oneblockultima.capability.OneBlockPlayerData
                 && newData instanceof ru.defea.oneblockultima.capability.OneBlockPlayerData)
         {
@@ -1378,8 +1323,16 @@ public final class ModEvents
             ru.defea.oneblockultima.capability.OneBlockPlayerData newPlayerData =
                     (ru.defea.oneblockultima.capability.OneBlockPlayerData) newData;
 
+            double before = newPlayerData.getCurrency();
             newPlayerData.copyFrom(oldPlayerData);
-            OneBlockPlayerDataProvider.saveToEntity(event.getEntityPlayer(), newPlayerData);
+            OneBlockPlayerDataProvider.saveToEntity(event.getEntity(), newPlayerData);
+            OneBlockUltima.getLogger().warn("[OBU-Balance] PlayerEvent.Clone fired: old={} newBefore={} newAfter={}",
+                    oldPlayerData.getCurrency(), before, newPlayerData.getCurrency());
+        }
+        else
+        {
+            OneBlockUltima.getLogger().warn("[OBU-Balance] PlayerEvent.Clone fired but capability missing oldData={} newData={}",
+                    oldData, newData);
         }
     }
 }

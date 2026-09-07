@@ -1,6 +1,7 @@
 {
   "parent": "block/cube_all",
   "textures": {
-    "all": "oneblockultima:blocks/compressed_mineral_block"
+    "all": "oneblockultima:block/compressed_mineral_block"
   }
 }
+

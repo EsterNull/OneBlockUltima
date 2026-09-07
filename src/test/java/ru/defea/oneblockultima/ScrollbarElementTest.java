@@ -1,9 +1,9 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.gui.layout.ScrollbarElement;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -13,10 +13,9 @@ public class ScrollbarElementTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
-    @SuppressWarnings("SameParameterValue")
     private ScrollbarElement bar(int total, int visible, int offset, int y, int height) {
         ScrollbarElement sb = new ScrollbarElement()
                 .totalItems(total)

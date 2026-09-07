@@ -2,12 +2,10 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "item": "minecraft:cooked_fish",
-      "data": 0
+      "item": "minecraft:cooked_cod"
     },
     {
-      "item": "minecraft:cooked_fish",
-      "data": 1
+      "item": "minecraft:cooked_salmon"
     },
     {
       "item": "minecraft:cooked_porkchop"
@@ -28,8 +26,7 @@
       "item": "minecraft:milk_bucket"
     },
     {
-      "item": "minecraft:fish",
-      "data": 2
+      "item": "minecraft:tropical_fish"
     }
   ],
   "result": {

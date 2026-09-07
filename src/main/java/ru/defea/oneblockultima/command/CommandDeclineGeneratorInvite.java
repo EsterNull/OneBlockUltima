@@ -1,90 +1,63 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
-
-public class CommandDeclineGeneratorInvite extends CommandBase
+public final class CommandDeclineGeneratorInvite
 {
-    @Override
-    @Nonnull
-    public String getName()
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher)
     {
-        return "declineGeneratorInvite";
+        dispatcher.register(Commands.literal("declineGeneratorInvite")
+                .requires(s -> s.hasPermission(0))
+                .executes(ctx -> {
+                    execute(ctx.getSource());
+                    return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                }));
     }
 
-    @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    private static void execute(CommandSourceStack source)
     {
-        return "/declineGeneratorInvite";
-    }
-
-    @Override
-    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
-    {
-        if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
+        ServerPlayer player = source.getPlayer();
+        if (player == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.only_player").withStyle(ChatFormatting.RED));
             return;
         }
 
-        EntityPlayerMP player = (EntityPlayerMP) sender.getCommandSenderEntity();
-        World world = player.world;
-        BlockPos generatorPos = new BlockPos(player.getPosition().getX(), player.getPosition().getY() - 1, player.getPosition().getZ());
+        Level world = player.level();
+        BlockPos generatorPos = player.blockPosition().below();
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_near_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.not_near_generator").withStyle(ChatFormatting.RED));
             return;
         }
 
-        TileEntity tileEntity = world.getTileEntity(generatorPos);
+        BlockEntity tileEntity = world.getBlockEntity(generatorPos);
         if (!(tileEntity instanceof TileEntityOneBlockGenerator))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.no_generator").withStyle(ChatFormatting.RED));
             return;
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
-        if (!generator.declineInvite(player.getUniqueID()))
+        if (!generator.declineInvite(player.getUUID()))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.no_invite")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.no_invite").withStyle(ChatFormatting.RED));
             return;
         }
 
-        sender.sendMessage(new TextComponentString(I18n.format("command.declineGeneratorInvite.declined")).setStyle(new Style().setColor(TextFormatting.GREEN)));
-    }
-
-    @Override
-    @Nonnull
-    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, @Nonnull String[] args, BlockPos targetPos)
-    {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 0;
-    }
-
-    @Override
-    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender) {
-        return true;
+        source.sendSuccess(() -> Component.translatable("command.declineGeneratorInvite.declined").withStyle(ChatFormatting.GREEN), false);
     }
 }

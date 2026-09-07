@@ -1,12 +1,10 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.item.Item;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.world.item.Item;
+import ru.defea.oneblockultima.ModTab;
 
 public class ItemDarkMatter extends Item {
     public ItemDarkMatter() {
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("dark_matter");
-        this.setUnlocalizedName("dark_matter");
+        super(new Item.Properties());
     }
 }

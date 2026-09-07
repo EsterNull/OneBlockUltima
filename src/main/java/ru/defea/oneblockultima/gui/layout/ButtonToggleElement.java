@@ -1,10 +1,9 @@
 package ru.defea.oneblockultima.gui.layout;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.Screen;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 import static ru.defea.oneblockultima.Constants.*;
@@ -12,10 +11,6 @@ import static ru.defea.oneblockultima.Constants.*;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
     private static final String CHECKMARK = "\u2714";
-
-    public enum LabelPosition {
-        LEFT, RIGHT
-    }
 
     private boolean stateTriggered;
     private String label;
@@ -35,27 +30,32 @@ public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
 
     public ButtonToggleElement label(String label) {
         this.label = label;
+        sideLabel(label);
         return this;
     }
 
     public ButtonToggleElement label(String label, LabelPosition position) {
         this.label = label;
         this.labelPosition = position;
+        sideLabel(label).sideLabelPosition(position);
         return this;
     }
 
     public ButtonToggleElement labelPosition(LabelPosition position) {
         this.labelPosition = position;
+        sideLabelPosition(position);
         return this;
     }
 
     public ButtonToggleElement labelColor(int color) {
         this.labelColor = color;
+        sideLabelColor(color);
         return this;
     }
 
     public ButtonToggleElement labelGap(int gap) {
         this.labelGap = gap;
+        sideLabelGap(gap);
         return this;
     }
 
@@ -107,60 +107,16 @@ public class ButtonToggleElement extends ButtonElement<ButtonToggleElement> {
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
+    public int getPreferredWidth(Font font) {
         if (label == null || label.isEmpty()) {
-            return super.getPreferredWidth(fr);
+            return super.getPreferredWidth(font);
         }
         int boxW = width > 0 ? width : BUTTON_PADDING;
-        return boxW + labelGap + fr.getStringWidth(label);
-    }
-
-    private int getBoxWidth(FontRenderer fr) {
-        if (width > 0) return width;
-        if (label == null || label.isEmpty()) return computedWidth;
-        return BUTTON_PADDING;
+        return boxW + labelGap + font.width(label);
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
-        boolean hasLabel = label != null && !label.isEmpty();
-        final int boxW = getBoxWidth(fontRenderer);
-        final int buttonId = getId();
-        final int borderSize = getBorderSize();
-        final int borderColor = getBorderColor();
-
-        guiButton = new GuiButton(buttonId, computedX, computedY, computedWidth, computedHeight, text) {
-            @Override
-            public void drawButton(@Nonnull Minecraft mc, int mouseX, int mouseY, float partialTicks) {
-                if (!this.visible) {
-                    return;
-                }
-                this.hovered = mouseX >= this.x && mouseY >= this.y &&
-                        mouseX < this.x + this.width && mouseY < this.y + this.height;
-
-                int actualBoxW = hasLabel ? Math.min(boxW, this.width) : this.width;
-                int boxX = hasLabel && labelPosition == LabelPosition.LEFT ? this.x + (this.width - actualBoxW) : this.x;
-
-                drawRect(boxX, this.y, boxX + actualBoxW, this.y + this.height, widgetFillColor(hovered));
-                drawRect(boxX, this.y, boxX + actualBoxW, this.y + borderSize, borderColor);
-                drawRect(boxX, this.y + this.height - borderSize, boxX + actualBoxW, this.y + this.height, borderColor);
-                drawRect(boxX, this.y, boxX + borderSize, this.y + this.height, borderColor);
-                drawRect(boxX + actualBoxW - borderSize, this.y, boxX + actualBoxW, this.y + this.height, borderColor);
-                this.drawCenteredString(fontRenderer, this.displayString,
-                        boxX + actualBoxW / 2,
-                        this.y + (this.height - fontRenderer.FONT_HEIGHT) / 2,
-                        widgetTextColor(hovered));
-
-                if (hasLabel) {
-                    int labelX = labelPosition == LabelPosition.RIGHT
-                            ? this.x + actualBoxW + labelGap
-                            : this.x;
-                    int labelY = this.y + (this.height - fontRenderer.FONT_HEIGHT) / 2;
-                    fontRenderer.drawString(label, labelX, labelY, enabled ? labelColor : DISABLED_BUTTON_TEXT);
-                }
-            }
-        };
-        guiButton.enabled = enabled;
-        buttonList.add(guiButton);
+    public int getPreferredHeight() {
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 }

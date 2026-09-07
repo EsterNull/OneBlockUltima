@@ -1,8 +1,9 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -57,45 +58,48 @@ public class LabelElement extends ViewElement<LabelElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (text == null || text.isEmpty()) return;
         if (scale != 1.0f) {
-            GlStateManager.pushMatrix();
-            GlStateManager.translate(computedX, computedY, 0);
-            GlStateManager.scale(scale, scale, 1.0f);
-            int drawX = centered ? (int)((computedWidth / scale - fr.getStringWidth(text)) / 2) : 0;
-            fr.drawString(text, drawX, 0, color);
-            GlStateManager.popMatrix();
+            g.pose().pushPose();
+            g.pose().translate(computedX, computedY, 0);
+            int s = (int) Math.round(scale);
+            if (s < 1) s = 1;
+            g.pose().scale(s, s, 1.0f);
+            Font f = Minecraft.getInstance().font;
+            int drawX = centered ? (int) ((computedWidth / s - f.width(text)) / 2) : 0;
+            g.drawString(f, text, drawX, 0, color);
+            g.pose().popPose();
         } else if (centered) {
-            fr.drawString(text, computedX + (computedWidth - fr.getStringWidth(text)) / 2, computedY, color);
+            g.drawCenteredString(font, text, computedX + computedWidth / 2, computedY, color);
         } else {
-            fr.drawString(text, computedX, computedY, color);
+            g.drawString(font, text, computedX, computedY, color);
         }
     }
 
     @Override
     public int getPreferredWidth() {
-        return Math.max(explicitWidth, 0);
+        return getPreferredWidth(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
+    public int getPreferredWidth(Font font) {
         if (explicitWidth > 0) return explicitWidth;
         if (text == null || text.isEmpty()) return 0;
-        return fr.getStringWidth(text);
+        return font.width(text);
     }
 
     @Override
     public int getPreferredHeight() {
-        return 10;
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredHeight(FontRenderer fr) {
-        return fr.FONT_HEIGHT + 2;
+    public int getPreferredHeight(Font font) {
+        return font.lineHeight + 2;
     }
 }

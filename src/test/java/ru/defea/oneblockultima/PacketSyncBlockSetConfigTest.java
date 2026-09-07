@@ -1,10 +1,10 @@
 package ru.defea.oneblockultima;
 
 import io.netty.buffer.Unpooled;
-import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.network.PacketSyncBlockSetConfig;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.nio.charset.StandardCharsets;
 
@@ -14,7 +14,11 @@ public class PacketSyncBlockSetConfigTest {
 
     @BeforeClass
     public static void initMinecraftBootstrap() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
+    }
+
+    private static net.minecraft.network.FriendlyByteBuf newBuf() {
+        return new net.minecraft.network.FriendlyByteBuf(Unpooled.buffer());
     }
 
     @Test
@@ -22,11 +26,10 @@ public class PacketSyncBlockSetConfigTest {
         String json = "{\"sets\":[{\"id\":\"test\",\"blocks\":[],\"mobs\":[]}],\"settings\":{}}";
         PacketSyncBlockSetConfig original = new PacketSyncBlockSetConfig(json);
 
-        io.netty.buffer.ByteBuf buf = Unpooled.buffer();
-        original.toBytes(buf);
+        net.minecraft.network.FriendlyByteBuf buf = newBuf();
+        original.write(buf);
 
-        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig();
-        restored.fromBytes(buf);
+        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig(buf);
 
         assertEquals(json, restored.getJson());
         buf.release();
@@ -37,11 +40,10 @@ public class PacketSyncBlockSetConfigTest {
         String json = "";
         PacketSyncBlockSetConfig original = new PacketSyncBlockSetConfig(json);
 
-        io.netty.buffer.ByteBuf buf = Unpooled.buffer();
-        original.toBytes(buf);
+        net.minecraft.network.FriendlyByteBuf buf = newBuf();
+        original.write(buf);
 
-        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig();
-        restored.fromBytes(buf);
+        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig(buf);
 
         assertEquals("", restored.getJson());
         buf.release();
@@ -52,11 +54,10 @@ public class PacketSyncBlockSetConfigTest {
         String json = "{\"name\":\"Тест набор\",\"sets\":[]}";
         PacketSyncBlockSetConfig original = new PacketSyncBlockSetConfig(json);
 
-        io.netty.buffer.ByteBuf buf = Unpooled.buffer();
-        original.toBytes(buf);
+        net.minecraft.network.FriendlyByteBuf buf = newBuf();
+        original.write(buf);
 
-        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig();
-        restored.fromBytes(buf);
+        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig(buf);
 
         assertEquals(json, restored.getJson());
         buf.release();
@@ -74,12 +75,11 @@ public class PacketSyncBlockSetConfigTest {
 
         PacketSyncBlockSetConfig original = new PacketSyncBlockSetConfig(json);
 
-        io.netty.buffer.ByteBuf buf = Unpooled.buffer();
-        original.toBytes(buf);
+        net.minecraft.network.FriendlyByteBuf buf = newBuf();
+        original.write(buf);
         int readableAfterWrite = buf.readableBytes();
 
-        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig();
-        restored.fromBytes(buf);
+        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig(buf);
 
         assertEquals(json, restored.getJson());
         assertEquals(json.getBytes(StandardCharsets.UTF_8).length + 4, readableAfterWrite);
@@ -91,11 +91,10 @@ public class PacketSyncBlockSetConfigTest {
         String json = "{\"key\":\"value\\nwith\\nnewlines\",\"path\":\"C:\\\\Users\\\\test\"}";
         PacketSyncBlockSetConfig original = new PacketSyncBlockSetConfig(json);
 
-        io.netty.buffer.ByteBuf buf = Unpooled.buffer();
-        original.toBytes(buf);
+        net.minecraft.network.FriendlyByteBuf buf = newBuf();
+        original.write(buf);
 
-        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig();
-        restored.fromBytes(buf);
+        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig(buf);
 
         assertEquals(json, restored.getJson());
         buf.release();
@@ -109,11 +108,10 @@ public class PacketSyncBlockSetConfigTest {
 
         PacketSyncBlockSetConfig original = new PacketSyncBlockSetConfig(json);
 
-        io.netty.buffer.ByteBuf buf = Unpooled.buffer();
-        original.toBytes(buf);
+        net.minecraft.network.FriendlyByteBuf buf = newBuf();
+        original.write(buf);
 
-        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig();
-        restored.fromBytes(buf);
+        PacketSyncBlockSetConfig restored = new PacketSyncBlockSetConfig(buf);
 
         assertEquals(json, restored.getJson());
         buf.release();

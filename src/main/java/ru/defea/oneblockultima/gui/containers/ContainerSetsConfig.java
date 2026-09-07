@@ -1,37 +1,54 @@
 package ru.defea.oneblockultima.gui.containers;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
 
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.EntityList;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagByte;
-import net.minecraft.nbt.NBTTagByteArray;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagDouble;
-import net.minecraft.nbt.NBTTagFloat;
-import net.minecraft.nbt.NBTTagInt;
-import net.minecraft.nbt.NBTTagIntArray;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagLong;
-import net.minecraft.nbt.NBTTagShort;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.storage.loot.LootTableList;
-import static net.minecraftforge.common.util.Constants.NBT.*;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.IFluidBlock;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.item.CreativeModeTabs;
+
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ByteTag;
+import net.minecraft.nbt.ByteArrayTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.FloatTag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongTag;
+import net.minecraft.nbt.ShortTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
+
+import static net.minecraft.nbt.Tag.*;
+import net.minecraft.world.level.material.Fluid;
+
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.forgespi.language.IModInfo;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.core.component.DataComponents;
+import net.minecraftforge.fml.loading.FMLPaths;
+import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.OneBlockUltima;
 
@@ -80,7 +97,7 @@ public class ContainerSetsConfig
         public final String name;
         public final String modId;
         public final ItemStack stack;
-        public final Class<?> entityClass;
+        public final EntityType<?> entityClass;
         public final boolean isMob;
         public final boolean isFluid;
         public final Fluid fluid;
@@ -92,7 +109,7 @@ public class ContainerSetsConfig
             this.entityClass = null; this.fluid = null;
         }
 
-        public SearchResult(String registry, String name, String modId, Class<?> entityClass)
+        public SearchResult(String registry, String name, String modId, EntityType<?> entityClass)
         {
             this.registry = registry; this.name = name; this.modId = modId;
             this.stack = ItemStack.EMPTY; this.isMob = true; this.isFluid = false;
@@ -202,7 +219,7 @@ public class ContainerSetsConfig
     {
         try
         {
-            return I18n.format(key, args);
+            return I18n.get(key, args);
         }
         catch (Exception e)
         {
@@ -329,7 +346,7 @@ public class ContainerSetsConfig
             for (BlockSetConfig.BlockElementDefinition block : editingSet.blocks)
             {
                 if (block == null || block.registry == null || block.registry.isEmpty()) continue;
-                if (block.nbtTags != null && !block.nbtTags.hasNoTags()) continue;
+                if (block.nbtTags != null && !block.nbtTags.isEmpty()) continue;
                 for (Integer meta : block.getMetaValues())
                 {
                     result.add(block.registry + "@" + meta);
@@ -405,7 +422,7 @@ public class ContainerSetsConfig
         {
             if (id.isEmpty())
             {
-                statusMessage = I18n.format("gui.oneblockultima.config.error.empty_id");
+                statusMessage = I18n.get("gui.oneblockultima.config.error.empty_id");
                 statusTimer = 100;
                 return false;
             }
@@ -413,7 +430,7 @@ public class ContainerSetsConfig
             {
                 if (set != null && id.equals(set.id))
                 {
-                    statusMessage = I18n.format("gui.oneblockultima.config.error.duplicate_id");
+                    statusMessage = I18n.get("gui.oneblockultima.config.error.duplicate_id");
                     statusTimer = 100;
                     return false;
                 }
@@ -424,7 +441,7 @@ public class ContainerSetsConfig
             try { cost = Integer.parseInt(costStr); }
             catch (NumberFormatException e)
             {
-                statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_cost");
+                statusMessage = I18n.get("gui.oneblockultima.config.error.invalid_cost");
                 statusTimer = 100;
                 return false;
             }
@@ -435,7 +452,7 @@ public class ContainerSetsConfig
             sets.add(editingSet);
             updateFilteredSets();
             saveConfigToFile();
-            statusMessage = I18n.format("gui.oneblockultima.config.set_created", id);
+            statusMessage = I18n.get("gui.oneblockultima.config.set_created", id);
             statusTimer = 60;
             isNewSet = false;
             editingSet = null;
@@ -450,7 +467,7 @@ public class ContainerSetsConfig
             try { cost = Integer.parseInt(costStr); }
             catch (NumberFormatException e)
             {
-                statusMessage = I18n.format("gui.oneblockultima.config.error.invalid_cost");
+                statusMessage = I18n.get("gui.oneblockultima.config.error.invalid_cost");
                 statusTimer = 100;
                 return false;
             }
@@ -458,7 +475,7 @@ public class ContainerSetsConfig
             if (editingSetSourceIndex >= 0 && editingSetSourceIndex < sets.size())
                 sets.set(editingSetSourceIndex, editingSet);
             saveConfigToFile();
-            statusMessage = I18n.format("gui.oneblockultima.config.saved");
+            statusMessage = I18n.get("gui.oneblockultima.config.saved");
             statusTimer = 60;
             editingSet.computedLevels = null;
             editingSetSourceIndex = -1;
@@ -481,7 +498,7 @@ public class ContainerSetsConfig
         updateFilteredSets();
         if (selectedSetIndex >= sets.size()) selectedSetIndex = sets.size() - 1;
         saveConfigToFile();
-        statusMessage = I18n.format("gui.oneblockultima.config.set_deleted", id);
+        statusMessage = I18n.get("gui.oneblockultima.config.set_deleted", id);
         statusTimer = 60;
         deleteTargetIndex = -1;
     }
@@ -516,12 +533,10 @@ public class ContainerSetsConfig
         {
             BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
             entry.registry = result.registry;
-            entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+            entry.meta = result.stack != null && !result.stack.isEmpty() ? ModBlocks.metaOf(result.stack) : 0;
             entry.baseLevel = baseLevel;
             entry.baseChance = baseChance;
-            entry.nbtTags = result.stack != null && result.stack.getTagCompound() != null
-                    ? result.stack.getTagCompound().copy()
-                    : new NBTTagCompound();
+            entry.nbtTags = captureItemNbt(result.stack);
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             editingSet.blocks.add(entry);
             statusMessage = safeFormat("gui.oneblockultima.config.block_added", result.name);
@@ -552,12 +567,10 @@ public class ContainerSetsConfig
         {
             BlockSetConfig.BlockElementDefinition entry = new BlockSetConfig.BlockElementDefinition();
             entry.registry = result.registry;
-            entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+            entry.meta = result.stack != null && !result.stack.isEmpty() ? ModBlocks.metaOf(result.stack) : 0;
             entry.baseLevel = 1;
             entry.baseChance = 1;
-            entry.nbtTags = result.stack != null && result.stack.getTagCompound() != null
-                    ? result.stack.getTagCompound().copy()
-                    : new NBTTagCompound();
+            entry.nbtTags = captureItemNbt(result.stack);
             if (editingSet.blocks == null) editingSet.blocks = new ArrayList<>();
             editingSet.blocks.add(entry);
             pendingAddIndex = editingSet.blocks.size() - 1;
@@ -633,7 +646,7 @@ public class ContainerSetsConfig
             boolean hasSpecificMeta = selectedBlockMeta >= 0 && block.metas != null && block.metas.size() > 1 && block.metas.contains(selectedBlockMeta);
             if (hasSpecificMeta) block.metas.remove(Integer.valueOf(selectedBlockMeta));
             else editingSet.blocks.remove(selectedBlockIndex);
-            statusMessage = I18n.format("gui.oneblockultima.config.removed");
+            statusMessage = I18n.get("gui.oneblockultima.config.removed");
             statusTimer = 60;
             selectedBlockIndex = -1;
             selectedBlockMeta = -1;
@@ -642,7 +655,7 @@ public class ContainerSetsConfig
         else if (selectedMobIndex >= 0 && editingSet.mobs != null && selectedMobIndex < editingSet.mobs.size())
         {
             editingSet.mobs.remove(selectedMobIndex);
-            statusMessage = I18n.format("gui.oneblockultima.config.removed");
+            statusMessage = I18n.get("gui.oneblockultima.config.removed");
             statusTimer = 60;
             selectedMobIndex = -1;
             editingSet.computedLevels = null;
@@ -671,10 +684,10 @@ public class ContainerSetsConfig
         return "";
     }
 
-    public NBTTagCompound getEditingEntryNbt()
+    public CompoundTag getEditingEntryNbt()
     {
-        NBTTagCompound tags = getEditingEntryNbtOrNull();
-        return tags != null ? tags.copy() : new NBTTagCompound();
+        CompoundTag tags = getEditingEntryNbtOrNull();
+        return tags != null ? tags.copy() : new CompoundTag();
     }
 
     // ======== Structured NBT editor ========
@@ -683,9 +696,9 @@ public class ContainerSetsConfig
     {
         public final String key;
         public final int index;
-        public final NBTBase value;
+        public final Tag value;
 
-        public NbtTagEntry(String key, int index, NBTBase value)
+        public NbtTagEntry(String key, int index, Tag value)
         {
             this.key = key;
             this.index = index;
@@ -699,17 +712,17 @@ public class ContainerSetsConfig
 
         public boolean isCompound()
         {
-            return value instanceof NBTTagCompound;
+            return value instanceof CompoundTag;
         }
 
         public boolean isList()
         {
-            return value instanceof NBTTagList;
+            return value instanceof ListTag;
         }
 
         public boolean isArray()
         {
-            return value instanceof NBTTagByteArray || value instanceof NBTTagIntArray;
+            return value instanceof ByteArrayTag || value instanceof IntArrayTag;
         }
 
         public boolean isScalar()
@@ -747,37 +760,37 @@ public class ContainerSetsConfig
     public List<NbtTagEntry> getNbtTags()
     {
         List<NbtTagEntry> result = new ArrayList<>();
-        NBTBase node = getNbtEditorCurrent();
-        if (node instanceof NBTTagCompound)
+        Tag node = getNbtEditorCurrent();
+        if (node instanceof CompoundTag)
         {
-            NBTTagCompound compound = (NBTTagCompound) node;
-            for (String key : compound.getKeySet())
+            CompoundTag compound = (CompoundTag) node;
+            for (String key : compound.getAllKeys())
             {
-                result.add(new NbtTagEntry(key, -1, compound.getTag(key)));
+                result.add(new NbtTagEntry(key, -1, compound.get(key)));
             }
         }
-        else if (node instanceof NBTTagList)
+        else if (node instanceof ListTag)
         {
-            NBTTagList list = (NBTTagList) node;
-            for (int i = 0; i < list.tagCount(); i++)
+            ListTag list = (ListTag) node;
+            for (int i = 0; i < list.size(); i++)
             {
                 result.add(new NbtTagEntry("[" + i + "]", i, list.get(i)));
             }
         }
-        else if (node instanceof NBTTagByteArray)
+        else if (node instanceof ByteArrayTag)
         {
-            byte[] arr = ((NBTTagByteArray) node).getByteArray();
+            byte[] arr = ((ByteArrayTag) node).getAsByteArray();
             for (int i = 0; i < arr.length; i++)
             {
-                result.add(new NbtTagEntry("[" + i + "]", i, new NBTTagByte(arr[i])));
+                result.add(new NbtTagEntry("[" + i + "]", i, ByteTag.valueOf(arr[i])));
             }
         }
-        else if (node instanceof NBTTagIntArray)
+        else if (node instanceof IntArrayTag)
         {
-            int[] arr = ((NBTTagIntArray) node).getIntArray();
+            int[] arr = ((IntArrayTag) node).getAsIntArray();
             for (int i = 0; i < arr.length; i++)
             {
-                result.add(new NbtTagEntry("[" + i + "]", i, new NBTTagInt(arr[i])));
+                result.add(new NbtTagEntry("[" + i + "]", i, IntTag.valueOf(arr[i])));
             }
         }
         return result;
@@ -790,19 +803,19 @@ public class ContainerSetsConfig
 
     public boolean nbtEditorIsListContext()
     {
-        return getNbtEditorCurrent() instanceof NBTTagList;
+        return getNbtEditorCurrent() instanceof ListTag;
     }
 
     public boolean nbtEditorIsArrayContext()
     {
-        NBTBase node = getNbtEditorCurrent();
-        return node instanceof NBTTagByteArray || node instanceof NBTTagIntArray;
+        Tag node = getNbtEditorCurrent();
+        return node instanceof ByteArrayTag || node instanceof IntArrayTag;
     }
 
     public int nbtEditorGetArrayElementType()
     {
-        NBTBase node = getNbtEditorCurrent();
-        return node instanceof NBTTagIntArray ? TAG_INT : TAG_BYTE;
+        Tag node = getNbtEditorCurrent();
+        return node instanceof IntArrayTag ? TAG_INT : TAG_BYTE;
     }
 
     public String nbtEditorPathLabel()
@@ -818,32 +831,32 @@ public class ContainerSetsConfig
 
     public void nbtEditorPush(String key)
     {
-        NBTBase node = getNbtEditorCurrent();
-        if (!(node instanceof NBTTagCompound)) return;
-        NBTTagCompound compound = (NBTTagCompound) node;
-        if (!compound.hasKey(key)) return;
-        NBTBase target = compound.getTag(key);
+        Tag node = getNbtEditorCurrent();
+        if (!(node instanceof CompoundTag)) return;
+        CompoundTag compound = (CompoundTag) node;
+        if (!compound.contains(key)) return;
+        Tag target = compound.get(key);
         if (!isContainer(target)) return;
         nbtEditorPath.add(new NbtEditorSegment(key));
     }
 
     public void nbtEditorPushIndex(int index)
     {
-        NBTBase node = getNbtEditorCurrent();
-        if (!(node instanceof NBTTagList)) return;
-        NBTTagList list = (NBTTagList) node;
-        if (index < 0 || index >= list.tagCount()) return;
-        NBTBase target = list.get(index);
+        Tag node = getNbtEditorCurrent();
+        if (!(node instanceof ListTag)) return;
+        ListTag list = (ListTag) node;
+        if (index < 0 || index >= list.size()) return;
+        Tag target = list.get(index);
         if (!isContainer(target)) return;
         nbtEditorPath.add(new NbtEditorSegment(index));
     }
 
-    private static boolean isContainer(NBTBase value)
+    private static boolean isContainer(Tag value)
     {
-        return value instanceof NBTTagCompound
-                || value instanceof NBTTagList
-                || value instanceof NBTTagByteArray
-                || value instanceof NBTTagIntArray;
+        return value instanceof CompoundTag
+                || value instanceof ListTag
+                || value instanceof ByteArrayTag
+                || value instanceof IntArrayTag;
     }
 
     public void nbtEditorPop()
@@ -871,18 +884,18 @@ public class ContainerSetsConfig
 
     public int getNbtEditorListElementType()
     {
-        NBTBase node = getNbtEditorCurrent();
-        if (node instanceof NBTTagList && ((NBTTagList) node).tagCount() > 0)
+        Tag node = getNbtEditorCurrent();
+        if (node instanceof ListTag && ((ListTag) node).size() > 0)
         {
-            return ((NBTTagList) node).getTagType();
+            return ((ListTag) node).getElementType();
         }
         return nbtEditorListElementType;
     }
 
     public boolean nbtEditorListTypeIsFixed()
     {
-        NBTBase node = getNbtEditorCurrent();
-        return node instanceof NBTTagList && ((NBTTagList) node).tagCount() > 0;
+        Tag node = getNbtEditorCurrent();
+        return node instanceof ListTag && ((ListTag) node).size() > 0;
     }
 
     public void cycleNbtEditorListElementType()
@@ -930,11 +943,11 @@ public class ContainerSetsConfig
 
     public void nbtEditorStartEdit(String key)
     {
-        NBTBase node = getNbtEditorCurrent();
-        if (!(node instanceof NBTTagCompound)) return;
-        NBTTagCompound compound = (NBTTagCompound) node;
-        if (!compound.hasKey(key)) return;
-        NBTBase target = compound.getTag(key);
+        Tag node = getNbtEditorCurrent();
+        if (!(node instanceof CompoundTag)) return;
+        CompoundTag compound = (CompoundTag) node;
+        if (!compound.contains(key)) return;
+        Tag target = compound.get(key);
         if (isContainer(target)) return;
         nbtEditorEditingKey = key;
         nbtEditorEditingIndex = -1;
@@ -945,11 +958,11 @@ public class ContainerSetsConfig
 
     public void nbtEditorStartEditIndex(int index)
     {
-        NBTBase node = getNbtEditorCurrent();
-        if (node instanceof NBTTagList)
+        Tag node = getNbtEditorCurrent();
+        if (node instanceof ListTag)
         {
-            NBTTagList list = (NBTTagList) node;
-            if (index < 0 || index >= list.tagCount()) return;
+            ListTag list = (ListTag) node;
+            if (index < 0 || index >= list.size()) return;
             if (isContainer(list.get(index))) return;
             nbtEditorEditingIndex = index;
             nbtEditorEditingKey = null;
@@ -957,7 +970,7 @@ public class ContainerSetsConfig
             nbtEditorKeyText = "";
             nbtEditorValueText = formatNbtValue(list.get(index));
         }
-        else if (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray)
+        else if (node instanceof ByteArrayTag || node instanceof IntArrayTag)
         {
             int size = getArraySize(node);
             if (index < 0 || index >= size) return;
@@ -991,18 +1004,18 @@ public class ContainerSetsConfig
 
     public String nbtEditorGetValue()
     {
-        NBTBase target = null;
-        NBTBase node = getNbtEditorCurrent();
-        if (nbtEditorEditingKey != null && node instanceof NBTTagCompound)
+        Tag target = null;
+        Tag node = getNbtEditorCurrent();
+        if (nbtEditorEditingKey != null && node instanceof CompoundTag)
         {
-            target = ((NBTTagCompound) node).getTag(nbtEditorEditingKey);
+            target = ((CompoundTag) node).get(nbtEditorEditingKey);
         }
-        else if (nbtEditorEditingIndex >= 0 && node instanceof NBTTagList)
+        else if (nbtEditorEditingIndex >= 0 && node instanceof ListTag)
         {
-            NBTTagList list = (NBTTagList) node;
-            if (nbtEditorEditingIndex < list.tagCount()) target = list.get(nbtEditorEditingIndex);
+            ListTag list = (ListTag) node;
+            if (nbtEditorEditingIndex < list.size()) target = list.get(nbtEditorEditingIndex);
         }
-        else if (nbtEditorEditingIndex >= 0 && (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray))
+        else if (nbtEditorEditingIndex >= 0 && (node instanceof ByteArrayTag || node instanceof IntArrayTag))
         {
             if (nbtEditorEditingIndex < getArraySize(node)) target = getArrayElement(node, nbtEditorEditingIndex);
         }
@@ -1016,24 +1029,24 @@ public class ContainerSetsConfig
         {
             if (nbtEditorIsListContext())
             {
-                NBTTagList list = getNbtEditorList();
+                ListTag list = getNbtEditorList();
                 if (list == null) return false;
-                int elementType = list.tagCount() > 0 ? list.getTagType() : nbtEditorListElementType;
-                NBTBase value = parseNbtValue(elementType, valueText);
+                int elementType = list.size() > 0 ? list.getElementType() : nbtEditorListElementType;
+                Tag value = parseNbtValue(elementType, valueText);
                 if (nbtEditorEditingIndex >= 0)
                 {
-                    if (nbtEditorEditingIndex >= list.tagCount()) return false;
+                    if (nbtEditorEditingIndex >= list.size()) return false;
                     list.set(nbtEditorEditingIndex, value);
                 }
-                else if (list.tagCount() == 0)
+                else if (list.size() == 0)
                 {
-                    NBTTagList fresh = new NBTTagList();
-                    fresh.appendTag(value);
+                    ListTag fresh = new ListTag();
+                    fresh.add(value);
                     if (!setNbtEditorCurrent(fresh)) return false;
                 }
                 else
                 {
-                    list.appendTag(value);
+                    list.add(value);
                 }
                 nbtEditorEditingIndex = -1;
                 nbtEditorEditingKey = null;
@@ -1045,10 +1058,10 @@ public class ContainerSetsConfig
 
             if (nbtEditorIsArrayContext())
             {
-                NBTBase node = getNbtEditorCurrent();
+                Tag node = getNbtEditorCurrent();
                 if (node == null) return false;
-                NBTBase value = parseNbtValue(nbtEditorGetArrayElementType(), valueText);
-                NBTBase replacement = nbtEditorEditingIndex >= 0
+                Tag value = parseNbtValue(nbtEditorGetArrayElementType(), valueText);
+                Tag replacement = nbtEditorEditingIndex >= 0
                         ? setArrayElement(node, nbtEditorEditingIndex, value)
                         : appendArrayElement(node, value);
                 if (replacement == null) return false;
@@ -1061,7 +1074,7 @@ public class ContainerSetsConfig
                 return true;
             }
 
-            NBTTagCompound compound = getNbtEditorCompound();
+            CompoundTag compound = getNbtEditorCompound();
             if (compound == null) return false;
 
             if (nbtEditorEditingKey != null)
@@ -1073,9 +1086,9 @@ public class ContainerSetsConfig
                     statusTimer = 100;
                     return false;
                 }
-                NBTBase value = parseNbtValue(nbtEditorAddType, valueText);
-                compound.removeTag(nbtEditorEditingKey);
-                compound.setTag(newKey, value);
+                Tag value = parseNbtValue(nbtEditorAddType, valueText);
+                compound.remove(nbtEditorEditingKey);
+                compound.put(newKey, value);
                 nbtEditorEditingKey = null;
                 nbtEditorValueText = "";
                 nbtEditorKeyText = "";
@@ -1090,8 +1103,8 @@ public class ContainerSetsConfig
                 statusTimer = 100;
                 return false;
             }
-            NBTBase value = parseNbtValue(nbtEditorAddType, valueText);
-            compound.setTag(trimmedKey, value);
+            Tag value = parseNbtValue(nbtEditorAddType, valueText);
+            compound.put(trimmedKey, value);
             nbtEditorValueText = "";
             nbtEditorKeyText = "";
             nbtEditorMarkDirty();
@@ -1107,27 +1120,27 @@ public class ContainerSetsConfig
 
     public boolean nbtEditorRemove(String key)
     {
-        NBTTagCompound compound = getNbtEditorCompound();
-        if (compound == null || !compound.hasKey(key)) return false;
-        compound.removeTag(key);
+        CompoundTag compound = getNbtEditorCompound();
+        if (compound == null || !compound.contains(key)) return false;
+        compound.remove(key);
         nbtEditorMarkDirty();
         return true;
     }
 
     public boolean nbtEditorRemoveIndex(int index)
     {
-        NBTBase node = getNbtEditorCurrent();
-        if (node instanceof NBTTagList)
+        Tag node = getNbtEditorCurrent();
+        if (node instanceof ListTag)
         {
-            NBTTagList list = (NBTTagList) node;
-            if (index < 0 || index >= list.tagCount()) return false;
-            list.removeTag(index);
+            ListTag list = (ListTag) node;
+            if (index < 0 || index >= list.size()) return false;
+            list.remove(index);
             nbtEditorMarkDirty();
             return true;
         }
-        if (node instanceof NBTTagByteArray || node instanceof NBTTagIntArray)
+        if (node instanceof ByteArrayTag || node instanceof IntArrayTag)
         {
-            NBTBase replacement = removeArrayElement(node, index);
+            Tag replacement = removeArrayElement(node, index);
             if (replacement == null) return false;
             if (!setNbtEditorCurrent(replacement)) return false;
             nbtEditorMarkDirty();
@@ -1141,210 +1154,210 @@ public class ContainerSetsConfig
         if (editingSet != null) editingSet.computedLevels = null;
     }
 
-    private NBTTagCompound getNbtEditorCompound()
+    private CompoundTag getNbtEditorCompound()
     {
-        NBTBase node = getNbtEditorCurrent();
-        return node instanceof NBTTagCompound ? (NBTTagCompound) node : null;
+        Tag node = getNbtEditorCurrent();
+        return node instanceof CompoundTag ? (CompoundTag) node : null;
     }
 
-    private NBTTagList getNbtEditorList()
+    private ListTag getNbtEditorList()
     {
-        NBTBase node = getNbtEditorCurrent();
-        return node instanceof NBTTagList ? (NBTTagList) node : null;
+        Tag node = getNbtEditorCurrent();
+        return node instanceof ListTag ? (ListTag) node : null;
     }
 
-    private NBTBase getNbtEditorCurrent()
+    private Tag getNbtEditorCurrent()
     {
-        NBTBase node = getEditingEntryNbtOrNull();
+        Tag node = getEditingEntryNbtOrNull();
         if (node == null) return null;
         for (NbtEditorSegment seg : nbtEditorPath)
         {
             if (seg.list)
             {
-                if (!(node instanceof NBTTagList)) return null;
-                NBTTagList list = (NBTTagList) node;
-                if (seg.index < 0 || seg.index >= list.tagCount()) return null;
+                if (!(node instanceof ListTag)) return null;
+                ListTag list = (ListTag) node;
+                if (seg.index < 0 || seg.index >= list.size()) return null;
                 node = list.get(seg.index);
             }
             else
             {
-                if (!(node instanceof NBTTagCompound)) return null;
-                NBTTagCompound compound = (NBTTagCompound) node;
-                if (!compound.hasKey(seg.key)) return null;
-                node = compound.getTag(seg.key);
+                if (!(node instanceof CompoundTag)) return null;
+                CompoundTag compound = (CompoundTag) node;
+                if (!compound.contains(seg.key)) return null;
+                node = compound.get(seg.key);
             }
         }
         return node;
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean setNbtEditorCurrent(NBTBase newNode)
+    private boolean setNbtEditorCurrent(Tag newNode)
     {
         if (nbtEditorPath.isEmpty()) return false;
         NbtEditorSegment last = nbtEditorPath.get(nbtEditorPath.size() - 1);
-        NBTBase parent = getNbtEditorParent();
-        if (parent instanceof NBTTagCompound)
+        Tag parent = getNbtEditorParent();
+        if (parent instanceof CompoundTag)
         {
-            ((NBTTagCompound) parent).setTag(last.key, newNode);
+            ((CompoundTag) parent).put(last.key, newNode);
             return true;
         }
-        if (parent instanceof NBTTagList)
+        if (parent instanceof ListTag)
         {
-            ((NBTTagList) parent).set(last.index, newNode);
+            ((ListTag) parent).set(last.index, newNode);
             return true;
         }
         return false;
     }
 
-    private static int getArraySize(NBTBase node)
+    private static int getArraySize(Tag node)
     {
-        if (node instanceof NBTTagByteArray) return ((NBTTagByteArray) node).getByteArray().length;
-        if (node instanceof NBTTagIntArray) return ((NBTTagIntArray) node).getIntArray().length;
+        if (node instanceof ByteArrayTag) return ((ByteArrayTag) node).getAsByteArray().length;
+        if (node instanceof IntArrayTag) return ((IntArrayTag) node).getAsIntArray().length;
         return 0;
     }
 
-    private static NBTBase getArrayElement(NBTBase node, int index)
+    private static Tag getArrayElement(Tag node, int index)
     {
-        if (node instanceof NBTTagByteArray) return new NBTTagByte(((NBTTagByteArray) node).getByteArray()[index]);
-        if (node instanceof NBTTagIntArray) return new NBTTagInt(((NBTTagIntArray) node).getIntArray()[index]);
+        if (node instanceof ByteArrayTag) return ByteTag.valueOf(((ByteArrayTag) node).getAsByteArray()[index]);
+        if (node instanceof IntArrayTag) return IntTag.valueOf(((IntArrayTag) node).getAsIntArray()[index]);
         return null;
     }
 
-    private static NBTBase setArrayElement(NBTBase node, int index, NBTBase value)
+    private static Tag setArrayElement(Tag node, int index, Tag value)
     {
-        if (node instanceof NBTTagByteArray)
+        if (node instanceof ByteArrayTag)
         {
-            byte[] src = ((NBTTagByteArray) node).getByteArray();
+            byte[] src = ((ByteArrayTag) node).getAsByteArray();
             if (index < 0 || index >= src.length) return null;
             byte[] dst = src.clone();
-            dst[index] = ((NBTTagByte) value).getByte();
-            return new NBTTagByteArray(dst);
+            dst[index] = ((ByteTag) value).getAsByte();
+            return new ByteArrayTag(dst);
         }
-        if (node instanceof NBTTagIntArray)
+        if (node instanceof IntArrayTag)
         {
-            int[] src = ((NBTTagIntArray) node).getIntArray();
+            int[] src = ((IntArrayTag) node).getAsIntArray();
             if (index < 0 || index >= src.length) return null;
             int[] dst = src.clone();
-            dst[index] = ((NBTTagInt) value).getInt();
-            return new NBTTagIntArray(dst);
+            dst[index] = ((IntTag) value).getAsInt();
+            return new IntArrayTag(dst);
         }
         return null;
     }
 
-    private static NBTBase appendArrayElement(NBTBase node, NBTBase value)
+    private static Tag appendArrayElement(Tag node, Tag value)
     {
-        if (node instanceof NBTTagByteArray)
+        if (node instanceof ByteArrayTag)
         {
-            byte[] src = ((NBTTagByteArray) node).getByteArray();
+            byte[] src = ((ByteArrayTag) node).getAsByteArray();
             byte[] dst = Arrays.copyOf(src, src.length + 1);
-            dst[src.length] = ((NBTTagByte) value).getByte();
-            return new NBTTagByteArray(dst);
+            dst[src.length] = ((ByteTag) value).getAsByte();
+            return new ByteArrayTag(dst);
         }
-        if (node instanceof NBTTagIntArray)
+        if (node instanceof IntArrayTag)
         {
-            int[] src = ((NBTTagIntArray) node).getIntArray();
+            int[] src = ((IntArrayTag) node).getAsIntArray();
             int[] dst = Arrays.copyOf(src, src.length + 1);
-            dst[src.length] = ((NBTTagInt) value).getInt();
-            return new NBTTagIntArray(dst);
+            dst[src.length] = ((IntTag) value).getAsInt();
+            return new IntArrayTag(dst);
         }
         return null;
     }
 
-    private static NBTBase removeArrayElement(NBTBase node, int index)
+    private static Tag removeArrayElement(Tag node, int index)
     {
-        if (node instanceof NBTTagByteArray)
+        if (node instanceof ByteArrayTag)
         {
-            byte[] src = ((NBTTagByteArray) node).getByteArray();
+            byte[] src = ((ByteArrayTag) node).getAsByteArray();
             if (index < 0 || index >= src.length) return null;
             byte[] dst = new byte[src.length - 1];
             System.arraycopy(src, 0, dst, 0, index);
             System.arraycopy(src, index + 1, dst, index, src.length - index - 1);
-            return new NBTTagByteArray(dst);
+            return new ByteArrayTag(dst);
         }
-        if (node instanceof NBTTagIntArray)
+        if (node instanceof IntArrayTag)
         {
-            int[] src = ((NBTTagIntArray) node).getIntArray();
+            int[] src = ((IntArrayTag) node).getAsIntArray();
             if (index < 0 || index >= src.length) return null;
             int[] dst = new int[src.length - 1];
             System.arraycopy(src, 0, dst, 0, index);
             System.arraycopy(src, index + 1, dst, index, src.length - index - 1);
-            return new NBTTagIntArray(dst);
+            return new IntArrayTag(dst);
         }
         return null;
     }
 
-    private NBTBase getNbtEditorParent()
+    private Tag getNbtEditorParent()
     {
-        NBTBase node = getEditingEntryNbtOrNull();
+        Tag node = getEditingEntryNbtOrNull();
         if (node == null) return null;
         for (int i = 0; i < nbtEditorPath.size() - 1; i++)
         {
             NbtEditorSegment seg = nbtEditorPath.get(i);
             if (seg.list)
             {
-                if (!(node instanceof NBTTagList)) return null;
-                NBTTagList list = (NBTTagList) node;
-                if (seg.index < 0 || seg.index >= list.tagCount()) return null;
+                if (!(node instanceof ListTag)) return null;
+                ListTag list = (ListTag) node;
+                if (seg.index < 0 || seg.index >= list.size()) return null;
                 node = list.get(seg.index);
             }
             else
             {
-                if (!(node instanceof NBTTagCompound)) return null;
-                NBTTagCompound compound = (NBTTagCompound) node;
-                if (!compound.hasKey(seg.key)) return null;
-                node = compound.getTag(seg.key);
+                if (!(node instanceof CompoundTag)) return null;
+                CompoundTag compound = (CompoundTag) node;
+                if (!compound.contains(seg.key)) return null;
+                node = compound.get(seg.key);
             }
         }
         return node;
     }
 
-    private static NBTBase parseNbtValue(int typeId, String text)
+    private static Tag parseNbtValue(int typeId, String text)
     {
         switch (typeId)
         {
-            case TAG_STRING: return new NBTTagString(text);
-            case TAG_BYTE: return new NBTTagByte(Byte.parseByte(text.trim()));
-            case TAG_SHORT: return new NBTTagShort(Short.parseShort(text.trim()));
-            case TAG_INT: return new NBTTagInt(Integer.parseInt(text.trim()));
-            case TAG_LONG: return new NBTTagLong(Long.parseLong(text.trim()));
-            case TAG_FLOAT: return new NBTTagFloat(Float.parseFloat(text.trim()));
-            case TAG_DOUBLE: return new NBTTagDouble(Double.parseDouble(text.trim()));
+            case TAG_STRING: return StringTag.valueOf(text);
+            case TAG_BYTE: return ByteTag.valueOf(Byte.parseByte(text.trim()));
+            case TAG_SHORT: return ShortTag.valueOf(Short.parseShort(text.trim()));
+            case TAG_INT: return IntTag.valueOf(Integer.parseInt(text.trim()));
+            case TAG_LONG: return LongTag.valueOf(Long.parseLong(text.trim()));
+            case TAG_FLOAT: return FloatTag.valueOf(Float.parseFloat(text.trim()));
+            case TAG_DOUBLE: return DoubleTag.valueOf(Double.parseDouble(text.trim()));
             case TAG_BYTE_ARRAY:
             {
-                if (text.trim().isEmpty()) return new NBTTagByteArray(new byte[0]);
+                if (text.trim().isEmpty()) return new ByteArrayTag(new byte[0]);
                 String[] parts = text.split(",");
                 byte[] arr = new byte[parts.length];
                 for (int i = 0; i < parts.length; i++) arr[i] = (byte) Integer.parseInt(parts[i].trim());
-                return new NBTTagByteArray(arr);
+                return new ByteArrayTag(arr);
             }
             case TAG_INT_ARRAY:
             {
-                if (text.trim().isEmpty()) return new NBTTagIntArray(new int[0]);
+                if (text.trim().isEmpty()) return new IntArrayTag(new int[0]);
                 String[] parts = text.split(",");
                 int[] arr = new int[parts.length];
                 for (int i = 0; i < parts.length; i++) arr[i] = Integer.parseInt(parts[i].trim());
-                return new NBTTagIntArray(arr);
+                return new IntArrayTag(arr);
             }
-            case TAG_COMPOUND: return new NBTTagCompound();
-            case TAG_LIST: return new NBTTagList();
+            case TAG_COMPOUND: return new CompoundTag();
+            case TAG_LIST: return new ListTag();
             default: throw new NumberFormatException("unsupported type " + typeId);
         }
     }
 
-    private static String formatNbtValue(NBTBase target)
+    private static String formatNbtValue(Tag target)
     {
         switch (target.getId())
         {
-            case TAG_STRING: return ((NBTTagString) target).getString();
-            case TAG_BYTE: return Byte.toString(((NBTTagByte) target).getByte());
-            case TAG_SHORT: return Short.toString(((NBTTagShort) target).getShort());
-            case TAG_INT: return Integer.toString(((NBTTagInt) target).getInt());
-            case TAG_LONG: return Long.toString(((NBTTagLong) target).getLong());
-            case TAG_FLOAT: return Float.toString(((NBTTagFloat) target).getFloat());
-            case TAG_DOUBLE: return Double.toString(((NBTTagDouble) target).getDouble());
+            case TAG_STRING: return ((StringTag) target).getAsString();
+            case TAG_BYTE: return Byte.toString(((ByteTag) target).getAsByte());
+            case TAG_SHORT: return Short.toString(((ShortTag) target).getAsShort());
+            case TAG_INT: return Integer.toString(((IntTag) target).getAsInt());
+            case TAG_LONG: return Long.toString(((LongTag) target).getAsLong());
+            case TAG_FLOAT: return Float.toString(((FloatTag) target).getAsFloat());
+            case TAG_DOUBLE: return Double.toString(((DoubleTag) target).getAsDouble());
             case TAG_BYTE_ARRAY:
             {
-                byte[] arr = ((NBTTagByteArray) target).getByteArray();
+                byte[] arr = ((ByteArrayTag) target).getAsByteArray();
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < arr.length; i++)
                 {
@@ -1355,7 +1368,7 @@ public class ContainerSetsConfig
             }
             case TAG_INT_ARRAY:
             {
-                int[] arr = ((NBTTagIntArray) target).getIntArray();
+                int[] arr = ((IntArrayTag) target).getAsIntArray();
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < arr.length; i++)
                 {
@@ -1392,27 +1405,27 @@ public class ContainerSetsConfig
         }
     }
 
-    public static String nbtValuePreview(NBTBase value)
+    public static String nbtValuePreview(Tag value)
     {
         if (value == null) return "";
-        if (value instanceof NBTTagCompound)
+        if (value instanceof CompoundTag)
         {
-            int n = ((NBTTagCompound) value).getKeySet().size();
+            int n = ((CompoundTag) value).getAllKeys().size();
             return "{" + n + "}";
         }
-        if (value instanceof NBTTagList)
+        if (value instanceof ListTag)
         {
-            int n = ((NBTTagList) value).tagCount();
+            int n = ((ListTag) value).size();
             return "[" + n + "]";
         }
-        if (value instanceof NBTTagByteArray) return "byte[" + ((NBTTagByteArray) value).getByteArray().length + "]";
-        if (value instanceof NBTTagIntArray) return "int[" + ((NBTTagIntArray) value).getIntArray().length + "]";
+        if (value instanceof ByteArrayTag) return "byte[" + ((ByteArrayTag) value).getAsByteArray().length + "]";
+        if (value instanceof IntArrayTag) return "int[" + ((IntArrayTag) value).getAsIntArray().length + "]";
         String preview = formatNbtValue(value);
         if (preview.length() > 48) preview = preview.substring(0, 45) + "...";
         return preview;
     }
 
-    private NBTTagCompound getEditingEntryNbtOrNull()
+    private CompoundTag getEditingEntryNbtOrNull()
     {
         if (editingSet == null || editingCurrencyIndex < 0) return null;
         if (editingEntryType == EntryType.BLOCK && editingSet.blocks != null && editingCurrencyIndex < editingSet.blocks.size())
@@ -1632,7 +1645,7 @@ public class ContainerSetsConfig
         if (editingSet.caseInfo.entries == null) editingSet.caseInfo.entries = new ArrayList<>();
         BlockSetConfig.CaseEntryDefinition entry = new BlockSetConfig.CaseEntryDefinition();
         entry.item = result.registry;
-        entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getMetadata() : 0;
+        entry.meta = result.stack != null && !result.stack.isEmpty() ? result.stack.getDamageValue() : 0;
         entry.count = 1;
         entry.weight = 1;
         editingSet.caseInfo.entries.add(entry);
@@ -1720,7 +1733,7 @@ public class ContainerSetsConfig
         if (index >= 0 && index < entries.size())
         {
             entries.remove(index);
-            statusMessage = I18n.format("gui.oneblockultima.config.removed");
+            statusMessage = I18n.get("gui.oneblockultima.config.removed");
             statusTimer = 60;
         }
         if (editingSet != null && editingSet.caseInfo != null) editingSet.caseInfo.customized = true;
@@ -1732,9 +1745,9 @@ public class ContainerSetsConfig
     public ItemStack getItemStackFromCaseEntry(BlockSetConfig.CaseEntryDefinition entry)
     {
         if (entry == null || entry.item == null || entry.item.isEmpty()) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.item));
+        Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(entry.item));
         if (item == null || item == Items.AIR) return ItemStack.EMPTY;
-        return new ItemStack(item, 1, Math.max(0, entry.meta));
+        return stackWithMeta(item, 1, Math.max(0, entry.meta));
     }
 
     public String getLocalizedNameForCaseEntry(BlockSetConfig.CaseEntryDefinition entry)
@@ -1745,13 +1758,13 @@ public class ContainerSetsConfig
             ItemStack stack = getItemStackFromCaseEntry(entry);
             if (!stack.isEmpty())
             {
-                try { return stack.getDisplayName(); } catch (Exception ignored) {}
+                try { return stack.getHoverName().getString(); } catch (Exception ignored) {}
             }
             return entry.item;
         }
         if (entry.lootTable != null && !entry.lootTable.isEmpty())
         {
-            return I18n.format("gui.oneblockultima.config.case_loot") + ": " + entry.lootTable;
+            return I18n.get("gui.oneblockultima.config.case_loot") + ": " + entry.lootTable;
         }
         return "-";
     }
@@ -1759,10 +1772,10 @@ public class ContainerSetsConfig
     public String getCaseButtonLabel()
     {
         if (editingSet == null || editingSet.caseInfo == null || !editingSet.caseInfo.enabled)
-            return I18n.format("gui.oneblockultima.config.case") + ": " + I18n.format("gui.oneblockultima.config.case_off");
+            return I18n.get("gui.oneblockultima.config.case") + ": " + I18n.get("gui.oneblockultima.config.case_off");
         int n = editingSet.caseInfo.entries == null ? 0 : editingSet.caseInfo.entries.size();
-        if (n == 0) return I18n.format("gui.oneblockultima.config.case") + ": " + I18n.format("gui.oneblockultima.config.none");
-        return I18n.format("gui.oneblockultima.config.case") + ": [" + n + "]";
+        if (n == 0) return I18n.get("gui.oneblockultima.config.case") + ": " + I18n.get("gui.oneblockultima.config.none");
+        return I18n.get("gui.oneblockultima.config.case") + ": [" + n + "]";
     }
 
     public String getCaseEntryInfoLine(BlockSetConfig.CaseEntryDefinition entry)
@@ -1770,10 +1783,10 @@ public class ContainerSetsConfig
         if (entry == null) return "";
         if (entry.item != null && !entry.item.isEmpty())
         {
-            return I18n.format("gui.oneblockultima.config.case_chance") + ": " + entry.weight
-                    + "  " + I18n.format("gui.oneblockultima.config.case_count") + ": " + entry.count;
+            return I18n.get("gui.oneblockultima.config.case_chance") + ": " + entry.weight
+                    + "  " + I18n.get("gui.oneblockultima.config.case_count") + ": " + entry.count;
         }
-        return I18n.format("gui.oneblockultima.config.case_chance") + ": " + entry.weight;
+        return I18n.get("gui.oneblockultima.config.case_chance") + ": " + entry.weight;
     }
 
     public String getCaseCountText() { return caseCountText; }
@@ -1799,11 +1812,34 @@ public class ContainerSetsConfig
         }
         try
         {
-            for (ResourceLocation location : LootTableList.getAll())
+            RegistryAccess access = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : null;
+            java.util.Collection<ResourceLocation> keys = null;
+            net.minecraft.server.MinecraftServer spServer = Minecraft.getInstance().getSingleplayerServer();
+            if (spServer != null)
             {
-                if (location != null && !location.equals(LootTableList.EMPTY)) {
-                    if (location.getResourcePath().startsWith("chests/") && !used.contains(location.toString())) {
-                        tables.add(location);
+                net.minecraft.core.RegistryAccess.Frozen accessFrozen = spServer.getServerResources().managers().fullRegistries().get();
+                Optional<Registry<LootTable>> lootRegOpt = accessFrozen.registry(net.minecraft.core.registries.Registries.LOOT_TABLE);
+                if (lootRegOpt.isPresent())
+                {
+                    keys = lootRegOpt.get().keySet();
+                }
+            }
+            if (keys == null && access != null)
+            {
+                Registry<LootTable> lootReg = access.registry(Registries.LOOT_TABLE).orElse(null);
+                if (lootReg != null)
+                {
+                    keys = lootReg.keySet();
+                }
+            }
+            if (keys != null)
+            {
+                for (ResourceLocation location : keys)
+                {
+                    if (location != null && !location.toString().equals("minecraft:empty")) {
+                        if (location.getPath().startsWith("chests/") && !used.contains(location.toString())) {
+                            tables.add(location);
+                        }
                     }
                 }
             }
@@ -1823,7 +1859,7 @@ public class ContainerSetsConfig
             File file = BlockSetConfig.getConfigFile();
             if (file == null)
             {
-                statusMessage = I18n.format("gui.oneblockultima.status.reset_failed");
+                statusMessage = I18n.get("gui.oneblockultima.status.reset_failed");
                 statusTimer = 100;
                 return;
             }
@@ -1834,7 +1870,7 @@ public class ContainerSetsConfig
             {
                 if (input == null)
                 {
-                    statusMessage = I18n.format("gui.oneblockultima.status.reset_failed");
+                    statusMessage = I18n.get("gui.oneblockultima.status.reset_failed");
                     statusTimer = 100;
                     return;
                 }
@@ -1846,12 +1882,12 @@ public class ContainerSetsConfig
                 Files.write(file.toPath(), output.toByteArray());
             }
             reloadConfig();
-            statusMessage = I18n.format("gui.oneblockultima.status.reset_success");
+            statusMessage = I18n.get("gui.oneblockultima.status.reset_success");
             statusTimer = 60;
         }
         catch (Exception e)
         {
-            statusMessage = I18n.format("gui.oneblockultima.status.reset_failed");
+            statusMessage = I18n.get("gui.oneblockultima.status.reset_failed");
             statusTimer = 100;
         }
     }
@@ -1878,55 +1914,62 @@ public class ContainerSetsConfig
             Set<String> existingBlocks = getExistingBlockKeys();
             for (Block block : ForgeRegistries.BLOCKS)
             {
-                ResourceLocation reg = block.getRegistryName();
+                ResourceLocation reg = ForgeRegistries.BLOCKS.getKey(block);
                 if (reg == null) continue;
                 String registry = reg.toString();
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
+                String registryId = reg.getPath();
+                String modId = reg.getNamespace();
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-                if (OneBlockUltima.MODID.equals(modId) && ("case".equals(registryId) || "case_block".equals(registryId))) continue;
+                if (ModBlocks.isBlockExcludedFromSearch(modId, registryId)) continue;
 
-                Fluid fluid = block instanceof IFluidBlock ? ((IFluidBlock) block).getFluid() : FluidRegistry.lookupFluidForBlock(block);
+                Fluid fluid = getFluidForBlock(block);
                 if (fluid != null)
                 {
-                    String name = fluid.getLocalizedName(new FluidStack(fluid, 1000));
+                    String name = getFluidLocalizedName(fluid);
                     if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
                     if (existingBlocks.contains(registry + "@0")) continue;
                     searchResults.add(new SearchResult(registry, name, modId, fluid));
                     continue;
                 }
 
-                Item item = Item.getItemFromBlock(block);
-                if (item == Items.AIR) continue;
                 NonNullList<ItemStack> subItems = NonNullList.create();
-                item.getSubItems(CreativeTabs.SEARCH, subItems);
-                if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
+                if (block instanceof ru.defea.oneblockultima.block.BlockCompressedBase)
+                {
+                    subItems.addAll(ModBlocks.getCompressedItemStacksForBlock(block));
+                }
+                if (subItems.isEmpty())
+                {
+                    Item item = block.asItem();
+                    if (item == Items.AIR) continue;
+                    subItems.add(item.getDefaultInstance());
+                    if (subItems.isEmpty()) subItems.add(stackWithMeta(item, 1, 0));
+                }
                 for (ItemStack subStack : subItems)
                 {
-                    if (subStack.isEmpty() || subStack.getItem() != item) continue;
+                    if (subStack.isEmpty()) continue;
                     String name = "";
-                    try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
+                    try { name = subStack.getHoverName().getString(); } catch (Exception ignored) {}
                     if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
-                    if (existingBlocks.contains(registry + "@" + subStack.getMetadata())) continue;
+                    if (existingBlocks.contains(registry + "@" + ModBlocks.metaOf(subStack))) continue;
                     searchResults.add(new SearchResult(registry, name, modId, subStack.copy()));
                 }
             }
 
             for (Item item : ForgeRegistries.ITEMS)
             {
-                ResourceLocation reg = item.getRegistryName();
+                ResourceLocation reg = ForgeRegistries.ITEMS.getKey(item);
                 if (reg == null) continue;
-                if (item instanceof net.minecraft.item.ItemBlock) continue;
+                if (item instanceof BlockItem) continue;
                 if (item == Items.AIR) continue;
                 String registry = reg.toString();
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
+                String registryId = reg.getPath();
+                String modId = reg.getNamespace();
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
-                if (OneBlockUltima.MODID.equals(modId) && ("case".equals(registryId) || "case_block".equals(registryId))) continue;
+                if (ModBlocks.isBlockExcludedFromSearch(modId, registryId)) continue;
                 String name = "";
-                try { name = new ItemStack(item, 1).getDisplayName(); } catch (Exception ignored) {}
+                try { name = new ItemStack(item, 1).getHoverName().getString(); } catch (Exception ignored) {}
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
                 if (existingBlocks.contains(registry + "@0")) continue;
                 searchResults.add(new SearchResult(registry, name, modId, new ItemStack(item, 1)));
@@ -1936,27 +1979,26 @@ public class ContainerSetsConfig
         if (currentSearchType == SearchType.MOBS)
         {
             Set<String> existingMobs = getExistingMobRegistries();
-            Set<ResourceLocation> entityNames = EntityList.getEntityNameList();
+            Set<ResourceLocation> entityNames = ForgeRegistries.ENTITY_TYPES.getKeys();
             for (ResourceLocation reg : entityNames) {
                 String registry = reg.toString();
                 if (existingMobs.contains(registry)) continue;
-                String registryId = reg.getResourcePath();
-                String modId = reg.getResourceDomain();
+                String registryId = reg.getPath();
+                String modId = reg.getNamespace();
                 if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
                 if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
                 String name = registry;
                 try {
-                    String entityName = EntityList.getTranslationName(reg);
-                    if (entityName != null && !entityName.isEmpty()) {
-                        String translationKey = "entity." + entityName + ".name";
-                        String localized = I18n.format(translationKey);
-                        if (!localized.equals(translationKey)) name = localized;
+                    EntityType<?> entityClass = ForgeRegistries.ENTITY_TYPES.getValue(reg);
+                    if (entityClass != null) {
+                        String localized = I18n.get(entityClass.getDescriptionId());
+                        if (localized != null && !localized.isEmpty() && !localized.equals(entityClass.getDescriptionId())) name = localized;
                     }
                 } catch (Exception ignored) {
                 }
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
-                Class<?> entityClass = EntityList.getClass(reg);
-                if (entityClass != null && EntityLivingBase.class.isAssignableFrom(entityClass))
+                EntityType<?> entityClass = ForgeRegistries.ENTITY_TYPES.getValue(reg);
+                if (entityClass != null && entityClass.getCategory() != MobCategory.MISC)
                     searchResults.add(new SearchResult(registry, name, modId, entityClass));
             }
         }
@@ -1991,7 +2033,7 @@ public class ContainerSetsConfig
         }
         catch (Exception e)
         {
-            statusMessage = I18n.format("gui.oneblockultima.status.save_failed") + ": " + e.getMessage();
+            statusMessage = I18n.get("gui.oneblockultima.status.save_failed") + ": " + e.getMessage();
             statusTimer = 100;
         }
     }
@@ -2001,31 +2043,24 @@ public class ContainerSetsConfig
         ItemStack stack = ItemStack.EMPTY;
         try
         {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(entry.registry));
+            String normalized = ru.defea.oneblockultima.util.BlockUtil.normalizeLegacyId(entry.registry);
+            Block block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(normalized));
             if (block != null)
             {
                 Fluid fluid = getFluidForRegistry(entry.registry);
                 if (fluid != null) return ItemStack.EMPTY;
-                //noinspection deprecation
-                net.minecraft.block.state.IBlockState state = block.getStateFromMeta(meta);
-                //noinspection DataFlowIssue
-                stack = block.getPickBlock(state, null, null, null, null);
-                if (stack.isEmpty())
-                {
-                    Item item = Item.getItemFromBlock(block);
-                    if (item != Items.AIR) stack = new ItemStack(item, 1, meta);
-                }
+                stack = block.asItem().getDefaultInstance();
             }
             if (stack.isEmpty())
             {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(entry.registry));
-                if (item != null && item != Items.AIR) stack = new ItemStack(item, 1, meta);
+                Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(normalized));
+                if (item != null && item != Items.AIR) stack = stackWithMeta(item, 1, meta);
             }
         } catch (Exception ignored) {}
-        if (!stack.isEmpty() && entry.nbtTags != null && !entry.nbtTags.hasNoTags())
+        if (!stack.isEmpty() && entry.nbtTags != null && !entry.nbtTags.isEmpty())
         {
             stack = stack.copy();
-            stack.setTagCompound(entry.nbtTags.copy());
+            /* nbtTags applied at block placement */
         }
         return stack;
     }
@@ -2034,25 +2069,24 @@ public class ContainerSetsConfig
     {
         try
         {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(registry));
+            Block block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(ru.defea.oneblockultima.util.BlockUtil.normalizeLegacyId(registry)));
             if (block == null) return null;
-            if (block instanceof IFluidBlock) return ((IFluidBlock) block).getFluid();
-            return FluidRegistry.lookupFluidForBlock(block);
+            return getFluidForBlock(block);
         } catch (Exception ignored) { return null; }
     }
 
     public static String getLocalizedSetName(BlockSetConfig.BlockSetDefinition set)
     {
         if (set == null || set.id == null) return "-";
-        Minecraft mc = Minecraft.getMinecraft();
-        String langCode = mc.getLanguageManager().getCurrentLanguage().getLanguageCode().toLowerCase();
+        Minecraft mc = Minecraft.getInstance();
+        String langCode = mc.getLanguageManager().getSelected().toLowerCase();
         if (staticSetLocalizedNames.containsKey(set.id))
         {
             Map<String, String> langMap = staticSetLocalizedNames.get(set.id);
             if (langMap.containsKey(langCode)) return langMap.get(langCode);
         }
         String key = "gui.oneblockultima.set." + set.id;
-        String localized = I18n.format(key);
+        String localized = I18n.get(key);
         return localized.equals(key) ? set.id : localized;
     }
 
@@ -2060,16 +2094,16 @@ public class ContainerSetsConfig
     {
         try
         {
-            Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(entry.registry));
+            Block block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(ru.defea.oneblockultima.util.BlockUtil.normalizeLegacyId(entry.registry)));
             if (block != null)
             {
-                if (block instanceof IFluidBlock || FluidRegistry.lookupFluidForBlock(block) != null)
+                if (getFluidForBlock(block) != null)
                 {
-                    Fluid fluid = block instanceof IFluidBlock ? ((IFluidBlock) block).getFluid() : FluidRegistry.lookupFluidForBlock(block);
-                    if (fluid != null) return fluid.getLocalizedName(new FluidStack(fluid, 1000));
+                    Fluid fluid = getFluidForBlock(block);
+                    if (fluid != null) return getFluidLocalizedName(fluid);
                 }
                 ItemStack stack = getItemStackFromEntry(entry, meta);
-                if (!stack.isEmpty()) return stack.getDisplayName();
+                if (!stack.isEmpty()) return stack.getHoverName().getString();
             }
         } catch (Exception ignored) {}
         return entry.registry + ":" + meta;
@@ -2079,13 +2113,13 @@ public class ContainerSetsConfig
     {
         try
         {
-            ResourceLocation reg = new ResourceLocation(entry.registry);
-            String entityName = EntityList.getTranslationName(reg);
-            if (entityName != null && !entityName.isEmpty())
+            ResourceLocation reg = ResourceLocation.parse(ru.defea.oneblockultima.util.BlockUtil.normalizeLegacyId(entry.registry));
+            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(reg);
+            if (type != null)
             {
-                String key = "entity." + entityName + ".name";
-                String loc = I18n.format(key);
-                if (!loc.equals(key)) return loc;
+                String key = type.getDescriptionId();
+                String loc = I18n.get(key);
+                if (loc != null && !loc.isEmpty() && !loc.equals(key)) return loc;
             }
         } catch (Exception ignored) {}
         return entry.registry;
@@ -2094,27 +2128,47 @@ public class ContainerSetsConfig
     public String getRequiredModsButtonLabel()
     {
         if (editingSet == null || editingSet.requiredMods == null)
-            return I18n.format("gui.oneblockultima.config.required_mods") + ": -";
+            return I18n.get("gui.oneblockultima.config.required_mods") + ": -";
         BlockSetConfig.SetRequiredModsDefinition mods = editingSet.requiredMods;
-        if (mods.getMods().isEmpty()) return I18n.format("gui.oneblockultima.config.required_mods") + ": " + I18n.format("gui.oneblockultima.config.none");
-        return I18n.format("gui.oneblockultima.config.required_mods") + ": " + (mods.getType() == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL ? I18n.format("gui.oneblockultima.config.all") : I18n.format("gui.oneblockultima.config.any")) + " [" + mods.getMods().size() + "]";
+        if (mods.getMods().isEmpty()) return I18n.get("gui.oneblockultima.config.required_mods") + ": " + I18n.get("gui.oneblockultima.config.none");
+        return I18n.get("gui.oneblockultima.config.required_mods") + ": " + (mods.getType() == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL ? I18n.get("gui.oneblockultima.config.all") : I18n.get("gui.oneblockultima.config.any")) + " [" + mods.getMods().size() + "]";
     }
 
     public String getUnlockConditionsButtonLabel()
     {
         if (editingSet == null || editingSet.unlockConditions == null)
-            return I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config.none");
+            return I18n.get("gui.oneblockultima.unlock_conditions") + ": " + I18n.get("gui.oneblockultima.config.none");
         BlockSetConfig.UnlockConditionGroup group = editingSet.unlockConditions;
         if (group.conditions == null || group.conditions.isEmpty())
-            return I18n.format("gui.oneblockultima.unlock_conditions") + ": " + I18n.format("gui.oneblockultima.config.none");
-        return I18n.format("gui.oneblockultima.unlock_conditions") + ": " + ("all".equalsIgnoreCase(group.mode)
-                ? I18n.format("gui.oneblockultima.config.all")
-                : I18n.format("gui.oneblockultima.config.any")) + " [" + group.conditions.size() + "]";
+            return I18n.get("gui.oneblockultima.unlock_conditions") + ": " + I18n.get("gui.oneblockultima.config.none");
+        return I18n.get("gui.oneblockultima.unlock_conditions") + ": " + ("all".equalsIgnoreCase(group.mode)
+                ? I18n.get("gui.oneblockultima.config.all")
+                : I18n.get("gui.oneblockultima.config.any")) + " [" + group.conditions.size() + "]";
     }
 
     public String getRequiredModsEditorTypeLabel()
     {
-        return I18n.format(requiredModsEditorType == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL ? "gui.oneblockultima.config.all" : "gui.oneblockultima.config.any");
+        return I18n.get(requiredModsEditorType == BlockSetConfig.SetRequiredModsDefinition.TYPE.ALL ? "gui.oneblockultima.config.all" : "gui.oneblockultima.config.any");
+    }
+
+    private static CompoundTag captureItemNbt(ItemStack stack)
+    {
+        if (stack != null && !stack.isEmpty())
+        {
+            net.minecraft.world.item.component.CustomData custom = stack.get(DataComponents.CUSTOM_DATA);
+            if (custom != null && !custom.isEmpty())
+            {
+                return custom.copyTag();
+            }
+        }
+        return new CompoundTag();
+    }
+
+    private static ItemStack stackWithMeta(Item item, int count, int meta)
+    {
+        ItemStack stack = new ItemStack(item, count);
+        if (meta > 0) stack.set(DataComponents.DAMAGE, meta);
+        return stack;
     }
 
     public static class RequiredModEntry
@@ -2130,9 +2184,9 @@ public class ContainerSetsConfig
         for (String modId : requiredModsEditorMods)
         {
             String displayName = "";
-            for (ModContainer mod : Loader.instance().getActiveModList())
+            for (IModInfo mod : ModList.get().getMods())
             {
-                if (mod.getModId().equals(modId)) { displayName = mod.getName(); break; }
+                if (mod.getModId().equals(modId)) { displayName = mod.getDisplayName(); break; }
             }
             result.add(new RequiredModEntry(modId, displayName));
         }
@@ -2142,10 +2196,10 @@ public class ContainerSetsConfig
     public List<RequiredModEntry> getAvailableRequiredModEntries()
     {
         List<RequiredModEntry> result = new ArrayList<>();
-        for (ModContainer mod : Loader.instance().getActiveModList())
+        for (IModInfo mod : ModList.get().getMods())
         {
             String modId = mod.getModId();
-            String modName = mod.getName();
+            String modName = mod.getDisplayName();
             if (modId.equalsIgnoreCase("minecraft") || modId.equalsIgnoreCase("forge") || modId.equalsIgnoreCase("mcp") || modId.equalsIgnoreCase("fml") || modId.equals("oneblockultima") || "Forge Mod Loader".equals(modName)) continue;
             if (!requiredModsEditorMods.contains(modId))
                 result.add(new RequiredModEntry(modId, modName));
@@ -2230,7 +2284,7 @@ public class ContainerSetsConfig
 
     public void saveLocalizedName(String setId, String name)
     {
-        String langCode = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode().toLowerCase();
+        String langCode = Minecraft.getInstance().getLanguageManager().getSelected().toLowerCase();
         if (langCode.isEmpty()) langCode = "en_us";
         staticSetLocalizedNames.computeIfAbsent(setId, k -> new HashMap<>()).put(langCode, name);
         saveCustomNames();
@@ -2240,7 +2294,7 @@ public class ContainerSetsConfig
     {
         try
         {
-            File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
+            File langDir = new File(FMLPaths.CONFIGDIR.get().toFile(), "oneblockultima/lang");
             if (!langDir.exists()) //noinspection ResultOfMethodCallIgnored
                 langDir.mkdirs();
             Map<String, List<String>> langLines = new HashMap<>();
@@ -2264,7 +2318,7 @@ public class ContainerSetsConfig
         staticSetLocalizedNames.clear();
         try
         {
-            File langDir = new File(Loader.instance().getConfigDir(), "oneblockultima/lang");
+            File langDir = new File(FMLPaths.CONFIGDIR.get().toFile(), "oneblockultima/lang");
             if (!langDir.exists()) return;
             for (File langFile : Objects.requireNonNull(langDir.listFiles()))
             {
@@ -2290,5 +2344,18 @@ public class ContainerSetsConfig
                 }
             }
         } catch (Exception ignored) {}
+    }
+
+    private static Fluid getFluidForBlock(Block block)
+    {
+        if (block instanceof LiquidBlock) return ((LiquidBlock) block).getFluid();
+        return null;
+    }
+
+    private static String getFluidLocalizedName(Fluid fluid)
+    {
+        ResourceLocation rl = ForgeRegistries.FLUIDS.getKey(fluid);
+        if (rl == null) return fluid.toString();
+        return I18n.get("block." + rl.getNamespace() + "." + rl.getPath());
     }
 }

@@ -1,30 +1,28 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.MobEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.PotionEffect;
-import net.minecraft.world.World;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nonnull;
 
 public class ItemLiquidDeath extends CustomPotion {
     public ItemLiquidDeath() {
         super("liquid_death",
-                new PotionEffect[]{
-                        new PotionEffect(MobEffects.INSTANT_DAMAGE, 600 * 20, 123)
+                new MobEffectInstance[]{
+                        new MobEffectInstance(MobEffects.HARM, 600 * 20, 123)
                 });
     }
 
-    @Override
     @Nonnull
-    public ItemStack onItemUseFinish(@Nonnull ItemStack stack, @Nonnull World worldIn, @Nonnull EntityLivingBase entityLiving)
-    {
-        if (!worldIn.isRemote)
-        {
-            // Kill even in creative (OUT_OF_WORLD damage bypasses creative invulnerability)
-            entityLiving.onKillCommand();
+    @Override
+    public ItemStack finishUsingItem(@Nonnull ItemStack stack, @Nonnull Level worldIn, @Nonnull LivingEntity entityLiving) {
+        if (!worldIn.isClientSide) {
+            // Kill even in creative (out_of_world damage bypasses creative invulnerability)
+            entityLiving.kill();
         }
-        return super.onItemUseFinish(stack, worldIn, entityLiving);
+        return super.finishUsingItem(stack, worldIn, entityLiving);
     }
 }

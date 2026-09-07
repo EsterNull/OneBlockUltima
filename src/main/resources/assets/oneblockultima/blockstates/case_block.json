@@ -1,5 +1,9 @@
 {
-  "variants": {
-    "normal": { "model": "oneblockultima:case_block" }
-  }
+    "variants":  {
+                     "":  {
+                              "model": "oneblockultima:block/case_block"
+                          }
+                 }
 }
+
+

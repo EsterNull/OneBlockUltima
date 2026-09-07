@@ -1,90 +1,99 @@
 package ru.defea.oneblockultima.capability;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.*;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraftforge.common.util.LazyOptional;
 
 import javax.annotation.Nullable;
 import java.util.Map;
 
-public class OneBlockPlayerDataProvider implements ICapabilitySerializable<NBTTagCompound>
+public class OneBlockPlayerDataProvider implements ICapabilitySerializable<CompoundTag>
 {
     private static final String PERSISTENT_TAG = "oneblockultima_player_data";
+    private static final String PLAYER_PERSISTED_TAG = "PlayerPersisted";
     private static final String CURRENCY_TAG = "currency";
     private static final String BROKEN_BLOCKS_TOTAL_TAG = "brokenBlocksTotal";
     private static final String SET_LEVELS_TAG = "setLevels";
     private static final String BROKEN_BLOCKS_BY_SET_TAG = "brokenBlocksBySet";
 
-    @CapabilityInject(IOneBlockPlayerData.class)
-    public static Capability<IOneBlockPlayerData> ONE_BLOCK_PLAYER_DATA = null;
+    public static final Capability<IOneBlockPlayerData> ONE_BLOCK_PLAYER_DATA =
+            CapabilityManager.get(new CapabilityToken<>() {});
 
     private final OneBlockPlayerData instance = new OneBlockPlayerData();
 
-    public static void register()
-    {
-        CapabilityManager.INSTANCE.register(
-                IOneBlockPlayerData.class,
-                new OneBlockPlayerDataStorage(),
-                OneBlockPlayerData.class
-        );
-    }
-
     public static IOneBlockPlayerData get(ICapabilityProvider provider)
     {
-        if (provider != null && ONE_BLOCK_PLAYER_DATA != null && provider.hasCapability(ONE_BLOCK_PLAYER_DATA, null))
+        if (provider != null && ONE_BLOCK_PLAYER_DATA != null && provider.getCapability(ONE_BLOCK_PLAYER_DATA).isPresent())
         {
-            return provider.getCapability(ONE_BLOCK_PLAYER_DATA, null);
+            return provider.getCapability(ONE_BLOCK_PLAYER_DATA).orElse(null);
         }
 
         return null;
     }
 
-    public static void saveToEntity(EntityPlayer player, IOneBlockPlayerData data)
+    public static void saveToEntity(Player player, IOneBlockPlayerData data)
     {
         if (player == null || data == null)
         {
             return;
         }
 
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setDouble(CURRENCY_TAG, data.getCurrency());
-        tag.setInteger(BROKEN_BLOCKS_TOTAL_TAG, data.getBrokenBlocksCount());
+        CompoundTag tag = new CompoundTag();
+        tag.putDouble(CURRENCY_TAG, data.getCurrency());
+        tag.putInt(BROKEN_BLOCKS_TOTAL_TAG, data.getBrokenBlocksCount());
 
-        NBTTagCompound setLevels = new NBTTagCompound();
+        CompoundTag setLevels = new CompoundTag();
         if (data instanceof OneBlockPlayerData)
         {
             OneBlockPlayerData playerData = (OneBlockPlayerData) data;
             for (Map.Entry<String, Integer> entry : playerData.getSetLevels().entrySet())
             {
-                setLevels.setInteger(entry.getKey(), entry.getValue());
+                setLevels.putInt(entry.getKey(), entry.getValue());
             }
         }
-        tag.setTag(SET_LEVELS_TAG, setLevels);
+        tag.put(SET_LEVELS_TAG, setLevels);
 
-        NBTTagCompound brokenBlocksBySet = new NBTTagCompound();
+        CompoundTag brokenBlocksBySet = new CompoundTag();
         if (data instanceof OneBlockPlayerData)
         {
             OneBlockPlayerData playerData = (OneBlockPlayerData) data;
             for (Map.Entry<String, Integer> entry : playerData.getBrokenBlocksBySet().entrySet())
             {
-                brokenBlocksBySet.setInteger(entry.getKey(), entry.getValue());
+                brokenBlocksBySet.putInt(entry.getKey(), entry.getValue());
             }
         }
-        tag.setTag(BROKEN_BLOCKS_BY_SET_TAG, brokenBlocksBySet);
+        tag.put(BROKEN_BLOCKS_BY_SET_TAG, brokenBlocksBySet);
 
-        player.getEntityData().setTag(PERSISTENT_TAG, tag);
+        CompoundTag persistentData = player.getPersistentData();
+        persistentData.put(PERSISTENT_TAG, tag);
+        CompoundTag playerPersisted = persistentData.getCompound(PLAYER_PERSISTED_TAG);
+        playerPersisted.put(PERSISTENT_TAG, tag);
+        persistentData.put(PLAYER_PERSISTED_TAG, playerPersisted);
     }
 
-    public static void loadFromEntity(EntityPlayer player, IOneBlockPlayerData data)
+    private static CompoundTag readPersistentTag(Player player)
+    {
+        CompoundTag persistentData = player.getPersistentData();
+        CompoundTag tag = persistentData.getCompound(PERSISTENT_TAG);
+        if (tag == null || tag.isEmpty())
+        {
+            tag = persistentData.getCompound(PLAYER_PERSISTED_TAG).getCompound(PERSISTENT_TAG);
+        }
+        return tag == null ? new CompoundTag() : tag;
+    }
+
+    public static void loadFromEntity(Player player, IOneBlockPlayerData data)
     {
         if (player == null || data == null)
         {
             return;
         }
 
-        NBTTagCompound tag = player.getEntityData().getCompoundTag(PERSISTENT_TAG);
-        if (tag == null || tag.hasNoTags())
+        CompoundTag tag = readPersistentTag(player);
+        if (tag == null || tag.isEmpty())
         {
             return;
         }
@@ -93,83 +102,77 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<NBTTa
         {
             OneBlockPlayerData playerData = (OneBlockPlayerData) data;
             playerData.setCurrency(tag.getDouble(CURRENCY_TAG));
-            playerData.setBrokenBlocksTotal(tag.getInteger(BROKEN_BLOCKS_TOTAL_TAG));
+            playerData.setBrokenBlocksTotal(tag.getInt(BROKEN_BLOCKS_TOTAL_TAG));
 
             playerData.getSetLevels().clear();
-            NBTTagCompound setLevels = tag.getCompoundTag(SET_LEVELS_TAG);
-            for (String key : setLevels.getKeySet())
+            CompoundTag setLevels = tag.getCompound(SET_LEVELS_TAG);
+            for (String key : setLevels.getAllKeys())
             {
-                playerData.getSetLevels().put(key, setLevels.getInteger(key));
+                playerData.getSetLevels().put(key, setLevels.getInt(key));
             }
 
             playerData.getBrokenBlocksBySet().clear();
-            NBTTagCompound brokenBlocksBySet = tag.getCompoundTag(BROKEN_BLOCKS_BY_SET_TAG);
-            for (String key : brokenBlocksBySet.getKeySet())
+            CompoundTag brokenBlocksBySet = tag.getCompound(BROKEN_BLOCKS_BY_SET_TAG);
+            for (String key : brokenBlocksBySet.getAllKeys())
             {
-                playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInteger(key));
+                playerData.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInt(key));
             }
         }
-    }
-
-    @Override
-    public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing)
-    {
-        return capability == ONE_BLOCK_PLAYER_DATA;
     }
 
     @Nullable
     @Override
-    public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing)
+    public <T> LazyOptional<T> getCapability(Capability<T> capability, @Nullable Direction facing)
     {
         if (capability == ONE_BLOCK_PLAYER_DATA)
         {
-            return ONE_BLOCK_PLAYER_DATA.cast(instance);
+            return (LazyOptional<T>) LazyOptional.of(() -> (IOneBlockPlayerData) instance);
         }
 
-        return null;
+        return LazyOptional.empty();
     }
 
     @Override
-    public NBTTagCompound serializeNBT()
+    public CompoundTag serializeNBT(net.minecraft.core.HolderLookup.Provider provider)
     {
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setDouble("currency", instance.getCurrency());
-        tag.setInteger("brokenBlocksTotal", instance.getBrokenBlocksCount());
+        CompoundTag tag = new CompoundTag();
+        tag.putDouble("currency", instance.getCurrency());
+        tag.putInt("brokenBlocksTotal", instance.getBrokenBlocksCount());
 
-        NBTTagCompound setLevels = new NBTTagCompound();
+        CompoundTag setLevels = new CompoundTag();
         for (Map.Entry<String, Integer> entry : instance.getSetLevels().entrySet())
         {
-            setLevels.setInteger(entry.getKey(), entry.getValue());
+            setLevels.putInt(entry.getKey(), entry.getValue());
         }
-        tag.setTag("setLevels", setLevels);
+        tag.put("setLevels", setLevels);
 
-        NBTTagCompound brokenBlocksBySet = new NBTTagCompound();
+        CompoundTag brokenBlocksBySet = new CompoundTag();
         for (Map.Entry<String, Integer> entry : instance.getBrokenBlocksBySet().entrySet())
         {
-            brokenBlocksBySet.setInteger(entry.getKey(), entry.getValue());
+            brokenBlocksBySet.putInt(entry.getKey(), entry.getValue());
         }
-        tag.setTag("brokenBlocksBySet", brokenBlocksBySet);
+        tag.put("brokenBlocksBySet", brokenBlocksBySet);
         return tag;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt)
+    public void deserializeNBT(net.minecraft.core.HolderLookup.Provider provider, CompoundTag nbt)
     {
         instance.setCurrency(nbt.getDouble("currency"));
-        instance.setBrokenBlocksTotal(nbt.getInteger("brokenBlocksTotal"));
+        instance.setBrokenBlocksTotal(nbt.getInt("brokenBlocksTotal"));
 
         instance.getSetLevels().clear();
-        NBTTagCompound setLevels = nbt.getCompoundTag("setLevels");
-        for (String key : setLevels.getKeySet())
+        CompoundTag setLevels = nbt.getCompound("setLevels");
+        for (String key : setLevels.getAllKeys())
         {
-            instance.getSetLevels().put(key, setLevels.getInteger(key));
+            instance.getSetLevels().put(key, setLevels.getInt(key));
         }
 
         instance.getBrokenBlocksBySet().clear();
-        NBTTagCompound brokenBlocksBySet = nbt.getCompoundTag("brokenBlocksBySet");
-        for (String key : brokenBlocksBySet.getKeySet())
+        CompoundTag brokenBlocksBySet = nbt.getCompound("brokenBlocksBySet");
+        for (String key : brokenBlocksBySet.getAllKeys())
         {
-            instance.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInteger(key));
+            instance.getBrokenBlocksBySet().put(key, brokenBlocksBySet.getInt(key));
         }
     }
 }

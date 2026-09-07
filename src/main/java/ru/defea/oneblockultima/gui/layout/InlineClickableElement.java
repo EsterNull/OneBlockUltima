@@ -1,8 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -38,26 +38,26 @@ public class InlineClickableElement extends ViewElement<InlineClickableElement> 
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         boolean hovered = mouseX >= computedX && mouseX <= computedX + computedWidth &&
                 mouseY >= computedY && mouseY <= computedY + computedHeight;
         int bg = hovered ? hoverColor : bgColor;
-        Gui.drawRect(computedX, computedY, computedX + computedWidth, computedY + computedHeight, bg);
+        g.fill(computedX, computedY, computedX + computedWidth, computedY + computedHeight, bg);
         if (text != null && !text.isEmpty()) {
-            float tx = computedX + (computedWidth - fr.getStringWidth(text)) / 2.0f;
-            float ty = computedY + (computedHeight - 8) / 2.0f;
-            fr.drawStringWithShadow(text, tx, ty, textColor);
+            float tx = computedX + (computedWidth - font.width(text)) / 2.0f;
+            float ty = computedY + (computedHeight - font.lineHeight) / 2.0f;
+            g.drawString(font, text, (int) tx, (int) ty, textColor, true);
         }
     }
 
     @Override
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
         boolean hit = mouseX >= computedX && mouseX <= computedX + computedWidth &&
-                      mouseY >= computedY && mouseY <= computedY + computedHeight;
+                mouseY >= computedY && mouseY <= computedY + computedHeight;
         if (!hit) return false;
         if (clickHandler != null) return clickHandler.onClick(mouseX, mouseY, mouseButton);
         return false;

@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "oneblockultima:block/cube_all_tinted",
   "textures": {
-    "all": "minecraft:blocks/lapis_block"
+    "all": "minecraft:block/lapis_block"
   }
 }

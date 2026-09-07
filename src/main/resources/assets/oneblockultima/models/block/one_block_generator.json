@@ -1,6 +1,7 @@
 {
-  "parent": "block/cube_all",
+  "parent": "oneblockultima:block/cube_all_tinted",
   "textures": {
-    "all": "oneblockultima:blocks/one_block_generator_texture"
+    "all": "oneblockultima:block/one_block_generator_texture"
   }
 }
+

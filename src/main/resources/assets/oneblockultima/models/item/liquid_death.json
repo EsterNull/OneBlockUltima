@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/liquid_death"
+    "layer0": "oneblockultima:item/liquid_death"
   }
 }
+

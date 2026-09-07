@@ -1,8 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -68,23 +68,23 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (totalItems <= visibleItems) return;
 
         trackX = computedX;
         int trackY = computedY;
         int trackHeight = computedHeight;
 
-        Gui.drawRect(trackX, trackY, trackX + trackWidth, trackY + trackHeight, trackColor);
+        g.fill(trackX, trackY, trackX + trackWidth, trackY + trackHeight, trackColor);
 
         computeThumb();
 
         int color = thumbHovered ? GRAY_COLOR_5 : thumbColor;
-        Gui.drawRect(trackX, thumbY, trackX + trackWidth, thumbY + thumbHeight, color);
+        g.fill(trackX, thumbY, trackX + trackWidth, thumbY + thumbHeight, color);
     }
 
     private void computeThumb() {
@@ -106,7 +106,7 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
         if (mouseButton != 0) return false;
         if (totalItems <= visibleItems) return false;
         if (mouseX >= computedX && mouseX <= computedX + trackWidth &&
-            mouseY >= computedY && mouseY <= computedY + computedHeight) {
+                mouseY >= computedY && mouseY <= computedY + computedHeight) {
             computeThumb();
             if (mouseY >= thumbY && mouseY <= thumbY + thumbHeight) {
                 dragging = true;
@@ -154,7 +154,7 @@ public class ScrollbarElement extends ViewElement<ScrollbarElement> {
 
     public void updateHover(int mouseX, int mouseY) {
         thumbHovered = mouseX >= trackX && mouseX <= trackX + trackWidth &&
-                       mouseY >= thumbY && mouseY <= thumbY + thumbHeight;
+                mouseY >= thumbY && mouseY <= thumbY + thumbHeight;
     }
 
     @Override

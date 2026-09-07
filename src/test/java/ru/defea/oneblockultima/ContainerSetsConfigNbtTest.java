@@ -1,15 +1,23 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.ByteArrayTag;
+import net.minecraft.nbt.ByteTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.gui.containers.ContainerSetsConfig;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static net.minecraftforge.common.util.Constants.NBT.*;
+import static net.minecraft.nbt.Tag.*;
 import static org.junit.Assert.*;
 
 public class ContainerSetsConfigNbtTest {
@@ -26,7 +34,7 @@ public class ContainerSetsConfigNbtTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     @Before
@@ -58,8 +66,8 @@ public class ContainerSetsConfigNbtTest {
         block.baseLevel = 1;
         block.baseChance = 50;
         block.dropItem = "minecraft:cobblestone";
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setString("CustomName", "Magic Stone");
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString("CustomName", "Magic Stone");
         block.nbtTags = nbt;
         set.blocks.add(block);
 
@@ -67,8 +75,8 @@ public class ContainerSetsConfigNbtTest {
         mob.registry = "minecraft:zombie";
         mob.baseLevel = 2;
         mob.baseChance = 5;
-        NBTTagCompound mobNbt = new NBTTagCompound();
-        mobNbt.setString("CustomName", "Zombie King");
+        CompoundTag mobNbt = new CompoundTag();
+        mobNbt.putString("CustomName", "Zombie King");
         mob.nbtTags = mobNbt;
         set.mobs.add(mob);
         return container;
@@ -98,14 +106,14 @@ public class ContainerSetsConfigNbtTest {
     public void getEditingEntryNbtReturnsIndependentCopy() {
         ContainerSetsConfig container = newBlockEntry();
 
-        NBTTagCompound snapshot = container.getEditingEntryNbt();
+        CompoundTag snapshot = container.getEditingEntryNbt();
         assertEquals("Magic Stone", snapshot.getString("CustomName"));
-        snapshot.setString("CustomName", "Mutated");
-        snapshot.setInteger("Purity", 9);
+        snapshot.putString("CustomName", "Mutated");
+        snapshot.putInt("Purity", 9);
 
-        NBTTagCompound actual = container.getEditingEntryNbt();
+        CompoundTag actual = container.getEditingEntryNbt();
         assertEquals("Magic Stone", actual.getString("CustomName"));
-        assertFalse(actual.hasKey("Purity"));
+        assertFalse(actual.contains("Purity"));
     }
 
     @Test
@@ -126,9 +134,9 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void nbtEditorPathNavigationIntoCompound() {
         ContainerSetsConfig container = newBlockEntry();
-        NBTTagCompound info = new NBTTagCompound();
-        info.setString("Name", "Secret");
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("Info", info);
+        CompoundTag info = new CompoundTag();
+        info.putString("Name", "Secret");
+        container.getEditingSet().blocks.get(0).nbtTags.put("Info", info);
 
         assertTrue(container.nbtEditorAtRoot());
         List<ContainerSetsConfig.NbtTagEntry> tags = container.getNbtTags();
@@ -151,14 +159,14 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void nbtEditorPathNavigationIntoList() {
         ContainerSetsConfig container = newBlockEntry();
-        NBTTagList list = new NBTTagList();
-        NBTTagCompound e0 = new NBTTagCompound();
-        e0.setInteger("Level", 1);
-        NBTTagCompound e1 = new NBTTagCompound();
-        e1.setInteger("Level", 2);
-        list.appendTag(e0);
-        list.appendTag(e1);
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("L", list);
+        ListTag list = new ListTag();
+        CompoundTag e0 = new CompoundTag();
+        e0.putInt("Level", 1);
+        CompoundTag e1 = new CompoundTag();
+        e1.putInt("Level", 2);
+        list.add(e0);
+        list.add(e1);
+        container.getEditingSet().blocks.get(0).nbtTags.put("L", list);
 
         container.nbtEditorPush("L");
         assertTrue(container.nbtEditorIsListContext());
@@ -198,7 +206,7 @@ public class ContainerSetsConfigNbtTest {
         cycleAddType(container, TAG_INT);
 
         assertTrue(container.nbtEditorApply("Count", "7"));
-        assertEquals(7, container.getEditingEntryNbt().getInteger("Count"));
+        assertEquals(7, container.getEditingEntryNbt().getInt("Count"));
     }
 
     @Test
@@ -208,14 +216,14 @@ public class ContainerSetsConfigNbtTest {
         cycleAddType(container, TAG_COMPOUND);
 
         assertTrue(container.nbtEditorApply("Inner", ""));
-        NBTBase inner = container.getEditingEntryNbt().getTag("Inner");
-        assertTrue(inner instanceof NBTTagCompound);
-        assertTrue(((NBTTagCompound) inner).getKeySet().isEmpty());
+        Tag inner = container.getEditingEntryNbt().get("Inner");
+        assertTrue(inner instanceof CompoundTag);
+        assertTrue(((CompoundTag) inner).getAllKeys().isEmpty());
 
         container.nbtEditorPush("Inner");
         container.nbtEditorStartAdd();
         assertTrue(container.nbtEditorApply("X", "1"));
-        assertEquals("1", container.getEditingEntryNbt().getCompoundTag("Inner").getString("X"));
+        assertEquals("1", container.getEditingEntryNbt().getCompound("Inner").getString("X"));
     }
 
     @Test
@@ -254,64 +262,64 @@ public class ContainerSetsConfigNbtTest {
         assertTrue(container.nbtEditorApply("Temp", "1"));
 
         assertTrue(container.nbtEditorRemove("Temp"));
-        assertFalse(container.getEditingEntryNbt().hasKey("Temp"));
+        assertFalse(container.getEditingEntryNbt().contains("Temp"));
         assertFalse(container.nbtEditorRemove("Missing"));
     }
 
     @Test
     public void nbtEditorListAppendAndSet() {
         ContainerSetsConfig container = newBlockEntry();
-        NBTTagList list = new NBTTagList();
-        list.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 1));
-        list.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 2));
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("L", list);
+        ListTag list = new ListTag();
+        list.add(ByteTag.valueOf((byte) 1));
+        list.add(ByteTag.valueOf((byte) 2));
+        container.getEditingSet().blocks.get(0).nbtTags.put("L", list);
 
         container.nbtEditorPush("L");
         assertTrue(container.nbtEditorListTypeIsFixed());
         assertEquals(TAG_BYTE, container.getNbtEditorListElementType());
 
         assertTrue(container.nbtEditorApply("", "3"));
-        NBTTagList afterAppend = (NBTTagList) container.getEditingEntryNbt().getTag("L");
-        assertEquals(3, afterAppend.tagCount());
-        assertEquals(3, ((net.minecraft.nbt.NBTTagByte) afterAppend.get(2)).getByte());
+        ListTag afterAppend = (ListTag) container.getEditingEntryNbt().get("L");
+        assertEquals(3, afterAppend.size());
+        assertEquals(3, ((ByteTag) afterAppend.get(2)).getAsByte());
 
         container.nbtEditorStartEditIndex(0);
         assertTrue(container.nbtEditorIsEditingListElement());
         assertEquals("1", container.nbtEditorGetValue());
         assertTrue(container.nbtEditorApply("", "9"));
-        NBTTagList afterSet = (NBTTagList) container.getEditingEntryNbt().getTag("L");
-        assertEquals(9, ((net.minecraft.nbt.NBTTagByte) afterSet.get(0)).getByte());
-        assertEquals(3, afterSet.tagCount());
+        ListTag afterSet = (ListTag) container.getEditingEntryNbt().get("L");
+        assertEquals(9, ((ByteTag) afterSet.get(0)).getAsByte());
+        assertEquals(3, afterSet.size());
     }
 
     @Test
     public void nbtEditorRemoveIndexRemovesListElement() {
         ContainerSetsConfig container = newBlockEntry();
-        NBTTagList list = new NBTTagList();
-        list.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 1));
-        list.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 2));
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("L", list);
+        ListTag list = new ListTag();
+        list.add(ByteTag.valueOf((byte) 1));
+        list.add(ByteTag.valueOf((byte) 2));
+        container.getEditingSet().blocks.get(0).nbtTags.put("L", list);
 
         container.nbtEditorPush("L");
         assertTrue(container.nbtEditorRemoveIndex(0));
-        NBTTagList after = (NBTTagList) container.getEditingEntryNbt().getTag("L");
-        assertEquals(1, after.tagCount());
-        assertEquals(2, ((net.minecraft.nbt.NBTTagByte) after.get(0)).getByte());
+        ListTag after = (ListTag) container.getEditingEntryNbt().get("L");
+        assertEquals(1, after.size());
+        assertEquals(2, ((ByteTag) after.get(0)).getAsByte());
         assertFalse(container.nbtEditorRemoveIndex(5));
     }
 
     @Test
     public void nbtEditorAppendToEmptyListCreatesFreshNode() {
         ContainerSetsConfig container = newBlockEntry();
-        NBTTagList list = new NBTTagList();
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("L", list);
+        ListTag list = new ListTag();
+        container.getEditingSet().blocks.get(0).nbtTags.put("L", list);
 
         container.nbtEditorPush("L");
         assertFalse(container.nbtEditorListTypeIsFixed());
         assertTrue(container.nbtEditorApply("", "5"));
-        NBTTagList after = (NBTTagList) container.getEditingEntryNbt().getTag("L");
-        assertEquals(1, after.tagCount());
-        assertEquals(5, ((net.minecraft.nbt.NBTTagByte) after.get(0)).getByte());
+        ListTag after = (ListTag) container.getEditingEntryNbt().get("L");
+        assertEquals(1, after.size());
+        assertEquals(5, ((ByteTag) after.get(0)).getAsByte());
     }
 
     @Test
@@ -337,8 +345,8 @@ public class ContainerSetsConfigNbtTest {
         container.nbtEditorStartEdit("CustomName");
 
         assertTrue(container.nbtEditorApply("Renamed", "X"));
-        NBTTagCompound nbt = container.getEditingEntryNbt();
-        assertFalse(nbt.hasKey("CustomName"));
+        CompoundTag nbt = container.getEditingEntryNbt();
+        assertFalse(nbt.contains("CustomName"));
         assertEquals("X", nbt.getString("Renamed"));
         assertEquals("", container.nbtEditorGetValueText());
         assertEquals("", container.nbtEditorGetKeyText());
@@ -350,7 +358,7 @@ public class ContainerSetsConfigNbtTest {
         container.nbtEditorStartEdit("CustomName");
 
         assertFalse(container.nbtEditorApply("   ", "X"));
-        NBTTagCompound nbt = container.getEditingEntryNbt();
+        CompoundTag nbt = container.getEditingEntryNbt();
         assertEquals("Magic Stone", nbt.getString("CustomName"));
         assertTrue(container.nbtEditorIsEditing());
     }
@@ -379,26 +387,26 @@ public class ContainerSetsConfigNbtTest {
 
     @Test
     public void nbtValuePreviewTruncatesLongStrings() {
-        NBTTagCompound c = new NBTTagCompound();
-        c.setString("Long", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+        CompoundTag c = new CompoundTag();
+        c.putString("Long", "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
-        String preview = ContainerSetsConfig.nbtValuePreview(c.getTag("Long"));
+        String preview = ContainerSetsConfig.nbtValuePreview(c.get("Long"));
         assertEquals(48, preview.length());
         assertTrue(preview.endsWith("..."));
     }
 
     @Test
     public void nbtValuePreviewShowsCountsForContainers() {
-        NBTTagCompound c = new NBTTagCompound();
-        c.setString("A", "1");
-        c.setString("B", "2");
+        CompoundTag c = new CompoundTag();
+        c.putString("A", "1");
+        c.putString("B", "2");
 
         assertEquals("{2}", ContainerSetsConfig.nbtValuePreview(c));
 
-        NBTTagList l = new NBTTagList();
-        l.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 1));
-        l.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 2));
-        l.appendTag(new net.minecraft.nbt.NBTTagByte((byte) 3));
+        ListTag l = new ListTag();
+        l.add(ByteTag.valueOf((byte) 1));
+        l.add(ByteTag.valueOf((byte) 2));
+        l.add(ByteTag.valueOf((byte) 3));
         assertEquals("[3]", ContainerSetsConfig.nbtValuePreview(l));
     }
 
@@ -456,7 +464,7 @@ public class ContainerSetsConfigNbtTest {
     public void editEntryWithOutOfRangeIndexIsSafe() {
         ContainerSetsConfig container = newContainer();
         container.editEntry(99, ContainerSetsConfig.EntryType.BLOCK);
-        assertTrue(container.getEditingEntryNbt().getKeySet().isEmpty());
+        assertTrue(container.getEditingEntryNbt().getAllKeys().isEmpty());
         assertTrue(container.getNbtTags().isEmpty());
         container.nbtEditorStartAdd();
         assertFalse(container.nbtEditorApply("K", "v"));
@@ -469,9 +477,9 @@ public class ContainerSetsConfigNbtTest {
         cycleAddType(container, TAG_BYTE_ARRAY);
 
         assertTrue(container.nbtEditorApply("B", ""));
-        NBTTagCompound nbt = container.getEditingEntryNbt();
-        assertTrue(nbt.getTag("B") instanceof net.minecraft.nbt.NBTTagByteArray);
-        assertEquals(0, ((net.minecraft.nbt.NBTTagByteArray) nbt.getTag("B")).getByteArray().length);
+        CompoundTag nbt = container.getEditingEntryNbt();
+        assertTrue(nbt.get("B") instanceof ByteArrayTag);
+        assertEquals(0, ((ByteArrayTag) nbt.get("B")).getAsByteArray().length);
     }
 
     @Test
@@ -481,16 +489,16 @@ public class ContainerSetsConfigNbtTest {
         cycleAddType(container, TAG_INT_ARRAY);
 
         assertTrue(container.nbtEditorApply("I", ""));
-        NBTTagCompound nbt = container.getEditingEntryNbt();
-        assertTrue(nbt.getTag("I") instanceof net.minecraft.nbt.NBTTagIntArray);
-        assertEquals(0, ((net.minecraft.nbt.NBTTagIntArray) nbt.getTag("I")).getIntArray().length);
+        CompoundTag nbt = container.getEditingEntryNbt();
+        assertTrue(nbt.get("I") instanceof IntArrayTag);
+        assertEquals(0, ((IntArrayTag) nbt.get("I")).getAsIntArray().length);
     }
 
     @Test
     public void nbtEditorStartEditRejectsContainerArray() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.nbt.NBTTagByteArray arr = new net.minecraft.nbt.NBTTagByteArray(new byte[] { 1 });
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("B", arr);
+        ByteArrayTag arr = new ByteArrayTag(new byte[] { 1 });
+        container.getEditingSet().blocks.get(0).nbtTags.put("B", arr);
 
         container.nbtEditorStartEdit("B");
         assertFalse(container.nbtEditorIsEditing());
@@ -499,8 +507,8 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void nbtEditorByteArrayContainerAppendSetEditRemove() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.nbt.NBTTagByteArray arr = new net.minecraft.nbt.NBTTagByteArray(new byte[] { 1, 2 });
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("B", arr);
+        ByteArrayTag arr = new ByteArrayTag(new byte[] { 1, 2 });
+        container.getEditingSet().blocks.get(0).nbtTags.put("B", arr);
 
         container.nbtEditorPush("B");
         assertTrue(container.nbtEditorIsArrayContext());
@@ -508,49 +516,49 @@ public class ContainerSetsConfigNbtTest {
         assertEquals(2, container.getNbtTags().size());
 
         assertTrue(container.nbtEditorApply("", "3"));
-        net.minecraft.nbt.NBTTagByteArray afterAppend = (net.minecraft.nbt.NBTTagByteArray) container.getEditingEntryNbt().getTag("B");
-        assertEquals(3, afterAppend.getByteArray().length);
-        assertEquals(3, afterAppend.getByteArray()[2]);
+        ByteArrayTag afterAppend = (ByteArrayTag) container.getEditingEntryNbt().get("B");
+        assertEquals(3, afterAppend.getAsByteArray().length);
+        assertEquals(3, afterAppend.getAsByteArray()[2]);
 
         container.nbtEditorStartEditIndex(0);
         assertTrue(container.nbtEditorIsEditing());
         assertEquals("1", container.nbtEditorGetValue());
         assertTrue(container.nbtEditorApply("", "9"));
-        net.minecraft.nbt.NBTTagByteArray afterSet = (net.minecraft.nbt.NBTTagByteArray) container.getEditingEntryNbt().getTag("B");
-        assertEquals(9, afterSet.getByteArray()[0]);
-        assertEquals(3, afterSet.getByteArray().length);
+        ByteArrayTag afterSet = (ByteArrayTag) container.getEditingEntryNbt().get("B");
+        assertEquals(9, afterSet.getAsByteArray()[0]);
+        assertEquals(3, afterSet.getAsByteArray().length);
 
         assertTrue(container.nbtEditorRemoveIndex(0));
-        net.minecraft.nbt.NBTTagByteArray afterRemove = (net.minecraft.nbt.NBTTagByteArray) container.getEditingEntryNbt().getTag("B");
-        assertEquals(2, afterRemove.getByteArray().length);
-        assertEquals(2, afterRemove.getByteArray()[0]);
-        assertEquals(3, afterRemove.getByteArray()[1]);
+        ByteArrayTag afterRemove = (ByteArrayTag) container.getEditingEntryNbt().get("B");
+        assertEquals(2, afterRemove.getAsByteArray().length);
+        assertEquals(2, afterRemove.getAsByteArray()[0]);
+        assertEquals(3, afterRemove.getAsByteArray()[1]);
         assertFalse(container.nbtEditorRemoveIndex(9));
     }
 
     @Test
     public void nbtEditorIntArrayElementTypeIsInt() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.nbt.NBTTagIntArray arr = new net.minecraft.nbt.NBTTagIntArray(new int[] { 5 });
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("I", arr);
+        IntArrayTag arr = new IntArrayTag(new int[] { 5 });
+        container.getEditingSet().blocks.get(0).nbtTags.put("I", arr);
 
         container.nbtEditorPush("I");
         assertTrue(container.nbtEditorIsArrayContext());
         assertEquals(TAG_INT, container.nbtEditorGetArrayElementType());
 
         assertTrue(container.nbtEditorApply("", "7"));
-        net.minecraft.nbt.NBTTagIntArray after = (net.minecraft.nbt.NBTTagIntArray) container.getEditingEntryNbt().getTag("I");
-        assertEquals(2, after.getIntArray().length);
-        assertEquals(7, after.getIntArray()[1]);
+        IntArrayTag after = (IntArrayTag) container.getEditingEntryNbt().get("I");
+        assertEquals(2, after.getAsIntArray().length);
+        assertEquals(7, after.getAsIntArray()[1]);
     }
 
     @Test
     public void nbtEditorPushIndexEntersArrayInsideList() {
         ContainerSetsConfig container = newBlockEntry();
-        NBTTagList list = new NBTTagList();
-        list.appendTag(new net.minecraft.nbt.NBTTagIntArray(new int[] { 1, 2 }));
-        list.appendTag(new net.minecraft.nbt.NBTTagIntArray(new int[] { 3, 4 }));
-        container.getEditingSet().blocks.get(0).nbtTags.setTag("L", list);
+        ListTag list = new ListTag();
+        list.add(new IntArrayTag(new int[] { 1, 2 }));
+        list.add(new IntArrayTag(new int[] { 3, 4 }));
+        container.getEditingSet().blocks.get(0).nbtTags.put("L", list);
 
         container.nbtEditorPush("L");
         container.nbtEditorPushIndex(1);
@@ -562,10 +570,10 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void addEntryToCurrentSetCopiesNbtFromSearchResult() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
-        net.minecraft.nbt.NBTTagCompound tag = new net.minecraft.nbt.NBTTagCompound();
-        tag.setString("CustomColor", "blue");
-        stack.setTagCompound(tag);
+        ItemStack stack = new ItemStack(Items.STONE);
+        CompoundTag tag = new CompoundTag();
+        tag.putString("CustomColor", "blue");
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         ContainerSetsConfig.SearchResult result = new ContainerSetsConfig.SearchResult("minecraft:stone", "Stone", "minecraft", stack);
 
         container.addEntryToCurrentSet(ContainerSetsConfig.EntryType.BLOCK, result, 1, 50);
@@ -577,28 +585,29 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void addEntryToCurrentSetWithoutStackNbtStoresEmptyTag() {
         ContainerSetsConfig container = newBlockEntry();
-        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
+        ItemStack stack = new ItemStack(Items.STONE);
         ContainerSetsConfig.SearchResult result = new ContainerSetsConfig.SearchResult("minecraft:stone", "Stone", "minecraft", stack);
 
         container.addEntryToCurrentSet(ContainerSetsConfig.EntryType.BLOCK, result, 1, 50);
 
         assertEquals(2, container.getEditingSet().blocks.size());
         assertNotNull(container.getEditingSet().blocks.get(1).nbtTags);
-        assertTrue(container.getEditingSet().blocks.get(1).nbtTags.hasNoTags());
+        assertTrue(container.getEditingSet().blocks.get(1).nbtTags.isEmpty());
     }
 
     @Test
-    public void getItemStackFromEntryAppliesNbt() {
+    public void getItemStackFromEntryDoesNotBakeNbtTags() {
         ContainerSetsConfig container = newBlockEntry();
         BlockSetConfig.BlockElementDefinition entry = container.getEditingSet().blocks.get(0);
-        entry.nbtTags.setString("CustomColor", "blue");
+        entry.nbtTags.putString("CustomColor", "blue");
 
-        net.minecraft.item.ItemStack stack = container.getItemStackFromEntry(entry, 0);
+        ItemStack stack = container.getItemStackFromEntry(entry, 0);
 
         assertFalse(stack.isEmpty());
-        assertTrue(stack.hasTagCompound());
-        assert stack.getTagCompound() != null;
-        assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
+        assertEquals(Items.STONE, stack.getItem());
+        assertFalse("nbt is applied at block placement, not baked into the preview stack",
+                stack.get(DataComponents.CUSTOM_DATA) != null);
+        assertEquals("blue", entry.nbtTags.getString("CustomColor"));
     }
 
     @Test
@@ -612,7 +621,7 @@ public class ContainerSetsConfigNbtTest {
     @Test
     public void getExistingBlockKeysIncludesPlainAddedBlocks() {
         ContainerSetsConfig container = newContainer();
-        net.minecraft.item.ItemStack stack = new net.minecraft.item.ItemStack(net.minecraft.init.Blocks.STONE);
+        ItemStack stack = new ItemStack(Items.STONE);
         container.addEntryToCurrentSet(ContainerSetsConfig.EntryType.BLOCK,
                 new ContainerSetsConfig.SearchResult("minecraft:stone", "Stone", "minecraft", stack), 1, 50);
 
@@ -627,7 +636,7 @@ public class ContainerSetsConfigNbtTest {
         block.registry = "minecraft:wool";
         block.meta = 0;
         block.metas = new ArrayList<>(Arrays.asList(0, 1, 2));
-        block.nbtTags = new NBTTagCompound();
+        block.nbtTags = new CompoundTag();
         container.getEditingSet().blocks.add(block);
 
         Set<String> keys = container.getExistingBlockKeys();

@@ -1,14 +1,21 @@
 {
-  "variants": {
-    "level=0": { "model": "oneblockultima:compressed_gold_block" },
-    "0": { "model": "oneblockultima:compressed_gold_block" },
-    "level=1": { "model": "oneblockultima:compressed_gold_block" },
-    "1": { "model": "oneblockultima:compressed_gold_block" },
-    "level=2": { "model": "oneblockultima:compressed_gold_block" },
-    "2": { "model": "oneblockultima:compressed_gold_block" },
-    "level=3": { "model": "oneblockultima:compressed_gold_block" },
-    "3": { "model": "oneblockultima:compressed_gold_block" },
-    "level=4": { "model": "oneblockultima:compressed_gold_block" },
-    "4": { "model": "oneblockultima:compressed_gold_block" }
-  }
+    "variants":  {
+                     "level=0":  {
+                                     "model": "oneblockultima:block/compressed_gold_block"
+                                 },
+                     "level=1":  {
+                                     "model": "oneblockultima:block/compressed_gold_block"
+                                 },
+                     "level=2":  {
+                                     "model": "oneblockultima:block/compressed_gold_block"
+                                 },
+                     "level=3":  {
+                                     "model": "oneblockultima:block/compressed_gold_block"
+                                 },
+                     "level=4":  {
+                                     "model": "oneblockultima:block/compressed_gold_block"
+                                 }
+                 }
 }
+
+

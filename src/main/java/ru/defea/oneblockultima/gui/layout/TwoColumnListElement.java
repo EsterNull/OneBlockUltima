@@ -1,8 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -21,8 +21,8 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
     private final ScrollbarElement scrollbar = new ScrollbarElement();
 
     public interface TwoColumnEntry {
-        void drawLeft(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY);
-        void drawRight(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY);
+        void drawLeft(int x, int y, int width, int height, boolean hovered, int index, Font font, int mouseX, int mouseY);
+        void drawRight(int x, int y, int width, int height, boolean hovered, int index, Font font, int mouseX, int mouseY);
         boolean mouseClickedLeft(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton);
         boolean mouseClickedRight(int mouseX, int mouseY, int localX, int localY, int entryWidth, int entryHeight, int mouseButton);
     }
@@ -66,11 +66,11 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if ((leftEntries == null || leftEntries.isEmpty()) && (rightEntries == null || rightEntries.isEmpty()))
             return;
 
@@ -80,7 +80,7 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
         if (scrollOffset > maxEntries - visibleItems) scrollOffset = Math.max(0, maxEntries - visibleItems);
         if (scrollOffset < 0) scrollOffset = 0;
 
-        Gui.drawRect(computedX, computedY, computedX + listWidth + trackWidth + 2, computedY + computedHeight, panelColor);
+        g.fill(computedX, computedY, computedX + listWidth + trackWidth + 2, computedY + computedHeight, panelColor);
 
         int colWidth = (listWidth - innerPad * 2) / 2;
         int contentTop = computedY;
@@ -92,25 +92,25 @@ public class TwoColumnListElement extends ViewElement<TwoColumnListElement> {
             int y = contentTop + i * itemHeight;
 
             boolean leftHovered = mouseX >= computedX && mouseX <= computedX + colWidth &&
-                                  mouseY >= y && mouseY < y + itemHeight;
+                    mouseY >= y && mouseY < y + itemHeight;
             boolean rightHovered = mouseX >= computedX + colWidth + innerPad && mouseX <= computedX + listWidth &&
-                                   mouseY >= y && mouseY < y + itemHeight;
+                    mouseY >= y && mouseY < y + itemHeight;
 
             if (row < (leftEntries != null ? leftEntries.size() : 0)) {
                 int bg = (row % 2 == 0) ? DARK_GRAY_COLOR_2 : DARK_GRAY_COLOR_3;
-                Gui.drawRect(computedX + innerPad, y, computedX + colWidth, y + itemHeight, bg);
-                leftEntries.get(row).drawLeft(computedX + innerPad, y, colWidth - innerPad, itemHeight, leftHovered, row, fr, mouseX, mouseY);
+                g.fill(computedX + innerPad, y, computedX + innerPad + colWidth, y + itemHeight, bg);
+                leftEntries.get(row).drawLeft(computedX + innerPad, y, colWidth - innerPad, itemHeight, leftHovered, row, font, mouseX, mouseY);
             }
             if (row < (rightEntries != null ? rightEntries.size() : 0)) {
                 int bg = (row % 2 == 0) ? DARK_GRAY_COLOR_2 : DARK_GRAY_COLOR_3;
-                Gui.drawRect(computedX + colWidth + innerPad, y, computedX + listWidth, y + itemHeight, bg);
-                rightEntries.get(row).drawRight(computedX + colWidth + innerPad, y, colWidth - innerPad, itemHeight, rightHovered, row, fr, mouseX, mouseY);
+                g.fill(computedX + colWidth + innerPad, y, computedX + colWidth + innerPad + listWidth - colWidth - innerPad, y + itemHeight, bg);
+                rightEntries.get(row).drawRight(computedX + colWidth + innerPad, y, colWidth - innerPad, itemHeight, rightHovered, row, font, mouseX, mouseY);
             }
         }
 
         if (maxEntries > visibleItems) {
             layoutScrollbar(listWidth);
-            scrollbar.draw(fr, mouseX, mouseY, partialTicks);
+            scrollbar.draw(g, font, mouseX, mouseY, partialTicks);
             scrollOffset = scrollbar.getScrollOffset();
         }
     }

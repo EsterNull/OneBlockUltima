@@ -1,7 +1,10 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +48,7 @@ public class RowElement extends ViewElement<RowElement> {
         return e;
     }
 
-    public ButtonToggleElement buttonToggle(int id, boolean stateTriggered)
-    {
+    public ButtonToggleElement buttonToggle(int id, boolean stateTriggered) {
         ButtonToggleElement e = new ButtonToggleElement(id, stateTriggered);
         children.add(e);
         return e;
@@ -77,10 +79,10 @@ public class RowElement extends ViewElement<RowElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         int naturalWidth = 0;
         for (ViewElement<?> child : children) {
-            naturalWidth += child.getPreferredWidth(fontRenderer);
+            naturalWidth += child.getPreferredWidth(font);
         }
 
         int actualHeight = Math.max(rowHeight, computedHeight);
@@ -90,8 +92,8 @@ public class RowElement extends ViewElement<RowElement> {
             float gapBetween = freeSpace > 0 ? (float) freeSpace / (children.size() - 1) : rowGap;
             float cx = computedX;
             for (ViewElement<?> child : children) {
-                int childWidth = child.getPreferredWidth(fontRenderer);
-                int childHeight = child.getPreferredHeight(fontRenderer);
+                int childWidth = child.getPreferredWidth(font);
+                int childHeight = child.getPreferredHeight(font);
                 int y;
                 if (topAlign) {
                     y = computedY;
@@ -100,7 +102,7 @@ public class RowElement extends ViewElement<RowElement> {
                 }
                 child.setComputedPosition(Math.round(cx), y);
                 child.setComputedSize(childWidth, childHeight);
-                child.createWidgets(buttonList, fontRenderer, factory);
+                child.createWidgets(screen, font, factory);
                 cx += childWidth + gapBetween;
             }
             return;
@@ -124,8 +126,8 @@ public class RowElement extends ViewElement<RowElement> {
 
         int cx = startX;
         for (ViewElement<?> child : children) {
-            int childWidth = child.getPreferredWidth(fontRenderer);
-            int childHeight = child.getPreferredHeight(fontRenderer);
+            int childWidth = child.getPreferredWidth(font);
+            int childHeight = child.getPreferredHeight(font);
             int y;
             if (topAlign) {
                 y = computedY;
@@ -134,20 +136,20 @@ public class RowElement extends ViewElement<RowElement> {
             }
             child.setComputedPosition(cx, y);
             child.setComputedSize(childWidth, childHeight);
-            child.createWidgets(buttonList, fontRenderer, factory);
+            child.createWidgets(screen, font, factory);
             cx += childWidth + rowGap;
         }
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         for (ViewElement<?> child : children) {
-            if (child.isVisible()) child.draw(fr, mouseX, mouseY, partialTicks);
+            if (child.isVisible()) child.draw(g, font, mouseX, mouseY, partialTicks);
         }
     }
 
     @Override
-    public boolean actionPerformed(GuiButton button) {
+    public boolean actionPerformed(AbstractWidget button) {
         for (ViewElement<?> child : children) {
             if (child.actionPerformed(button)) return true;
         }
@@ -210,19 +212,14 @@ public class RowElement extends ViewElement<RowElement> {
 
     @Override
     public int getPreferredWidth() {
-        int total = 0;
-        for (ViewElement<?> child : children) {
-            total += child.getPreferredWidth();
-        }
-        total += rowGap * Math.max(0, children.size() - 1);
-        return total;
+        return getPreferredWidth(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
+    public int getPreferredWidth(Font font) {
         int total = 0;
         for (ViewElement<?> child : children) {
-            total += child.getPreferredWidth(fr);
+            total += child.getPreferredWidth(font);
         }
         total += rowGap * Math.max(0, children.size() - 1);
         return total;
@@ -230,14 +227,14 @@ public class RowElement extends ViewElement<RowElement> {
 
     @Override
     public int getPreferredHeight() {
-        return rowHeight;
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredHeight(FontRenderer fr) {
+    public int getPreferredHeight(Font font) {
         int max = rowHeight;
         for (ViewElement<?> child : children) {
-            int h = child.getPreferredHeight(fr);
+            int h = child.getPreferredHeight(font);
             if (h > max) max = h;
         }
         return max;

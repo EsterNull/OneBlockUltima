@@ -1,12 +1,17 @@
 package ru.defea.oneblockultima.gui;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
 
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.resources.I18n;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.resources.language.I18n;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
@@ -15,13 +20,13 @@ import java.io.IOException;
 
 import static ru.defea.oneblockultima.Constants.*;
 
-public class GuiUiSettings extends GuiScreen
+public class GuiUiSettings extends ModScreen
 {
     private static final int BUTTON_SAVE = 0;
     private static final int BUTTON_BACK = 1;
     private static final int BUTTON_SHOW_BALANCE = 25;
 
-    private final GuiScreen parent;
+    private final Screen parent;
     private ModSettings.BalancePosition currentPos;
     private ModSettings settings;
     private int hOffset;
@@ -35,16 +40,18 @@ public class GuiUiSettings extends GuiScreen
     private StepperElement vStepper;
     private int[] sessionHOffset;
     private int[] sessionVOffset;
+    private GuiGraphics gfx;
 
-    public GuiUiSettings(GuiScreen parent)
+    public GuiUiSettings(Screen parent)
     {
+        super(Component.literal(""));
         this.parent = parent;
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
-        buttonList.clear();
+        
         settings = ModSettings.get();
         currentPos = settings.getBalancePosition();
         ModSettings.BalancePosition[] positions = ModSettings.BalancePosition.values();
@@ -65,14 +72,14 @@ public class GuiUiSettings extends GuiScreen
     private void buildView() {
         int contentWidth = width - 20;
         int fieldWidth = Math.max(40, contentWidth / 20);
-        String hLabel = I18n.format("gui.oneblockultima.ui_settings.h_offset");
-        String vLabel = I18n.format("gui.oneblockultima.ui_settings.v_offset");
-        String showBalanceLabel = I18n.format("gui.oneblockultima.ui_settings.show_balance");
+        String hLabel = I18n.get("gui.oneblockultima.ui_settings.h_offset");
+        String vLabel = I18n.get("gui.oneblockultima.ui_settings.v_offset");
+        String showBalanceLabel = I18n.get("gui.oneblockultima.ui_settings.show_balance");
 
         int previewWidth = contentWidth * 4 / 5;
         int previewHeight = Math.max(60, height * 3 / 20 - 6);
         CustomDrawCallbackElement previewElement = new CustomDrawCallbackElement(
-                (x, y, w, h, fr, mx, my, pt) -> drawPreviewAt(x, y, w, h, fr),
+                (g, x, y, w, h, fr, mx, my, pt) -> drawPreviewAt(g, x, y, w, h, fr),
                 previewWidth, previewHeight
         );
         previewElement.align(Alignment.CENTER);
@@ -98,16 +105,16 @@ public class GuiUiSettings extends GuiScreen
                     else if (hovered) bgColor = GRAY_COLOR_6;
                     else bgColor = DARK_GRAY_COLOR_1;
 
-                    Gui.drawRect(x, y, x + cw, y + ch, bgColor);
-                    Gui.drawRect(x, y, x + cw, y + 1, GRAY_COLOR_2);
-                    Gui.drawRect(x, y + ch - 1, x + cw, y + ch, GRAY_COLOR_2);
-                    Gui.drawRect(x, y, x + 1, y + ch, GRAY_COLOR_2);
-                    Gui.drawRect(x + cw - 1, y, x + cw, y + ch, GRAY_COLOR_2);
+                    gfx.fill(x, y, x + cw, y + ch, bgColor);
+                    gfx.fill(x, y, x + cw, y + 1, GRAY_COLOR_2);
+                    gfx.fill(x, y + ch - 1, x + cw, y + ch, GRAY_COLOR_2);
+                    gfx.fill(x, y, x + 1, y + ch, GRAY_COLOR_2);
+                    gfx.fill(x + cw - 1, y, x + cw, y + ch, GRAY_COLOR_2);
 
                     String label = getPositionLabel(pos);
                     int textColor = isSelected ? SUCCESS_COLOR : WHITE_COLOR_1;
-                    int tw = fr.getStringWidth(label);
-                    fr.drawStringWithShadow(label, x + (cw - tw) / 2.0F, y + (ch - 8) / 2.0F, textColor);
+                    int tw = fr.width(label);
+                    gfx.drawString(fr, label, (int)(x + (cw - tw) / 2.0F), (int)(y + (ch - 8) / 2.0F), textColor, true);
                 })
                 .clickHandler((row, col, mx, my, mb) -> {
                     ModSettings.BalancePosition[][] g = {
@@ -119,7 +126,7 @@ public class GuiUiSettings extends GuiScreen
                         sessionHOffset[currentPos.ordinal()] = hOffset;
                         sessionVOffset[currentPos.ordinal()] = vOffset;
                         currentPos = g[row][col];
-                        positionLabel.text(I18n.format("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase()));
+                        positionLabel.text(I18n.get("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase()));
                         hStepper.setMin(hOffsetMin());
                         vStepper.setMin(vOffsetMin());
                         hOffset = sessionHOffset[currentPos.ordinal()];
@@ -140,11 +147,12 @@ public class GuiUiSettings extends GuiScreen
 
         factory.title("gui.oneblockultima.ui_settings.title");
         factory.add(previewElement);
-        positionLabel = new LabelElement(I18n.format("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase())).centered().color(SUCCESS_COLOR);
+        positionLabel = new LabelElement(I18n.get("gui.oneblockultima.ui_settings.pos." + currentPos.name().toLowerCase())).centered().color(SUCCESS_COLOR);
         factory.add(positionLabel);
 
         RowElement toggleControls = new RowElement(Alignment.LEFT).gap(5).widthPercent(70);
-        showBalanceToggle = toggleControls.buttonToggle(BUTTON_SHOW_BALANCE, isShowBalance).label(showBalanceLabel);
+        showBalanceToggle = toggleControls.buttonToggle(BUTTON_SHOW_BALANCE, isShowBalance).label(showBalanceLabel)
+                .onPress(() -> { isShowBalance = !isShowBalance; showBalanceToggle.toggle(); });
         factory.add(toggleControls);
 
         StepperElement hStepper = new StepperElement()
@@ -169,8 +177,8 @@ public class GuiUiSettings extends GuiScreen
         hOffset = hStepper.getValue();
         vOffset = vStepper.getValue();
 
-        int hLabelW = fontRenderer.getStringWidth(hLabel);
-        int vLabelW = fontRenderer.getStringWidth(vLabel);
+        int hLabelW = Minecraft.getInstance().font.width(hLabel);
+        int vLabelW = Minecraft.getInstance().font.width(vLabel);
         int maxLabelW = Math.max(hLabelW, vLabelW);
 
         RowElement hControls = new RowElement(Alignment.LEFT).gap(5);
@@ -198,82 +206,69 @@ public class GuiUiSettings extends GuiScreen
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(8);
         btnRow.widthPercent(60);
-        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
-
-        factory.build(buttonList, fontRenderer);
-    }
-
-    @Override
-    protected void actionPerformed(GuiButton button)
-    {
-        if (button.id == BUTTON_SAVE)
-        {
+        btnRow.button(BUTTON_BACK, I18n.get("gui.oneblockultima.cancel")).onPress(() -> Minecraft.getInstance().setScreen(parent));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.get("gui.oneblockultima.save")).onPress(() -> {
             sessionHOffset[currentPos.ordinal()] = hOffset;
             sessionVOffset[currentPos.ordinal()] = vOffset;
             settings.setBalancePosition(currentPos);
             settings.setAllPositionOffsets(sessionHOffset, sessionVOffset);
             settings.setShowBalance(isShowBalance);
-            mc.displayGuiScreen(parent);
-            return;
+            Minecraft.getInstance().setScreen(parent);
+        }));
+
+        factory.build(this, Minecraft.getInstance().font);
+        for (net.minecraft.client.gui.components.AbstractWidget w : factory.getWidgets()) {
+            this.addRenderableWidget(w);
         }
-        if (button.id == BUTTON_BACK)
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers)
+    {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE)
         {
-            mc.displayGuiScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
+            return true;
         }
-        else if (button.id == BUTTON_SHOW_BALANCE)
-        {
-            isShowBalance = !isShowBalance;
-            showBalanceToggle.toggle();
-        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        if (keyCode == Keyboard.KEY_ESCAPE)
-        {
-            mc.displayGuiScreen(parent);
-            return;
-        }
-        super.keyTyped(typedChar, keyCode);
+        if (factory != null && factory.mouseClicked((int) mouseX, (int) mouseY, mouseButton)) return true;
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTicks)
     {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (factory != null) factory.mouseClicked(mouseX, mouseY, mouseButton);
+        this.gfx = g;
+        drawModBackground(g);
+        if (factory != null) factory.draw(g, Minecraft.getInstance().font, mouseX, mouseY, partialTicks);
+        for (var r : this.renderables) r.render(g, mouseX, mouseY, partialTicks);
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public void tick()
     {
-        drawDefaultBackground();
-        if (factory != null) factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
-        super.drawScreen(mouseX, mouseY, partialTicks);
-    }
-
-    @Override
-    public void updateScreen()
-    {
-        super.updateScreen();
         if (factory != null) factory.updateScreen();
+        super.tick();
     }
 
-    private void drawPreviewAt(int previewX, int previewY, int previewWidth, int previewHeight, net.minecraft.client.gui.FontRenderer fr)
+    private void drawPreviewAt(GuiGraphics g, int previewX, int previewY, int previewWidth, int previewHeight, net.minecraft.client.gui.Font fr)
     {
-        Gui.drawRect(previewX + 1, previewY + 1, previewX + previewWidth - 1, previewY + previewHeight - 1, TRANSPARENT_DARK_GRAY_COLOR_1);
-        drawHorizontalLine(previewX, previewX + previewWidth, previewY, GRAY_COLOR_3);
-        drawHorizontalLine(previewX, previewX + previewWidth, previewY + previewHeight, GRAY_COLOR_3);
-        drawVerticalLine(previewX, previewY, previewY + previewHeight, GRAY_COLOR_3);
-        drawVerticalLine(previewX + previewWidth, previewY, previewY + previewHeight, GRAY_COLOR_3);
+        g.fill(previewX + 1, previewY + 1, previewX + previewWidth - 1, previewY + previewHeight - 1, TRANSPARENT_DARK_GRAY_COLOR_1);
+        g.hLine(previewX, previewX + previewWidth, previewY, GRAY_COLOR_3);
+        g.hLine(previewX, previewX + previewWidth, previewY + previewHeight, GRAY_COLOR_3);
+        g.vLine(previewX, previewY, previewY + previewHeight, GRAY_COLOR_3);
+        g.vLine(previewX + previewWidth, previewY, previewY + previewHeight, GRAY_COLOR_3);
 
         int chX = previewX + previewWidth / 2;
         int chY = previewY + previewHeight / 2;
         int chLen = 5;
-        Gui.drawRect(chX - chLen, chY, chX + chLen + 1, chY + 1, LIGHT_GRAY_COLOR_1);
-        Gui.drawRect(chX, chY - chLen, chX + 1, chY + chLen + 1, LIGHT_GRAY_COLOR_1);
+        g.fill(chX - chLen, chY, chX + chLen + 1, chY + 1, LIGHT_GRAY_COLOR_1);
+        g.fill(chX, chY - chLen, chX + 1, chY + chLen + 1, LIGHT_GRAY_COLOR_1);
 
         if (!isShowBalance) return;
 
@@ -282,7 +277,7 @@ public class GuiUiSettings extends GuiScreen
         int hMargin = 5;
         int vMargin = 3;
         String sampleText = "12345.25";
-        int textWidth = fr.getStringWidth(sampleText);
+        int textWidth = fr.width(sampleText);
         int boxW = coinSize + textWidth + spaceBetween + hMargin * 2;
         int boxH = coinSize + vMargin * 2;
 
@@ -291,61 +286,29 @@ public class GuiUiSettings extends GuiScreen
         int innerW = previewWidth - 2;
         int innerH = previewHeight - 2;
 
-        ScaledResolution sr = new ScaledResolution(mc);
-        int scale = sr.getScaleFactor();
-        GL11.glScissor(innerX * scale, mc.displayHeight - (innerY + innerH) * scale, innerW * scale, innerH * scale);
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        g.enableScissor(innerX, innerY, innerX + innerW, innerY + innerH);
 
-        int boxX;
-        int boxY;
+        int areaX = innerX + 2;
+        int areaY = innerY + 2;
+        int areaW = innerW - 4;
+        int areaH = innerH - 4;
 
-        switch (currentPos)
-        {
-            case TOP_LEFT:
-                boxX = innerX + innerW * hOffset / 100;
-                boxY = innerY + innerH * vOffset / 100;
-                break;
-            case TOP:
-                boxX = innerX + innerW / 2 - boxW / 2 + innerW * hOffset / 100;
-                boxY = innerY + innerH * vOffset / 100;
-                break;
-            case LEFT:
-                boxX = innerX + innerW * hOffset / 100;
-                boxY = innerY + innerH / 2 - boxH / 2 + innerH * vOffset / 100;
-                break;
-            case RIGHT:
-                boxX = innerX + innerW - boxW - innerW * hOffset / 100;
-                boxY = innerY + innerH / 2 - boxH / 2 + innerH * vOffset / 100;
-                break;
-            case BOTTOM_LEFT:
-                boxX = innerX + innerW * hOffset / 100;
-                boxY = innerY + innerH - boxH - innerH * vOffset / 100;
-                break;
-            case BOTTOM:
-                boxX = innerX + innerW / 2 - boxW / 2 + innerW * hOffset / 100;
-                boxY = innerY + innerH - boxH - innerH * vOffset / 100;
-                break;
-            case BOTTOM_RIGHT:
-                boxX = innerX + innerW - boxW - innerW * hOffset / 100;
-                boxY = innerY + innerH - boxH - innerH * vOffset / 100;
-                break;
-            default:
-                boxX = innerX + innerW - boxW - innerW * hOffset / 100;
-                boxY = innerY + innerH * vOffset / 100;
-                break;
-        }
+        int[] placed = ModSettings.computeBalanceBox(currentPos, hOffset, vOffset, boxW, boxH, areaW, areaH);
+        int boxX = areaX + placed[0];
+        int boxY = areaY + placed[1];
 
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        Gui.drawRect(boxX, boxY, boxX + boxW, boxY + boxH, TRANSPARENT_DARK_GRAY_COLOR_2);
-        GlStateManager.enableBlend();
+        g.fill(boxX, boxY, boxX + boxW, boxY + boxH, TRANSPARENT_DARK_GRAY_COLOR_2);
+        g.fill(boxX, boxY, boxX + boxW, boxY + 1, GRAY_COLOR_7);
+        g.fill(boxX, boxY + boxH - 1, boxX + boxW, boxY + boxH, GRAY_COLOR_7);
+        g.fill(boxX, boxY, boxX + 1, boxY + boxH, GRAY_COLOR_7);
+        g.fill(boxX + boxW - 1, boxY, boxX + boxW, boxY + boxH, GRAY_COLOR_7);
         TextureElement coinIcon = new TextureElement(COIN_TEXTURE, coinSize, coinSize);
         coinIcon.setComputedPosition(boxX + hMargin, boxY + vMargin);
         coinIcon.setComputedSize(coinSize, coinSize);
-        coinIcon.draw(fr, 0, 0, 0);
-        GlStateManager.disableBlend();
-        fr.drawString(sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin - fr.FONT_HEIGHT / 4, GOLD_COLOR);
+        coinIcon.draw(g, fr, 0, 0, 0);
+        g.drawString(fr, sampleText, boxX + hMargin + coinSize + spaceBetween, boxY + vMargin, GOLD_COLOR, true);
 
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        g.disableScissor();
     }
 
     private String getPositionLabel(ModSettings.BalancePosition pos)

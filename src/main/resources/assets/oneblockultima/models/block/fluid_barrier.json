@@ -1,6 +1,7 @@
 {
-  "parent": "builtin/generated",
+  "parent": "oneblockultima:block/cube_all_tinted",
   "textures": {
-    "layer0": "oneblockultima:blocks/one_block_generator_texture"
+    "all": "minecraft:block/glass"
   }
 }
+

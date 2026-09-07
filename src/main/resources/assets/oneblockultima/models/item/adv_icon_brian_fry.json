@@ -1,6 +1,8 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:advancements/adv_brian_fry"
+    "layer0": "oneblockultima:item/adv_brian_fry"
   }
 }
+
+

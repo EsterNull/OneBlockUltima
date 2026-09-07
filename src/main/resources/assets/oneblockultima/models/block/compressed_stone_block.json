@@ -1,6 +1,6 @@
-{
+﻿{
   "parent": "oneblockultima:block/cube_all_tinted",
   "textures": {
-    "all": "minecraft:blocks/stone"
+    "all": "minecraft:block/stone"
   }
 }

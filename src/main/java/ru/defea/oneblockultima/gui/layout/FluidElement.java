@@ -1,9 +1,11 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
 import ru.defea.oneblockultima.util.ModelUtil;
 
 import java.util.List;
@@ -19,8 +21,8 @@ public class FluidElement extends ViewElement<FluidElement> {
     }
 
     public static FluidElement fromName(String fluidName) {
-        Fluid f = FluidRegistry.getFluid(fluidName);
-        if (f == null) return null;
+        Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidName));
+        if (f == null || f == net.minecraft.world.level.material.Fluids.EMPTY) return null;
         return new FluidElement(f);
     }
 
@@ -42,13 +44,13 @@ public class FluidElement extends ViewElement<FluidElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (fluid == null) return;
-        ModelUtil.renderFluidSprite(fluid, computedX, computedY, width, height);
+        ModelUtil.renderFluidSprite(g, fluid, computedX, computedY, width, height);
     }
 
     @Override

@@ -1,96 +1,69 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerPlayer;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
 
-import javax.annotation.Nonnull;
-import java.util.List;
-
-public class CommandAddUltimaBalance extends CommandBase
+public final class CommandAddUltimaBalance
 {
-    @Override
-    @Nonnull
-    public String getName()
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher)
     {
-        return "addUltimaBalance";
+        dispatcher.register(Commands.literal("addUltimaBalance")
+                .requires(s -> s.hasPermission(2))
+                .then(Commands.argument("target", EntityArgument.player())
+                        .then(Commands.argument("amount", StringArgumentType.word())
+                                .executes(ctx -> {
+                                    execute(ctx.getSource(),
+                                            EntityArgument.getPlayer(ctx, "target"),
+                                            StringArgumentType.getString(ctx, "amount"));
+                                    return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                                }))));
     }
 
-    @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    private static void execute(CommandSourceStack source, ServerPlayer player, String amountStr)
     {
-        return "/addUltimaBalance <player> <amount>";
-    }
-
-    @Override
-    public void execute(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args)
-    {
-        if (args.length != 2)
+        if (amountStr == null || amountStr.isEmpty())
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.usage") + getUsage(sender)).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.usage")
+                    .append(Component.literal(" /addUltimaBalance <player> <amount>")).withStyle(ChatFormatting.RED));
             return;
         }
 
         double amount;
         try
         {
-            amount = Double.parseDouble(args[1].replace(',', '.'));
+            amount = Double.parseDouble(amountStr.replace(',', '.'));
         }
         catch (NumberFormatException ex)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.addUltimaBalance.integer")).setStyle(new Style().setColor(TextFormatting.RED)));
-            return;
-        }
-
-        EntityPlayerMP player = server.getPlayerList().getPlayerByUsername(args[0]);
-        if (player == null)
-        {
-            sender.sendMessage(new TextComponentString(I18n.format("command.player_not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.addUltimaBalance.integer").withStyle(ChatFormatting.RED));
             return;
         }
 
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.addUltimaBalance.no_data")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.addUltimaBalance.no_data").withStyle(ChatFormatting.RED));
             return;
         }
 
         data.addCurrency(amount);
         OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
-        sender.sendMessage(new TextComponentString(I18n.format("command.addUltimaBalance.success", player.getName(), amount, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));
-        if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP) || sender.getCommandSenderEntity() != player)
+        Component msg = Component.translatable("command.addUltimaBalance.success", player.getName(), amount, data.getCurrency())
+                .withStyle(ChatFormatting.GREEN);
+        source.sendSuccess(() -> msg, false);
+        if (!(source.getEntity() instanceof ServerPlayer) || source.getEntity() != player)
         {
-            player.sendMessage(new TextComponentString(I18n.format("command.addUltimaBalance.success", player.getName(), amount, data.getCurrency())).setStyle(new Style().setColor(TextFormatting.GREEN)));
+            player.sendSystemMessage(msg);
         }
-    }
-
-    @Override
-    @Nonnull
-    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args, BlockPos targetPos)
-    {
-        if (args.length == 1)
-        {
-            return getListOfStringsMatchingLastWord(args, server.getOnlinePlayerNames());
-        }
-
-        return super.getTabCompletions(server, sender, args, targetPos);
-    }
-
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 2;
     }
 }

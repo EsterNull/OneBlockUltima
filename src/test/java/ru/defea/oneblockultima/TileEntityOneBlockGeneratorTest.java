@@ -1,20 +1,37 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import java.lang.reflect.Field;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
 
+/**
+ * Core behavior of {@link TileEntityOneBlockGenerator}: selected set / level bookkeeping,
+ * toggle flags, ownership/membership, invites, non-player-break cooldown, NBT round-trip and
+ * the static active-generator set iterated by {@code ModEvents.onWorldTick}.
+ *
+ * <p>The tile entity is constructed headless via
+ * {@link TestBootstrap#registerOneBlockTileEntity()}; NBT uses
+ * {@code saveAdditional(new CompoundTag(), RegistryAccess.EMPTY)} /
+ * {@code loadAdditional(compound, RegistryAccess.EMPTY)} (1.21 inherits these from
+ * {@link net.minecraft.world.level.block.entity.BlockEntity}).
+ *
+ * <p>Forge 1.21 has no {@code onChunkUnload()} on {@code BlockEntity} and the port removed the
+ * 1.12 {@code invalidate()} façade, so the active-set lifecycle is only exercised through the
+ * port's real invalidation path: {@code setRemoved()}.
+ */
 public class TileEntityOneBlockGeneratorTest
 {
     private static final UUID OWNER = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -26,14 +43,12 @@ public class TileEntityOneBlockGeneratorTest
     @BeforeClass
     public static void setUp()
     {
-        Bootstrap.register();
-        net.minecraftforge.fml.common.registry.GameRegistry.registerTileEntity(
-            TileEntityOneBlockGenerator.class, "oneblockultima:generator");
+        TestBootstrap.registerOneBlockTileEntity();
     }
 
     private TileEntityOneBlockGenerator newGenerator()
     {
-        return new TileEntityOneBlockGenerator();
+        return new TileEntityOneBlockGenerator(BlockPos.ZERO, ModBlocks.ONE_BLOCK_GENERATOR.defaultBlockState());
     }
 
     @After
@@ -452,28 +467,28 @@ public class TileEntityOneBlockGeneratorTest
     @Test
     public void nbtReadFromCompound()
     {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setString("selectedSetId", "nether");
-        nbt.setBoolean("disableFluidGeneration", true);
-        nbt.setBoolean("disableMobGeneration", true);
-        nbt.setBoolean("disableChestGeneration", false);
-        nbt.setBoolean("disableSaplingGeneration", true);
-        nbt.setUniqueId("ownerId", OWNER);
-        nbt.setBoolean("placedByPlayer", true);
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString("selectedSetId", "nether");
+        nbt.putBoolean("disableFluidGeneration", true);
+        nbt.putBoolean("disableMobGeneration", true);
+        nbt.putBoolean("disableChestGeneration", false);
+        nbt.putBoolean("disableSaplingGeneration", true);
+        nbt.putUUID("ownerId", OWNER);
+        nbt.putBoolean("placedByPlayer", true);
 
-        net.minecraft.nbt.NBTTagList levelsTag = new net.minecraft.nbt.NBTTagList();
-        NBTTagCompound levelTag = new NBTTagCompound();
-        levelTag.setString("setId", "nether");
-        levelTag.setInteger("level", 2);
-        levelsTag.appendTag(levelTag);
-        nbt.setTag("setLevels", levelsTag);
+        net.minecraft.nbt.ListTag levelsTag = new net.minecraft.nbt.ListTag();
+        CompoundTag levelTag = new CompoundTag();
+        levelTag.putString("setId", "nether");
+        levelTag.putInt("level", 2);
+        levelsTag.add(levelTag);
+        nbt.put("setLevels", levelsTag);
 
-        net.minecraft.nbt.NBTTagList membersTag = new net.minecraft.nbt.NBTTagList();
-        membersTag.appendTag(new net.minecraft.nbt.NBTTagString(MEMBER.toString()));
-        nbt.setTag("memberIds", membersTag);
+        net.minecraft.nbt.ListTag membersTag = new net.minecraft.nbt.ListTag();
+        membersTag.add(net.minecraft.nbt.StringTag.valueOf(MEMBER.toString()));
+        nbt.put("memberIds", membersTag);
 
         TileEntityOneBlockGenerator loaded = newGenerator();
-        loaded.readFromNBT(nbt);
+        loaded.loadAdditional(nbt, RegistryAccess.EMPTY);
 
         assertEquals("nether", loaded.getSelectedSetId());
         assertTrue(loaded.isDisableFluidGeneration());
@@ -493,10 +508,10 @@ public class TileEntityOneBlockGeneratorTest
         TileEntityOneBlockGenerator gen = newGenerator();
         gen.setOwnerId(OWNER);
 
-        NBTTagCompound nbt = gen.writeToNBT(new NBTTagCompound());
-
+        CompoundTag nbt = new CompoundTag();
+        gen.saveAdditional(nbt, RegistryAccess.EMPTY);
         TileEntityOneBlockGenerator loaded = newGenerator();
-        loaded.readFromNBT(nbt);
+        loaded.loadAdditional(nbt, RegistryAccess.EMPTY);
         assertEquals(OWNER, loaded.getOwnerId());
     }
 
@@ -524,9 +539,10 @@ public class TileEntityOneBlockGeneratorTest
     {
         TileEntityOneBlockGenerator gen = newGenerator();
         gen.setDisableFluidGeneration(true);
-        NBTTagCompound nbt = gen.writeToNBT(new NBTTagCompound());
+        CompoundTag nbt = new CompoundTag();
+        gen.saveAdditional(nbt, RegistryAccess.EMPTY);
         TileEntityOneBlockGenerator loaded = newGenerator();
-        loaded.readFromNBT(nbt);
+        loaded.loadAdditional(nbt, RegistryAccess.EMPTY);
         assertTrue(loaded.isDisableFluidGeneration());
         assertFalse(loaded.isDisableMobGeneration());
         assertFalse(loaded.isDisableChestGeneration());
@@ -539,9 +555,10 @@ public class TileEntityOneBlockGeneratorTest
         TileEntityOneBlockGenerator gen = newGenerator();
         gen.setDisableMobGeneration(true);
         gen.setDisableSaplingGeneration(true);
-        NBTTagCompound nbt = gen.writeToNBT(new NBTTagCompound());
+        CompoundTag nbt = new CompoundTag();
+        gen.saveAdditional(nbt, RegistryAccess.EMPTY);
         TileEntityOneBlockGenerator loaded = newGenerator();
-        loaded.readFromNBT(nbt);
+        loaded.loadAdditional(nbt, RegistryAccess.EMPTY);
         assertFalse(loaded.isDisableFluidGeneration());
         assertTrue(loaded.isDisableMobGeneration());
         assertFalse(loaded.isDisableChestGeneration());
@@ -620,7 +637,7 @@ public class TileEntityOneBlockGeneratorTest
     }
 
     @Test
-    public void invalidateRemovesGeneratorFromActiveSet()
+    public void setRemovedUnregistersGeneratorFromActiveSet()
     {
         TileEntityOneBlockGenerator gen = newGenerator();
         addToActiveSet(gen);
@@ -628,52 +645,29 @@ public class TileEntityOneBlockGeneratorTest
         assertTrue("the generator must be tracked until it is invalidated",
                 TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
 
-        gen.invalidate();
+        gen.setRemoved();
 
-        assertFalse("invalidate must unregister the generator from the active set",
+        assertFalse("setRemoved (the port's invalidation path) must unregister the generator",
                 TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
     }
 
     @Test
-    public void onChunkUnloadRemovesGeneratorFromActiveSet()
-    {
-        TileEntityOneBlockGenerator gen = newGenerator();
-        addToActiveSet(gen);
-
-        gen.onChunkUnload();
-
-        assertFalse("onChunkUnload must unregister the generator from the active set",
-                TileEntityOneBlockGenerator.getActiveGenerators().contains(gen));
-    }
-
-    @Test
-    public void invalidateLeavesOtherGeneratorsInActiveSet()
+    public void setRemovedLeavesOtherGeneratorsInActiveSet()
     {
         TileEntityOneBlockGenerator a = newGenerator();
         TileEntityOneBlockGenerator b = newGenerator();
         addToActiveSet(a);
         addToActiveSet(b);
 
-        a.invalidate();
+        a.setRemoved();
 
         Set<TileEntityOneBlockGenerator> active = TileEntityOneBlockGenerator.getActiveGenerators();
         assertFalse("the invalidated generator must be removed", active.contains(a));
         assertTrue("unrelated generators must stay tracked", active.contains(b));
     }
 
-    @SuppressWarnings("unchecked")
     private static void addToActiveSet(TileEntityOneBlockGenerator generator)
     {
-        try
-        {
-            Field field = TileEntityOneBlockGenerator.class.getDeclaredField("ACTIVE_GENERATORS");
-            field.setAccessible(true);
-            Set<TileEntityOneBlockGenerator> active = (Set<TileEntityOneBlockGenerator>) field.get(null);
-            active.add(generator);
-        }
-        catch (Exception e)
-        {
-            throw new AssertionError("Unable to access ACTIVE_GENERATORS", e);
-        }
+        TileEntityOneBlockGenerator.getActiveGenerators().add(generator);
     }
 }

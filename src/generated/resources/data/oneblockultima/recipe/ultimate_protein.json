@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    },
+    {
+      "item": "oneblockultima:super_protein"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:ultimate_protein"
+  }
+}

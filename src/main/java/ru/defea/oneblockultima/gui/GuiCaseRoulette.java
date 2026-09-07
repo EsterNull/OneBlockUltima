@@ -1,24 +1,24 @@
 package ru.defea.oneblockultima.gui;
 
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextComponentTranslation;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.GL11;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.client.resources.language.I18n;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.List;
+import java.util.Random;
+
 import ru.defea.oneblockultima.Constants;
 import ru.defea.oneblockultima.network.ModMessages;
 import ru.defea.oneblockultima.network.PacketOpenCase;
 import ru.defea.oneblockultima.util.CaseUtil;
 
-import java.util.List;
-import java.util.Random;
-
-public class GuiCaseRoulette extends GuiScreen
+public class GuiCaseRoulette extends ModScreen
 {
     private static GuiCaseRoulette openInstance;
     private static Integer pendingResult;
@@ -47,7 +47,7 @@ public class GuiCaseRoulette extends GuiScreen
     private int finishTicks;
     private String rewardName;
     private boolean skipRequested;
-    private GuiButton skipButton;
+    private Button skipButton;
     private final Random rand = new Random();
     private long spinStartNanos;
 
@@ -65,14 +65,15 @@ public class GuiCaseRoulette extends GuiScreen
 
     public GuiCaseRoulette(ItemStack caseStack)
     {
+        super(Component.literal("case_roulette"));
         this.caseStack = caseStack;
-        this.contents = CaseUtil.readContents(caseStack);
+        this.contents = CaseUtil.readContents(caseStack, net.minecraft.client.Minecraft.getInstance().level.registryAccess());
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
-        super.initGui();
+        super.init();
         openInstance = this;
 
         if (pendingResult != null)
@@ -83,11 +84,11 @@ public class GuiCaseRoulette extends GuiScreen
 
         if (contents.isEmpty())
         {
-            if (mc.player != null)
+            if (this.minecraft.player != null)
             {
-                mc.player.sendMessage(new TextComponentTranslation("gui.oneblockultima.case.empty"));
+                this.minecraft.player.sendSystemMessage(Component.translatable("gui.oneblockultima.case.empty"));
             }
-            mc.displayGuiScreen(null);
+            this.minecraft.setScreen(null);
             return;
         }
 
@@ -106,18 +107,18 @@ public class GuiCaseRoulette extends GuiScreen
 
         int buttonWidth = 110;
         int buttonHeight = 20;
-        skipButton = new GuiButton(0, width / 2 - buttonWidth / 2, height - 32, buttonWidth, buttonHeight, I18n.format("gui.oneblockultima.case.skip"));
-        buttonList.clear();
-        buttonList.add(skipButton);
+        skipButton = Button.builder(Component.literal(I18n.get("gui.oneblockultima.case.skip")), b -> skipRequested = true)
+                .bounds(width / 2 - buttonWidth / 2, height - 32, buttonWidth, buttonHeight)
+                .build();
+        this.addRenderableWidget(skipButton);
 
-        NBTTagCompound nbt = caseStack.hasTagCompound() ? caseStack.getTagCompound() : new NBTTagCompound();
+        CompoundTag nbt = (CompoundTag) caseStack.saveOptional(net.minecraft.core.RegistryAccess.EMPTY);
         ModMessages.sendToServer(new PacketOpenCase(nbt));
     }
 
     private void startSpin()
     {
         int size = contents.size();
-        // Longer run-up: cross more items for a longer, more impressive spin
         int base = size * 24 + rand.nextInt(size * 6);
         int mod = ((base % size) - targetIndex + size) % size;
         targetScroll = base - mod;
@@ -172,7 +173,7 @@ public class GuiCaseRoulette extends GuiScreen
     {
         if (skipButton != null)
         {
-            skipButton.displayString = I18n.format("gui.oneblockultima.case.skip");
+            skipButton.setMessage(Component.literal(I18n.get("gui.oneblockultima.case.skip")));
         }
     }
 
@@ -186,15 +187,14 @@ public class GuiCaseRoulette extends GuiScreen
         {
             return 1.0D;
         }
-        // Ease-out quartic: fast start with a long, smooth deceleration
         double u = 1.0D - t;
         return 1.0D - u * u * u * u;
     }
 
     @Override
-    public void updateScreen()
+    public void tick()
     {
-        super.updateScreen();
+        super.tick();
         if (contents.isEmpty())
         {
             return;
@@ -218,7 +218,7 @@ public class GuiCaseRoulette extends GuiScreen
                 int size = contents.size();
                 int slot = (int) Math.floor(targetScroll);
                 int landed = ((slot % size) + size) % size;
-                rewardName = contents.get(landed).stack.getDisplayName();
+                rewardName = contents.get(landed).stack.getHoverName().getString();
                 finishing = true;
                 finishTicks = 0;
                 if (skipButton != null)
@@ -232,22 +232,22 @@ public class GuiCaseRoulette extends GuiScreen
             finishTicks++;
             if (finishTicks >= 80)
             {
-                mc.displayGuiScreen(null);
+                this.minecraft.setScreen(null);
             }
         }
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTicks)
     {
-        drawDefaultBackground();
+        this.drawModBackground(g);
 
         int cx = width / 2;
-        drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.case.title"), cx, 24, Constants.WHITE_COLOR_2);
+        g.drawCenteredString(this.font, I18n.get("gui.oneblockultima.case.title"), cx, 24, Constants.WHITE_COLOR_2);
 
         if (contents.isEmpty())
         {
-            super.drawScreen(mouseX, mouseY, partialTicks);
+            super.render(g, mouseX, mouseY, partialTicks);
             return;
         }
 
@@ -255,32 +255,27 @@ public class GuiCaseRoulette extends GuiScreen
         double scroll = renderScroll(partialTicks);
         int top = height / 2 - stripHeight / 2;
 
-        // Name of the item currently pointed at by the arrows:
-        // switches when the slot's middle crosses the pointer's middle
         int curSlot = (int) Math.round(scroll);
         int curIdx = ((curSlot % size) + size) % size;
         ItemStack curStack = contents.get(curIdx).stack;
-        String previewName = curStack.getDisplayName();
+        String previewName = curStack.getHoverName().getString();
         if (curStack.getCount() > 1)
         {
             previewName += " x" + curStack.getCount();
         }
-        drawOutlinedCenteredString(previewName, cx, top - 14);
+        drawOutlinedCenteredString(g, previewName, cx, top - 14);
 
-        // Panel background: vertical gradient with gold corner accents
         int stripL = cx - STRIP_WIDTH / 2;
         int stripR = cx + STRIP_WIDTH / 2;
-        GlStateManager.disableTexture2D();
-        drawGradientRect(stripL, top, stripR, top + stripHeight, Constants.CASE_BG_GRADIENT_TOP, Constants.CASE_BG_GRADIENT_BOTTOM);
-        GlStateManager.enableTexture2D();
-        drawRect(stripL, top, stripL + 6, top + 2, Constants.GOLD_COLOR);
-        drawRect(stripL, top, stripL + 2, top + 6, Constants.GOLD_COLOR);
-        drawRect(stripR - 6, top, stripR, top + 2, Constants.GOLD_COLOR);
-        drawRect(stripR - 2, top, stripR, top + 6, Constants.GOLD_COLOR);
-        drawRect(stripL, top + stripHeight - 2, stripL + 6, top + stripHeight, Constants.GOLD_COLOR);
-        drawRect(stripL, top + stripHeight - 6, stripL + 2, top + stripHeight, Constants.GOLD_COLOR);
-        drawRect(stripR - 6, top + stripHeight - 2, stripR, top + stripHeight, Constants.GOLD_COLOR);
-        drawRect(stripR - 2, top + stripHeight - 6, stripR, top + stripHeight, Constants.GOLD_COLOR);
+        g.fillGradient(stripL, top, stripR, top + stripHeight, Constants.CASE_BG_GRADIENT_TOP, Constants.CASE_BG_GRADIENT_BOTTOM);
+        g.fill(stripL, top, stripL + 6, top + 2, Constants.GOLD_COLOR);
+        g.fill(stripL, top, stripL + 2, top + 6, Constants.GOLD_COLOR);
+        g.fill(stripR - 6, top, stripR, top + 2, Constants.GOLD_COLOR);
+        g.fill(stripR - 2, top, stripR, top + 6, Constants.GOLD_COLOR);
+        g.fill(stripL, top + stripHeight - 2, stripL + 6, top + stripHeight, Constants.GOLD_COLOR);
+        g.fill(stripL, top + stripHeight - 6, stripL + 2, top + stripHeight, Constants.GOLD_COLOR);
+        g.fill(stripR - 6, top + stripHeight - 2, stripR, top + stripHeight, Constants.GOLD_COLOR);
+        g.fill(stripR - 2, top + stripHeight - 6, stripR, top + stripHeight, Constants.GOLD_COLOR);
 
         int stripLeft = cx - STRIP_WIDTH / 2;
         int innerTop = top + 7;
@@ -288,8 +283,6 @@ public class GuiCaseRoulette extends GuiScreen
         int clipHeight = (rowCount - 1) * ROW_HEIGHT + SLOT_SIZE;
         long tMs = System.currentTimeMillis();
 
-        // Sparkles on the gray background only: drawn before the cells, which
-        // then overdraw anything beneath the slot area
         if (!finishing && animTicks < animDuration)
         {
             java.util.Random sparkRand = new java.util.Random(tMs / 90L);
@@ -300,17 +293,16 @@ public class GuiCaseRoulette extends GuiScreen
                 int ssz = 1 + sparkRand.nextInt(2);
                 int sa = 120 + sparkRand.nextInt(120);
                 int scol = (i % 3 == 0) ? Constants.CASE_SPARK_WHITE : Constants.CASE_GOLD_RGB;
-                drawRect(sx, sy, sx + ssz, sy + ssz, (sa << 24) | scol);
+                g.fill(sx, sy, sx + ssz, sy + ssz, (sa << 24) | scol);
             }
         }
 
-        // Continuously sliding cells, clipped exactly to the fixed slots' extent
-        enableStripScissor(stripLeft + 2, innerTop, STRIP_WIDTH - 4, clipHeight);
+        g.enableScissor(stripLeft + 2, innerTop, stripLeft + 2 + STRIP_WIDTH - 4, innerTop + clipHeight);
         double frac = scroll - Math.floor(scroll);
         float dy = (float) (frac * (double) ROW_HEIGHT);
 
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(0.0F, dy, 0.0F);
+        g.pose().pushPose();
+        g.pose().translate(0.0D, dy, 0.0D);
 
         for (int r = -1; r <= rowCount; r++)
         {
@@ -318,81 +310,66 @@ public class GuiCaseRoulette extends GuiScreen
             int slotIdx = ((index % size) + size) % size;
             int y = innerTop + r * ROW_HEIGHT;
 
-            drawRect(x, y, x + SLOT_SIZE, y + SLOT_SIZE, Constants.DARK_GRAY_COLOR_2);
-            drawRect(x, y, x + SLOT_SIZE, y + 1, Constants.GRAY_COLOR_8);
-            drawRect(x, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE, Constants.GRAY_COLOR_8);
-            drawRect(x, y, x + 1, y + SLOT_SIZE, Constants.GRAY_COLOR_8);
-            drawRect(x + SLOT_SIZE - 1, y, x + SLOT_SIZE, y + SLOT_SIZE, Constants.GRAY_COLOR_8);
+            g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, Constants.DARK_GRAY_COLOR_2);
+            g.fill(x, y, x + SLOT_SIZE, y + 1, Constants.GRAY_COLOR_8);
+            g.fill(x, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE, Constants.GRAY_COLOR_8);
+            g.fill(x, y, x + 1, y + SLOT_SIZE, Constants.GRAY_COLOR_8);
+            g.fill(x + SLOT_SIZE - 1, y, x + SLOT_SIZE, y + SLOT_SIZE, Constants.GRAY_COLOR_8);
 
             ItemStack stack = contents.get(slotIdx).stack;
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderHelper.enableGUIStandardItemLighting();
             int ix = x + (SLOT_SIZE - 16) / 2;
             int iy = y + (SLOT_SIZE - 16) / 2;
-            mc.getRenderItem().renderItemIntoGUI(stack, ix, iy);
-            RenderHelper.disableStandardItemLighting();
+            g.renderFakeItem(stack, ix, iy);
 
             if (stack.getCount() > 1)
             {
                 String cnt = "x" + stack.getCount();
-                drawOutlinedString(cnt, x + SLOT_SIZE - fontRenderer.getStringWidth(cnt) - 3, y + SLOT_SIZE - 11, Constants.WHITE_COLOR_1);
+                drawOutlinedString(g, cnt, x + SLOT_SIZE - this.font.width(cnt) - 3, y + SLOT_SIZE - 11, Constants.WHITE_COLOR_1);
             }
         }
 
-        GlStateManager.popMatrix();
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        g.pose().popPose();
+        g.disableScissor();
 
-        // Static frames above the sliding cells. Gui.drawRect hardcodes z=0 while items
-        // render at z~50+, so depth testing must be off here for draw order to win
-        GlStateManager.disableDepth();
+        RenderSystem.disableDepthTest();
 
-        // Pulsing golden glow inside the center slot
         int centerY = innerTop + centerRow * ROW_HEIGHT;
         float pulse = 0.5F + 0.5F * (float) Math.sin(tMs % 100000L / 180.0D);
         int glowA = finishing ? 0x46 : (int) (0x20 + 0x18 * pulse);
-        drawRect(x, centerY, x + SLOT_SIZE, centerY + SLOT_SIZE, (glowA << 24) | Constants.CASE_GOLD_RGB);
+        g.fill(x, centerY, x + SLOT_SIZE, centerY + SLOT_SIZE, (glowA << 24) | Constants.CASE_GOLD_RGB);
 
-        drawRectOutline(x - 2, innerTop - 2, x + SLOT_SIZE + 2, innerTop + SLOT_SIZE + 2, 2, Constants.GRAY_COLOR_1);
-        drawRectOutline(x - 2, innerTop + (rowCount - 1) * ROW_HEIGHT - 2, x + SLOT_SIZE + 2, innerTop + (rowCount - 1) * ROW_HEIGHT + SLOT_SIZE + 2, 2, Constants.GRAY_COLOR_1);
-        drawRectOutline(x - 2, centerY - 2, x + SLOT_SIZE + 2, centerY + SLOT_SIZE + 2, 2, Constants.GOLD_COLOR);
-        GlStateManager.enableDepth();
+        drawRectOutline(g, x - 2, innerTop - 2, x + SLOT_SIZE + 2, innerTop + SLOT_SIZE + 2, 2, Constants.GRAY_COLOR_1);
+        drawRectOutline(g, x - 2, innerTop + (rowCount - 1) * ROW_HEIGHT - 2, x + SLOT_SIZE + 2, innerTop + (rowCount - 1) * ROW_HEIGHT + SLOT_SIZE + 2, 2, Constants.GRAY_COLOR_1);
+        drawRectOutline(g, x - 2, centerY - 2, x + SLOT_SIZE + 2, centerY + SLOT_SIZE + 2, 2, Constants.GOLD_COLOR);
+        RenderSystem.enableDepthTest();
 
-        // Golden flash when the reward is revealed
         if (finishing && finishTicks < 15)
         {
             int fa = (14 - finishTicks) * 12;
-            drawRect(stripL, top, stripR, top + stripHeight, (fa << 24) | Constants.CASE_GOLD_RGB);
+            g.fill(stripL, top, stripR, top + stripHeight, (fa << 24) | Constants.CASE_GOLD_RGB);
         }
 
-        // Arrow indicators on the sides, pointing into the center slot
         int arrowY = centerY + (SLOT_SIZE - 9) / 2;
-        drawCenteredString(fontRenderer, "\u25B6", x - 11, arrowY, Constants.GOLD_COLOR);
-        drawCenteredString(fontRenderer, "\u25C0", x + SLOT_SIZE + 11, arrowY, Constants.GOLD_COLOR);
+        g.drawCenteredString(this.font, "\u25B6", x - 11, arrowY, Constants.GOLD_COLOR);
+        g.drawCenteredString(this.font, "\u25C0", x + SLOT_SIZE + 11, arrowY, Constants.GOLD_COLOR);
 
         if (finishing && rewardName != null)
         {
-            String reward = I18n.format("gui.oneblockultima.case.reward", rewardName);
-            drawCenteredString(fontRenderer, reward, cx, top + stripHeight + 10, Constants.SUCCESS_COLOR);
-            drawCenteredString(fontRenderer, I18n.format("gui.oneblockultima.case.click_close"), cx, top + stripHeight + 22, Constants.WHITE_COLOR_2);
+            int rewardCount = contents.get(targetIndex).stack.getCount();
+            String reward = I18n.get("gui.oneblockultima.case.reward", rewardName, String.valueOf(rewardCount));
+            g.drawCenteredString(this.font, reward, cx, top + stripHeight + 10, Constants.SUCCESS_COLOR);
+            g.drawCenteredString(this.font, I18n.get("gui.oneblockultima.case.click_close"), cx, top + stripHeight + 22, Constants.WHITE_COLOR_2);
         }
 
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        super.render(g, mouseX, mouseY, partialTicks);
     }
 
-    private static void drawRectOutline(int left, int top, int right, int bottom, @SuppressWarnings("SameParameterValue") int thickness, int color)
+    private static void drawRectOutline(GuiGraphics g, int left, int top, int right, int bottom, int thickness, int color)
     {
-        drawRect(left, top, right, top + thickness, color);
-        drawRect(left, bottom - thickness, right, bottom, color);
-        drawRect(left, top + thickness, left + thickness, bottom - thickness, color);
-        drawRect(right - thickness, top + thickness, right, bottom - thickness, color);
-    }
-
-    private void enableStripScissor(int x, int y, @SuppressWarnings("SameParameterValue") int w, int h)
-    {
-        net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(mc);
-        int f = sr.getScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(x * f, mc.displayHeight - (y + h) * f, w * f, h * f);
+        g.fill(left, top, right, top + thickness, color);
+        g.fill(left, bottom - thickness, right, bottom, color);
+        g.fill(left, top + thickness, left + thickness, bottom - thickness, color);
+        g.fill(right - thickness, top + thickness, right, bottom - thickness, color);
     }
 
     private double renderScroll(float partialTicks)
@@ -406,70 +383,60 @@ public class GuiCaseRoulette extends GuiScreen
         return startScroll + (targetScroll - startScroll) * smoothEase(t);
     }
 
-    private void drawOutlinedString(String text, float tx, int y, int color)
+    private void drawOutlinedString(GuiGraphics g, String text, float tx, int y, int color)
     {
         String outline = "\u00A70" + text;
-        fontRenderer.drawString(outline, tx - 1.0F, y, Constants.WHITE_COLOR_1, false);
-        fontRenderer.drawString(outline, tx + 1.0F, y, Constants.WHITE_COLOR_1, false);
-        fontRenderer.drawString(outline, tx, y - 1.0F, Constants.WHITE_COLOR_1, false);
-        fontRenderer.drawString(outline, tx, y + 1.0F, Constants.WHITE_COLOR_1, false);
-        fontRenderer.drawString(text, tx, y, color, true);
+        g.drawString(this.font, outline, (int) (tx - 1.0F), y, Constants.WHITE_COLOR_1, false);
+        g.drawString(this.font, outline, (int) (tx + 1.0F), y, Constants.WHITE_COLOR_1, false);
+        g.drawString(this.font, outline, (int) tx, y - 1, Constants.WHITE_COLOR_1, false);
+        g.drawString(this.font, outline, (int) tx, y + 1, Constants.WHITE_COLOR_1, false);
+        g.drawString(this.font, text, (int) tx, y, color, true);
     }
 
-    private void drawOutlinedCenteredString(String text, int cx, int y)
+    private void drawOutlinedCenteredString(GuiGraphics g, String text, int cx, int y)
     {
-        drawOutlinedString(text, cx - fontRenderer.getStringWidth(text) / 2.0F, y, Constants.GOLD_COLOR);
+        drawOutlinedString(g, text, cx - this.font.width(text) / 2.0F, y, Constants.GOLD_COLOR);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws java.io.IOException
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
         if (finishing && mouseButton == 0)
         {
-            mc.displayGuiScreen(null);
-            return;
+            this.minecraft.setScreen(null);
+            return true;
         }
-        super.mouseClicked(mouseX, mouseY, mouseButton);
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    protected void actionPerformed(GuiButton button) throws java.io.IOException
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers)
     {
-        if (button.id == 0)
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE || keyCode == GLFW.GLFW_KEY_E)
+        {
+            this.minecraft.setScreen(null);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_SPACE && !finishing)
         {
             skipRequested = true;
+            return true;
         }
-        super.actionPerformed(button);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws java.io.IOException
-    {
-        if (keyCode == Keyboard.KEY_ESCAPE || keyCode == Keyboard.KEY_E)
-        {
-            mc.displayGuiScreen(null);
-            return;
-        }
-        if (keyCode == Keyboard.KEY_SPACE && !finishing)
-        {
-            skipRequested = true;
-            return;
-        }
-        super.keyTyped(typedChar, keyCode);
-    }
-
-    @Override
-    public void onGuiClosed()
+    public void onClose()
     {
         if (openInstance == this)
         {
             openInstance = null;
         }
-        super.onGuiClosed();
+        super.onClose();
     }
 
     @Override
-    public boolean doesGuiPauseGame()
+    public boolean isPauseScreen()
     {
         return false;
     }

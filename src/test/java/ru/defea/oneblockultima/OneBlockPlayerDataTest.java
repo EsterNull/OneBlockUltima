@@ -1,6 +1,5 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.capability.OneBlockPlayerData;
@@ -17,7 +16,6 @@ public class OneBlockPlayerDataTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
         BlockSetConfig.reset();
     }
 

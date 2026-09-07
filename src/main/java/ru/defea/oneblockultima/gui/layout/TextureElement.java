@@ -1,11 +1,9 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
@@ -35,18 +33,14 @@ public class TextureElement extends ViewElement<TextureElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (texture == null) return;
-        Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        Gui.drawModalRectWithCustomSizedTexture(
-            computedX, computedY, u, v,
-            computedWidth, computedHeight, width, height
-        );
+        g.blit(texture, computedX, computedY, computedWidth, computedHeight,
+                u, v, width, height, width, height);
     }
 
     @Override

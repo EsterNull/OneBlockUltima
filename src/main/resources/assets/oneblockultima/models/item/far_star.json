@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/far_star"
+    "layer0": "oneblockultima:item/far_star"
   }
 }
+

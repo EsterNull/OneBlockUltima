@@ -1,11 +1,15 @@
 package ru.defea.oneblockultima.world;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.World;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
 import ru.defea.oneblockultima.OneBlockUltima;
 
-public class SpawnConfigData extends WorldSavedData
+public class SpawnConfigData extends SavedData
 {
     private static final String DATA_NAME = OneBlockUltima.MODID + "_spawn_data";
 
@@ -14,42 +18,35 @@ public class SpawnConfigData extends WorldSavedData
 
     public SpawnConfigData()
     {
-        this(DATA_NAME);
     }
 
-    public SpawnConfigData(String name)
+    public static SpawnConfigData get(Level world)
     {
-        super(name);
-    }
-
-    public static SpawnConfigData get(World world)
-    {
-        SpawnConfigData data = (SpawnConfigData) world.getPerWorldStorage().getOrLoadData(
-                SpawnConfigData.class,
-                DATA_NAME
+        ServerLevel serverLevel = (ServerLevel) world;
+        DimensionDataStorage storage = serverLevel.getDataStorage();
+        SavedData.Factory<SpawnConfigData> factory = new SavedData.Factory<>(
+                SpawnConfigData::new,
+                (tag, provider) -> {
+                    SpawnConfigData d = new SpawnConfigData();
+                    d.readFromNBT(tag);
+                    return d;
+                },
+                DataFixTypes.LEVEL
         );
-
-        if (data == null)
-        {
-            data = new SpawnConfigData();
-            world.getPerWorldStorage().setData(DATA_NAME, data);
-        }
-
-        return data;
+        return storage.computeIfAbsent(factory, DATA_NAME);
     }
 
-    @Override
-    public void readFromNBT(NBTTagCompound nbt)
+    public void readFromNBT(CompoundTag nbt)
     {
         spawnInitialized = nbt.getBoolean("spawnInitialized");
         spawnTeleportDone = nbt.getBoolean("spawnTeleportDone");
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound)
+    public CompoundTag save(CompoundTag compound, HolderLookup.Provider provider)
     {
-        compound.setBoolean("spawnInitialized", spawnInitialized);
-        compound.setBoolean("spawnTeleportDone", spawnTeleportDone);
+        compound.putBoolean("spawnInitialized", spawnInitialized);
+        compound.putBoolean("spawnTeleportDone", spawnTeleportDone);
         return compound;
     }
 }

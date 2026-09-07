@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/compressed_mineral"
+    "layer0": "oneblockultima:item/compressed_mineral"
   }
 }
+

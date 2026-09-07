@@ -1,6 +1,11 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -9,6 +14,7 @@ import ru.defea.oneblockultima.capability.OneBlockPlayerData;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig.*;
 import ru.defea.oneblockultima.config.ModSettings;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +29,7 @@ public class BlockSetDefinitionTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     @Before
@@ -487,8 +493,8 @@ public class BlockSetDefinitionTest {
     public void resolveBlockReturnsCachedInstance() {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "minecraft:stone";
-        net.minecraft.block.Block first = entry.resolveBlock();
-        net.minecraft.block.Block second = entry.resolveBlock();
+        Block first = entry.resolveBlock();
+        Block second = entry.resolveBlock();
         assertNotNull(first);
         assertSame(first, second);
     }
@@ -497,9 +503,10 @@ public class BlockSetDefinitionTest {
     public void resolveBlockCachesResultForUnknownRegistry() {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "nonexistent_mod:missing_block";
-        net.minecraft.block.Block first = entry.resolveBlock();
-        net.minecraft.block.Block second = entry.resolveBlock();
-        assertNotNull(first);
+        Block first = entry.resolveBlock();
+        Block second = entry.resolveBlock();
+        assertNotNull("unknown registry resolves to air in 1.21", first);
+        assertSame("unknown registry resolves to air sentinel", Blocks.AIR, first);
         assertSame(first, second);
     }
 
@@ -529,9 +536,9 @@ public class BlockSetDefinitionTest {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "minecraft:stone";
         entry.dropItem = "minecraft:diamond";
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        ItemStack stack = entry.getPickBlock();
         assertFalse(stack.isEmpty());
-        assertEquals(net.minecraft.init.Items.DIAMOND, stack.getItem());
+        assertEquals(Items.DIAMOND, stack.getItem());
     }
 
     @Test
@@ -540,7 +547,7 @@ public class BlockSetDefinitionTest {
         entry.registry = "minecraft:stone";
         entry.dropItem = null;
         entry.meta = 0;
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        ItemStack stack = entry.getPickBlock();
         assertFalse(stack.isEmpty());
     }
 
@@ -550,7 +557,7 @@ public class BlockSetDefinitionTest {
         entry.registry = "minecraft:stone";
         entry.dropItem = "nonexistent:item";
         entry.meta = 0;
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        ItemStack stack = entry.getPickBlock();
         assertFalse(stack.isEmpty());
     }
 
@@ -559,7 +566,7 @@ public class BlockSetDefinitionTest {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = null;
         entry.dropItem = null;
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        ItemStack stack = entry.getPickBlock();
         assertTrue(stack.isEmpty());
     }
 
@@ -569,8 +576,8 @@ public class BlockSetDefinitionTest {
         entry.registry = "minecraft:stone";
         entry.dropItem = "minecraft:gold_ingot";
         entry.meta = 0;
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
-        assertEquals(net.minecraft.init.Items.GOLD_INGOT, stack.getItem());
+        ItemStack stack = entry.getPickBlock();
+        assertEquals(Items.GOLD_INGOT, stack.getItem());
     }
 
     @Test
@@ -578,12 +585,11 @@ public class BlockSetDefinitionTest {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "minecraft:stone";
         entry.meta = 0;
-        entry.nbtTags.setString("CustomColor", "blue");
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        entry.nbtTags.putString("CustomColor", "blue");
+        ItemStack stack = entry.getPickBlock();
         assertFalse(stack.isEmpty());
-        assertTrue(stack.hasTagCompound());
-        assert stack.getTagCompound() != null;
-        assertEquals("blue", stack.getTagCompound().getString("CustomColor"));
+        assertTrue("stack should carry custom data", stack.get(DataComponents.CUSTOM_DATA) != null);
+        assertEquals("blue", stack.get(DataComponents.CUSTOM_DATA).getUnsafe().getString("CustomColor"));
     }
 
     @Test
@@ -591,9 +597,9 @@ public class BlockSetDefinitionTest {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         entry.registry = "minecraft:stone";
         entry.meta = 0;
-        net.minecraft.item.ItemStack stack = entry.getPickBlock();
+        ItemStack stack = entry.getPickBlock();
         assertFalse(stack.isEmpty());
-        assertFalse(stack.hasTagCompound());
+        assertFalse(stack.get(DataComponents.CUSTOM_DATA) != null);
     }
 
     @Test
@@ -620,14 +626,14 @@ public class BlockSetDefinitionTest {
     public void pickMobReturnsNullForEmptyMobs() {
         SetLevelDefinition lvl = new SetLevelDefinition();
         lvl.mobs = new ArrayList<>();
-        assertNull(lvl.pickMob(new java.util.Random()));
+        assertNull(lvl.pickMob(RandomSource.create()));
     }
 
     @Test
     public void pickMobReturnsNullForNullMobs() {
         SetLevelDefinition lvl = new SetLevelDefinition();
         lvl.mobs = null;
-        assertNull(lvl.pickMob(new java.util.Random()));
+        assertNull(lvl.pickMob(RandomSource.create()));
     }
 
     @Test
@@ -637,7 +643,7 @@ public class BlockSetDefinitionTest {
         mob.registry = "nonexistent:fake_entity";
         mob.chance = 100;
         lvl.mobs = Collections.singletonList(mob);
-        assertNull(lvl.pickMob(new java.util.Random()));
+        assertNull(lvl.pickMob(RandomSource.create()));
     }
 
     @Test
@@ -647,7 +653,7 @@ public class BlockSetDefinitionTest {
         mob.registry = "minecraft:pig";
         mob.chance = 100;
         lvl.mobs = Collections.singletonList(mob);
-        MobEntryDefinition result = lvl.pickMob(new java.util.Random());
+        MobEntryDefinition result = lvl.pickMob(RandomSource.create());
         assertNotNull(result);
         assertEquals("minecraft:pig", result.registry);
     }
@@ -667,7 +673,7 @@ public class BlockSetDefinitionTest {
         int cowCount = 0;
         int nullCount = 0;
         for (int i = 0; i < 1000; i++) {
-            MobEntryDefinition picked = lvl.pickMob(new java.util.Random(42 + i));
+            MobEntryDefinition picked = lvl.pickMob(RandomSource.create(42 + i));
             if (picked == null) nullCount++;
             else if ("minecraft:pig".equals(picked.registry)) pigCount++;
             else if ("minecraft:cow".equals(picked.registry)) cowCount++;
@@ -686,7 +692,7 @@ public class BlockSetDefinitionTest {
 
         int nullCount = 0;
         for (int i = 0; i < 1000; i++) {
-            MobEntryDefinition picked = lvl.pickMob(new java.util.Random(i));
+            MobEntryDefinition picked = lvl.pickMob(RandomSource.create(i));
             if (picked == null) nullCount++;
         }
         assertTrue("with totalChance=50 and min(100,totalChance)=100, ~50% should be null", nullCount > 300);
@@ -821,14 +827,14 @@ public class BlockSetDefinitionTest {
     public void blockEntryDefinitionDefaultNbtTagsNotEmpty() {
         BlockEntryDefinition entry = new BlockEntryDefinition();
         assertNotNull(entry.nbtTags);
-        assertTrue(entry.nbtTags.hasNoTags());
+        assertTrue(entry.nbtTags.isEmpty());
     }
 
     @Test
     public void mobEntryDefinitionDefaultNbtTagsNotEmpty() {
         MobEntryDefinition mob = new MobEntryDefinition();
         assertNotNull(mob.nbtTags);
-        assertTrue(mob.nbtTags.hasNoTags());
+        assertTrue(mob.nbtTags.isEmpty());
     }
 
     @Test

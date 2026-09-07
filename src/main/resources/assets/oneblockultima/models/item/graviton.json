@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/graviton"
+    "layer0": "oneblockultima:item/graviton"
   }
 }
+

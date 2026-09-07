@@ -1,6 +1,8 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:advancements/adv_royal_taster"
+    "layer0": "oneblockultima:item/adv_royal_taster"
   }
 }
+
+

@@ -1,8 +1,8 @@
 {
   "textures": {
-    "particle": "oneblockultima:items/case_3d",
-    "body": "oneblockultima:items/case_3d",
-    "lid": "oneblockultima:items/case_3d"
+    "particle": "oneblockultima:item/case_3d",
+    "body": "oneblockultima:item/case_3d",
+    "lid": "oneblockultima:item/case_3d"
   },
   "elements": [
     {
@@ -43,3 +43,4 @@
     }
   ]
 }
+

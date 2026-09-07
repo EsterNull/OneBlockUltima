@@ -1,6 +1,7 @@
 {
-  "parent": "item/generated",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "oneblockultima:items/space_soup"
+    "layer0": "oneblockultima:item/space_soup"
   }
 }
+

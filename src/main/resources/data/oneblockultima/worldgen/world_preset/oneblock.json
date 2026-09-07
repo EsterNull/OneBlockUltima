@@ -1,0 +1,20 @@
+{
+  "dimensions": {
+    "minecraft:overworld": {
+      "type": "oneblockultima:oneblock",
+      "generator": {
+        "type": "minecraft:flat",
+        "settings": {
+          "biome": "minecraft:the_void",
+          "structure_overrides": [],
+          "layers": [
+            {
+              "block": "minecraft:air",
+              "height": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

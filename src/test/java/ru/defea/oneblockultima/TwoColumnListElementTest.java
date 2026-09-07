@@ -1,10 +1,10 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.init.Bootstrap;
+import net.minecraft.client.gui.Font;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.gui.layout.TwoColumnListElement;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +16,16 @@ public class TwoColumnListElementTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     private static class Entry implements TwoColumnListElement.TwoColumnEntry {
         @Override
-        public void drawLeft(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY) {
+        public void drawLeft(int x, int y, int width, int height, boolean hovered, int index, Font font, int mouseX, int mouseY) {
         }
 
         @Override
-        public void drawRight(int x, int y, int width, int height, boolean hovered, int index, FontRenderer fr, int mouseX, int mouseY) {
+        public void drawRight(int x, int y, int width, int height, boolean hovered, int index, Font font, int mouseX, int mouseY) {
         }
 
         @Override

@@ -1,7 +1,10 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +78,7 @@ public class ColumnElement extends ViewElement<ColumnElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         int visibleCount = 0;
         int flexCount = 0;
         int fixedHeight = 0;
@@ -85,7 +88,7 @@ public class ColumnElement extends ViewElement<ColumnElement> {
             if (child.isFlexible()) {
                 flexCount++;
             } else {
-                fixedHeight += ViewFactory.computeElementHeight(fontRenderer, child, computedHeight) + colGap;
+                fixedHeight += ViewFactory.computeElementHeight(font, child, computedHeight) + colGap;
             }
         }
         if (visibleCount > 0) fixedHeight -= colGap;
@@ -94,7 +97,7 @@ public class ColumnElement extends ViewElement<ColumnElement> {
             int naturalHeight = 0;
             for (ViewElement<?> child : children) {
                 if (!child.isVisible()) continue;
-                naturalHeight += child.getPreferredHeight(fontRenderer);
+                naturalHeight += child.getPreferredHeight(font);
             }
 
             float gapBetween = colGap;
@@ -107,8 +110,8 @@ public class ColumnElement extends ViewElement<ColumnElement> {
             for (ViewElement<?> child : children) {
                 if (!child.isVisible()) continue;
 
-                int childWidth = ViewFactory.computeElementWidth(fontRenderer, child, computedWidth);
-                int childHeight = child.getPreferredHeight(fontRenderer);
+                int childWidth = ViewFactory.computeElementWidth(font, child, computedWidth);
+                int childHeight = child.getPreferredHeight(font);
 
                 int x;
                 switch (colAlignment) {
@@ -125,7 +128,7 @@ public class ColumnElement extends ViewElement<ColumnElement> {
 
                 child.setComputedPosition(x, Math.round(cy));
                 child.setComputedSize(childWidth, childHeight);
-                child.createWidgets(buttonList, fontRenderer, factory);
+                child.createWidgets(screen, font, factory);
                 cy += childHeight + gapBetween;
             }
             return;
@@ -141,10 +144,10 @@ public class ColumnElement extends ViewElement<ColumnElement> {
         for (ViewElement<?> child : children) {
             if (!child.isVisible()) continue;
 
-            int childWidth = ViewFactory.computeElementWidth(fontRenderer, child, computedWidth);
+            int childWidth = ViewFactory.computeElementWidth(font, child, computedWidth);
             int childHeight = child.isFlexible()
                     ? flexHeight
-                    : ViewFactory.computeElementHeight(fontRenderer, child, computedHeight);
+                    : ViewFactory.computeElementHeight(font, child, computedHeight);
             if (startY + childHeight > maxY) break;
 
             int x;
@@ -162,20 +165,20 @@ public class ColumnElement extends ViewElement<ColumnElement> {
 
             child.setComputedPosition(x, Math.round(startY));
             child.setComputedSize(childWidth, childHeight);
-            child.createWidgets(buttonList, fontRenderer, factory);
+            child.createWidgets(screen, font, factory);
             startY += childHeight + colGap;
         }
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         for (ViewElement<?> child : children) {
-            if (child.isVisible()) child.draw(fr, mouseX, mouseY, partialTicks);
+            if (child.isVisible()) child.draw(g, font, mouseX, mouseY, partialTicks);
         }
     }
 
     @Override
-    public boolean actionPerformed(GuiButton button) {
+    public boolean actionPerformed(AbstractWidget button) {
         for (ViewElement<?> child : children) {
             if (child.actionPerformed(button)) return true;
         }
@@ -238,19 +241,14 @@ public class ColumnElement extends ViewElement<ColumnElement> {
 
     @Override
     public int getPreferredWidth() {
-        int max = 0;
-        for (ViewElement<?> child : children) {
-            int w = child.getPreferredWidth();
-            if (w > max) max = w;
-        }
-        return max;
+        return getPreferredWidth(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
+    public int getPreferredWidth(Font font) {
         int max = 0;
         for (ViewElement<?> child : children) {
-            int w = child.getPreferredWidth(fr);
+            int w = child.getPreferredWidth(font);
             if (w > max) max = w;
         }
         return max;
@@ -258,25 +256,17 @@ public class ColumnElement extends ViewElement<ColumnElement> {
 
     @Override
     public int getPreferredHeight() {
-        int total = 0;
-        boolean first = true;
-        for (ViewElement<?> child : children) {
-            if (!child.isVisible()) continue;
-            if (!first) total += colGap;
-            total += child.getPreferredHeight();
-            first = false;
-        }
-        return total;
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredHeight(FontRenderer fr) {
+    public int getPreferredHeight(Font font) {
         int total = 0;
         boolean first = true;
         for (ViewElement<?> child : children) {
             if (!child.isVisible()) continue;
             if (!first) total += colGap;
-            total += child.getPreferredHeight(fr);
+            total += child.getPreferredHeight(font);
             first = false;
         }
         return total;

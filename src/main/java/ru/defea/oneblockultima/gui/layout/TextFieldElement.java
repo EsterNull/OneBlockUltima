@@ -1,9 +1,14 @@
 package ru.defea.oneblockultima.gui.layout;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiTextField;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
+import ru.defea.oneblockultima.gui.ModScreen;
 
 import java.util.List;
 
@@ -12,7 +17,7 @@ import static ru.defea.oneblockultima.Constants.WHITE_COLOR_2;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class TextFieldElement extends ViewElement<TextFieldElement> {
     private int width;
-    private GuiTextField textField;
+    private EditBox textField;
     private String text = "";
     private boolean focused = false;
     private boolean backgroundDrawing = true;
@@ -34,7 +39,7 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
 
     public TextFieldElement text(String text) {
         this.text = text;
-        if (textField != null) textField.setText(text);
+        if (textField != null) textField.setValue(text);
         return this;
     }
 
@@ -46,7 +51,7 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
 
     public TextFieldElement maxLength(int max) {
         this.maxStringLength = max;
-        if (textField != null) textField.setMaxStringLength(max);
+        if (textField != null) textField.setMaxLength(max);
         return this;
     }
 
@@ -57,19 +62,20 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
 
     public TextFieldElement enableBackgroundDrawing(boolean draw) {
         this.backgroundDrawing = draw;
-        if (textField != null) textField.setEnableBackgroundDrawing(draw);
+        if (textField != null) textField.setBordered(draw);
         return this;
     }
 
     public TextFieldElement enabled(boolean enabled) {
         this.enabled = enabled;
-        if (textField != null) textField.setEnabled(enabled);
+        if (textField != null) textField.setEditable(enabled);
         if (!enabled) textColor(WHITE_COLOR_2);
         return this;
     }
 
     public TextFieldElement textColor(int color) {
         this.textColor = color;
+        if (textField != null) textField.setTextColor(color);
         return this;
     }
 
@@ -77,17 +83,17 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
         return this;
     }
 
-    public GuiTextField getTextField() {
+    public EditBox getTextField() {
         return textField;
     }
 
     public String getText() {
-        return textField != null ? textField.getText() : text;
+        return textField != null ? textField.getValue() : text;
     }
 
     public void setText(String text) {
         this.text = text;
-        if (textField != null) textField.setText(text);
+        if (textField != null) textField.setValue(text);
     }
 
     public boolean isFocused() {
@@ -95,62 +101,64 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
-        int id = factory.getTextFields().size();
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         int fieldWidth = width > 0 ? width : computedWidth;
-        if (fitToText) fieldWidth = fitWidth(fontRenderer, fieldWidth);
-        textField = new GuiTextField(id, fontRenderer, computedX, computedY, fieldWidth, getFieldHeight());
-        textField.setMaxStringLength(maxStringLength);
-        textField.setText(text);
+        if (fitToText) fieldWidth = fitWidth(font, fieldWidth);
+        int fieldHeight = getFieldHeight();
+        textField = new EditBox(font, computedX, computedY, fieldWidth, fieldHeight, Component.literal(""));
+        textField.setMaxLength(maxStringLength);
+        textField.setValue(text);
         textField.setFocused(focused);
-        textField.setMaxStringLength(maxStringLength);
-        textField.setEnableBackgroundDrawing(backgroundDrawing);
-        textField.setEnabled(enabled);
+        textField.setBordered(backgroundDrawing);
+        textField.setEditable(enabled);
         textField.setTextColor(textColor);
-        factory.addTextField(textField);
+        if (screen instanceof ModScreen && enabled)
+        {
+            ((ModScreen) screen).registerRenderableWidget(textField);
+        }
+        else
+        {
+            screen.renderables.add(textField);
+        }
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        if (textField != null) textField.drawTextBox();
+    public AbstractWidget getWidget() {
+        return textField;
+    }
+
+    @Override
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
     }
 
     @Override
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        if (textField != null && enabled) {
-            textField.mouseClicked(mouseX, mouseY, mouseButton);
-            return textField.isFocused();
-        }
         return false;
     }
 
     @Override
     public boolean keyTyped(char typedChar, int keyCode) {
-        if (textField != null && textField.isFocused() && enabled) {
-            return textField.textboxKeyTyped(typedChar, keyCode);
-        }
         return false;
     }
 
     @Override
     public void updateCursorCounter() {
-        if (textField != null) textField.updateCursorCounter();
     }
 
     @Override
     public int getPreferredWidth() {
-        return width;
+        return getPreferredWidth(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
-        if (!fitToText) return getPreferredWidth();
-        return fitWidth(fr, getPreferredWidth());
+    public int getPreferredWidth(Font font) {
+        if (!fitToText) return width;
+        return fitWidth(font, width);
     }
 
-    private int fitWidth(FontRenderer fr, int baseWidth) {
-        if (fr == null || text.isEmpty()) return baseWidth;
-        return Math.max(baseWidth, Math.min(fr.getStringWidth(text) + FIT_TEXT_PADDING, MAX_FIT_WIDTH));
+    private int fitWidth(Font font, int baseWidth) {
+        if (font == null || text.isEmpty()) return baseWidth;
+        return Math.max(baseWidth, Math.min(font.width(text) + FIT_TEXT_PADDING, MAX_FIT_WIDTH));
     }
 
     @Override
@@ -159,8 +167,8 @@ public class TextFieldElement extends ViewElement<TextFieldElement> {
     }
 
     private static int getFieldHeight() {
-        Minecraft mc = Minecraft.getMinecraft();
-        int fontHeight = mc.fontRenderer != null ? mc.fontRenderer.FONT_HEIGHT : 9;
+        Minecraft mc = Minecraft.getInstance();
+        int fontHeight = mc.font != null ? mc.font.lineHeight : 9;
         return fontHeight + 4;
     }
 }

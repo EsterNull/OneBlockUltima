@@ -1,111 +1,120 @@
 package ru.defea.oneblockultima.network;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.event.network.CustomPayloadEvent;
+import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.util.CaseUtil;
 
 import java.util.List;
+import java.util.function.Supplier;
 
-public class PacketOpenCase implements IMessage
+public class PacketOpenCase implements CustomPacketPayload
 {
-    private NBTTagCompound caseNbt;
+    public static final Type<PacketOpenCase> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "open_case"));
+    public static final StreamCodec<FriendlyByteBuf, PacketOpenCase> STREAM_CODEC = StreamCodec.of(
+            (buf, p) -> p.write(buf),
+            PacketOpenCase::new
+    );
+
+    private net.minecraft.nbt.CompoundTag caseNbt;
 
     public PacketOpenCase()
     {
     }
 
-    public PacketOpenCase(NBTTagCompound caseNbt)
+    public PacketOpenCase(net.minecraft.nbt.CompoundTag caseNbt)
     {
         this.caseNbt = caseNbt;
     }
 
-    @Override
-    public void fromBytes(ByteBuf buf)
+    public PacketOpenCase(FriendlyByteBuf buf)
     {
-        caseNbt = ByteBufUtils.readTag(buf);
+        this.caseNbt = buf.readNbt();
+    }
+
+    public void write(FriendlyByteBuf buf)
+    {
+        buf.writeNbt(caseNbt);
     }
 
     @Override
-    public void toBytes(ByteBuf buf)
+    public Type<PacketOpenCase> type()
     {
-        ByteBufUtils.writeTag(buf, caseNbt);
+        return TYPE;
     }
 
-    public static class Handler implements IMessageHandler<PacketOpenCase, IMessage>
+    public void handle(CustomPayloadEvent.Context context)
     {
-        @Override
-        public IMessage onMessage(PacketOpenCase message, MessageContext ctx)
+        ServerPlayer player = context.getSender();
+        if (player != null)
         {
-            if (ctx.side.isClient())
-            {
-                return null;
-            }
-            EntityPlayerMP player = ctx.getServerHandler().player;
-            player.getServerWorld().addScheduledTask(() -> process(player));
-            return null;
+            context.enqueueWork(() -> process(player));
+        }
+        context.setPacketHandled(true);
+    }
+
+    private static void process(ServerPlayer player)
+    {
+        if (player == null)
+        {
+            return;
+        }
+        net.minecraft.world.item.ItemStack held = findCaseStack(player);
+        if (held.isEmpty())
+        {
+            return;
         }
 
-        private static void process(EntityPlayerMP player)
+        List<CaseUtil.WeightedStack> contents = CaseUtil.readContents(held, player.level().registryAccess());
+        int index = CaseUtil.rollIndex(contents, player.level().random);
+        if (index < 0)
         {
-            if (player == null)
-            {
-                return;
-            }
-            ItemStack held = findCaseStack(player);
-            if (held.isEmpty())
-            {
-                return;
-            }
-
-            List<CaseUtil.WeightedStack> contents = CaseUtil.readContents(held);
-            int index = CaseUtil.rollIndex(contents, player.world.rand);
-            if (index < 0)
-            {
-                return;
-            }
-
-            ItemStack winner = contents.get(index).stack.copy();
-            if (!player.isCreative())
-            {
-                held.shrink(1);
-            }
-            if (!player.inventory.addItemStackToInventory(winner.copy()))
-            {
-                dropItem(player, winner.copy());
-            }
-
-            player.sendMessage(new TextComponentTranslation("gui.oneblockultima.case.reward", winner.getDisplayName()));
-            ModMessages.sendToPlayer(new PacketCaseResult(index), player);
+            return;
         }
 
-        private static ItemStack findCaseStack(EntityPlayerMP player)
+        net.minecraft.world.item.ItemStack winner = contents.get(index).stack.copy();
+        if (!player.isCreative())
         {
-            ItemStack main = player.getHeldItemMainhand();
-            if (CaseUtil.isCaseItem(main))
-            {
-                return main;
-            }
-            ItemStack off = player.getHeldItemOffhand();
-            if (CaseUtil.isCaseItem(off))
-            {
-                return off;
-            }
-            return ItemStack.EMPTY;
+            held.shrink(1);
+        }
+        if (player.getInventory().add(winner.copy()))
+        {
+            player.getInventory().setChanged();
+            player.inventoryMenu.broadcastChanges();
+        }
+        else
+        {
+            dropItem(player, winner.copy());
         }
 
-        private static void dropItem(EntityPlayerMP player, ItemStack stack)
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.oneblockultima.case.reward",
+                winner.getDisplayName(), String.valueOf(winner.getCount())));
+        ModMessages.sendToPlayer(new PacketCaseResult(index), player);
+    }
+
+    private static net.minecraft.world.item.ItemStack findCaseStack(ServerPlayer player)
+    {
+        net.minecraft.world.item.ItemStack main = player.getMainHandItem();
+        if (CaseUtil.isCaseItem(main))
         {
-            EntityItem entityItem = new EntityItem(player.world, player.posX, player.posY + 0.5D, player.posZ, stack);
-            entityItem.setNoPickupDelay();
-            player.world.spawnEntity(entityItem);
+            return main;
         }
+        net.minecraft.world.item.ItemStack off = player.getOffhandItem();
+        if (CaseUtil.isCaseItem(off))
+        {
+            return off;
+        }
+        return net.minecraft.world.item.ItemStack.EMPTY;
+    }
+
+    private static void dropItem(ServerPlayer player, net.minecraft.world.item.ItemStack stack)
+    {
+        net.minecraft.world.entity.item.ItemEntity entityItem = new net.minecraft.world.entity.item.ItemEntity(player.level(), player.getX(), player.getY() + 0.5D, player.getZ(), stack);
+        entityItem.setNoPickUpDelay();
+        player.level().addFreshEntity(entityItem);
     }
 }

@@ -1,132 +1,113 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.util.RandomSource;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Random;
 
 public class BlockFluidBarrier extends Block
 {
     public BlockFluidBarrier()
     {
-        super(Material.GROUND);
-        setHardness(-1.0F);
-        setResistance(6000000.0F);
-        setRegistryName(OneBlockUltima.MODID, "fluid_barrier");
-        setUnlocalizedName("fluid_barrier");
-        this.setLightOpacity(0);
-        this.setTickRandomly(false);
+        super(Properties.of().mapColor(MapColor.NONE).strength(-1.0F, 6000000.0F)
+                .isSuffocating((state, level, pos) -> false)
+                .isViewBlocking((state, level, pos) -> false)
+                .noOcclusion());
     }
 
-    @Nullable
+    // Fully transparent to the player's sight/raycast: left-clicks and right-clicks pass straight
+    // through this slot to the block behind it (the generated block above the generator).
     @Override
-    public RayTraceResult collisionRayTrace(@Nonnull IBlockState blockState, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Vec3d start, @Nonnull Vec3d end)
+    public VoxelShape getShape(@Nonnull BlockState state, @Nonnull net.minecraft.world.level.BlockGetter source, @Nonnull BlockPos pos, @Nonnull net.minecraft.world.phys.shapes.CollisionContext context)
     {
-        return null;
+        return Shapes.empty();
     }
 
     @Override
-    public float getExplosionResistance(@Nonnull World world, @Nonnull BlockPos pos, @Nullable Entity exploder, @Nonnull Explosion explosion)
+    public VoxelShape getInteractionShape(@Nonnull BlockState state, @Nonnull net.minecraft.world.level.BlockGetter level, @Nonnull BlockPos pos)
+    {
+        return Shapes.empty();
+    }
+
+    @Nonnull
+    @Override
+    public VoxelShape getCollisionShape(@Nonnull BlockState state, @Nonnull net.minecraft.world.level.BlockGetter worldIn, @Nonnull BlockPos pos, @Nonnull CollisionContext context)
+    {
+        // Liquids and pathfinding check collisions via CollisionContext.empty() (its context has no
+        // entity). They must see a full cube so liquid cannot flow through this slot in ANY direction.
+        // A living entity always queries with a context carrying its entity — those pass through freely.
+        if (context instanceof EntityCollisionContext
+                && ((EntityCollisionContext) context).getEntity() != null)
+        {
+            return Shapes.empty();
+        }
+
+        return Shapes.block();
+    }
+
+    @Nonnull
+    @Override
+    public InteractionResult useWithoutItem(@Nonnull BlockState state, @Nonnull Level world, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull BlockHitResult hit)
+    {
+        // Defensive: clicks reaching this block (they normally pass straight through the empty
+        // shape to the generated block / generator behind it) are consumed, never propagated.
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public float getExplosionResistance(BlockState state, net.minecraft.world.level.BlockGetter world, BlockPos pos, Explosion explosion)
     {
         return 0.0F;
     }
 
-    @Override
     @Nonnull
-    public EnumBlockRenderType getRenderType(@Nonnull IBlockState state)
+    @Override
+    public RenderShape getRenderShape(@Nonnull BlockState state)
     {
-        return EnumBlockRenderType.INVISIBLE;
+        return RenderShape.INVISIBLE;
     }
 
     @Override
-    @Nonnull
-    public AxisAlignedBB getBoundingBox(@Nonnull IBlockState state, @Nonnull IBlockAccess source, @Nonnull BlockPos pos)
-    {
-        return FULL_BLOCK_AABB;
-    }
-
-    @Nullable
-    @Override
-    public AxisAlignedBB getCollisionBoundingBox(@Nonnull IBlockState blockState, @Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
-    {
-        return NULL_AABB;
-    }
-
-    @Override
-    public void addCollisionBoxToList(@Nonnull IBlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull AxisAlignedBB entityBox, @Nonnull java.util.List<AxisAlignedBB> collidingBoxes, @Nullable Entity entityIn, boolean p_185477_7_)
-    {
-    }
-
-    @Override
-    public boolean isOpaqueCube(@Nonnull IBlockState state)
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(@Nonnull IBlockState state)
-    {
-        return false;
-    }
-
-    @Override
-    public boolean isFullBlock(@Nonnull IBlockState state)
+    public boolean isAir(@Nonnull BlockState state)
     {
         return true;
     }
 
     @Override
-    public boolean isPassable(@Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
+    public boolean canBeReplaced(@Nonnull BlockState state, @Nonnull net.minecraft.world.item.context.BlockPlaceContext useContext)
     {
         return true;
     }
 
     @Override
-    public boolean isReplaceable(@Nonnull IBlockAccess worldIn, @Nonnull BlockPos pos)
+    public boolean propagatesSkylightDown(@Nonnull BlockState state, @Nonnull net.minecraft.world.level.BlockGetter reader, @Nonnull BlockPos pos)
     {
         return true;
     }
 
     @Override
-    @Nonnull
-    public BlockFaceShape getBlockFaceShape(@Nonnull IBlockAccess worldIn, @Nonnull IBlockState state, @Nonnull BlockPos pos, @Nonnull EnumFacing face)
+    public PushReaction getPistonPushReaction(@Nonnull BlockState state)
     {
-        return BlockFaceShape.UNDEFINED;
+        return PushReaction.IGNORE;
     }
 
     @Override
-    public boolean canBeReplacedByLeaves(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos)
-    {
-        return true;
-    }
-
-    @Override
-    public boolean isAir(@Nonnull IBlockState state, @Nonnull IBlockAccess world, @Nonnull BlockPos pos)
-    {
-        // Transparent for placement (flint and steel / fire charge etc.):
-        // ItemFlintAndSteel requires world.isAirBlock for the slot. Liquids are still
-        // blocked by the GROUND material (Material#blocksMovement).
-        return true;
-    }
-
-    @Override
-    public void randomDisplayTick(@Nonnull IBlockState stateIn, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Random rand)
+    public void animateTick(@Nonnull BlockState stateIn, @Nonnull Level worldIn, @Nonnull BlockPos pos, @Nonnull RandomSource rand)
     {
         if (rand.nextInt(3) == 0)
         {
@@ -136,11 +117,7 @@ public class BlockFluidBarrier extends Block
             double vx = (rand.nextDouble() - 0.5D) * 0.15D;
             double vy = 0.05D + 0.1D * rand.nextDouble();
             double vz = (rand.nextDouble() - 0.5D) * 0.15D;
-            worldIn.spawnParticle(
-                    EnumParticleTypes.PORTAL,
-                    x, y, z,
-                    vx, vy, vz
-            );
+            worldIn.addParticle(net.minecraft.core.particles.ParticleTypes.PORTAL, x, y, z, vx, vy, vz);
         }
     }
 }

@@ -1,13 +1,18 @@
 package ru.defea.oneblockultima.update;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.event.ClickEvent;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.forgespi.language.IModInfo;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.io.BufferedReader;
@@ -32,7 +37,7 @@ public class UpdateChecker
     private static boolean checkDone = false;
     private static boolean updateAvailable = false;
 
-    public static void checkForUpdates(EntityPlayerMP player)
+    public static void checkForUpdates(ServerPlayer player)
     {
         if (checkDone)
         {
@@ -47,13 +52,15 @@ public class UpdateChecker
         {
             try
             {
-                String mcVersion = Loader.instance().getMCVersionString().substring(10);
+                String mcVersion = net.minecraft.SharedConstants.getCurrentVersion().getName();
                 String versionKey = mcVersion + "-recommended";
                 String releaseKey = mcVersion + "-recommended_release";
 
-                ModContainer mod = Loader.instance().getIndexedModList().get(OneBlockUltima.MODID);
-                if (mod == null) return;
-                String currentVersion = mod.getVersion();
+        IModInfo mod = ModList.get().getMods().stream()
+                .filter(m -> m.getModId().equals(OneBlockUltima.MODID))
+                .findFirst().orElse(null);
+        if (mod == null) return;
+        String currentVersion = mod.getVersion().toString();
 
                 URL url = new URL(VERSIONS_URL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -64,7 +71,7 @@ public class UpdateChecker
 
                 if (conn.getResponseCode() != 200)
                 {
-                    OneBlockUltima.getLogger().warn("[UpdateChecker] Failed to fetch versions.json: HTTP {}", conn.getResponseCode());
+                    OneBlockUltima.logDebugWarn("[UpdateChecker] Failed to fetch versions.json: HTTP {}", conn.getResponseCode());
                     checkDone = true;
                     return;
                 }
@@ -83,7 +90,7 @@ public class UpdateChecker
                 JsonObject promos = root.getAsJsonObject("promos");
                 if (promos == null || !promos.has(versionKey))
                 {
-                    OneBlockUltima.getLogger().warn("[UpdateChecker] No promo key '{}' found", versionKey);
+                    OneBlockUltima.logDebugWarn("[UpdateChecker] No promo key '{}' found", versionKey);
                     checkDone = true;
                     return;
                 }
@@ -98,7 +105,7 @@ public class UpdateChecker
 
                 if (!currentVersion.equals(recommendedVersion))
                 {
-                    OneBlockUltima.getLogger().info("[UpdateChecker] New version available: {} (current: {})", recommendedVersion, currentVersion);
+                    OneBlockUltima.logDebug("[UpdateChecker] New version available: {} (current: {})", recommendedVersion, currentVersion);
                     updateAvailable = true;
                     if (player != null)
                     {
@@ -107,45 +114,47 @@ public class UpdateChecker
                 }
                 else
                 {
-                    OneBlockUltima.getLogger().info("[UpdateChecker] Mod is up to date: {}", currentVersion);
+                    OneBlockUltima.logDebug("[UpdateChecker] Mod is up to date: {}", currentVersion);
                 }
             }
             catch (Exception e)
             {
-                OneBlockUltima.getLogger().warn("[UpdateChecker] Failed to check for updates: {}", e.getMessage());
+                OneBlockUltima.logDebugWarn("[UpdateChecker] Failed to check for updates: {}", e.getMessage());
                 checkDone = true;
             }
         });
     }
 
-    private static void notifyPlayer(EntityPlayerMP player)
+    private static void notifyPlayer(ServerPlayer player)
     {
         String currentVersion;
-        ModContainer mod = Loader.instance().getIndexedModList().get(OneBlockUltima.MODID);
+        IModInfo mod = ModList.get().getMods().stream()
+                .filter(m -> m.getModId().equals(OneBlockUltima.MODID))
+                .findFirst().orElse(null);
         if (mod != null)
         {
-            currentVersion = mod.getVersion();
+            currentVersion = mod.getVersion().toString();
         }
         else
         {
             currentVersion = "???";
         }
 
-        player.sendMessage(new TextComponentTranslation(
+        player.sendSystemMessage(Component.translatable(
                 "oneblockultima.update.available",
                 cachedRecommendedVersion,
                 currentVersion));
 
         if (cachedReleaseUrl != null)
         {
-            TextComponentTranslation linkMessage = new TextComponentTranslation(
+            net.minecraft.network.chat.MutableComponent linkMessage = Component.translatable(
                     "oneblockultima.update.link",
                     cachedRecommendedVersion);
 
-            linkMessage.setStyle(new Style()
-                    .setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, cachedReleaseUrl)));
+            linkMessage = linkMessage.withStyle(Style.EMPTY
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, cachedReleaseUrl)));
 
-            player.sendMessage(linkMessage);
+            player.sendSystemMessage(linkMessage);
         }
     }
 

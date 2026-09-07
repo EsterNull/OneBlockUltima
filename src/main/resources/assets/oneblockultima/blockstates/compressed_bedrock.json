@@ -1,12 +1,18 @@
 {
-  "variants": {
-    "level=0": { "model": "oneblockultima:compressed_bedrock" },
-    "0": { "model": "oneblockultima:compressed_bedrock" },
-    "level=1": { "model": "oneblockultima:compressed_bedrock" },
-    "1": { "model": "oneblockultima:compressed_bedrock" },
-    "level=2": { "model": "oneblockultima:compressed_bedrock" },
-    "2": { "model": "oneblockultima:compressed_bedrock" },
-    "level=3": { "model": "oneblockultima:compressed_bedrock" },
-    "3": { "model": "oneblockultima:compressed_bedrock" }
-  }
+    "variants":  {
+                     "level=0":  {
+                                     "model": "oneblockultima:block/compressed_bedrock"
+                                 },
+                     "level=1":  {
+                                     "model": "oneblockultima:block/compressed_bedrock"
+                                 },
+                     "level=2":  {
+                                     "model": "oneblockultima:block/compressed_bedrock"
+                                 },
+                     "level=3":  {
+                                     "model": "oneblockultima:block/compressed_bedrock"
+                                 }
+                 }
 }
+
+

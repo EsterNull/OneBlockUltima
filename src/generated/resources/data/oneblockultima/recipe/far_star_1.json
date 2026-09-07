@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "E": {
+      "item": "oneblockultima:energy_orb"
+    },
+    "H": {
+      "item": "oneblockultima:higgs_boson"
+    },
+    "S": {
+      "item": "minecraft:nether_star"
+    }
+  },
+  "pattern": [
+    "EHE",
+    "HSH",
+    "EHE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:far_star"
+  }
+}

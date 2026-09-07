@@ -1,7 +1,9 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -38,15 +40,15 @@ public class StatusBarElement extends ViewElement<StatusBarElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (!isActive()) return;
-        fr.drawStringWithShadow(text,
-            computedX + (computedWidth - fr.getStringWidth(text)) / 2.0f,
-            computedY, textColor);
+        g.drawString(font, text,
+                computedX + (computedWidth - font.width(text)) / 2,
+                computedY, textColor, true);
     }
 
     @Override
@@ -56,11 +58,11 @@ public class StatusBarElement extends ViewElement<StatusBarElement> {
 
     @Override
     public int getPreferredHeight() {
-        return 10;
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredHeight(FontRenderer fr) {
-        return fr.FONT_HEIGHT + 2;
+    public int getPreferredHeight(Font font) {
+        return font.lineHeight + 2;
     }
 }

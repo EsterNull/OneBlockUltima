@@ -1,5 +1,9 @@
 {
-  "variants": {
-    "normal": { "model": "oneblockultima:one_block_generator" }
-  }
+    "variants":  {
+                     "":  {
+                              "model": "oneblockultima:block/one_block_generator"
+                          }
+                 }
 }
+
+

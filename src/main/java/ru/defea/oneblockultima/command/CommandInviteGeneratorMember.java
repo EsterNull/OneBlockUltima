@@ -1,124 +1,78 @@
 package ru.defea.oneblockultima.command;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.Style;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.world.World;
+import com.mojang.brigadier.CommandDispatcher;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.tile.TileEntityOneBlockGenerator;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
-
-public class CommandInviteGeneratorMember extends CommandBase
+public final class CommandInviteGeneratorMember
 {
-    @Override
-    @Nonnull
-    public String getName()
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher)
     {
-        return "inviteGeneratorMember";
+        dispatcher.register(Commands.literal("inviteGeneratorMember")
+                .requires(s -> s.hasPermission(0))
+                .then(Commands.argument("target", EntityArgument.player())
+                        .executes(ctx -> {
+                            execute(ctx.getSource(), EntityArgument.getPlayer(ctx, "target"));
+                            return com.mojang.brigadier.Command.SINGLE_SUCCESS;
+                        })));
     }
 
-    @Override
-    @Nonnull
-    public String getUsage(@Nonnull ICommandSender sender)
+    private static void execute(CommandSourceStack source, ServerPlayer target)
     {
-        return "/inviteGeneratorMember <playerName>";
-    }
-
-    @Override
-    public void execute(@Nonnull MinecraftServer server, ICommandSender sender, @Nonnull String[] args)
-    {
-        if (!(sender.getCommandSenderEntity() instanceof EntityPlayerMP))
+        ServerPlayer owner = source.getPlayer();
+        if (owner == null)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.only_player")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.only_player").withStyle(ChatFormatting.RED));
             return;
         }
 
-        if (args.length != 1)
-        {
-            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.usage")).setStyle(new Style().setColor(TextFormatting.RED)));
-            return;
-        }
-
-        EntityPlayerMP owner = (EntityPlayerMP) sender.getCommandSenderEntity();
-        World world = owner.world;
-        BlockPos generatorPos = new BlockPos(owner.getPosition().getX(), owner.getPosition().getY() - 1, owner.getPosition().getZ());
+        Level world = owner.level();
+        BlockPos generatorPos = owner.blockPosition().below();
 
         if (world.getBlockState(generatorPos).getBlock() != ModBlocks.ONE_BLOCK_GENERATOR)
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.not_near_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.not_near_generator").withStyle(ChatFormatting.RED));
             return;
         }
 
-        TileEntity tileEntity = world.getTileEntity(generatorPos);
+        BlockEntity tileEntity = world.getBlockEntity(generatorPos);
         if (!(tileEntity instanceof TileEntityOneBlockGenerator))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.no_generator")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.no_generator").withStyle(ChatFormatting.RED));
             return;
         }
 
         TileEntityOneBlockGenerator generator = (TileEntityOneBlockGenerator) tileEntity;
         if (!generator.isOwner(owner))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.owner_only")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.inviteGeneratorMember.owner_only").withStyle(ChatFormatting.RED));
             return;
         }
 
-        EntityPlayerMP target = server.getPlayerList().getPlayerByUsername(args[0]);
-        if (target == null)
+        if (target.getUUID().equals(owner.getUUID()))
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.player_not_found")).setStyle(new Style().setColor(TextFormatting.RED)));
-            return;
-        }
-
-        if (target.getUniqueID().equals(owner.getUniqueID()))
-        {
-            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.self_invite")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.inviteGeneratorMember.self_invite").withStyle(ChatFormatting.RED));
             return;
         }
 
         if (generator.isMemberLimitReached())
         {
-            sender.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.member_limit")).setStyle(new Style().setColor(TextFormatting.RED)));
+            source.sendFailure(Component.translatable("command.inviteGeneratorMember.member_limit").withStyle(ChatFormatting.RED));
             return;
         }
 
-        generator.addPendingInvite(target.getUniqueID(), owner.getUniqueID(), Math.max(1, ModSettings.get().getInviteDurationTicks()));
-        target.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.invitation_received")).setStyle(new Style().setColor(TextFormatting.GREEN)));
-        owner.sendMessage(new TextComponentString(I18n.format("command.inviteGeneratorMember.invitation_sent", target.getName())).setStyle(new Style().setColor(TextFormatting.GREEN)));
-    }
-
-    @Override
-    @Nonnull
-    public List<String> getTabCompletions(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender, String[] args, BlockPos targetPos)
-    {
-        if (args.length != 1)
-        {
-            return new ArrayList<>();
-        }
-
-        return getListOfStringsMatchingLastWord(args, server.getOnlinePlayerNames());
-    }
-
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 0;
-    }
-
-    @Override
-    public boolean checkPermission(@Nonnull MinecraftServer server, @Nonnull ICommandSender sender)
-    {
-        return true;
+        generator.addPendingInvite(target.getUUID(), owner.getUUID(), Math.max(1, ModSettings.get().getInviteDurationTicks()));
+        target.sendSystemMessage(Component.translatable("command.inviteGeneratorMember.invitation_received").withStyle(ChatFormatting.GREEN));
+        owner.sendSystemMessage(Component.translatable("command.inviteGeneratorMember.invitation_sent", target.getName()).withStyle(ChatFormatting.GREEN));
     }
 }

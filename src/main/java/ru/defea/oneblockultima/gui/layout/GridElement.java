@@ -1,8 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import static ru.defea.oneblockultima.Constants.*;
 public class GridElement extends ViewElement<GridElement> {
     public interface CellRenderer {
         void draw(int x, int y, int cellWidth, int cellHeight, int row, int col,
-                  boolean hovered, boolean selected, FontRenderer fr, int mouseX, int mouseY, float partialTicks);
+                  boolean hovered, boolean selected, Font font, int mouseX, int mouseY, float partialTicks);
     }
 
     public interface CellClickHandler {
@@ -59,15 +59,20 @@ public class GridElement extends ViewElement<GridElement> {
         return this;
     }
 
-    public int getSelectedRow() { return selectedRow; }
-    public int getSelectedCol() { return selectedCol; }
+    public int getSelectedRow() {
+        return selectedRow;
+    }
 
-    @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public int getSelectedCol() {
+        return selectedCol;
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
+    }
+
+    @Override
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         int hoveredRow = -1;
         int hoveredCol = -1;
 
@@ -82,14 +87,14 @@ public class GridElement extends ViewElement<GridElement> {
                 int cx = startX + c * (actualCellSize + cellGap);
                 int cy = startY + r * (actualCellSize + cellGap);
                 boolean hovered = mouseX >= cx && mouseX < cx + actualCellSize &&
-                                  mouseY >= cy && mouseY < cy + actualCellSize;
+                        mouseY >= cy && mouseY < cy + actualCellSize;
                 boolean selected = r == selectedRow && c == selectedCol;
 
                 if (cellRenderer != null) {
-                    cellRenderer.draw(cx, cy, actualCellSize, actualCellSize, r, c, hovered, selected, fr, mouseX, mouseY, partialTicks);
+                    cellRenderer.draw(cx, cy, actualCellSize, actualCellSize, r, c, hovered, selected, font, mouseX, mouseY, partialTicks);
                 } else {
                     int bg = selected ? GREEN_COLOR : (hovered ? DARK_BLUE_GRAY_COLOR_1 : DARK_GRAY_COLOR_2);
-                    Gui.drawRect(cx, cy, cx + actualCellSize, cy + actualCellSize, bg);
+                    g.fill(cx, cy, cx + actualCellSize, cy + actualCellSize, bg);
                 }
             }
         }

@@ -1,36 +1,31 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.Material;
-import net.minecraft.entity.Entity;
-import net.minecraft.init.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.item.Item;
 import ru.defea.oneblockultima.OneBlockUltima;
+
+import javax.annotation.Nonnull;
 
 public class BlockCompressedMineralBlock extends Block {
     public BlockCompressedMineralBlock()
     {
-        super(Material.IRON);
-        init("compressed_mineral_block");
+        super(Properties.of().mapColor(MapColor.METAL).strength(10F * 9F, 20F * 9F).sound(SoundType.METAL));
     }
 
     protected BlockCompressedMineralBlock(String name)
     {
-        super(Material.IRON);
-        init(name);
+        this();
     }
 
     @Override
-    public float getExplosionResistance(Entity exploder) {
-        return Blocks.IRON_BLOCK.getExplosionResistance(exploder) * 9.0F;
-    }
-
-    private void init(String name) {
-        this.setSoundType(SoundType.METAL);
-        this.setHardness(10F * 9F);
-        this.setResistance(20F * 9F);
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setUnlocalizedName(name);
-        this.setRegistryName(OneBlockUltima.MODID, name);
+    public float getExplosionResistance(@Nonnull BlockState state, @Nonnull BlockGetter world, @Nonnull BlockPos pos, @Nonnull Explosion explosion) {
+        return Blocks.IRON_BLOCK.getExplosionResistance() * 9.0F;
     }
 }

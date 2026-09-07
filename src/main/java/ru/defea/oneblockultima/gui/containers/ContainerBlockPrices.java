@@ -1,13 +1,14 @@
 package ru.defea.oneblockultima.gui.containers;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraftforge.registries.ForgeRegistries;
+import ru.defea.oneblockultima.block.ModBlocks;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 
@@ -41,7 +42,7 @@ public class ContainerBlockPrices
             this.registry = registry;
             this.name = name;
             this.stack = stack;
-            this.meta = stack.isEmpty() ? 0 : stack.getMetadata();
+            this.meta = stack.isEmpty() ? 0 : ModBlocks.metaOf(stack);
         }
     }
 
@@ -193,34 +194,34 @@ public class ContainerBlockPrices
             else searchTerms.add(part.toLowerCase(Locale.ROOT));
         }
 
-        for (net.minecraft.block.Block block : ForgeRegistries.BLOCKS)
+        for (Block block : ForgeRegistries.BLOCKS)
         {
-            ResourceLocation reg = block.getRegistryName();
+            ResourceLocation reg = ForgeRegistries.BLOCKS.getKey(block);
             if (reg == null) continue;
 
             String registry = reg.toString();
-            String registryId = reg.getResourcePath();
-            String modId = reg.getResourceDomain();
+            String registryId = reg.getPath();
+            String modId = reg.getNamespace();
 
             if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
             if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
+            if (ModBlocks.isBlockExcludedFromSearch(modId, registryId)) continue;
 
-            Item item = Item.getItemFromBlock(block);
+            Item item = block.asItem();
             if (item == Items.AIR) continue;
 
             NonNullList<ItemStack> subItems = NonNullList.create();
-            item.getSubItems(CreativeTabs.SEARCH, subItems);
-            if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
+            subItems.add(item.getDefaultInstance());
 
             for (ItemStack subStack : subItems)
             {
                 if (subStack.isEmpty() || subStack.getItem() != item) continue;
-                int meta = subStack.getMetadata();
+                int meta = ModBlocks.metaOf(subStack);
                 String key = registry + ":" + meta;
                 if (stagedPrices.containsKey(key) || (meta == 0 && stagedPrices.containsKey(registry))) continue;
 
                 String name = "";
-                try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
+                try { name = subStack.getHoverName().getString(); } catch (Exception ignored) {}
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
 
                 searchResults.add(new SearchResult(registry, name, subStack.copy()));
@@ -229,30 +230,30 @@ public class ContainerBlockPrices
 
         for (Item item : ForgeRegistries.ITEMS)
         {
-            if (item == null || item == Items.AIR || item instanceof ItemBlock) continue;
-            ResourceLocation reg = item.getRegistryName();
+            if (item == null || item == Items.AIR || item instanceof BlockItem) continue;
+            ResourceLocation reg = ForgeRegistries.ITEMS.getKey(item);
             if (reg == null) continue;
 
             String registry = reg.toString();
-            String registryId = reg.getResourcePath();
-            String modId = reg.getResourceDomain();
+            String registryId = reg.getPath();
+            String modId = reg.getNamespace();
 
             if (modFilter != null && !modId.toLowerCase(Locale.ROOT).contains(modFilter)) continue;
             if (idFilter != null && !registryId.toLowerCase(Locale.ROOT).contains(idFilter)) continue;
+            if (ModBlocks.isBlockExcludedFromSearch(modId, registryId)) continue;
 
             NonNullList<ItemStack> subItems = NonNullList.create();
-            item.getSubItems(CreativeTabs.SEARCH, subItems);
-            if (subItems.isEmpty()) subItems.add(new ItemStack(item, 1, 0));
+            subItems.add(item.getDefaultInstance());
 
             for (ItemStack subStack : subItems)
             {
                 if (subStack.isEmpty() || subStack.getItem() != item) continue;
-                int meta = subStack.getMetadata();
+                int meta = ModBlocks.metaOf(subStack);
                 String key = registry + ":" + meta;
                 if (stagedPrices.containsKey(key) || (meta == 0 && stagedPrices.containsKey(registry))) continue;
 
                 String name = "";
-                try { name = subStack.getDisplayName(); } catch (Exception ignored) {}
+                try { name = subStack.getHoverName().getString(); } catch (Exception ignored) {}
                 if (!emptyQuery && !searchTerms.isEmpty() && mismatchesSearchTerms(name, searchTerms)) continue;
 
                 searchResults.add(new SearchResult(registry, name, subStack.copy()));
@@ -277,7 +278,7 @@ public class ContainerBlockPrices
         ItemStack stack = BlockPriceConfig.createItemStack(registry, meta);
         if (!stack.isEmpty())
         {
-            try { return stack.getDisplayName(); } catch (Exception ignored) {}
+            try { return stack.getHoverName().getString(); } catch (Exception ignored) {}
         }
         return registry;
     }

@@ -1,6 +1,5 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -8,6 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.BlockSetConfig.*;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +21,7 @@ public class BlockSetConfigSyncTest {
 
     @BeforeClass
     public static void initMinecraftBootstrap() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     private void saveAndApply(BlockSetDefinition... sets) {
@@ -324,7 +324,7 @@ public class BlockSetConfigSyncTest {
     @Test
     public void toJsonPreservesBlockMeta() {
         BlockElementDefinition block = new BlockElementDefinition();
-        block.registry = "minecraft:planks";
+        block.registry = "minecraft:dirt";
         block.meta = 4;
         block.baseLevel = 1;
         block.baseChance = 100;
@@ -380,14 +380,14 @@ public class BlockSetConfigSyncTest {
         a.meta = 0;
         a.baseLevel = 1;
         a.baseChance = 100;
-        a.nbtTags.setString("Type", "A");
+        a.nbtTags.putString("Type", "A");
 
         BlockElementDefinition b = new BlockElementDefinition();
         b.registry = "minecraft:stone";
         b.meta = 0;
         b.baseLevel = 1;
         b.baseChance = 100;
-        b.nbtTags.setString("Type", "B");
+        b.nbtTags.putString("Type", "B");
 
         BlockSetDefinition set = new BlockSetDefinition();
         set.id = "nbt_variants";
@@ -406,18 +406,18 @@ public class BlockSetConfigSyncTest {
     @Test
     public void mergeCombinesSameMetaSameNbt() {
         BlockElementDefinition a = new BlockElementDefinition();
-        a.registry = "minecraft:stone";
+        a.registry = "minecraft:dirt";
         a.meta = 0;
         a.baseLevel = 1;
         a.baseChance = 100;
-        a.nbtTags.setString("Type", "A");
+        a.nbtTags.putString("Type", "A");
 
         BlockElementDefinition b = new BlockElementDefinition();
-        b.registry = "minecraft:stone";
+        b.registry = "minecraft:dirt";
         b.meta = 1;
         b.baseLevel = 1;
         b.baseChance = 100;
-        b.nbtTags.setString("Type", "A");
+        b.nbtTags.putString("Type", "A");
 
         BlockSetDefinition set = new BlockSetDefinition();
         set.id = "merge_same_nbt";

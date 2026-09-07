@@ -2,12 +2,13 @@ package ru.defea.oneblockultima.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.loading.FMLPaths;
 import ru.defea.oneblockultima.OneBlockUltima;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ public final class ModSettings
         }
     }
 
-    private static final Gson GSON = new GsonBuilder().create();
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE_NAME = "oneblockultima_mod_settings.json";
     private static ModSettings instance;
     private static volatile boolean debugEnabled;
@@ -55,6 +56,10 @@ public final class ModSettings
     private int maxGeneratorMembers = 0;
     private double caseDropPercent = 5.0;
     private boolean isShowInfoPanel = true;
+    private boolean showFluids = true;
+    private boolean showMobs = true;
+    private boolean showChests = true;
+    private boolean showSaplings = true;
 
     public static ModSettings get()
     {
@@ -64,6 +69,51 @@ public final class ModSettings
         }
         debugEnabled = instance.debugMode;
         return instance;
+    }
+
+    public static int[] computeBalanceBox(BalancePosition pos, int hOffset, int vOffset,
+                                          int boxW, int boxH, int areaW, int areaH)
+    {
+        int bx;
+        int by;
+        switch (pos)
+        {
+            case TOP_LEFT:
+                bx = areaW * hOffset / 100;
+                by = areaH * vOffset / 100;
+                break;
+            case TOP:
+                bx = areaW / 2 - boxW / 2 + areaW * hOffset / 100;
+                by = areaH * vOffset / 100;
+                break;
+            case LEFT:
+                bx = areaW * hOffset / 100;
+                by = areaH / 2 - boxH / 2 + areaH * vOffset / 100;
+                break;
+            case RIGHT:
+                bx = areaW - boxW - areaW * hOffset / 100;
+                by = areaH / 2 - boxH / 2 + areaH * vOffset / 100;
+                break;
+            case BOTTOM_LEFT:
+                bx = areaW * hOffset / 100;
+                by = areaH - boxH - areaH * vOffset / 100;
+                break;
+            case BOTTOM:
+                bx = areaW / 2 - boxW / 2 + areaW * hOffset / 100;
+                by = areaH - boxH - areaH * vOffset / 100;
+                break;
+            case BOTTOM_RIGHT:
+                bx = areaW - boxW - areaW * hOffset / 100;
+                by = areaH - boxH - areaH * vOffset / 100;
+                break;
+            default:
+                bx = areaW - boxW - areaW * hOffset / 100;
+                by = areaH * vOffset / 100;
+                break;
+        }
+        bx = Math.max(0, Math.min(bx, Math.max(0, areaW - boxW)));
+        by = Math.max(0, Math.min(by, Math.max(0, areaH - boxH)));
+        return new int[]{bx, by, boxW, boxH};
     }
 
     public static boolean isDebugEnabled()
@@ -85,6 +135,14 @@ public final class ModSettings
     public int getMaxGeneratorMembers() { return maxGeneratorMembers; }
     public double getCaseDropPercent() { return caseDropPercent; }
     public boolean isNotShowInfoPanel() { return !isShowInfoPanel; }
+    public boolean isShowFluids() { return showFluids; }
+    public boolean isShowMobs() { return showMobs; }
+    public boolean isShowChests() { return showChests; }
+    public boolean isShowSaplings() { return showSaplings; }
+    public void toggleFluids() { this.showFluids = !this.showFluids; save(); }
+    public void toggleMobs() { this.showMobs = !this.showMobs; save(); }
+    public void toggleChests() { this.showChests = !this.showChests; save(); }
+    public void toggleSaplings() { this.showSaplings = !this.showSaplings; save(); }
 
     public void setBalancePosition(BalancePosition pos) { this.balancePosition = pos; save(); }
     public void setHOffset(int offset) { setHOffset(balancePosition, offset); }
@@ -112,23 +170,19 @@ public final class ModSettings
     public void setCaseDropPercent(double caseDropPercent) { this.caseDropPercent = caseDropPercent; save(); }
     public void setShowInfoPanel(boolean showInfoPanel) { this.isShowInfoPanel = showInfoPanel; save(); }
 
-    private static File getFile()
+    private static Path getFilePath()
     {
-        if (Loader.instance().getConfigDir() != null)
-        {
-            return new File(Loader.instance().getConfigDir(), OneBlockUltima.MODID + "/" + FILE_NAME);
-        }
-        return null;
+        return FMLPaths.CONFIGDIR.get().resolve(OneBlockUltima.MODID).resolve(FILE_NAME);
     }
 
     private static ModSettings load()
     {
-        File file = getFile();
-        if (file == null || !file.exists())
+        Path file = getFilePath();
+        if (!Files.exists(file))
         {
             return new ModSettings();
         }
-        try (Reader reader = new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))
+        try (Reader reader = new InputStreamReader(Files.newInputStream(file), StandardCharsets.UTF_8))
         {
             ModSettings loaded = GSON.fromJson(reader, ModSettings.class);
             if (loaded == null) return new ModSettings();
@@ -178,11 +232,17 @@ public final class ModSettings
 
     private void save()
     {
-        File file = getFile();
-        if (file == null) return;
-        try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8))
+        Path file = getFilePath();
+        try
         {
-            GSON.toJson(this, writer);
+            if (file.getParent() != null)
+            {
+                Files.createDirectories(file.getParent());
+            }
+            try (Writer writer = new OutputStreamWriter(Files.newOutputStream(file), StandardCharsets.UTF_8))
+            {
+                GSON.toJson(this, writer);
+            }
         }
         catch (Exception e)
         {

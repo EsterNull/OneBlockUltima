@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    },
+    {
+      "item": "minecraft:bedrock"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:compressed_bedrock_0"
+  }
+}

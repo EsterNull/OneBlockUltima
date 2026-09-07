@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_lapis_block_4": {
+      "conditions": {
+        "items": [
+          {
+            "items": "oneblockultima:compressed_lapis_block_3"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "oneblockultima:uncompress_lapis_block_4"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_lapis_block_4"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "oneblockultima:uncompress_lapis_block_4"
+    ]
+  }
+}

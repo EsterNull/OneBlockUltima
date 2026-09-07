@@ -1,45 +1,45 @@
 package ru.defea.oneblockultima.world;
 
-import net.minecraft.world.World;
-import net.minecraft.world.WorldType;
-import net.minecraft.world.gen.ChunkGeneratorFlat;
-import net.minecraft.world.gen.IChunkGenerator;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.presets.WorldPreset;
+import ru.defea.oneblockultima.OneBlockUltima;
 
-public class OneBlockWorldType extends WorldType
+public final class OneBlockWorldType
 {
-    public static final OneBlockWorldType ONE_BLOCK = new OneBlockWorldType();
+    public static final ResourceKey<Level> DIMENSION =
+            ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "oneblock"));
 
-    public OneBlockWorldType()
+    public static final ResourceKey<DimensionType> DIMENSION_TYPE =
+            ResourceKey.create(Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "oneblock"));
+
+    public static final ResourceKey<WorldPreset> PRESET_KEY =
+            ResourceKey.create(Registries.WORLD_PRESET, ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "oneblock"));
+
+    public static final ResourceKey<LevelStem> LEVEL_STEM =
+            ResourceKey.create(Registries.LEVEL_STEM, ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, "oneblock"));
+
+    private OneBlockWorldType()
     {
-        super("one_block");
     }
 
     public static void init()
     {
-        // Force class loading / register the world type.
-        ONE_BLOCK.getName();
+        // WorldPreset is datapack-driven in 1.21 and is provided as a JSON datapack
+        // (data/oneblockultima/worldgen/world_preset/oneblock.json); nothing to register here.
     }
 
-    public String getFlatGeneratorOptions()
+    public static boolean isOneBlockWorld(Level world)
     {
-        return "3;minecraft:air;127";
+        return world != null && world.dimensionTypeRegistration().is(DIMENSION_TYPE);
     }
 
-    @Override
-    public boolean isCustomizable()
+    public static boolean isEnabled(Level world)
     {
-        return false;
-    }
-
-    @Override
-    public IChunkGenerator getChunkGenerator(World world, String generatorOptions)
-    {
-        // Use default flat world template if no options provided
-        if (generatorOptions == null || generatorOptions.isEmpty())
-        {
-            generatorOptions = getFlatGeneratorOptions();
-        }
-        return new ChunkGeneratorFlat(world, world.getSeed(), world.getWorldInfo().isMapFeaturesEnabled(), generatorOptions);
+        return isOneBlockWorld(world);
     }
 }
-

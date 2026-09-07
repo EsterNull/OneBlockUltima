@@ -1,189 +1,151 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.oredict.OreDictionary;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
+import net.minecraftforge.registries.RegistryObject;
 import ru.defea.oneblockultima.OneBlockUltima;
 import ru.defea.oneblockultima.item.ItemBlockCompressed;
 import ru.defea.oneblockultima.util.BlockUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
-@Mod.EventBusSubscriber(modid = OneBlockUltima.MODID)
 public final class ModBlocks
 {
-    @SuppressWarnings("unused")
-    public static final class RegisterBlock
-    {
-        private final Block block;
-        private boolean isItem = false;
-        private String variantIn = "inventory";
-        private int meta = 0;
-        private String subBlockName;
-        private int subBlockCount = 1;
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.Keys.BLOCKS, OneBlockUltima.MODID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.Keys.ITEMS, OneBlockUltima.MODID);
 
-        private RegisterBlock(Block block)
-        {
-            this.block = block;
-        }
+    public static BlockOneBlockGenerator ONE_BLOCK_GENERATOR;
+    public static BlockFluidBarrier FLUID_BARRIER;
+    public static BlockCase CASE_BLOCK;
+    public static BlockCompressedMineralBlock COMPRESSED_MINERAL_BLOCK;
 
-        private RegisterBlock(Block block, boolean isItem)
-        {
-            this.block = block;
-            this.isItem = isItem;
-        }
-
-        private RegisterBlock(Block block, String variantIn)
-        {
-            this.block = block;
-            this.variantIn = variantIn;
-        }
-
-        private RegisterBlock(Block block, boolean isItem, String variantIn)
-        {
-            this.block = block;
-            this.isItem = isItem;
-            this.variantIn = variantIn;
-        }
-
-        private RegisterBlock(Block block, int meta)
-        {
-            this.block = block;
-            this.meta = meta;
-        }
-
-        private RegisterBlock(Block block, boolean isItem, int meta)
-        {
-            this.block = block;
-            this.isItem = isItem;
-            this.meta = meta;
-        }
-
-        private RegisterBlock(Block block, String variantIn, int meta)
-        {
-            this.block = block;
-            this.variantIn = variantIn;
-            this.meta = meta;
-        }
-
-        private RegisterBlock(Block block, boolean isItem, String variantIn, int meta)
-        {
-            this.block = block;
-            this.isItem = isItem;
-            this.variantIn = variantIn;
-            this.meta = meta;
-        }
-
-        private RegisterBlock(Block block, boolean isItem, String variantIn, int meta, String subBlockName, int subBlockCount)
-        {
-            this.block = block;
-            this.isItem = isItem;
-            this.variantIn = variantIn;
-            this.meta = meta;
-            this.subBlockName = subBlockName;
-            this.subBlockCount = subBlockCount;
-        }
-
-        public Block getBlock()
-        {
-            return this.block;
-        }
-
-        public String getVariantIn()
-        {
-            return this.variantIn;
-        }
-
-        public int getMeta()
-        {
-            return this.meta;
-        }
-
-        public String getSubBlockName()
-        {
-            return this.subBlockName;
-        }
-
-        public int getSubBlockCount()
-        {
-            return this.subBlockCount;
-        }
-    }
-
-    public static final BlockOneBlockGenerator ONE_BLOCK_GENERATOR = new BlockOneBlockGenerator();
-    public static final BlockFluidBarrier FLUID_BARRIER = new BlockFluidBarrier();
-    public static final BlockCompressedMineralBlock COMPRESSED_MINERAL_BLOCK = new BlockCompressedMineralBlock();
-    public static final BlockCase CASE_BLOCK = new BlockCase();
-
-    public static final BlockCompressedBedrock COMPRESSED_BEDROCK = new BlockCompressedBedrock();
-    public static final BlockCompressedRedstoneBlock COMPRESSED_REDSTONE_BLOCK = new BlockCompressedRedstoneBlock();
-    public static final BlockCompressedGoldBlock COMPRESSED_GOLD_BLOCK = new BlockCompressedGoldBlock();
-    public static final BlockCompressedIronBlock COMPRESSED_IRON_BLOCK = new BlockCompressedIronBlock();
-    public static final BlockCompressedDiamondBlock COMPRESSED_DIAMOND_BLOCK = new BlockCompressedDiamondBlock();
-    public static final BlockCompressedStoneBlock COMPRESSED_STONE_BLOCK = new BlockCompressedStoneBlock();
-    public static final BlockCompressedEmeraldBlock COMPRESSED_EMERALD_BLOCK = new BlockCompressedEmeraldBlock();
-    public static final BlockCompressedLapisBlock COMPRESSED_LAPIS_BLOCK = new BlockCompressedLapisBlock();
-    public static final BlockCompressedEndStone COMPRESSED_END_STONE = new BlockCompressedEndStone();
-    public static final BlockCompressedNetherrack COMPRESSED_NETHERRACK = new BlockCompressedNetherrack();
-
-    public static RegisterBlock[] modBlocks = {
-        new RegisterBlock(ONE_BLOCK_GENERATOR, true),
-        new RegisterBlock(FLUID_BARRIER),
-        new RegisterBlock(CASE_BLOCK),
-        new RegisterBlock(COMPRESSED_MINERAL_BLOCK, true, "normal"),
-
-        new RegisterBlock(COMPRESSED_BEDROCK, true, "normal", 0, "compressed_bedrock", BlockCompressedBedrock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_REDSTONE_BLOCK, true, "normal", 0, "compressed_redstone_block", BlockCompressedRedstoneBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_GOLD_BLOCK, true, "normal", 0, "compressed_gold_block", BlockCompressedGoldBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_IRON_BLOCK, true, "normal", 0, "compressed_iron_block", BlockCompressedIronBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_DIAMOND_BLOCK, true, "normal", 0, "compressed_diamond_block", BlockCompressedDiamondBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_STONE_BLOCK, true, "normal", 0, "compressed_stone_block", BlockCompressedStoneBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_EMERALD_BLOCK, true, "normal", 0, "compressed_emerald_block", BlockCompressedEmeraldBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_LAPIS_BLOCK, true, "normal", 0, "compressed_lapis_block", BlockCompressedLapisBlock.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_END_STONE, true, "normal", 0, "compressed_end_stone", BlockCompressedEndStone.MAX_LEVEL),
-        new RegisterBlock(COMPRESSED_NETHERRACK, true, "normal", 0, "compressed_netherrack", BlockCompressedNetherrack.MAX_LEVEL)
-    };
+    public static BlockCompressedBedrock COMPRESSED_BEDROCK;
+    public static BlockCompressedRedstoneBlock COMPRESSED_REDSTONE_BLOCK;
+    public static BlockCompressedGoldBlock COMPRESSED_GOLD_BLOCK;
+    public static BlockCompressedIronBlock COMPRESSED_IRON_BLOCK;
+    public static BlockCompressedDiamondBlock COMPRESSED_DIAMOND_BLOCK;
+    public static BlockCompressedStoneBlock COMPRESSED_STONE_BLOCK;
+    public static BlockCompressedEmeraldBlock COMPRESSED_EMERALD_BLOCK;
+    public static BlockCompressedLapisBlock COMPRESSED_LAPIS_BLOCK;
+    public static BlockCompressedEndStone COMPRESSED_END_STONE;
+    public static BlockCompressedNetherrack COMPRESSED_NETHERRACK;
 
     public static final int CUSTOM_BREAKABLE_POOL_SIZE = 32;
-
     public static final List<BlockCustomBreakable> CUSTOM_BREAKABLE_POOL = new ArrayList<>();
 
     private static final Map<Block, BlockCustomBreakable> BREAKABLE_BY_EMULATED = new HashMap<>();
 
+    private static final Map<String, RegistryObject<? extends Block>> BLOCK_RO = new HashMap<>();
+    private static final Map<String, RegistryObject<? extends Item>> ITEM_RO = new HashMap<>();
+
+    private static final List<CompressedReg> COMPRESSED_REGS = new ArrayList<>();
+
+    private record CompressedReg(RegistryObject<? extends Block> blockRO, String name, int maxLevel) {}
+
     static
     {
+        BLOCK_RO.put("one_block_generator", BLOCKS.register("one_block_generator", BlockOneBlockGenerator::new));
+        ITEM_RO.put("one_block_generator", ITEMS.register("one_block_generator", () -> new BlockItem(ONE_BLOCK_GENERATOR, new Item.Properties())));
+
+        BLOCK_RO.put("fluid_barrier", BLOCKS.register("fluid_barrier", BlockFluidBarrier::new));
+
+        BLOCK_RO.put("case_block", BLOCKS.register("case_block", BlockCase::new));
+        ITEM_RO.put("case_block", ITEMS.register("case_block", () -> new BlockItem(CASE_BLOCK, new Item.Properties())));
+
+        BLOCK_RO.put("compressed_mineral_block", BLOCKS.register("compressed_mineral_block", BlockCompressedMineralBlock::new));
+        ITEM_RO.put("compressed_mineral_block", ITEMS.register("compressed_mineral_block", () -> new BlockItem(COMPRESSED_MINERAL_BLOCK, new Item.Properties())));
+
+        registerCompressed("compressed_bedrock", BlockCompressedBedrock::new, BlockCompressedBedrock.MAX_LEVEL);
+        registerCompressed("compressed_redstone_block", BlockCompressedRedstoneBlock::new, BlockCompressedRedstoneBlock.MAX_LEVEL);
+        registerCompressed("compressed_gold_block", BlockCompressedGoldBlock::new, BlockCompressedGoldBlock.MAX_LEVEL);
+        registerCompressed("compressed_iron_block", BlockCompressedIronBlock::new, BlockCompressedIronBlock.MAX_LEVEL);
+        registerCompressed("compressed_diamond_block", BlockCompressedDiamondBlock::new, BlockCompressedDiamondBlock.MAX_LEVEL);
+        registerCompressed("compressed_stone_block", BlockCompressedStoneBlock::new, BlockCompressedStoneBlock.MAX_LEVEL);
+        registerCompressed("compressed_emerald_block", BlockCompressedEmeraldBlock::new, BlockCompressedEmeraldBlock.MAX_LEVEL);
+        registerCompressed("compressed_lapis_block", BlockCompressedLapisBlock::new, BlockCompressedLapisBlock.MAX_LEVEL);
+        registerCompressed("compressed_end_stone", BlockCompressedEndStone::new, BlockCompressedEndStone.MAX_LEVEL);
+        registerCompressed("compressed_netherrack", BlockCompressedNetherrack::new, BlockCompressedNetherrack.MAX_LEVEL);
+
         for (int i = 0; i < CUSTOM_BREAKABLE_POOL_SIZE; i++)
         {
-            CUSTOM_BREAKABLE_POOL.add(new BlockCustomBreakable("custom_breakable_" + i));
+            final String name = "custom_breakable_" + i;
+            BLOCK_RO.put(name, BLOCKS.register(name, () -> new BlockCustomBreakable(name)));
         }
-        RegisterBlock[] poolEntries = new RegisterBlock[CUSTOM_BREAKABLE_POOL.size()];
-        for (int i = 0; i < poolEntries.length; i++)
+    }
+
+    private static void registerCompressed(String name, Supplier<? extends Block> blockSupplier, int maxLevel)
+    {
+        RegistryObject<? extends Block> bro = BLOCKS.register(name, blockSupplier);
+        BLOCK_RO.put(name, bro);
+        COMPRESSED_REGS.add(new CompressedReg(bro, name, maxLevel));
+    }
+
+    public static void register(IEventBus bus)
+    {
+        BLOCKS.register(bus);
+        ITEMS.register(bus);
+        bus.addListener((RegisterEvent event) ->
         {
-            poolEntries[i] = new RegisterBlock(CUSTOM_BREAKABLE_POOL.get(i), "normal");
-        }
-        RegisterBlock[] combined = Arrays.copyOf(modBlocks, modBlocks.length + poolEntries.length);
-        System.arraycopy(poolEntries, 0, combined, modBlocks.length, poolEntries.length);
-        modBlocks = combined;
+            if (event.getRegistryKey() == ForgeRegistries.Keys.BLOCKS)
+            {
+                ONE_BLOCK_GENERATOR = (BlockOneBlockGenerator) BLOCK_RO.get("one_block_generator").get();
+                FLUID_BARRIER = (BlockFluidBarrier) BLOCK_RO.get("fluid_barrier").get();
+                CASE_BLOCK = (BlockCase) BLOCK_RO.get("case_block").get();
+                COMPRESSED_MINERAL_BLOCK = (BlockCompressedMineralBlock) BLOCK_RO.get("compressed_mineral_block").get();
+                COMPRESSED_BEDROCK = (BlockCompressedBedrock) BLOCK_RO.get("compressed_bedrock").get();
+                COMPRESSED_REDSTONE_BLOCK = (BlockCompressedRedstoneBlock) BLOCK_RO.get("compressed_redstone_block").get();
+                COMPRESSED_GOLD_BLOCK = (BlockCompressedGoldBlock) BLOCK_RO.get("compressed_gold_block").get();
+                COMPRESSED_IRON_BLOCK = (BlockCompressedIronBlock) BLOCK_RO.get("compressed_iron_block").get();
+                COMPRESSED_DIAMOND_BLOCK = (BlockCompressedDiamondBlock) BLOCK_RO.get("compressed_diamond_block").get();
+                COMPRESSED_STONE_BLOCK = (BlockCompressedStoneBlock) BLOCK_RO.get("compressed_stone_block").get();
+                COMPRESSED_EMERALD_BLOCK = (BlockCompressedEmeraldBlock) BLOCK_RO.get("compressed_emerald_block").get();
+                COMPRESSED_LAPIS_BLOCK = (BlockCompressedLapisBlock) BLOCK_RO.get("compressed_lapis_block").get();
+                COMPRESSED_END_STONE = (BlockCompressedEndStone) BLOCK_RO.get("compressed_end_stone").get();
+                COMPRESSED_NETHERRACK = (BlockCompressedNetherrack) BLOCK_RO.get("compressed_netherrack").get();
+                CUSTOM_BREAKABLE_POOL.clear();
+                for (int i = 0; i < CUSTOM_BREAKABLE_POOL_SIZE; i++)
+                {
+                    CUSTOM_BREAKABLE_POOL.add((BlockCustomBreakable) BLOCK_RO.get("custom_breakable_" + i).get());
+                }
+            }
+            else if (event.getRegistryKey() == ForgeRegistries.Keys.ITEMS)
+            {
+                for (CompressedReg reg : COMPRESSED_REGS)
+                {
+                    Block block = reg.blockRO().get();
+                    for (int l = 0; l < reg.maxLevel(); l++)
+                    {
+                        final int level = l;
+                        String itemName = reg.name() + "_" + level;
+                        event.register(ForgeRegistries.Keys.ITEMS,
+                                ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, itemName),
+                                () -> new ItemBlockCompressed(block, level));
+                    }
+                }
+            }
+        });
     }
 
     public static void bindBreakablePool()
     {
-        for (Block block : ForgeRegistries.BLOCKS)
+        for (Block block : BuiltInRegistries.BLOCK)
         {
-            if (block == null || block.getRegistryName() == null || BREAKABLE_BY_EMULATED.containsKey(block))
+            if (block == null || block.builtInRegistryHolder() == null || BREAKABLE_BY_EMULATED.containsKey(block))
             {
                 continue;
             }
@@ -202,19 +164,19 @@ public final class ModBlocks
             }
             if (slot == null)
             {
-                OneBlockUltima.getLogger().warn("[Breakable] Custom breakable pool exhausted, {} stays unbreakable", block.getRegistryName());
+                OneBlockUltima.logDebugWarn("[Breakable] Custom breakable pool exhausted, {} stays unbreakable", block);
                 continue;
             }
             slot.setEmulated(block);
             BREAKABLE_BY_EMULATED.put(block, slot);
-            OneBlockUltima.getLogger().info("[Breakable] Bound {} -> {}", block.getRegistryName(), slot.getRegistryName());
+            OneBlockUltima.logDebug("[Breakable] Bound {} -> {}", BuiltInRegistries.BLOCK.getKey(block), BuiltInRegistries.BLOCK.getKey(slot));
         }
     }
 
     @Nullable
     public static BlockCustomBreakable getBreakableFor(Block block)
     {
-        if (block == null || block == Blocks.AIR)
+        if (block == null || block == net.minecraft.world.level.block.Blocks.AIR)
         {
             return null;
         }
@@ -237,59 +199,92 @@ public final class ModBlocks
 
     public static void registerOreDict()
     {
-        registerCompressedOres(COMPRESSED_BEDROCK, "Bedrock");
-        registerCompressedOres(COMPRESSED_REDSTONE_BLOCK, "RedstoneBlock");
-        registerCompressedOres(COMPRESSED_GOLD_BLOCK, "GoldBlock");
-        registerCompressedOres(COMPRESSED_IRON_BLOCK, "IronBlock");
-        registerCompressedOres(COMPRESSED_DIAMOND_BLOCK, "DiamondBlock");
-        registerCompressedOres(COMPRESSED_STONE_BLOCK, "Stone");
-        registerCompressedOres(COMPRESSED_EMERALD_BLOCK, "EmeraldBlock");
-        registerCompressedOres(COMPRESSED_LAPIS_BLOCK, "LapisBlock");
-        registerCompressedOres(COMPRESSED_END_STONE, "EndStone");
-        registerCompressedOres(COMPRESSED_NETHERRACK, "Netherrack");
+        // OreDictionary does not exist in 1.21; tags would be registered via datagen/tags instead.
     }
 
-    private static void registerCompressedOres(BlockCompressedBase block, String capName)
+    public static boolean isCompressedBlock(Block b)
     {
-        for (int level = 1; level <= block.getMaxLevel(); level++)
+        return b instanceof BlockCompressedBase;
+    }
+
+    public static Item getCompressedItem(Block block, int level)
+    {
+        if (!(block instanceof BlockCompressedBase base)) return Items.AIR;
+        ResourceLocation rl = ResourceLocation.fromNamespaceAndPath(OneBlockUltima.MODID, base.getBaseName() + "_" + level);
+        Item item = ForgeRegistries.ITEMS.getValue(rl);
+        return item != null ? item : Items.AIR;
+    }
+
+    public static int metaOf(ItemStack stack)
+    {
+        if (stack.getItem() instanceof ItemBlockCompressed c) return c.getLevel();
+        return stack.getDamageValue();
+    }
+
+    public static ItemStack itemStackFor(Block block, int meta)
+    {
+        if (block instanceof BlockCompressedBase)
         {
-            OreDictionary.registerOre("compressed" + level + "x" + capName, new ItemStack(block, 1, level - 1));
+            Item item = getCompressedItem(block, meta);
+            return item != Items.AIR ? new ItemStack(item) : ItemStack.EMPTY;
         }
+        ItemStack stack = new ItemStack(block);
+        if (meta != 0) stack.setDamageValue(meta);
+        return stack;
+    }
+
+    public static ItemStack stackFromItemAndMeta(Item item, int meta)
+    {
+        Block block = Block.byItem(item);
+        if (block instanceof BlockCompressedBase)
+        {
+            Item comp = getCompressedItem(block, meta);
+            return comp != Items.AIR ? new ItemStack(comp) : ItemStack.EMPTY;
+        }
+        ItemStack stack = new ItemStack(item);
+        if (meta != 0) stack.setDamageValue(meta);
+        return stack;
+    }
+
+    public static List<ItemStack> getCompressedItemStacks()
+    {
+        List<ItemStack> list = new ArrayList<>();
+        for (CompressedReg reg : COMPRESSED_REGS)
+        {
+            Block block = reg.blockRO().get();
+            for (int l = 0; l < reg.maxLevel(); l++)
+            {
+                Item it = getCompressedItem(block, l);
+                if (it != null && it != Items.AIR) list.add(new ItemStack(it));
+            }
+        }
+        return list;
+    }
+
+    public static List<ItemStack> getCompressedItemStacksForBlock(Block block)
+    {
+        List<ItemStack> list = new ArrayList<>();
+        if (block instanceof BlockCompressedBase base)
+        {
+            int maxLevel = base.getMaxLevel();
+            for (int l = 0; l < maxLevel; l++)
+            {
+                Item it = getCompressedItem(block, l);
+                if (it != null && it != Items.AIR) list.add(new ItemStack(it));
+            }
+        }
+        return list;
+    }
+
+    public static boolean isBlockExcludedFromSearch(String modId, String registryId)
+    {
+        if (!OneBlockUltima.MODID.equals(modId)) return false;
+        return "one_block_generator".equals(registryId)
+                || "case".equals(registryId)
+                || "case_block".equals(registryId);
     }
 
     private ModBlocks()
     {
-    }
-
-    @SubscribeEvent
-    public static void registerBlocks(RegistryEvent.Register<Block> event)
-    {
-        for (RegisterBlock modBlock : modBlocks)
-        {
-            event.getRegistry().register(modBlock.block);
-        }
-    }
-
-    @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event)
-    {
-        bindBreakablePool();
-        for (RegisterBlock modBlock : modBlocks)
-        {
-            if (modBlock.isItem) {
-                Item modItemBlock;
-                if (modBlock.getSubBlockCount() > 1)
-                {
-                    modItemBlock = new ItemBlockCompressed(modBlock.block, modBlock.getSubBlockName(), modBlock.getSubBlockCount());
-                }
-                else
-                {
-                    modItemBlock = new ItemBlock(modBlock.block);
-                }
-                modItemBlock.setRegistryName(Objects.requireNonNull(modBlock.block.getRegistryName()));
-
-                event.getRegistry().register(modItemBlock);
-            }
-        }
     }
 }

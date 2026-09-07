@@ -1,46 +1,37 @@
 package ru.defea.oneblockultima.block;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.phys.HitResult;
 import ru.defea.oneblockultima.OneBlockUltima;
-import ru.defea.oneblockultima.client.ModModels;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Random;
 
 public class BlockCustomBreakable extends Block
 {
-    public static final PropertyInteger ORIGINAL_META = PropertyInteger.create("original_meta", 0, 15);
+    public static final IntegerProperty ORIGINAL_META = IntegerProperty.create("original_meta", 0, 15);
 
     private Block emulated;
 
     public BlockCustomBreakable(String registryName)
     {
-        super(Material.ROCK);
-        this.setDefaultState(this.blockState.getBaseState().withProperty(ORIGINAL_META, 0));
-        this.setHardness(50.0F);
-        this.setResistance(2000.0F);
-        this.setUnlocalizedName("custom_breakable");
-        this.setRegistryName(OneBlockUltima.MODID, registryName);
+        super(Properties.of().mapColor(MapColor.STONE).requiresCorrectToolForDrops().strength(50.0F, 2000.0F));
+        this.registerDefaultState(this.defaultBlockState().setValue(ORIGINAL_META, 0));
     }
 
     public void setEmulated(Block block)
@@ -54,27 +45,32 @@ public class BlockCustomBreakable extends Block
         return this.emulated;
     }
 
+    @Nonnull
+    @Override
+    public BlockState getAppearance(BlockState state, BlockAndTintGetter level, BlockPos pos, Direction side,
+            @Nullable BlockState queryState, @Nullable BlockPos queryPos)
+    {
+        if (this.emulated != null && (queryState == null || queryState.getBlock() != this))
+        {
+            return this.emulated.defaultBlockState();
+        }
+        return super.getAppearance(state, level, pos, side, queryState, queryPos);
+    }
+
     @Nullable
-    public IBlockState getEmulatedState(IBlockState state)
+    public BlockState getEmulatedState(BlockState state)
     {
         if (this.emulated == null)
         {
             return null;
         }
-        try
-        {
-            return this.emulated.getStateFromMeta(state.getValue(ORIGINAL_META));
-        }
-        catch (Exception ex)
-        {
-            return this.emulated.getDefaultState();
-        }
+        return this.emulated.defaultBlockState();
     }
 
-    public static String buildVariantString(IBlockState state)
+    public static String buildVariantString(BlockState state)
     {
         StringBuilder sb = new StringBuilder();
-        for (IProperty<?> property : state.getPropertyKeys())
+        for (net.minecraft.world.level.block.state.properties.Property<?> property : state.getBlock().getStateDefinition().getProperties())
         {
             if (sb.length() != 0)
             {
@@ -89,128 +85,45 @@ public class BlockCustomBreakable extends Block
         return sb.toString();
     }
 
-    private static <T extends Comparable<T>> String propertyValueName(IProperty<T> property, IBlockState state)
+    private static <T extends Comparable<T>> String propertyValueName(net.minecraft.world.level.block.state.properties.Property<T> property, BlockState state)
     {
         return property.getName(state.getValue(property));
     }
 
-    @Override
     @Nonnull
-    public ItemStack getPickBlock(@Nonnull IBlockState state, @Nonnull RayTraceResult target, @Nonnull World world, @Nonnull BlockPos pos, @Nonnull EntityPlayer player)
+    @Override
+    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state)
     {
         if (this.emulated == null)
         {
-            return super.getPickBlock(state, target, world, pos, player);
+            return super.getCloneItemStack(world, pos, state);
         }
-        IBlockState emuState = this.getEmulatedState(state);
-        return this.emulated.getPickBlock(emuState == null ? this.emulated.getDefaultState() : emuState, target, world, pos, player);
+        BlockState emuState = this.getEmulatedState(state);
+        return this.emulated.getCloneItemStack(world, pos, emuState == null ? this.emulated.defaultBlockState() : emuState);
     }
 
-    @Override
-    public float getExplosionResistance(@Nonnull Entity exploder)
-    {
-        return Blocks.OBSIDIAN.getExplosionResistance(exploder);
-    }
-
-    @Override
     @Nonnull
-    public List<ItemStack> getDrops(@Nonnull IBlockAccess world, @Nonnull BlockPos pos, @Nonnull IBlockState state, int fortune)
+    @Override
+    public List<ItemStack> getDrops(@Nonnull BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder builder)
     {
         List<ItemStack> drops = new java.util.ArrayList<>();
         if (this.emulated != null)
         {
-            Item item = Item.getItemFromBlock(this.emulated);
+            Item item = this.emulated.asItem();
             if (item != Items.AIR)
             {
-                drops.add(new ItemStack(item, 1, state.getValue(ORIGINAL_META)));
+                ItemStack stack = new ItemStack(item, 1);
+                stack.setDamageValue(state.getValue(ORIGINAL_META));
+                drops.add(stack);
             }
         }
         return drops;
     }
 
-    @Override
     @Nonnull
-    public Item getItemDropped(@Nonnull IBlockState state, @Nonnull Random rand, int fortune)
-    {
-        return this.emulated == null ? Items.AIR : Item.getItemFromBlock(this.emulated);
-    }
-
     @Override
-    public int quantityDropped(@Nonnull Random random)
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder)
     {
-        return this.emulated == null ? 0 : 1;
-    }
-
-    @Override
-    public int damageDropped(IBlockState state)
-    {
-        return state.getValue(ORIGINAL_META);
-    }
-
-    @Override
-    public int getHarvestLevel(@Nonnull IBlockState state)
-    {
-        return 3;
-    }
-
-    @Override
-    public String getHarvestTool(@Nonnull IBlockState state)
-    {
-        return "pickaxe";
-    }
-
-    @Override
-    public boolean isToolEffective(@Nonnull String tool, @Nonnull IBlockState state)
-    {
-        return "pickaxe".equals(tool);
-    }
-
-    @Override
-    @Nonnull
-    public IBlockState getStateFromMeta(int meta)
-    {
-        return this.getDefaultState().withProperty(ORIGINAL_META, Math.max(0, Math.min(15, meta)));
-    }
-
-    @Override
-    public int getMetaFromState(IBlockState state)
-    {
-        return state.getValue(ORIGINAL_META);
-    }
-
-    @Override
-    @Nonnull
-    protected BlockStateContainer createBlockState()
-    {
-        return new BlockStateContainer(this, ORIGINAL_META);
-    }
-
-    @Override
-    @Nonnull
-    @SideOnly(Side.CLIENT)
-    public BlockRenderLayer getBlockLayer()
-    {
-        if (this.emulated != null)
-        {
-            if (this.emulated.getBlockLayer() != BlockRenderLayer.SOLID)
-            {
-                return this.emulated.getBlockLayer();
-            }
-            if (ModModels.hasNoBlockstateModel(this.emulated))
-            {
-                return BlockRenderLayer.TRANSLUCENT;
-            }
-        }
-        return super.getBlockLayer();
-    }
-
-    @Override
-    public boolean isOpaqueCube(@Nonnull IBlockState state)
-    {
-        if (this.emulated != null)
-        {
-            return this.emulated.isOpaqueCube(this.emulated.getDefaultState());
-        }
-        return super.isOpaqueCube(state);
+        builder.add(ORIGINAL_META);
     }
 }

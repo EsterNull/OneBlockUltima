@@ -1,16 +1,22 @@
 package ru.defea.oneblockultima.gui;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.resources.I18n;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import org.lwjgl.glfw.GLFW;
 import ru.defea.oneblockultima.config.BlockSetConfig;
 import ru.defea.oneblockultima.config.ModSettings;
 import ru.defea.oneblockultima.gui.layout.*;
 
 import java.io.IOException;
 
-public class GuiMiscSettings extends GuiScreen {
+public class GuiMiscSettings extends ModScreen {
     private static final int BUTTON_BACK = 0;
     private static final int BUTTON_SAVE = 1;
     private static final int BUTTON_MOB_WORLD_GENERATION = 2;
@@ -30,9 +36,10 @@ public class GuiMiscSettings extends GuiScreen {
     private static final int MAX_GENERATOR_MEMBERS = 100;
     private static final int GENERATOR_MEMBERS_STEP = 1;
 
-    private final GuiScreen parent;
+    private final Screen parent;
     private ViewFactory factory;
     private ModSettings settings;
+    private GuiGraphics gfx;
 
     private boolean mobWorldGeneration;
     private boolean debugMode;
@@ -50,16 +57,17 @@ public class GuiMiscSettings extends GuiScreen {
     private StepperElement generatorMembersStepper;
     private DoubleStepperElement caseDropPercentStepper;
 
-    public GuiMiscSettings(GuiScreen parent)
+    public GuiMiscSettings(Screen parent)
     {
+        super(Component.literal(""));
         this.parent = parent;
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
-        buttonList.clear();
-        Keyboard.enableRepeatEvents(true);
+        this.renderables.clear();
+        this.children().clear();
 
         settings = ModSettings.get();
         mobWorldGeneration = settings.getMobWorldGeneration();
@@ -86,13 +94,15 @@ public class GuiMiscSettings extends GuiScreen {
 
         RowElement firstLineControls = factory.row(Alignment.LEFT).gap(8).align(Alignment.LEFT);
         mobWorldGenerationToggle = firstLineControls.buttonToggle(BUTTON_MOB_WORLD_GENERATION, mobWorldGeneration)
-                .label(I18n.format("gui.oneblockultima.misc.mob_world_generation"));
+                .label(I18n.get("gui.oneblockultima.misc.mob_world_generation"))
+                .onPress(() -> actionPerformed(BUTTON_MOB_WORLD_GENERATION));
 
         RowElement debugModeControls = factory.row(Alignment.LEFT).gap(8).align(Alignment.LEFT);
         debugModeToggle = debugModeControls.buttonToggle(BUTTON_DEBUG_MODE, debugMode)
-                .label(I18n.format("gui.oneblockultima.misc.debug_mode"));
+                .label(I18n.get("gui.oneblockultima.misc.debug_mode"))
+                .onPress(() -> actionPerformed(BUTTON_DEBUG_MODE));
 
-        String inviteControlString = I18n.format("gui.oneblockultima.misc.invite_duration");
+        String inviteControlString = I18n.get("gui.oneblockultima.misc.invite_duration");
         RowElement inviteControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
         inviteControls.label(inviteControlString);
         inviteDurationStepper = new StepperElement()
@@ -105,7 +115,7 @@ public class GuiMiscSettings extends GuiScreen {
         inviteControls.add(inviteDurationStepper);
 
         RowElement breakCooldownControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
-        breakCooldownControls.label(I18n.format("gui.oneblockultima.misc.non_player_break_cooldown"));
+        breakCooldownControls.label(I18n.get("gui.oneblockultima.misc.non_player_break_cooldown"));
         breakCooldownStepper = new StepperElement()
                 .value(breakCooldownTicks)
                 .min(MIN_BREAK_COOLDOWN_TICKS)
@@ -116,7 +126,7 @@ public class GuiMiscSettings extends GuiScreen {
         breakCooldownControls.add(breakCooldownStepper);
 
         RowElement mobSpawnPercentControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
-        mobSpawnPercentControls.label(I18n.format("gui.oneblockultima.misc.max_mob_spawn_percent"));
+        mobSpawnPercentControls.label(I18n.get("gui.oneblockultima.misc.max_mob_spawn_percent"));
         mobSpawnPercentStepper = new StepperElement()
                 .value(mobSpawnPercent)
                 .min(MIN_MOB_SPAWN_PERCENT)
@@ -127,7 +137,7 @@ public class GuiMiscSettings extends GuiScreen {
         mobSpawnPercentControls.add(mobSpawnPercentStepper);
 
         RowElement generatorMembersControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
-        generatorMembersControls.label(I18n.format("gui.oneblockultima.misc.max_generator_members"));
+        generatorMembersControls.label(I18n.get("gui.oneblockultima.misc.max_generator_members"));
         generatorMembersStepper = new StepperElement()
                 .value(generatorMembers)
                 .min(MIN_GENERATOR_MEMBERS)
@@ -138,7 +148,7 @@ public class GuiMiscSettings extends GuiScreen {
         generatorMembersControls.add(generatorMembersStepper);
 
         RowElement caseDropPercentControls = factory.row(Alignment.SPACE_BETWEEN).stretchToContent();
-        caseDropPercentControls.label(I18n.format("gui.oneblockultima.misc.case_drop_percent"));
+        caseDropPercentControls.label(I18n.get("gui.oneblockultima.misc.case_drop_percent"));
         caseDropPercentStepper = new DoubleStepperElement()
                 .value(caseDropPercent)
                 .min(0.0)
@@ -150,22 +160,21 @@ public class GuiMiscSettings extends GuiScreen {
         caseDropPercentControls.add(caseDropPercentStepper);
 
         RowElement btnRow = factory.row(Alignment.CENTER).gap(4);
-        btnRow.button(BUTTON_BACK, I18n.format("gui.oneblockultima.cancel"));
-        btnRow.button(BUTTON_RESET, I18n.format("gui.oneblockultima.reset_default"));
-        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.format("gui.oneblockultima.save")));
+        btnRow.button(BUTTON_BACK, I18n.get("gui.oneblockultima.cancel")).onPress(() -> actionPerformed(BUTTON_BACK));
+        btnRow.button(BUTTON_RESET, I18n.get("gui.oneblockultima.reset_default")).onPress(() -> actionPerformed(BUTTON_RESET));
+        btnRow.add(new SuccessButtonElement(BUTTON_SAVE, I18n.get("gui.oneblockultima.save")).onPress(() -> actionPerformed(BUTTON_SAVE)));
 
-        factory.build(buttonList, fontRenderer);
+        factory.build(this, Minecraft.getInstance().font);
     }
 
-    @Override
-    protected void actionPerformed(GuiButton button)
+    private void actionPerformed(int id)
     {
-        if (button.id == BUTTON_BACK)
+        if (id == BUTTON_BACK)
         {
-            mc.displayGuiScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
             return;
         }
-        if (button.id == BUTTON_SAVE) {
+        if (id == BUTTON_SAVE) {
             settings.setMobWorldGeneration(mobWorldGeneration);
             settings.setDebugMode(debugMode);
             settings.setInviteDurationTicks(inviteDurationStepper.getValue());
@@ -174,18 +183,18 @@ public class GuiMiscSettings extends GuiScreen {
             settings.setMaxGeneratorMembers(generatorMembersStepper.getValue());
             settings.setCaseDropPercent(caseDropPercentStepper.getValue());
             BlockSetConfig.invalidateComputedLevels();
-            mc.displayGuiScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
             return;
         }
-        if (button.id == BUTTON_MOB_WORLD_GENERATION) {
+        if (id == BUTTON_MOB_WORLD_GENERATION) {
             mobWorldGeneration = !mobWorldGeneration;
             mobWorldGenerationToggle.toggle();
         }
-        if (button.id == BUTTON_DEBUG_MODE) {
+        if (id == BUTTON_DEBUG_MODE) {
             debugMode = !debugMode;
             debugModeToggle.toggle();
         }
-        if (button.id == BUTTON_RESET) {
+        if (id == BUTTON_RESET) {
             mobWorldGeneration = false;
             debugMode = false;
             inviteDurationTicks = 1200;
@@ -204,35 +213,35 @@ public class GuiMiscSettings extends GuiScreen {
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers)
     {
-        if (keyCode == Keyboard.KEY_ESCAPE)
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE)
         {
-            mc.displayGuiScreen(parent);
-            return;
+            Minecraft.getInstance().setScreen(parent);
+            return true;
         }
-        super.keyTyped(typedChar, keyCode);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException
+    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton)
     {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (factory != null) factory.mouseClicked(mouseX, mouseY, mouseButton);
+        if (factory != null) factory.mouseClicked((int) mouseX, (int) mouseY, mouseButton);
+        return super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
-    public void updateScreen()
+    public void tick()
     {
-        super.updateScreen();
         if (factory != null) factory.updateScreen();
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTicks)
     {
-        drawDefaultBackground();
-        if (factory != null) factory.draw(fontRenderer, mouseX, mouseY, partialTicks);
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        this.gfx = g;
+        drawModBackground(g);
+        if (factory != null) factory.draw(g, Minecraft.getInstance().font, mouseX, mouseY, partialTicks);
+        super.render(g, mouseX, mouseY, partialTicks);
     }
 }

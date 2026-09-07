@@ -1,14 +1,14 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.init.MobEffects;
-import net.minecraft.potion.PotionEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 public class ItemSuperPoison extends CustomPotion {
     public ItemSuperPoison() {
         super("super_poison",
-                new PotionEffect[]{
-                        new PotionEffect(MobEffects.POISON, 90 * 20, 3),
-                        new PotionEffect(MobEffects.WITHER, 30 * 20, 2),
+                new MobEffectInstance[]{
+                        new MobEffectInstance(MobEffects.POISON, 90 * 20, 3),
+                        new MobEffectInstance(MobEffects.WITHER, 30 * 20, 2),
                 });
     }
 }

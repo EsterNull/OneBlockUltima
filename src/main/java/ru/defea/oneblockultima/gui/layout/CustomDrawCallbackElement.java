@@ -1,14 +1,15 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.List;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public class CustomDrawCallbackElement extends ViewElement<CustomDrawCallbackElement> {
     public interface DrawCallback {
-        void draw(int x, int y, int width, int height, FontRenderer fr, int mouseX, int mouseY, float partialTicks);
+        void draw(GuiGraphics g, int x, int y, int width, int height, Font font, int mouseX, int mouseY, float partialTicks);
     }
 
     public interface SizeCallback {
@@ -33,13 +34,13 @@ public class CustomDrawCallbackElement extends ViewElement<CustomDrawCallbackEle
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         if (drawCallback != null) {
-            drawCallback.draw(computedX, computedY, computedWidth, computedHeight, fr, mouseX, mouseY, partialTicks);
+            drawCallback.draw(g, computedX, computedY, computedWidth, computedHeight, font, mouseX, mouseY, partialTicks);
         }
     }
 

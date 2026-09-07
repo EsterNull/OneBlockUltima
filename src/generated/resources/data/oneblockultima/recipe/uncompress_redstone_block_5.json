@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    },
+    {
+      "item": "oneblockultima:compressed_redstone_block_4"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "oneblockultima:compressed_redstone_block_3"
+  }
+}

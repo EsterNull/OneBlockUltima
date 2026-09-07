@@ -1,12 +1,10 @@
 package ru.defea.oneblockultima.item;
 
-import net.minecraft.item.Item;
-import ru.defea.oneblockultima.OneBlockUltima;
+import net.minecraft.world.item.Item;
+import ru.defea.oneblockultima.ModTab;
 
 public class ItemEnergyOrb extends Item {
     public ItemEnergyOrb() {
-        setCreativeTab(OneBlockUltima.modTab);
-        this.setRegistryName("energy_orb");
-        this.setUnlocalizedName("energy_orb");
+        super(new Item.Properties());
     }
 }

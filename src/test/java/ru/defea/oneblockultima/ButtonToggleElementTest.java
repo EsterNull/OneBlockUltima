@@ -1,10 +1,12 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.init.Bootstrap;
+import net.minecraft.client.gui.Font;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import ru.defea.oneblockultima.gui.layout.ButtonElement;
+import ru.defea.oneblockultima.gui.layout.ButtonElement.LabelPosition;
 import ru.defea.oneblockultima.gui.layout.ButtonToggleElement;
-import ru.defea.oneblockultima.gui.layout.ButtonToggleElement.LabelPosition;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import static org.junit.Assert.*;
 import static ru.defea.oneblockultima.Constants.*;
@@ -14,7 +16,7 @@ public class ButtonToggleElementTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.installFakeMinecraft();
     }
 
     private static class ExposedToggle extends ButtonToggleElement {
@@ -114,8 +116,10 @@ public class ButtonToggleElementTest {
     }
 
     @Test
-    public void preferredHeightIsTwenty() {
-        assertEquals(20, new ButtonToggleElement(false).getPreferredHeight());
+    public void preferredHeightUsesFontLineHeightPlusPadding() {
+        Font font = TestBootstrap.getStubFont();
+        assertEquals(font.lineHeight + ButtonElement.BUTTON_HEIGHT_PADDING,
+                new ButtonToggleElement(false).getPreferredHeight());
     }
 
     // --- colors ---

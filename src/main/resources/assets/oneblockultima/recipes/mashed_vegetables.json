@@ -8,8 +8,7 @@
       "item": "minecraft:mushroom_stew"
     },
     {
-      "item": "minecraft:golden_apple",
-      "data": 0
+      "item": "minecraft:golden_apple"
     },
     {
       "item": "minecraft:beetroot_soup"
@@ -21,7 +20,7 @@
       "item": "minecraft:melon"
     },
     {
-      "item": "minecraft:carrot"
+      "item": "minecraft:golden_carrot"
     },
     {
       "item": "minecraft:baked_potato"

@@ -1,16 +1,15 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.init.Bootstrap;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import ru.defea.oneblockultima.gui.layout.ViewElement;
 import ru.defea.oneblockultima.gui.layout.ViewFactory;
 import ru.defea.oneblockultima.gui.layout.ViewSwitcherElement;
-
-import java.util.ArrayList;
-import java.util.List;
+import ru.defea.oneblockultima.testutil.TestBootstrap;
 
 import static org.junit.Assert.assertEquals;
 
@@ -18,7 +17,7 @@ public class ViewSwitcherElementTest {
 
     @BeforeClass
     public static void setUp() {
-        Bootstrap.register();
+        TestBootstrap.prepare();
     }
 
     private static class Stub extends ViewElement<Stub> {
@@ -31,11 +30,11 @@ public class ViewSwitcherElementTest {
         }
 
         @Override
-        public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+        public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         }
 
         @Override
-        public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         }
 
         @Override
@@ -47,6 +46,14 @@ public class ViewSwitcherElementTest {
         public int getPreferredHeight() {
             return prefH;
         }
+    }
+
+    private static Screen screen() {
+        return new Screen(Component.literal("")) {
+            @Override
+            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            }
+        };
     }
 
     private static int fullWidth() {
@@ -76,7 +83,7 @@ public class ViewSwitcherElementTest {
         switcher.setView(0);
         switcher.fitContent(true);
 
-        factory.build(new ArrayList<>(), null);
+        factory.build(screen(), null);
 
         int x = 10 + (fullWidth() - 200) / 2;
         int y = 10 + (fullHeight() - 150) / 2;
@@ -93,7 +100,7 @@ public class ViewSwitcherElementTest {
         switcher.replaceView(0, stub);
         switcher.setView(0);
 
-        factory.build(new ArrayList<>(), null);
+        factory.build(screen(), null);
 
         assertEquals(fullWidth(), stub.getComputedWidth());
         assertEquals(fullHeight(), stub.getComputedHeight());

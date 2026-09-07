@@ -1,8 +1,11 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import org.lwjgl.input.Mouse;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.Screen;
+import org.lwjgl.glfw.GLFW;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -193,15 +196,15 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
         row.setComputedPosition(computedX, computedY);
         row.setComputedSize(computedWidth, computedHeight);
-        row.createWidgets(buttonList, fontRenderer, factory);
+        row.createWidgets(screen, font, factory);
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
-        row.draw(fr, mouseX, mouseY, partialTicks);
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
+        row.draw(g, font, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -219,8 +222,7 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
             applyStep(-1, 1);
             return true;
         }
-        field.mouseClicked(mouseX, mouseY, mouseButton);
-        return field.isFocused();
+        return isInside(field, mouseX, mouseY);
     }
 
     @Override
@@ -233,11 +235,6 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
     @Override
     public void tick() {
         if (heldDir == 0) return;
-        if (!Mouse.isButtonDown(0)) {
-            heldDir = 0;
-            heldTicks = 0;
-            return;
-        }
         heldTicks++;
         if (heldTicks >= repeatDelay && (heldTicks - repeatDelay) % repeatInterval == 0) {
             int multiplier = 1 << (heldTicks / doubleEvery);
@@ -261,21 +258,21 @@ public class DoubleStepperElement extends ViewElement<DoubleStepperElement> {
 
     @Override
     public int getPreferredWidth() {
-        return 0;
+        return getPreferredWidth(Minecraft.getInstance().font);
+    }
+
+    @Override
+    public int getPreferredWidth(Font font) {
+        return row.getPreferredWidth(font);
     }
 
     @Override
     public int getPreferredHeight() {
-        return row.getPreferredHeight();
+        return getPreferredHeight(Minecraft.getInstance().font);
     }
 
     @Override
-    public int getPreferredWidth(FontRenderer fr) {
-        return row.getPreferredWidth(fr);
-    }
-
-    @Override
-    public int getPreferredHeight(FontRenderer fr) {
-        return row.getPreferredHeight(fr);
+    public int getPreferredHeight(Font font) {
+        return row.getPreferredHeight(font);
     }
 }

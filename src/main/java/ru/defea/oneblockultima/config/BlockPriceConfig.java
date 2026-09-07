@@ -2,11 +2,17 @@ package ru.defea.oneblockultima.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
 import ru.defea.oneblockultima.OneBlockUltima;
+import ru.defea.oneblockultima.block.ModBlocks;
+import ru.defea.oneblockultima.util.BlockUtil;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -70,7 +76,14 @@ public final class BlockPriceConfig
     {
         if (registry == null) return 0;
         Double price = prices.get(registry);
-        return price != null ? price : 0;
+        if (price != null) return price;
+        String normalized = BlockUtil.normalizeLegacyId(registry, 0);
+        if (!normalized.equals(registry))
+        {
+            Double normalizedPrice = prices.get(normalized);
+            if (normalizedPrice != null) return normalizedPrice;
+        }
+        return 0;
     }
 
     public double getPrice(String registry, int meta)
@@ -82,26 +95,37 @@ public final class BlockPriceConfig
             Double metaPrice = prices.get(metaKey);
             if (metaPrice != null) return metaPrice;
         }
-        return getPrice(registry);
+        double base = getPrice(registry);
+        if (base > 0) return base;
+
+        java.util.Map.Entry<String, Integer> normalized = BlockUtil.normalizeBlockRegistryAndMeta(registry, meta);
+        if (normalized != null)
+        {
+            String normalizedMetaKey = normalized.getKey() + ":" + normalized.getValue();
+            Double normalizedMetaPrice = prices.get(normalizedMetaKey);
+            if (normalizedMetaPrice != null) return normalizedMetaPrice;
+            return getPrice(normalized.getKey());
+        }
+        return 0;
     }
 
     public double getPriceFromItemStack(ItemStack stack)
     {
         if (stack.isEmpty()) return 0;
         Item item = stack.getItem();
-        net.minecraft.util.ResourceLocation reg;
-        if (item instanceof net.minecraft.item.ItemBlock)
+        ResourceLocation reg;
+        if (item instanceof BlockItem)
         {
-            Block block = ((net.minecraft.item.ItemBlock) item).getBlock();
-            reg = block.getRegistryName();
+            Block block = ((BlockItem) item).getBlock();
+            reg = BuiltInRegistries.BLOCK.getKey(block);
         }
         else
         {
-            reg = item.getRegistryName();
+            reg = BuiltInRegistries.ITEM.getKey(item);
         }
         if (reg != null)
         {
-            int meta = stack.getMetadata();
+            int meta = ModBlocks.metaOf(stack);
             String metaKey = reg + ":" + meta;
             Double metaPrice = prices.get(metaKey);
             if (metaPrice != null) return metaPrice;
@@ -178,22 +202,37 @@ public final class BlockPriceConfig
         if (registry == null) return ItemStack.EMPTY;
         try
         {
-            net.minecraft.util.ResourceLocation rl = new net.minecraft.util.ResourceLocation(registry);
+            ResourceLocation rl = ResourceLocation.parse(BlockUtil.normalizeLegacyId(registry));
 
-            Block block = ForgeRegistries.BLOCKS.getValue(rl);
-            if (block != null)
+            Block block = BuiltInRegistries.BLOCK.get(rl);
+            if (block != Blocks.AIR)
             {
-                Item item = Item.getItemFromBlock(block);
-                if (item != Item.getItemFromBlock(net.minecraft.init.Blocks.AIR))
+                if (block instanceof ru.defea.oneblockultima.block.BlockCompressedBase)
                 {
-                    return new ItemStack(item, 1, meta);
+                    Item comp = ModBlocks.getCompressedItem(block, meta);
+                    if (comp != Items.AIR)
+                    {
+                        return new ItemStack(comp);
+                    }
+                }
+                else
+                {
+                    Item item = block.asItem();
+                    if (item != Items.AIR)
+                    {
+                        ItemStack stack = new ItemStack(item, 1);
+                        if (meta != 0) stack.setDamageValue(meta);
+                        return stack;
+                    }
                 }
             }
 
-            Item item = ForgeRegistries.ITEMS.getValue(rl);
-            if (item != null && item != net.minecraft.init.Items.AIR)
+            Item item = BuiltInRegistries.ITEM.get(rl);
+            if (item != Items.AIR)
             {
-                return new ItemStack(item, 1, meta);
+                ItemStack stack = new ItemStack(item, 1);
+                if (meta != 0) stack.setDamageValue(meta);
+                return stack;
             }
 
             return ItemStack.EMPTY;

@@ -1,8 +1,8 @@
 package ru.defea.oneblockultima.gui.layout;
 
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,11 +60,11 @@ public class TabBarElement extends ViewElement<TabBarElement> {
     }
 
     @Override
-    public void createWidgets(List<GuiButton> buttonList, FontRenderer fontRenderer, ViewFactory factory) {
+    public void createWidgets(Screen screen, Font font, ViewFactory factory) {
     }
 
     @Override
-    public void draw(FontRenderer fr, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphics g, Font font, int mouseX, int mouseY, float partialTicks) {
         int visibleCount = 0;
         for (Tab tab : tabs) {
             if (tab.visible) visibleCount++;
@@ -78,18 +78,18 @@ public class TabBarElement extends ViewElement<TabBarElement> {
 
             boolean active = tabs.indexOf(tab) == activeTab;
             boolean hovered = mouseX >= cx && mouseX < cx + tabWidth &&
-                              mouseY >= computedY && mouseY < computedY + computedHeight;
+                    mouseY >= computedY && mouseY < computedY + computedHeight;
 
             int bg;
             if (active) bg = DARK_BLUE_GRAY_COLOR_1;
             else if (hovered) bg = DARK_GRAY_COLOR_2;
             else bg = PANEL_COLOR;
-            Gui.drawRect(cx, computedY, cx + tabWidth, computedY + computedHeight, bg);
+            g.fill(cx, computedY, cx + tabWidth, computedY + computedHeight, bg);
 
             int textColor = active ? WHITE_COLOR_1 : LIGHT_BLUE_GRAY_COLOR;
-            fr.drawStringWithShadow(tab.label,
-                cx + (tabWidth - fr.getStringWidth(tab.label)) / 2.0f,
-                computedY + (computedHeight - 8) / 2.0f, textColor);
+            g.drawString(font, tab.label,
+                    cx + (tabWidth - font.width(tab.label)) / 2,
+                    computedY + (computedHeight - font.lineHeight) / 2, textColor, true);
 
             cx += tabWidth;
         }
@@ -109,7 +109,10 @@ public class TabBarElement extends ViewElement<TabBarElement> {
         int cx = computedX;
         int idx = 0;
         for (Tab tab : tabs) {
-            if (!tab.visible) { idx++; continue; }
+            if (!tab.visible) {
+                idx++;
+                continue;
+            }
             if (mouseX >= cx && mouseX < cx + tabWidth) {
                 activeTab = idx;
                 return true;

@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    },
+    {
+      "item": "oneblockultima:compressed_netherrack_4"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "oneblockultima:compressed_netherrack_5"
+  }
+}
