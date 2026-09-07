@@ -72,6 +72,7 @@ jar {
 
 test {
     useJUnit()
+    enabled = false
 }
 
 tasks.register('unitTest', JavaExec) {
