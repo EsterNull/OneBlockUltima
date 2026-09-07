@@ -20,6 +20,18 @@ classes/
 # VS Code
 .vscode/
 
+# Generated datagen output (regenerate with: gradlew data)
+src/generated/
+
+# Datagen run working dir
+run-data/
+
+# Stray decompile output
+net/
+
+# Agent memory
+opencode_memory.md
+
 # Minecraft / Forge
 run/
 logs/
@@ -30,6 +42,7 @@ options.txt
 usercache.json
 usernamecache.json
 servers.dat
+build-output.txt
 
 # OS
 .DS_Store
