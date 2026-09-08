@@ -2,6 +2,8 @@ package ru.defea.oneblockultima;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 public class CommonProxy
 {
@@ -10,6 +12,10 @@ public class CommonProxy
     }
 
     public void init()
+    {
+    }
+
+    public void clientSetup(IEventBus modBus, FMLClientSetupEvent event)
     {
     }
 

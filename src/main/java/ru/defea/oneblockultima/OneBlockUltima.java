@@ -1,7 +1,5 @@
 package ru.defea.oneblockultima;
 
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraftforge.fml.ModLoadingContext;
 import ru.defea.oneblockultima.gui.containers.ModMenus;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.registries.RegisterEvent;
@@ -88,17 +86,7 @@ public class OneBlockUltima
     private void clientSetup(final FMLClientSetupEvent event)
     {
         proxy.preInit();
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(ru.defea.oneblockultima.client.OneBlockWorldTypeSelector.class);
-
-        this.modBus.addListener(ru.defea.oneblockultima.event.ModEventsClient::registerKeyMappings);
-
-        MenuScreens.register(ModMenus.ONE_BLOCK.get(), ru.defea.oneblockultima.gui.GuiOneBlock::new);
-        MenuScreens.register(ModMenus.CLAIM_GENERATOR.get(), ru.defea.oneblockultima.gui.GuiClaimGenerator::new);
-
-        net.minecraftforge.fml.ModLoadingContext.get().registerExtensionPoint(
-                net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
-                () -> new net.minecraftforge.client.ConfigScreenHandler.ConfigScreenFactory(
-                        (mc, parent) -> new ru.defea.oneblockultima.gui.ModMainSettings(parent)));
+        proxy.clientSetup(modBus, event);
     }
 
     private void onRegisterCommands(final RegisterCommandsEvent event)
