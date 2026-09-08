@@ -46,7 +46,12 @@ public class PacketOneBlockAction implements CustomPacketPayload
     public PacketOneBlockAction(FriendlyByteBuf buf)
     {
         this.generatorPos = buf.readBlockPos();
-        this.action = Action.values()[buf.readByte()];
+        int actionOrdinal = buf.readByte();
+        if (actionOrdinal < 0 || actionOrdinal >= Action.values().length)
+        {
+            throw new IllegalStateException("Unknown OneBlock action ordinal: " + actionOrdinal);
+        }
+        this.action = Action.values()[actionOrdinal];
         this.setId = buf.readUtf();
     }
 

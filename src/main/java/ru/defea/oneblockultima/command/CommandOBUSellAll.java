@@ -13,6 +13,7 @@ import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
+import ru.defea.oneblockultima.util.CurrencyUtil;
 
 public final class CommandOBUSellAll
 {
@@ -49,7 +50,7 @@ public final class CommandOBUSellAll
         }
 
         Inventory inventory = player.getInventory();
-        double totalPrice = 0;
+        long totalCents = 0;
         int totalCount = 0;
         Item targetType = null;
 
@@ -69,7 +70,7 @@ public final class CommandOBUSellAll
             double price = BlockPriceConfig.get().getPriceFromItemStack(stack);
             if (price <= 0) continue;
             int count = stack.getCount();
-            totalPrice += price * count;
+            totalCents += CurrencyUtil.toCents(price * count);
             totalCount += count;
         }
 
@@ -91,12 +92,12 @@ public final class CommandOBUSellAll
             soldCount += count;
         }
 
-        data.addCurrency(totalPrice);
+        data.addCurrency(CurrencyUtil.fromCents(totalCents));
         OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
 
         final int fSold = soldCount;
-        final double fPrice = totalPrice;
+        final double fPrice = CurrencyUtil.fromCents(totalCents);
         source.sendSuccess(() -> Component.translatable("command.obuSellAll.success", fSold, fPrice, data.getCurrency())
                 .withStyle(ChatFormatting.GREEN), false);
     }

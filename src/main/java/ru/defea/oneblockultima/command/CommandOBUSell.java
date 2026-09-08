@@ -11,6 +11,7 @@ import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.config.BlockPriceConfig;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
+import ru.defea.oneblockultima.util.CurrencyUtil;
 
 import static ru.defea.oneblockultima.Constants.NBT_OBU_GENERATED;
 
@@ -69,7 +70,7 @@ public final class CommandOBUSell
         }
 
         int count = heldItem.getCount();
-        double totalValue = price * count;
+        double totalValue = CurrencyUtil.roundToCents(price * count);
         Component itemName = heldItem.getDisplayName();
         heldItem.shrink(count);
 

@@ -234,6 +234,7 @@
   "command.inviteGeneratorMember.owner_only": "Only the owner can invite members to this generator.",
   "command.inviteGeneratorMember.self_invite": "You cannot invite yourself.",
   "command.inviteGeneratorMember.invitation_received": "You were invited to join generator ownership. Type /acceptGeneratorInvite to accept or /declineGeneratorInvite to decline.",
+  "command.inviteGeneratorMember.access_warning": "Warning: accepting this invitation will remove your access to all other generators you belong to.",
   "command.inviteGeneratorMember.invitation_sent": "Invitation sent to %s.",
   "command.inviteGeneratorMember.member_limit": "The generator has reached its member limit.",
   "command.acceptGeneratorInvite.accepted": "You accepted the invitation.",

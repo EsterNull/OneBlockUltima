@@ -9,12 +9,14 @@ import net.minecraftforge.common.util.LazyOptional;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import ru.defea.oneblockultima.util.CurrencyUtil;
 
 public class OneBlockPlayerDataProvider implements ICapabilitySerializable<CompoundTag>
 {
     private static final String PERSISTENT_TAG = "oneblockultima_player_data";
     private static final String PLAYER_PERSISTED_TAG = "PlayerPersisted";
     private static final String CURRENCY_TAG = "currency";
+    private static final String CURRENCY_TAG_CENTS = "currencyCents";
     private static final String BROKEN_BLOCKS_TOTAL_TAG = "brokenBlocksTotal";
     private static final String SET_LEVELS_TAG = "setLevels";
     private static final String BROKEN_BLOCKS_BY_SET_TAG = "brokenBlocksBySet";
@@ -42,7 +44,9 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<Compo
         }
 
         CompoundTag tag = new CompoundTag();
-        tag.putDouble(CURRENCY_TAG, data.getCurrency());
+        tag.putLong(CURRENCY_TAG_CENTS, data instanceof OneBlockPlayerData
+                ? ((OneBlockPlayerData) data).getCurrencyCents()
+                : CurrencyUtil.toCents(data.getCurrency()));
         tag.putInt(BROKEN_BLOCKS_TOTAL_TAG, data.getBrokenBlocksCount());
 
         CompoundTag setLevels = new CompoundTag();
@@ -101,7 +105,14 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<Compo
         if (data instanceof OneBlockPlayerData)
         {
             OneBlockPlayerData playerData = (OneBlockPlayerData) data;
-            playerData.setCurrency(tag.getDouble(CURRENCY_TAG));
+            if (tag.contains(CURRENCY_TAG_CENTS))
+            {
+                playerData.setCurrencyCents(tag.getLong(CURRENCY_TAG_CENTS));
+            }
+            else
+            {
+                playerData.setCurrencyCents(CurrencyUtil.toCents(tag.getDouble(CURRENCY_TAG)));
+            }
             playerData.setBrokenBlocksTotal(tag.getInt(BROKEN_BLOCKS_TOTAL_TAG));
 
             playerData.getSetLevels().clear();
@@ -136,7 +147,7 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<Compo
     public CompoundTag serializeNBT(net.minecraft.core.HolderLookup.Provider provider)
     {
         CompoundTag tag = new CompoundTag();
-        tag.putDouble("currency", instance.getCurrency());
+        tag.putLong("currencyCents", instance.getCurrencyCents());
         tag.putInt("brokenBlocksTotal", instance.getBrokenBlocksCount());
 
         CompoundTag setLevels = new CompoundTag();
@@ -158,7 +169,14 @@ public class OneBlockPlayerDataProvider implements ICapabilitySerializable<Compo
     @Override
     public void deserializeNBT(net.minecraft.core.HolderLookup.Provider provider, CompoundTag nbt)
     {
-        instance.setCurrency(nbt.getDouble("currency"));
+        if (nbt.contains("currencyCents"))
+        {
+            instance.setCurrencyCents(nbt.getLong("currencyCents"));
+        }
+        else
+        {
+            instance.setCurrencyCents(CurrencyUtil.toCents(nbt.getDouble("currency")));
+        }
         instance.setBrokenBlocksTotal(nbt.getInt("brokenBlocksTotal"));
 
         instance.getSetLevels().clear();

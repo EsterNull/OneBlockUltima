@@ -73,6 +73,7 @@ public final class CommandInviteGeneratorMember
 
         generator.addPendingInvite(target.getUUID(), owner.getUUID(), Math.max(1, ModSettings.get().getInviteDurationTicks()));
         target.sendSystemMessage(Component.translatable("command.inviteGeneratorMember.invitation_received").withStyle(ChatFormatting.GREEN));
+        target.sendSystemMessage(Component.translatable("command.inviteGeneratorMember.access_warning").withStyle(ChatFormatting.YELLOW));
         owner.sendSystemMessage(Component.translatable("command.inviteGeneratorMember.invitation_sent", target.getName()).withStyle(ChatFormatting.GREEN));
     }
 }

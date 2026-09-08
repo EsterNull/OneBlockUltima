@@ -214,4 +214,26 @@ public class OneBlockPlayerDataTest {
         assertTrue(data.spendCurrency(0.5));
         assertEquals(9.5, data.getCurrency(), DELTA);
     }
+
+    @Test
+    public void currencyIsRoundedToTwoDecimalsWhenAdding() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(0.125);
+        assertEquals(0.13, data.getCurrency(), DELTA);
+        data.addCurrency(1.009);
+        assertEquals(1.14, data.getCurrency(), DELTA);
+    }
+
+    @Test
+    public void currencyRejectsNaNAndInfinity() {
+        OneBlockPlayerData data = newData();
+        data.addCurrency(Double.NaN);
+        assertEquals(0, data.getCurrency(), DELTA);
+        data.addCurrency(Double.POSITIVE_INFINITY);
+        assertEquals(0, data.getCurrency(), DELTA);
+        assertFalse(data.spendCurrency(Double.NaN));
+        assertFalse(data.spendCurrency(Double.POSITIVE_INFINITY));
+        data.setCurrency(Double.NaN);
+        assertEquals(0, data.getCurrency(), DELTA);
+    }
 }

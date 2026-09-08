@@ -2309,8 +2309,23 @@ public class ContainerSetsConfig
                 }
             }
             for (Map.Entry<String, List<String>> entry : langLines.entrySet())
-                Files.write(new File(langDir, entry.getKey() + ".lang").toPath(), entry.getValue(), StandardCharsets.UTF_8);
+                if (isSafeLangCode(entry.getKey()))
+                    Files.write(new File(langDir, entry.getKey() + ".lang").toPath(), entry.getValue(), StandardCharsets.UTF_8);
         } catch (Exception ignored) {}
+    }
+
+    private static boolean isSafeLangCode(String langCode)
+    {
+        if (langCode == null || langCode.isEmpty()) return false;
+        for (int i = 0; i < langCode.length(); i++)
+        {
+            char c = langCode.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void loadStaticCustomNames()

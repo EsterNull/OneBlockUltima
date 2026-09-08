@@ -1,13 +1,14 @@
 package ru.defea.oneblockultima.capability;
 
 import ru.defea.oneblockultima.config.BlockSetConfig;
+import ru.defea.oneblockultima.util.CurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class OneBlockPlayerData implements IOneBlockPlayerData
 {
-    private double currency;
+    private long currencyCents;
     private final Map<String, Integer> setLevels = new HashMap<String, Integer>();
     private final Map<String, Integer> brokenBlocksBySet = new HashMap<String, Integer>();
     private int brokenBlocksTotal;
@@ -15,27 +16,51 @@ public class OneBlockPlayerData implements IOneBlockPlayerData
     @Override
     public double getCurrency()
     {
-        return currency;
+        return CurrencyUtil.fromCents(currencyCents);
+    }
+
+    public long getCurrencyCents()
+    {
+        return currencyCents;
+    }
+
+    public void setCurrencyCents(long cents)
+    {
+        this.currencyCents = Math.max(0L, cents);
     }
 
     @Override
     public void addCurrency(double amount)
     {
-        if (amount > 0)
+        if (Double.isFinite(amount) && amount > 0)
         {
-            currency += amount;
+            long cents = CurrencyUtil.toCents(amount);
+            if (cents > 0)
+            {
+                currencyCents += cents;
+                if (currencyCents < 0)
+                {
+                    currencyCents = Long.MAX_VALUE;
+                }
+            }
         }
     }
 
     @Override
     public boolean spendCurrency(double amount)
     {
-        if (amount < 0 || currency < amount)
+        if (!Double.isFinite(amount) || amount < 0)
         {
             return false;
         }
 
-        currency -= amount;
+        long cents = CurrencyUtil.toCents(amount);
+        if (currencyCents < cents)
+        {
+            return false;
+        }
+
+        currencyCents -= cents;
         return true;
     }
 
@@ -131,7 +156,7 @@ public class OneBlockPlayerData implements IOneBlockPlayerData
 
     public void setCurrency(double currency)
     {
-        this.currency = Math.max(0, currency);
+        setCurrencyCents(Double.isFinite(currency) ? CurrencyUtil.toCents(currency) : 0L);
     }
 
     public void setBrokenBlocksTotal(int brokenBlocksTotal)

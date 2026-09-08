@@ -233,6 +233,7 @@
   "command.inviteGeneratorMember.owner_only": "Только владелец может приглашать участников в этот генератор.",
   "command.inviteGeneratorMember.self_invite": "Вы не можете пригласить сами себя.",
   "command.inviteGeneratorMember.invitation_received": "Вас пригласили стать участником генератора. Введите /acceptGeneratorInvite, чтобы принять, или /declineGeneratorInvite, чтобы отклонить.",
+  "command.inviteGeneratorMember.access_warning": "Внимание: при принятии приглашения доступ ко всем вашим другим генераторам будет снят.",
   "command.inviteGeneratorMember.invitation_sent": "Приглашение отправлено игроку %s.",
   "command.inviteGeneratorMember.member_limit": "Генератор достиг лимита участников.",
   "command.acceptGeneratorInvite.accepted": "Вы приняли приглашение.",

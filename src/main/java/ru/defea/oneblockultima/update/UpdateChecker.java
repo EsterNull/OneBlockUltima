@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 public class UpdateChecker
 {
-    private static final String VERSIONS_URL = "https://raw.githubusercontent.com/XZSt4nce/OneBlockUltima/main/versions.json";
+    private static final String VERSIONS_URL = "https://raw.githubusercontent.com/EsterNull/OneBlockUltima/main/versions.json";
     private static final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "OneBlockUltima-UpdateChecker");
         t.setDaemon(true);

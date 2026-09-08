@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import ru.defea.oneblockultima.capability.IOneBlockPlayerData;
 import ru.defea.oneblockultima.capability.OneBlockPlayerDataProvider;
 import ru.defea.oneblockultima.network.PacketSyncPlayerData;
+import ru.defea.oneblockultima.util.CurrencyUtil;
 
 public final class CommandAddUltimaBalance
 {
@@ -48,6 +49,12 @@ public final class CommandAddUltimaBalance
             return;
         }
 
+        if (!Double.isFinite(amount) || amount <= 0)
+        {
+            source.sendFailure(Component.translatable("command.addUltimaBalance.integer").withStyle(ChatFormatting.RED));
+            return;
+        }
+
         IOneBlockPlayerData data = OneBlockPlayerDataProvider.get(player);
         if (data == null)
         {
@@ -55,10 +62,11 @@ public final class CommandAddUltimaBalance
             return;
         }
 
-        data.addCurrency(amount);
+        double roundedAmount = CurrencyUtil.roundToCents(amount);
+        data.addCurrency(roundedAmount);
         OneBlockPlayerDataProvider.saveToEntity(player, data);
         PacketSyncPlayerData.sendToPlayer(player);
-        Component msg = Component.translatable("command.addUltimaBalance.success", player.getName(), amount, data.getCurrency())
+        Component msg = Component.translatable("command.addUltimaBalance.success", player.getName(), roundedAmount, data.getCurrency())
                 .withStyle(ChatFormatting.GREEN);
         source.sendSuccess(() -> msg, false);
         if (!(source.getEntity() instanceof ServerPlayer) || source.getEntity() != player)

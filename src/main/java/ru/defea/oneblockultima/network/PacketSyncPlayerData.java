@@ -61,7 +61,7 @@ public class PacketSyncPlayerData implements CustomPacketPayload
 
         OneBlockPlayerData data = (OneBlockPlayerData) playerData;
         CompoundTag sync = new CompoundTag();
-        sync.putDouble("currency", data.getCurrency());
+        sync.putLong("currencyCents", data.getCurrencyCents());
         sync.putInt("brokenBlocksTotal", data.getBrokenBlocksCount());
         CompoundTag levels = new CompoundTag();
         for (java.util.Map.Entry<String, Integer> entry : data.getSetLevels().entrySet())
@@ -92,8 +92,15 @@ public class PacketSyncPlayerData implements CustomPacketPayload
             {
                 OneBlockPlayerData playerData = (OneBlockPlayerData) data;
                 OneBlockUltima.getLogger().warn("[OBU-Balance] Client received sync, old={} new={}",
-                        playerData.getCurrency(), tag.getDouble("currency"));
-                playerData.setCurrency(tag.getDouble("currency"));
+                        playerData.getCurrency(), tag.getLong("currencyCents") / 100.0d);
+                if (tag.contains("currencyCents"))
+                {
+                    playerData.setCurrencyCents(tag.getLong("currencyCents"));
+                }
+                else
+                {
+                    playerData.setCurrency(tag.getDouble("currency"));
+                }
                 playerData.setBrokenBlocksTotal(tag.getInt("brokenBlocksTotal"));
                 playerData.getSetLevels().clear();
                 CompoundTag levels = tag.getCompound("setLevels");
