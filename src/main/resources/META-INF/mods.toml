@@ -9,10 +9,10 @@ displayName="OneBlock Ultima"
 description='''This mod will give you a unique survival experience in a world where there is only one block. It adds a new type of "One Block" world that will regenerate whenever you break it. By clicking on the generated block, you will open the generator menu, where you can select a set, open new ones and improve the already opened sets. The mod also adds a balance, which you replenish by destroying blocks.
 The mod is compatible with other mods and it already has basic support for Industrial Craft 2, Draconic Evolution, ThaumCraft, Botania, Applied Energistics 2, Industrial Upgrade, Thermal Foundation, Tinker's Construct, Extra Utils 2, Forestry, Astral Sorcery, DivineRPG, Farmer's Delight Legacy, Pam's HarvestCraft. If desired, you can edit the configuration of the sets.'''
 logoFile="oneblock_logo.png"
-authors="XZSt4nce"
-url="https://github.com/XZSt4nce/OneBlockUltima"
-displayURL="https://github.com/XZSt4nce/OneBlockUltima"
-updateJSONUrl="https://github.com/XZSt4nce/OneBlockUltima/blob/main/versions.json"
+authors="EsterNull"
+url="https://github.com/EsterNull/OneBlockUltima"
+displayURL="https://github.com/EsterNull/OneBlockUltima"
+updateJSONUrl="https://github.com/EsterNull/OneBlockUltima/blob/main/versions.json"
 
 [[dependencies.oneblockultima]]
 modId="forge"
